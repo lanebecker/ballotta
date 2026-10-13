@@ -2,13 +2,6 @@
   "detector": {
     "ignoreRules": [],
     "ignoreFiles": [],
-    "ignoreValues": [
-      {
-        "rule": "overused-font",
-        "value": "fraunces",
-        "createdAt": "2026-10-13T23:37:02.198Z",
-        "reason": "user confirmed: Lane reviewed eight wordmark typefaces and said 'let's stick with Fraunces' (Oct 13, 2026)"
-      }
-    ]
+    "ignoreValues": []
   }
 }

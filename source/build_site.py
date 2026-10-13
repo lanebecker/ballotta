@@ -19,7 +19,8 @@ data = json.dumps({"contests": contests, "rules": rules, "tlc": tlc}, ensure_asc
 html = (HERE / "template-travis.html").read_text(encoding="utf-8").replace("__DATA__", data)
 
 # Self-hosted fonts: the only third-party requests are the county and Census lookups.
-fonts = ("<style>@font-face{font-family:'Fraunces';src:url('fonts/Fraunces-opsz-wght.woff2') format('woff2');font-weight:100 900;font-display:swap}"
+fonts = ("<style>@font-face{font-family:'Zilla Slab';src:url('fonts/ZillaSlab-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}"
+         "@font-face{font-family:'Zilla Slab';src:url('fonts/ZillaSlab-Bold.woff2') format('woff2');font-weight:700;font-display:swap}"
          "@font-face{font-family:'Public Sans';src:url('fonts/PublicSans-wght.woff2') format('woff2');font-weight:100 900;font-display:swap}</style>")
 html = re.sub(r"<!--FONTS-->.*?<!--/FONTS-->", fonts, html, flags=re.S).replace("__OG_IMAGE__", BASE_URL + "og.png")
 (ROOT / "index.html").write_text(html, encoding="utf-8")

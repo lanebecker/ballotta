@@ -19,7 +19,7 @@ Contests marked **Double-check** aren't confirmed for your address yet. Always c
 - District assignments: Travis County Tax Office voter registration data (public ArcGIS server)
 - State and federal districts by precinct: Texas Legislative Council, CC BY 4.0
 - Contests and candidates: Travis County consolidated ballot, Nov 3, 2026
-- Fonts: Fraunces and Public Sans, SIL Open Font License 1.1
+- Fonts: Zilla Slab and Public Sans, SIL Open Font License 1.1
 
 Ballotta isn't affiliated with Travis County or any campaign, and it doesn't tell anyone how to vote.
 
