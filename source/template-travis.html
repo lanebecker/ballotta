@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ballotta · What's on your ballot? (Travis County test)</title>
+<meta name="description" content="See exactly what's on your November 3, 2026 ballot in Travis County, make your picks with private notes, and print a crib sheet to take to the polls.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#4B2A6B">
+<meta property="og:title" content="Ballotta · What's on your ballot?">
+<meta property="og:description" content="Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet. An early test.">
+<meta property="og:image" content="__OG_IMAGE__">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!--FONTS--><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Public+Sans:wght@400;600;800&display=swap"><!--/FONTS-->
+<style>
+:root{--ground:#FFF9F1;--card:#FFFFFF;--ink:#241A2E;--ink2:#3D3248;--muted:#5E4B73;--line:#E6DCCF;--line2:#D3C6B6;--lc:#8E7FA0;--divider:#F1E9DE;--track:#EFE6DA;--gold:#E9A92A;--plum:#4B2A6B;--lilac:#EADCF5;
+--warn:#7A5A00;--warnsoft:#FBF1D2;--bad:#9A3412;--badsoft:#FBE9DF;--ok:#1F6B4A;--oksoft:#E3F1EA;--focus:0 0 0 2px #FFF9F1,0 0 0 4px #4B2A6B}
+*{box-sizing:border-box}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible{outline:none;box-shadow:var(--focus)}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:'Public Sans',system-ui,sans-serif;font-size:16px;line-height:1.5}
+a{color:var(--ink);font-weight:600}a:hover{color:var(--muted)}
+.wrap{max-width:440px;margin:0 auto;padding:28px 16px 80px;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.brand span{display:flex;align-items:center;gap:10px}
+.ball{width:22px;height:22px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.brand b{font-family:'Fraunces',serif;font-size:24px;font-weight:500;letter-spacing:-.01em}
+.tag{padding:4px 10px;border-radius:999px;background:var(--lilac);font-size:12px;font-weight:600;color:var(--plum)}
+h1{margin:0;font-family:'Fraunces',serif;font-size:32px;line-height:1.1;font-weight:700;letter-spacing:-.01em}
+h2{margin:0;font-family:'Fraunces',serif;font-size:21px;font-weight:700}
+h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+.lead{color:var(--ink2)}
+.note{font-size:13px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+label{font-size:14px;font-weight:600}
+.field{display:flex;flex-direction:column;gap:6px}
+input[type=text],textarea{width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:1px solid var(--lc);background:#fff;font:inherit;color:var(--ink)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+textarea{min-height:70px;font-size:15px;resize:vertical}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:12px;border:none;background:var(--plum);color:#fff;font:inherit;font-weight:600;cursor:pointer;text-decoration:none}
+.btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+.btn.small{min-height:40px;font-size:14px;border-radius:10px;padding:0 12px}
+.status{font-size:14px;padding:10px 12px;border-radius:10px}
+.status.bad{background:var(--badsoft);color:var(--bad)}
+.status.warn{background:var(--warnsoft);color:var(--warn)}
+.status.ok{background:var(--oksoft);color:var(--ok)}
+.hidden{display:none !important}
+.meter{height:10px;border-radius:999px;background:var(--track);overflow:hidden}
+.meter div{height:10px;background:var(--gold);border-radius:999px;width:0}
+.list{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+details.race{border-bottom:1px solid var(--divider)}
+details.race:last-child{border-bottom:none}
+details.race summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 16px;cursor:pointer}
+details.race summary::-webkit-details-marker{display:none}
+.rt{flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rt b{font-size:15px;font-weight:600}
+.rt .pick{font-size:14px;display:flex;align-items:center;gap:6px}
+.rt .pick i{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.rt .und{font-size:14px;color:var(--muted)}
+.chev{width:18px;height:18px;flex-shrink:0;transition:transform .15s}
+details[open] .chev{transform:rotate(90deg)}
+.rb{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.opt[aria-pressed=true]{border:2px solid var(--plum)}
+.radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--lc);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.radio svg{display:none}
+.opt[aria-pressed=true] .radio{border:none;background:var(--gold)}
+.opt[aria-pressed=true] .radio svg{display:block}
+.opt small{display:block;font-size:13px;color:var(--muted)}
+.skip{min-height:44px;border-radius:12px;border:1px dashed var(--lc);background:transparent;font:inherit;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink)}
+.skip[aria-pressed=true]{border:2px solid var(--plum)}
+.mtext{font-size:14px;color:var(--ink2);background:var(--ground);border-radius:10px;padding:10px 12px}
+.flag{display:inline-block;align-self:flex-start;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--warnsoft);color:var(--warn)}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kv div{background:var(--ground);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.kv b{font-size:22px;font-weight:800;line-height:1.1}
+.kv span{font-size:12px;color:var(--muted)}
+.unit{display:flex;flex-direction:column;gap:8px}
+#crib{background:#fff;border:1px solid var(--line2);border-radius:4px;padding:20px}
+#crib .ch{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:4px}
+#crib .ln{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #DDD;font-size:12px;break-inside:avoid}
+#crib .ln span:last-child{font-weight:800;text-align:right}
+#crib .why{font-size:11px;color:#333;padding:0 0 4px}
+#crib .grp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:10px}
+@media print{
+  body{background:#fff}
+  .wrap{padding:0;max-width:none}
+  .wrap > :not(#result), #result > :not(#cribwrap), #cribwrap > :not(#crib){display:none !important}
+  #result{display:block !important}
+  #cribwrap{border:none;padding:0;display:block}
+  #crib{border:none;padding:0}
+  @page{margin:0.5in}
+}
+.small{font-size:13px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand"><span><svg width="24" height="29" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#4B2A6B" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#4B2A6B" stroke-width="8" stroke-linecap="round"></path></svg><b>Ballotta</b></span><span class="tag">Early test · Travis County</span></div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <h1>What's on your ballot?</h1>
+    <p class="lead">Enter the address where you're registered. We'll build your ballot for the November 3, 2026 election from Travis County's own voter-district data.</p>
+  </div>
+
+  <section class="card" id="lookup" aria-labelledby="lk">
+    <h2 id="lk" class="hidden">Your address</h2>
+    <div class="field"><label for="street">Registered street address</label><input id="street" type="text" placeholder="1000 Guadalupe St" autocomplete="street-address"></div>
+    <div class="row">
+      <div class="field"><label for="unit">Apt / unit</label><input id="unit" type="text" placeholder="Optional"></div>
+      <div class="field"><label for="zip">ZIP</label><input id="zip" type="text" inputmode="numeric" placeholder="78701" autocomplete="postal-code"></div>
+    </div>
+    <button class="btn" id="go" type="button">Show my ballot</button>
+    <div id="status" class="status hidden" role="status"></div>
+    <div id="units" class="unit hidden"></div>
+    <p class="note">Your browser sends your address straight to Travis County's public map server (and, if the county can't match it, the U.S. Census geocoder) to find your districts. Ballotta has no server: it never receives your address, and your picks and reasons stay in this browser.</p>
+  </section>
+
+  <div id="result" class="hidden" style="display:flex;flex-direction:column;gap:16px">
+    <section class="card" aria-labelledby="yb">
+      <h2 id="yb">Your ballot</h2>
+      <p id="where" class="note"></p>
+      <div class="kv">
+        <div><b id="k-total">0</b><span>contests</span></div>
+        <div><b id="k-done">0</b><span>decided</span></div>
+        <div><b id="k-check">0</b><span>to double-check</span></div>
+      </div>
+      <div class="meter" role="img" id="meterlabel" aria-label="Progress"><div id="meter"></div></div>
+      <div id="confbox"></div>
+    </section>
+    <div id="groups" style="display:flex;flex-direction:column;gap:16px"></div>
+
+    <section class="card" id="cribwrap" aria-labelledby="cs">
+      <h2 id="cs">Your crib sheet</h2>
+      <p class="note">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p>
+      <label class="note" style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="withwhy"> Include my reasons</label>
+      <div id="crib"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="print" type="button">Print crib sheet</button>
+        <button class="btn secondary" id="reset" type="button">Clear my picks</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h3>About this test</h3>
+    <p class="note">Ballotta is an early test for Travis County voters only. It isn't affiliated with Travis County or any campaign, and it doesn't tell you how to vote.</p>
+    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026. Contests marked "Double-check" aren't confirmed yet; one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet. Always confirm with your official sample ballot at <a href="https://votetravis.gov" target="_blank" rel="noopener">VoteTravis.gov</a>.</p>
+  </section>
+  <footer class="card" aria-label="Feedback">
+    <h3>Tell us what you think</h3>
+    <p class="note" style="color:var(--ink2)">Did your ballot look right? Anything confusing, broken, or missing? Your feedback shapes what Ballotta becomes.</p>
+    <a class="btn secondary" id="feedback" href="#">Send feedback by email</a>
+    <p class="note">Opens your email app with a few details filled in (your precinct and how the lookup went, never your address).</p>
+  </footer>
+</main>
+
+<script>
+const DATA = __DATA__;
+const SVC = 'https://taxmaps.traviscountytx.gov/arcgis/rest/services/';
+const FIELDS = 'Address,Unit,ZIP,Precinct,Commissioner,Congressional,JPConstable,Legislative,Senate,Muni,MuniSMD,ISD,ISDSMD,College,MUD,ESD,ESD2,Library,WCID,Temp,CodeCat';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+let picks = LS.get('ballotta.picks', {}), whys = LS.get('ballotta.whys', {});
+let ballot = [];  // [{c, conf, note}]
+const BYID = Object.fromEntries(DATA.contests.map(c => [c.id, c]));
+
+function show(cls, msg) { const s = $('status'); s.className = 'status ' + cls; s.textContent = msg; }
+function hideStatus() { $('status').className = 'status hidden'; }
+
+async function getJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message || 'server error');
+  return d;
+}
+function q(s) { return String(s).replace(/'/g, "''"); }
+
+/* ---------- routing ---------- */
+function enrich(rec) {
+  const t = DATA.tlc[String(rec.Precinct)] || {};
+  return Object.assign({}, rec, t);
+}
+function applies(rule, rec) {
+  if (!rule || !rule.clauses) return null;
+  for (const cl of rule.clauses) {
+    let ok = true;
+    for (const f in cl) {
+      if (f === '_conf') continue;
+      const v = String(rec[f.replace(/!$/, '')] == null ? '' : rec[f.replace(/!$/, '')]).trim();
+      if (f.endsWith('!')) { if (cl[f].includes(v)) ok = false; }
+      else if (!cl[f].includes(v)) ok = false;
+    }
+    if (ok) return cl._conf || rule.conf;
+  }
+  return null;
+}
+function route(rec) {
+  const r = enrich(rec);
+  return DATA.contests.map(c => { const conf = applies(DATA.rules[c.id], r); return conf ? { c, conf, note: DATA.rules[c.id].note } : null; }).filter(Boolean);
+}
+function profileKey(rec) { return (rec.CodeCat || '') + '|' + (rec.Temp || '').trim(); }
+
+/* ---------- lookup ---------- */
+$('go').addEventListener('click', lookup);
+['street', 'unit', 'zip'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); }));
+async function lookup() {
+  const street = $('street').value.trim(), unit = $('unit').value.trim(), zip = $('zip').value.trim();
+  $('units').className = 'unit hidden';
+  $('result').classList.add('hidden');
+  if (!street) { show('bad', 'Enter your street address.'); return; }
+  if (!/^\d{5}$/.test(zip)) { show('bad', 'Enter your 5-digit ZIP code.'); return; }
+  show('warn', 'Finding your address in Travis County’s records…');
+  try {
+    const g = await getJSON(SVC + 'AdMas_wPrecinctFraction/GeocodeServer/findAddressCandidates?' + new URLSearchParams({ SingleLine: street + ', ' + zip, outFields: 'Addr_type,Precinct', maxLocations: '3', outSR: '4326', f: 'json' }));
+    const cand = (g.candidates || []).filter(c => c.address.indexOf(zip) !== -1).sort((a, b) => b.score - a.score)[0];
+    if (!cand || cand.score < 80) {
+      // Not a registered voting address in the county file: place it with the free Census geocoder, then use nearby addresses
+      const pt = await censusPoint(street, zip);
+      if (!pt) { show('bad', 'We couldn\u2019t find that address. Check the spelling and ZIP. Only Travis County addresses are supported.'); return; }
+      return nearby(pt, pt.label);
+    }
+    const addr = cand.address.split(',')[0].toUpperCase().replace(/\s+(UNIT|APT|STE|#).*$/, '');
+    let where = "Address = '" + q(addr) + "' AND ZIP = " + Number(zip);
+    let d = await getJSON(SVC + 'VotingAddresses/VA/MapServer/0/query?' + new URLSearchParams({ where, outFields: FIELDS, returnGeometry: 'false', f: 'json' }));
+    let recs = (d.features || []).map(f => f.attributes);
+    if (unit && recs.length > 1) {
+      const u = unit.toUpperCase().replace(/^(APT|UNIT|STE|#)\s*/, '');
+      const byUnit = recs.filter(r => String(r.Unit || '').toUpperCase().replace(/^(APT|UNIT|STE|#)\s*/, '') === u);
+      if (byUnit.length) recs = byUnit;
+    }
+    if (recs.length) {
+      const profiles = {}; recs.forEach(r => { (profiles[profileKey(r)] = profiles[profileKey(r)] || []).push(r); });
+      const keys = Object.keys(profiles);
+      if (keys.length === 1) { hideStatus(); render(recs[0], 'exact', cand.address); return; }
+      hideStatus(); chooseUnit(profiles, cand.address); return;
+    }
+    return nearby(cand.location, cand.address);
+  } catch (e) {
+    show('bad', 'We couldn’t reach Travis County’s map server just now (' + e.message + '). Check your connection and try again in a minute.');
+  }
+}
+function censusPoint(street, zip) {
+  return new Promise(resolve => {
+    const cb = 'cg' + Date.now(), sc = document.createElement('script');
+    const done = (v) => { try { delete window[cb]; } catch (e) {} sc.remove(); resolve(v); };
+    const t = setTimeout(() => done(null), 8000);
+    window[cb] = (d) => { clearTimeout(t); const m = d && d.result && d.result.addressMatches && d.result.addressMatches[0]; done(m ? { x: m.coordinates.x, y: m.coordinates.y, label: m.matchedAddress } : null); };
+    sc.onerror = () => { clearTimeout(t); done(null); };
+    sc.src = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?' + new URLSearchParams({ address: street + ', TX ' + zip, benchmark: 'Public_AR_Current', format: 'jsonp', callback: cb });
+    document.head.appendChild(sc);
+  });
+}
+async function nearby(p, label) {
+  const d = await getJSON(SVC + 'VotingAddresses/VA/MapServer/0/query?' + new URLSearchParams({ geometry: p.x + ',' + p.y, geometryType: 'esriGeometryPoint', inSR: '4326', distance: '120', units: 'esriSRUnit_Meter', spatialRel: 'esriSpatialRelIntersects', outFields: FIELDS + ',LongitudeX,LatitudeY', returnGeometry: 'false', f: 'json' }));
+  const near = (d.features || []).map(f => f.attributes);
+  if (!near.length) { show('bad', 'We placed that address on the map, but there are no registered voting addresses near it. Check with the Travis County Tax Office.'); return; }
+  const dist = r => Math.hypot((r.LongitudeX - p.x) * 96000, (r.LatitudeY - p.y) * 111000);
+  near.sort((a, b) => dist(a) - dist(b));
+  const keys = new Set(near.map(profileKey));
+  hideStatus();
+  render(near[0], keys.size > 1 ? 'nearby-mixed' : 'nearby', label, keys.size > 1 ? near : null);
+}
+function chooseUnit(profiles, label) {
+  const box = $('units');
+  const groups = Object.values(profiles);
+  box.innerHTML = '<p class="small" style="font-weight:600">Units at this address are in different districts. Which is yours?</p>' +
+    groups.map((g, i) => '<button type="button" class="btn secondary small" data-i="' + i + '">' + esc(g.slice(0, 6).map(r => r.Unit || '(no unit)').join(', ') + (g.length > 6 ? ' +' + (g.length - 6) + ' more' : '')) + '</button>').join('');
+  box.className = 'unit';
+  box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { box.className = 'unit hidden'; render(groups[+b.dataset.i][0], 'exact', label); }));
+}
+
+/* ---------- render ---------- */
+const LEVELS = ['Federal', 'State', 'Courts', 'County', 'City', 'School', 'Special district'];
+const LEVEL_LABEL = { 'Courts': 'District courts', 'Special district': 'Special districts' };
+function seats(c) { const m = c.title.match(/vote for up to (\d)/); return m ? +m[1] : 1; }
+function cleanTitle(c) { return c.title.replace(/\s*\(vote for up to \d\)/, ''); }
+function render(rec, mode, label, neighbors) {
+  ballot = route(rec);
+  if (neighbors) {
+    // Contests that differ between nearby addresses become "double-check"
+    const sets = neighbors.map(n => new Set(route(n).map(x => x.c.id)));
+    const all = new Set(); sets.forEach(s => s.forEach(id => all.add(id)));
+    const mine = new Set(ballot.map(b => b.c.id));
+    ballot.forEach(b => { if (!sets.every(s => s.has(b.c.id))) { b.conf = 'medium'; b.note = 'Your address is near a district line, so this contest may or may not be on your ballot.'; } });
+    all.forEach(id => { if (!mine.has(id)) ballot.push({ c: BYID[id], conf: 'medium', note: 'Your address is near a district line, so this contest may be on your ballot.' }); });
+    const order = Object.fromEntries(DATA.contests.map((c, i) => [c.id, i]));
+    ballot.sort((a, b) => order[a.c.id] - order[b.c.id]);
+  }
+  $('result').classList.remove('hidden');
+  const conf = mode === 'exact' ? '<div class="status ok">Matched your exact address in the county’s voter-district records.</div>' :
+    mode === 'nearby' ? '<div class="status warn">We couldn’t match your exact address, so this uses the nearest registered addresses. All of them have the same ballot.</div>' :
+    '<div class="status warn">We couldn’t match your exact address, and nearby addresses have different ballots. Contests that differ are marked "Double-check."</div>';
+  $('confbox').innerHTML = conf;
+  lastLookup = { mode, precinct: rec.Precinct, total: ballot.length };
+  $('where').textContent = label.replace(/, AUSTIN, TX/i, ', Austin') + ' · Precinct ' + rec.Precinct + ' · Nov 3, 2026';
+  const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));
+  $('groups').innerHTML = LEVELS.filter(L => byLevel[L]).map(L => '<div style="display:flex;flex-direction:column;gap:8px"><h3>' + esc(LEVEL_LABEL[L] || L) + '</h3><div class="list">' + byLevel[L].map(raceHTML).join('') + '</div></div>').join('');
+  $('groups').querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => pick(btn.dataset.c, btn.dataset.pick)));
+  $('groups').querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { whys[t.dataset.c] = t.value; LS.set('ballotta.whys', whys); renderCrib(); }));
+  refresh();
+  $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function chev() { return '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'; }
+function current(cid) { const v = picks[cid]; return Array.isArray(v) ? v : (v ? [v] : []); }
+function summaryHTML(cid) {
+  const v = current(cid);
+  if (!v.length) return '<span class="und">Undecided</span>';
+  if (v[0] === '__skip') return '<span class="und" style="font-style:italic">Skipped</span>';
+  return '<span class="pick"><i aria-hidden="true"></i>' + esc(v.join(', ')) + '</span>';
+}
+function raceHTML(b) {
+  const c = b.c, isM = c.type === 'measure', n = seats(c);
+  const opts = isM ? ['FOR', 'AGAINST'] : c.choices.filter(x => x !== 'Write-in');
+  const cur = current(c.id);
+  let body = '';
+  if (b.conf === 'medium') body += '<span class="flag">Double-check</span><p class="note">' + esc(b.note || 'Not yet confirmed for your address.') + '</p>';
+  if (isM && c.text) body += '<p class="mtext">' + esc(c.text) + '</p>';
+  if (!isM) body += '<p class="note">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</p>';
+  body += opts.map(o => {
+    const m = o.match(/^(.*?)\s*\((REP|DEM|LIB|GRN)\)$/);
+    const name = m ? m[1] : o, party = m ? { REP: 'Republican', DEM: 'Democratic', LIB: 'Libertarian', GRN: 'Green' }[m[2]] : '';
+    const label = isM ? (o === 'FOR' ? 'For' : 'Against') : name;
+    return '<button type="button" class="opt" data-c="' + c.id + '" data-pick="' + esc(isM ? o : name) + '" aria-pressed="' + (cur.includes(isM ? o : name) ? 'true' : 'false') + '"><span class="radio" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#241A2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span>' + esc(label) + (party ? '<small>' + party + '</small>' : '') + '</span></button>';
+  }).join('');
+  body += '<button type="button" class="skip" data-c="' + c.id + '" data-pick="__skip" aria-pressed="' + (cur[0] === '__skip' ? 'true' : 'false') + '">Skip this ' + (isM ? 'measure' : 'race') + '</button>';
+  body += '<label class="note" for="w' + c.id + '" style="font-weight:600;color:var(--ink)">Why? <span style="font-weight:400;color:var(--muted)">(private, optional)</span></label><textarea id="w' + c.id + '" data-c="' + c.id + '" placeholder="Your reasoning, in your words">' + esc(whys[c.id] || '') + '</textarea>';
+  return '<details class="race" id="r' + c.id + '"><summary><span class="rt"><b>' + esc(cleanTitle(c)) + '</b><span id="s' + c.id + '">' + summaryHTML(c.id) + '</span>' + (b.conf === 'medium' ? '<span class="flag">Double-check</span>' : '') + '</span>' + chev() + '</summary><div class="rb">' + body + '</div></details>';
+}
+function pick(cid, val) {
+  const c = BYID[cid], n = seats(c);
+  let cur = current(cid).filter(x => x !== '__skip');
+  if (val === '__skip') cur = current(cid)[0] === '__skip' ? [] : ['__skip'];
+  else if (n > 1) { cur = cur.includes(val) ? cur.filter(x => x !== val) : (cur.length < n ? cur.concat(val) : cur); }
+  else cur = current(cid)[0] === val ? [] : [val];
+  picks[cid] = cur; LS.set('ballotta.picks', picks);
+  document.querySelectorAll('[data-c="' + cid + '"][data-pick]').forEach(b => b.setAttribute('aria-pressed', current(cid).includes(b.dataset.pick) ? 'true' : 'false'));
+  $('s' + cid).innerHTML = summaryHTML(cid);
+  refresh();
+}
+function refresh() {
+  const total = ballot.length, done = ballot.filter(b => current(b.c.id).length).length, chk = ballot.filter(b => b.conf === 'medium').length;
+  $('k-total').textContent = total; $('k-done').textContent = done; $('k-check').textContent = chk;
+  $('meter').style.width = (total ? Math.round(100 * done / total) : 0) + '%';
+  $('meterlabel').setAttribute('aria-label', done + ' of ' + total + ' contests decided');
+  renderCrib();
+}
+function renderCrib() {
+  const withWhy = $('withwhy').checked;
+  let html = '<div class="ch"><b style="font-size:15px">My ballot notes</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
+  ballot.forEach(b => {
+    if (b.c.level !== last) { last = b.c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
+    const v = current(b.c.id), txt = !v.length || v[0] === '__skip' ? '______' : v.join(', ');
+    html += '<div class="ln"><span>' + esc(cleanTitle(b.c)) + (b.conf === 'medium' ? ' *' : '') + '</span><span>' + esc(txt) + '</span></div>';
+    if (withWhy && whys[b.c.id]) html += '<div class="why">' + esc(whys[b.c.id]) + '</div>';
+  });
+  html += '<p style="font-size:10px;margin-top:10px">Blank = no vote planned. * = check your official sample ballot. Contests are in ballot order.</p>';
+  $('crib').innerHTML = html;
+}
+$('withwhy').addEventListener('change', renderCrib);
+/* ---------- feedback (address assembled at runtime to keep it away from scrapers) ---------- */
+let lastLookup = { mode: '', precinct: '', total: 0 };
+$('feedback').addEventListener('click', (e) => {
+  e.preventDefault();
+  const to = ['lanebecker', 'gmail.com'].join('@');
+  const ctx = lastLookup.precinct
+    ? 'Precinct ' + lastLookup.precinct + ' · ' + lastLookup.total + ' contests · ' + ({ exact: 'exact match', nearby: 'nearby match', 'nearby-mixed': 'near a district line' }[lastLookup.mode] || lastLookup.mode)
+    : 'No ballot looked up yet';
+  const body = 'What I tried:\n\n\nWhat happened (or what looked wrong):\n\n\nPhone or computer, and browser:\n\n\n---\n' + ctx + '\nPage: ' + location.href;
+  location.href = 'mailto:' + to + '?' + new URLSearchParams({ subject: 'Ballotta test feedback', body }).toString().replace(/\+/g, '%20');
+});
+$('print').addEventListener('click', () => window.print());
+$('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => b.setAttribute('aria-pressed', 'false')); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
+</script>
+</body>
+</html>

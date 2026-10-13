@@ -1,0 +1,2575 @@
+{
+ "election": "Travis County Joint General and Special Elections, November 3, 2026",
+ "source": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+ "source_note": "Consolidated ('bedsheet') ballot listing every contest in the county. No single voter sees all of these; each ballot is a subset by precinct.",
+ "unopposed_not_on_ballot": [
+  "Coupland ISD trustees (declared elected unopposed)",
+  "Manor ISD Board of Trustees, Places 1-4 (declared elected unopposed)"
+ ],
+ "contests": [
+  {
+   "title": "United States Senator",
+   "type": "candidate",
+   "choices": [
+    "Ken Paxton (REP)",
+    "James Talarico (DEM)",
+    "Ted Brown (LIB)",
+    "Write-in"
+   ],
+   "id": "c001",
+   "level": "Federal",
+   "entity": "Federal"
+  },
+  {
+   "title": "United States Representative, District 10",
+   "type": "candidate",
+   "choices": [
+    "Chris Gober (REP)",
+    "Caitlin Rourk (DEM)"
+   ],
+   "id": "c002",
+   "level": "Federal",
+   "entity": "Federal"
+  },
+  {
+   "title": "United States Representative, District 37",
+   "type": "candidate",
+   "choices": [
+    "Lauren B. Peña (REP)",
+    "Greg Casar (DEM)"
+   ],
+   "id": "c003",
+   "level": "Federal",
+   "entity": "Federal"
+  },
+  {
+   "title": "United States Representative, District 11",
+   "type": "candidate",
+   "choices": [
+    "August Pfluger (REP)",
+    "Claire Reynolds (DEM)"
+   ],
+   "id": "c004",
+   "level": "Federal",
+   "entity": "Federal"
+  },
+  {
+   "title": "United States Representative, District 27",
+   "type": "candidate",
+   "choices": [
+    "Michael Cloud (REP)",
+    "Tanya Lloyd (DEM)",
+    "Write-in"
+   ],
+   "id": "c005",
+   "level": "Federal",
+   "entity": "Federal"
+  },
+  {
+   "title": "Governor",
+   "type": "candidate",
+   "choices": [
+    "Greg Abbott (REP)",
+    "Gina Hinojosa (DEM)",
+    "Pat Dixon (LIB)",
+    "Write-in"
+   ],
+   "id": "c006",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Lieutenant Governor",
+   "type": "candidate",
+   "choices": [
+    "Dan Patrick (REP)",
+    "Vikki Goodwin (DEM)",
+    "Anthony Cristo (LIB)",
+    "Kevin McCormick (GRN)",
+    "Write-in"
+   ],
+   "id": "c007",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Attorney General",
+   "type": "candidate",
+   "choices": [
+    "Mayes Middleton (REP)",
+    "Nathan Johnson (DEM)",
+    "Tom Oxford (LIB)"
+   ],
+   "id": "c008",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Comptroller of Public Accounts",
+   "type": "candidate",
+   "choices": [
+    "Don Huffines (REP)",
+    "Sarah Eckhardt (DEM)",
+    "V. Alonzo Echavarria-Garza (LIB)",
+    "Shehla Faizi (GRN)"
+   ],
+   "id": "c009",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Commissioner of the General Land Office",
+   "type": "candidate",
+   "choices": [
+    "Dawn Buckingham (REP)",
+    "Benjamin Flores (DEM)",
+    "Neill Snider (LIB)"
+   ],
+   "id": "c010",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Commissioner of Agriculture",
+   "type": "candidate",
+   "choices": [
+    "Nate Sheets (REP)",
+    "Clayton Tucker (DEM)",
+    "Austin R. Kelly (LIB)"
+   ],
+   "id": "c011",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Railroad Commissioner",
+   "type": "candidate",
+   "choices": [
+    "Bo French (REP)",
+    "Jon Rosenthal (DEM)",
+    "Arthur DiBianca (LIB)"
+   ],
+   "id": "c012",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Chief Justice, Supreme Court",
+   "type": "candidate",
+   "choices": [
+    "Jimmy Blacklock (REP)",
+    "Maggie Ellis (DEM)"
+   ],
+   "id": "c013",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Justice, Supreme Court, Place 2 (Unexpired Term)",
+   "type": "candidate",
+   "choices": [
+    "James P. Sullivan (REP)",
+    "Chari Kelly (DEM)"
+   ],
+   "id": "c014",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Justice, Supreme Court, Place 7",
+   "type": "candidate",
+   "choices": [
+    "Kyle Hawkins (REP)",
+    "Kristen Hawkins (DEM)"
+   ],
+   "id": "c015",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Justice, Supreme Court, Place 8",
+   "type": "candidate",
+   "choices": [
+    "Brett Busby (REP)",
+    "Gisela D. Triana (DEM)"
+   ],
+   "id": "c016",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Judge, Court of Criminal Appeals, Place 3",
+   "type": "candidate",
+   "choices": [
+    "Thomas Smith (REP)",
+    "Okey Anyiam (DEM)",
+    "Mark Ash (LIB)"
+   ],
+   "id": "c017",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Judge, Court of Criminal Appeals, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Kevin Patrick Yeary (REP)",
+    "Audra Riley (DEM)"
+   ],
+   "id": "c018",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Judge, Court of Criminal Appeals, Place 9",
+   "type": "candidate",
+   "choices": [
+    "John Messinger (REP)",
+    "Holly Taylor (DEM)"
+   ],
+   "id": "c019",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Member, State Board of Education, District 5",
+   "type": "candidate",
+   "choices": [
+    "Mica Arellano (REP)",
+    "Allison Bush (DEM)"
+   ],
+   "id": "c020",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Senator, District 21",
+   "type": "candidate",
+   "choices": [
+    "Julie Dahlberg (REP)",
+    "Judith Zaffirini (DEM)"
+   ],
+   "id": "c021",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 19",
+   "type": "candidate",
+   "choices": [
+    "Ellen Troxclair (REP)",
+    "Tom Luck (DEM)"
+   ],
+   "id": "c022",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 46",
+   "type": "candidate",
+   "choices": [
+    "Sheryl Cole (DEM)"
+   ],
+   "id": "c023",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 47",
+   "type": "candidate",
+   "choices": [
+    "Jennifer Mushtaler (REP)",
+    "Pooja Sethi (DEM)"
+   ],
+   "id": "c024",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 48",
+   "type": "candidate",
+   "choices": [
+    "Anthony Gupta (REP)",
+    "Donna Howard (DEM)"
+   ],
+   "id": "c025",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 49",
+   "type": "candidate",
+   "choices": [
+    "Montserrat Garibay (DEM)",
+    "Arshia Papari (GRN)"
+   ],
+   "id": "c026",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 50",
+   "type": "candidate",
+   "choices": [
+    "Howard Olsen (REP)",
+    "Samantha Lopez-Resendez (DEM)"
+   ],
+   "id": "c027",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "State Representative, District 51",
+   "type": "candidate",
+   "choices": [
+    "Jessica Martinez (REP)",
+    "Maria Luisa “Lulu” Flores (DEM)"
+   ],
+   "id": "c028",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Chief Justice, 15th Court of Appeals District",
+   "type": "candidate",
+   "choices": [
+    "Scott Brister (REP)",
+    "Jerry Zimmerer (DEM)"
+   ],
+   "id": "c029",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Justice, 15th Court of Appeals District, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Scott K. Field (REP)",
+    "Tom Baker (DEM)"
+   ],
+   "id": "c030",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Justice, 15th Court of Appeals District, Place 3",
+   "type": "candidate",
+   "choices": [
+    "April Farris (REP)",
+    "Marc M. Meyer (DEM)"
+   ],
+   "id": "c031",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "Chief Justice, 3rd Court of Appeals District",
+   "type": "candidate",
+   "choices": [
+    "Cory Liu (REP)",
+    "Darlene Byrne (DEM)"
+   ],
+   "id": "c032",
+   "level": "State",
+   "entity": "State"
+  },
+  {
+   "title": "District Judge, 147th Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Cliff Brown (DEM)"
+   ],
+   "id": "c033",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 201st Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Amy Clark Meachum (DEM)"
+   ],
+   "id": "c034",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 250th Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Kennon Lily Wooten (DEM)"
+   ],
+   "id": "c035",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 261st Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Daniella Deseta Lyttle (DEM)"
+   ],
+   "id": "c036",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 299th Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Karen R. Sage (DEM)"
+   ],
+   "id": "c037",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 331st Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Chantal Melissa Eldridge"
+   ],
+   "id": "c038",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 403rd Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Brandy Mueller (DEM)"
+   ],
+   "id": "c039",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 419th Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Catherine A. Mauzy (DEM)"
+   ],
+   "id": "c040",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "District Judge, 455th Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Laurie Eiserloh (DEM)"
+   ],
+   "id": "c041",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "Judge, County Court at Law No. 1",
+   "type": "candidate",
+   "choices": [
+    "Todd Wong (DEM)"
+   ],
+   "id": "c042",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "District Judge, 459th Judicial District",
+   "type": "candidate",
+   "choices": [
+    "Maya Guerra Gamble (DEM)"
+   ],
+   "id": "c043",
+   "level": "Courts",
+   "entity": "Courts"
+  },
+  {
+   "title": "County Judge",
+   "type": "candidate",
+   "choices": [
+    "Andy Brown (DEM)"
+   ],
+   "id": "c044",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, County Court at Law No. 2",
+   "type": "candidate",
+   "choices": [
+    "Leslie Dippel (DEM)"
+   ],
+   "id": "c045",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, County Court at Law No. 3",
+   "type": "candidate",
+   "choices": [
+    "Bianca Garcia (DEM)"
+   ],
+   "id": "c046",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, County Court at Law No. 4",
+   "type": "candidate",
+   "choices": [
+    "Dimple Malhotra (DEM)"
+   ],
+   "id": "c047",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, County Court at Law No. 5",
+   "type": "candidate",
+   "choices": [
+    "Mary Ann Espiritu (DEM)"
+   ],
+   "id": "c048",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, County Court at Law No. 6",
+   "type": "candidate",
+   "choices": [
+    "Denise Hernández (DEM)"
+   ],
+   "id": "c049",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, County Court at Law No. 7",
+   "type": "candidate",
+   "choices": [
+    "Elisabeth Earle (DEM)"
+   ],
+   "id": "c050",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Judge, Probate Court No. 1",
+   "type": "candidate",
+   "choices": [
+    "Guy Herman (DEM)"
+   ],
+   "id": "c051",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "District Clerk",
+   "type": "candidate",
+   "choices": [
+    "Velva L. Price (DEM)"
+   ],
+   "id": "c052",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "County Clerk",
+   "type": "candidate",
+   "choices": [
+    "Dyana Limon-Mercado (DEM)",
+    "Write-in"
+   ],
+   "id": "c053",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "County Treasurer",
+   "type": "candidate",
+   "choices": [
+    "Dolores Ortega Carter (DEM)"
+   ],
+   "id": "c054",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "County Commissioner, Precinct 2",
+   "type": "candidate",
+   "choices": [
+    "Brigid Shea (DEM)"
+   ],
+   "id": "c055",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "County Commissioner, Precinct 4",
+   "type": "candidate",
+   "choices": [
+    "George Morales III (DEM)"
+   ],
+   "id": "c056",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Justice of the Peace, Precinct 1",
+   "type": "candidate",
+   "choices": [
+    "Ciara Parks (DEM)"
+   ],
+   "id": "c057",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Justice of the Peace, Precinct 2",
+   "type": "candidate",
+   "choices": [
+    "Mariel Kelley (DEM)"
+   ],
+   "id": "c058",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Justice of the Peace, Precinct 3",
+   "type": "candidate",
+   "choices": [
+    "Sylvia Holmes (DEM)"
+   ],
+   "id": "c059",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Justice of the Peace, Precinct 4",
+   "type": "candidate",
+   "choices": [
+    "Raul Arturo Gonzalez (DEM)"
+   ],
+   "id": "c060",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Justice of the Peace, Precinct 5",
+   "type": "candidate",
+   "choices": [
+    "Tanisa Jeffers (DEM)"
+   ],
+   "id": "c061",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "County Constable, Precinct 4 (Unexpired Term)",
+   "type": "candidate",
+   "choices": [
+    "Gabriel Padilla (DEM)"
+   ],
+   "id": "c062",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
+   "title": "Travis Central Appraisal District, Board of Directors, Place 1",
+   "type": "candidate",
+   "choices": [
+    "Skyler A. Korgel"
+   ],
+   "id": "c063",
+   "level": "County",
+   "entity": "Travis Central Appraisal District"
+  },
+  {
+   "title": "Travis Central Appraisal District, Board of Directors, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Brian Peña"
+   ],
+   "id": "c064",
+   "level": "County",
+   "entity": "Travis Central Appraisal District"
+  },
+  {
+   "title": "Travis Central Appraisal District, Board of Directors, Place 3",
+   "type": "candidate",
+   "choices": [
+    "Yvonne Muñoz",
+    "Phil Gorman"
+   ],
+   "id": "c065",
+   "level": "County",
+   "entity": "Travis Central Appraisal District"
+  },
+  {
+   "title": "City of Austin, City Council Member, District 1",
+   "type": "candidate",
+   "choices": [
+    "Steven Brown",
+    "Alexandria Anderson",
+    "Amber K. Goodwin",
+    "Michael Nahas",
+    "Portia Riggins",
+    "Misael Ramos"
+   ],
+   "id": "c066",
+   "level": "City",
+   "entity": "City of Austin"
+  },
+  {
+   "title": "City of Austin, City Council Member, District 3",
+   "type": "candidate",
+   "choices": [
+    "Eduardo “Lalito” Romero",
+    "Brock Skinner",
+    "José Velásquez",
+    "Gavin Fernandez Jr.",
+    "Neha Shah"
+   ],
+   "id": "c067",
+   "level": "City",
+   "entity": "City of Austin"
+  },
+  {
+   "title": "City of Austin, City Council Member, District 5",
+   "type": "candidate",
+   "choices": [
+    "Liz Brink",
+    "David Weinberg",
+    "Ryan Alter",
+    "Farrah Abraham"
+   ],
+   "id": "c068",
+   "level": "City",
+   "entity": "City of Austin"
+  },
+  {
+   "title": "City of Austin, City Council Member, District 8",
+   "type": "candidate",
+   "choices": [
+    "Jeffery Bowen",
+    "Selena Xie"
+   ],
+   "id": "c069",
+   "level": "City",
+   "entity": "City of Austin"
+  },
+  {
+   "title": "City of Austin, City Council Member, District 9",
+   "type": "candidate",
+   "choices": [
+    "Rich Heyman",
+    "Katie Kam",
+    "Zohaib “Zo” Qadri",
+    "Dave Thadani",
+    "Kai Huang"
+   ],
+   "id": "c070",
+   "level": "City",
+   "entity": "City of Austin"
+  },
+  {
+   "title": "City of Austin Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of bonds in the amount of $260,000,000 for citywide park, recreation, aquatic, and open space improvements , and the levy of taxes sufficient to pay the principle of and interest in bonds.",
+   "id": "c071",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of bonds in the amount of $35,000,000 for library facilities and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c072",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to clarify that the Independent Citizens Redistricting Commission (ICRC) is independent of City Council control, allow the ICRC to review City districts after changes to the City’s boundary lines, create voter registration and residency duration exceptions for student members, provide an effective date for the redistricting plan adopted by the ICRC, increase the potential appointees to the ICRC, clarify the method and timing of filing vacancies on the ICRC, and allow City staff to communicate with the ICRC outside of meeting as long as such communication is in compliance with the Texas Open Meetings Act?",
+   "id": "c073",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to delete language providing that the City Council shall meet at least once each week?",
+   "id": "c074",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to delete language requiring the City Council to determine its rules and order of business by ordinance?",
+   "id": "c075",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to clarify the meaning of the term “election” and to provide that the campaign contribution and expenditure limits shall be modified each year by January 1st instead of with the adoption of the budget?",
+   "id": "c076",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition G",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to provide that initiative elections and petitioned charter amendment elections must be held on the next available November election date that occurs in an even-numbered year and that allows sufficient time to comply with other requirements of law?",
+   "id": "c077",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition H",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to provide that the City Council appoints and removes the City Attorney?",
+   "id": "c078",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition I",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to require an Independent Affordability and Efficiency Initiative on a regular basis and before any tax rate increase election and requiring the independent contractor to identify annual and multi-year savings that exceed the cost of the contractor’s service?",
+   "id": "c079",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Austin Proposition J",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to make non-substantive corrections of typographical errors, punctuation, and sentence structure, and to change or remove language that is moot or unenforceable because it has been superseded by state law or by a final court order?",
+   "id": "c080",
+   "level": "City",
+   "entity": "City of Austin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Elgin Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "The legal sale of all alcoholic beverages including mixed beverages.",
+   "id": "c081",
+   "level": "City",
+   "entity": "City of Elgin",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Jonestown, City Council Member, Place 3",
+   "type": "candidate",
+   "choices": [
+    "Vincent Kuhn",
+    "Mark Holmstrom"
+   ],
+   "id": "c082",
+   "level": "City",
+   "entity": "City of Jonestown"
+  },
+  {
+   "title": "City of Jonestown, City Council Member, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Dave Nelsen"
+   ],
+   "id": "c083",
+   "level": "City",
+   "entity": "City of Jonestown"
+  },
+  {
+   "title": "City of Jonestown, City Council Member, Place 5",
+   "type": "candidate",
+   "choices": [
+    "Linda Bush",
+    "Max Spadafore"
+   ],
+   "id": "c084",
+   "level": "City",
+   "entity": "City of Jonestown"
+  },
+  {
+   "title": "City of Lago Vista, City Council Member, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Adam Benefield",
+    "Arminae McDonald"
+   ],
+   "id": "c085",
+   "level": "City",
+   "entity": "City of Lago Vista"
+  },
+  {
+   "title": "City of Lago Vista, City Council Member, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Norma Owen"
+   ],
+   "id": "c086",
+   "level": "City",
+   "entity": "City of Lago Vista"
+  },
+  {
+   "title": "City of Lago Vista, City Council Member, Place 6",
+   "type": "candidate",
+   "choices": [
+    "David vonOhlerking III"
+   ],
+   "id": "c087",
+   "level": "City",
+   "entity": "City of Lago Vista"
+  },
+  {
+   "title": "City of Manor, Council Member, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Anne Weir",
+    "Robert Edward Battaile"
+   ],
+   "id": "c088",
+   "level": "City",
+   "entity": "City of Manor"
+  },
+  {
+   "title": "City of Manor, Council Member, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Sam Samaripa",
+    "Sonia A. Wallace"
+   ],
+   "id": "c089",
+   "level": "City",
+   "entity": "City of Manor"
+  },
+  {
+   "title": "City of Manor, Council Member, Place 6",
+   "type": "candidate",
+   "choices": [
+    "Selena Chambers",
+    "Felix Paiz",
+    "Tracy Medearis"
+   ],
+   "id": "c090",
+   "level": "City",
+   "entity": "City of Manor"
+  },
+  {
+   "title": "City of Manor Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Municipal Powers Shall Section 1.05 of the City Charter be amended to reorganize the existing list of the City's particular powers into separate provisions for clarity, without substantively changing or expanding those powers?",
+   "id": "c091",
+   "level": "City",
+   "entity": "City of Manor",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Manor Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Annexation and Disannexation Shall Section 1.07 of the City Charter be amended to revise the City's annexation and disannexation authority and procedures to require compliance with applicable state law, clarify the rights and obligations of residents and property within annexed territory, and require payment of City taxes and assessments owed before disannexation?",
+   "id": "c092",
+   "level": "City",
+   "entity": "City of Manor",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Manor Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "City Manager Duties Shall Section 7.01(i) of the City Charter be amended to correct the word “insure” to “ensure”?",
+   "id": "c093",
+   "level": "City",
+   "entity": "City of Manor",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Manor Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Community Committees Shall Section 10.11 of the City Charter be amended to repeal the establishment and requirement for Community Committees?",
+   "id": "c094",
+   "level": "City",
+   "entity": "City of Manor",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville, Council Member, Place 2",
+   "type": "candidate",
+   "choices": [
+    "David Rogers",
+    "Ceasar Ruiz"
+   ],
+   "id": "c095",
+   "level": "City",
+   "entity": "City of Pflugerville"
+  },
+  {
+   "title": "City of Pflugerville, Council Member, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Trent Barlow",
+    "De Juana “De J.” Lozada",
+    "Gregory L. Harrington"
+   ],
+   "id": "c096",
+   "level": "City",
+   "entity": "City of Pflugerville"
+  },
+  {
+   "title": "City of Pflugerville, Council Member, Place 6",
+   "type": "candidate",
+   "choices": [
+    "Oscar R. Mitchell"
+   ],
+   "id": "c097",
+   "level": "City",
+   "entity": "City of Pflugerville"
+  },
+  {
+   "title": "City of Pflugerville Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to authorize monthly compensation for members of the City Council in the amount of seven hundred fifty dollars ($750.00) per month for the Mayor and five hundred dollars ($500.00) per month for Council Members?",
+   "id": "c098",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to add a new section requiring the City Council to adopt protections governing the collection, use, retention, and oversight of data, facial recognition, and surveillance technologies, to establish transparent approval processes for such technologies, and to require a responsible artificial intelligence framework?",
+   "id": "c099",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to revise the procedures for adopting ordinances, including eliminating the requirement that a proposed ordinance be read at two Council meetings and instead requiring an additional reading only when the City Council determines that an amendment substantively changes the ordinance, and revising related notice and public-availability procedures?",
+   "id": "c100",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to lower, from fifteen percent (15%) to ten percent (10%), the percentage of qualified voters required to sign a petition for an initiative, referendum, or nonbinding referendum?",
+   "id": "c101",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to revise City Council meeting and agenda procedures, including requiring that an item submitted by a Council Member with the support of a second Council Member be placed on an agenda within sixty (60) days, requiring the Mayor to include such items on the agenda, and clarifying the Council's meetings requirements with City-created boards and commissions?",
+   "id": "c102",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to provide that voter petition requirements be completed in compliance with state law and extending, from two (2) weeks to four (4) weeks, the deadline to file a supplementary petition after a petition is certified insufficient?",
+   "id": "c103",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition G",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to revise the requirements governing the development and content of the Citys annual budget, including requiring that the City Manager prepare and present the budget in accordance with Government Finance Officers Association budget -award guidelines, requiring comparative budget information and a five-year financial forecast, and to add a new charter section requiring a publicly accessible reporting system and final close-out reports for major capital projects?",
+   "id": "c104",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition H",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to authorize the mayor alone to excuse the City Manager from attending a meeting?",
+   "id": "c105",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition I",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to allow City Council to appoint residents of the city's ETJ as non-voting advisory participants on city boards and commissions?",
+   "id": "c106",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition J",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to provide that the Mayor and City Council set the strategic direction and general policy framework of the City?",
+   "id": "c107",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition K",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City Charter be amended to allow public comment during removal proceedings without requiring City Council approval?",
+   "id": "c108",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition L",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to remove the requirement that the Municipal Court Judge reside within the City?",
+   "id": "c109",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition M",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to add a new Section 11.05 specifying how the public may participate in City Council meetings, including the submission of written comments on agenda items and participation by remote communication to the extent permitted by state law?",
+   "id": "c110",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Pflugerville Proposition N",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Shall the City of Pflugerville City Charter be amended to make non- substantive technical and conforming corrections, including standardizing capitalization throughout the Charter; adopting language conforming with state law, and amending or deleting language that is unnecessary or duplicative of state law?",
+   "id": "c111",
+   "level": "City",
+   "entity": "City of Pflugerville",
+   "kind": "measure"
+  },
+  {
+   "title": "City of Sunset Valley, Mayor",
+   "type": "candidate",
+   "choices": [
+    "Marc Bruner"
+   ],
+   "id": "c112",
+   "level": "City",
+   "entity": "City of Sunset Valley"
+  },
+  {
+   "title": "City of Sunset Valley, Two City Council Member Seats (vote for up to 2)",
+   "type": "candidate",
+   "choices": [
+    "Sarah Ponder",
+    "Robert Johnson",
+    "Charles Young"
+   ],
+   "id": "c113",
+   "level": "City",
+   "entity": "City of Sunset Valley"
+  },
+  {
+   "title": "City of Sunset Valley Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Whether the City of Sunset Valley Crime Control and Prevention District should be continued for ten (10) years and the crime control and prevention district sales tax should be continued for ten (10) years. Ciudad de Sunset Valley",
+   "id": "c114",
+   "level": "City",
+   "entity": "City of Sunset Valley",
+   "kind": "measure"
+  },
+  {
+   "title": "Village of Volente, Village Mayor",
+   "type": "candidate",
+   "choices": [
+    "Tom Blauvelt",
+    "Mark Rook"
+   ],
+   "id": "c115",
+   "level": "City",
+   "entity": "Village of Volente"
+  },
+  {
+   "title": "Village of Volente, Village Council (vote for up to 2)",
+   "type": "candidate",
+   "choices": [
+    "Eric Peeters",
+    "Tony Ruff"
+   ],
+   "id": "c116",
+   "level": "City",
+   "entity": "Village of Volente"
+  },
+  {
+   "title": "ACC, Trustee, Place 1",
+   "type": "candidate",
+   "choices": [
+    "Dana Walker",
+    "Gloria Gonzales-Dholakia"
+   ],
+   "id": "c117",
+   "level": "School",
+   "entity": "Austin Community College"
+  },
+  {
+   "title": "ACC, Trustee, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Gigi Edwards Bryant"
+   ],
+   "id": "c118",
+   "level": "School",
+   "entity": "Austin Community College"
+  },
+  {
+   "title": "ACC, Trustee, Place 3",
+   "type": "candidate",
+   "choices": [
+    "Trevor Hale",
+    "Nan McRaven"
+   ],
+   "id": "c119",
+   "level": "School",
+   "entity": "Austin Community College"
+  },
+  {
+   "title": "Austin Community College District Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. Approving the annexation by the Austin Community College District of the following territory: the territory in the Pflugerville Independent School District that is not already within the Austin Community College taxing district, and authorizing the imposition of an ad valorem tax for junior college purposes, which is currently set at a rate of $0.1034, per $100 valuation of taxable property. Distrito de Austin Community",
+   "id": "c120",
+   "level": "School",
+   "entity": "Austin Community College",
+   "kind": "measure"
+  },
+  {
+   "title": "Austin ISD Board of Trustees, District 1",
+   "type": "candidate",
+   "choices": [
+    "Cheryl Bradley",
+    "Candace L. Hunter"
+   ],
+   "id": "c121",
+   "level": "School",
+   "entity": "Austin ISD"
+  },
+  {
+   "title": "Austin ISD Board of Trustees, District 4",
+   "type": "candidate",
+   "choices": [
+    "Edward M. Bradfield",
+    "Tricia Mitchell Kim",
+    "Jessica Jessie Neufeld"
+   ],
+   "id": "c122",
+   "level": "School",
+   "entity": "Austin ISD"
+  },
+  {
+   "title": "Austin ISD Board of Trustees, District 6",
+   "type": "candidate",
+   "choices": [
+    "Sarah Dille",
+    "Alex San Martin",
+    "Marie Lebron"
+   ],
+   "id": "c123",
+   "level": "School",
+   "entity": "Austin ISD"
+  },
+  {
+   "title": "Austin ISD Board of Trustees, District 7",
+   "type": "candidate",
+   "choices": [
+    "Jimmy Counihan",
+    "Laurie Solis"
+   ],
+   "id": "c124",
+   "level": "School",
+   "entity": "Austin ISD"
+  },
+  {
+   "title": "Austin ISD Board of Trustees, At-Large Position 9",
+   "type": "candidate",
+   "choices": [
+    "Cynthia Soliz",
+    "Kirk Becker",
+    "Pamela Mathai"
+   ],
+   "id": "c125",
+   "level": "School",
+   "entity": "Austin ISD"
+  },
+  {
+   "title": "Coupland ISD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. Ratifying the Ad Valorem tax rate of $1.192200 in Coupland Independent School District for the current year, a rate that will result in an increase of 4.14% percent in Maintenance and Operations tax revenue for the district for the current year as compared to the preceding year, which is an additional $86,933. Coupland ISD",
+   "id": "c126",
+   "level": "School",
+   "entity": "Coupland ISD",
+   "kind": "measure"
+  },
+  {
+   "title": "Del Valle ISD Board of Trustees, Single Member District 3",
+   "type": "candidate",
+   "choices": [
+    "Charles Burton",
+    "Claire Campos-O'Neal"
+   ],
+   "id": "c127",
+   "level": "School",
+   "entity": "Del Valle ISD"
+  },
+  {
+   "title": "Del Valle ISD Board of Trustees, Single Member District 5",
+   "type": "candidate",
+   "choices": [
+    "Jason Sierra"
+   ],
+   "id": "c128",
+   "level": "School",
+   "entity": "Del Valle ISD"
+  },
+  {
+   "title": "Del Valle ISD Board of Trustees, Single Member District 7",
+   "type": "candidate",
+   "choices": [
+    "Josh Castro",
+    "Susanna Ledesma Woody"
+   ],
+   "id": "c129",
+   "level": "School",
+   "entity": "Del Valle ISD"
+  },
+  {
+   "title": "Del Valle ISD Board of Trustees, Single Member District 8",
+   "type": "candidate",
+   "choices": [
+    "Robert “Bobby” Hidrogo",
+    "Darla Wegner"
+   ],
+   "id": "c130",
+   "level": "School",
+   "entity": "Del Valle ISD"
+  },
+  {
+   "title": "Del Valle ISD Board of Trustees, Single Member District 9",
+   "type": "candidate",
+   "choices": [
+    "Mike Randolph",
+    "Gloria Vera-Bedolla",
+    "Stephanie Arellano"
+   ],
+   "id": "c131",
+   "level": "School",
+   "entity": "Del Valle ISD"
+  },
+  {
+   "title": "Del Valle ISD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. Ratifying the ad valorem tax rate of $1.0328 per $100 valuation in Del Valle Independent School District for the current year, a rate that will result in an increase of 19.5% percent in maintenance and operations tax revenue for the District for the current year as compared to the preceding year, which is an additional $20,038,349.",
+   "id": "c132",
+   "level": "School",
+   "entity": "Del Valle ISD",
+   "kind": "measure"
+  },
+  {
+   "title": "Leander ISD Board of Trustees, Place 1",
+   "type": "candidate",
+   "choices": [
+    "Serenity Coats",
+    "Gerald Prater"
+   ],
+   "id": "c133",
+   "level": "School",
+   "entity": "Leander ISD"
+  },
+  {
+   "title": "Leander ISD Board of Trustees, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Meg Dean",
+    "Perla Muñoz Hopkins",
+    "Chitra Nedun"
+   ],
+   "id": "c134",
+   "level": "School",
+   "entity": "Leander ISD"
+  },
+  {
+   "title": "Leander ISD Board of Trustees, Place 6",
+   "type": "candidate",
+   "choices": [
+    "Laura Marques"
+   ],
+   "id": "c135",
+   "level": "School",
+   "entity": "Leander ISD"
+  },
+  {
+   "title": "Leander ISD Board of Trustees, Place 7",
+   "type": "candidate",
+   "choices": [
+    "Jason Embry",
+    "Paul Gauthier"
+   ],
+   "id": "c136",
+   "level": "School",
+   "entity": "Leander ISD"
+  },
+  {
+   "title": "Leander ISD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. Ratifying the ad valorem tax rate of $1.1169 per $100 valuation in Leander Independent School District for the current year, a rate that will result in an increase of 3.72 percent in maintenance and operations tax revenue for the District for the current year as compared to the preceding year, which is an additional $12,066,324.",
+   "id": "c137",
+   "level": "School",
+   "entity": "Leander ISD",
+   "kind": "measure"
+  },
+  {
+   "title": "Manor ISD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A PROPERTY TAX INCREASE; the issuance of bonds in the amount of $391,500,000 for (1) school facilities, including campus renovations and district- wide safety and security upgrades, and (2) buses, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c138",
+   "level": "School",
+   "entity": "Manor ISD",
+   "kind": "measure"
+  },
+  {
+   "title": "Manor ISD Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A PROPERTY TAX INCREASE; the issuance of bonds in the amount of $8,500,000 for school technology improvements and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c139",
+   "level": "School",
+   "entity": "Manor ISD",
+   "kind": "measure"
+  },
+  {
+   "title": "Pflugerville ISD Board of Trustees, Place 6",
+   "type": "candidate",
+   "choices": [
+    "Nicole Toran",
+    "Jean Mayer"
+   ],
+   "id": "c140",
+   "level": "School",
+   "entity": "Pflugerville ISD"
+  },
+  {
+   "title": "Pflugerville ISD Board of Trustees, Place 7",
+   "type": "candidate",
+   "choices": [
+    "Chevonne Lorigo-Johst"
+   ],
+   "id": "c141",
+   "level": "School",
+   "entity": "Pflugerville ISD"
+  },
+  {
+   "title": "Round Rock ISD Board of Trustees, Place 3",
+   "type": "candidate",
+   "choices": [
+    "Ayaan Moledina",
+    "Vera Southwell",
+    "Amber Feller Landrum",
+    "Gregory Andrew"
+   ],
+   "id": "c142",
+   "level": "School",
+   "entity": "Round Rock ISD"
+  },
+  {
+   "title": "Round Rock ISD Board of Trustees, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Alicia Markum"
+   ],
+   "id": "c143",
+   "level": "School",
+   "entity": "Round Rock ISD"
+  },
+  {
+   "title": "Round Rock ISD Board of Trustees, Place 5",
+   "type": "candidate",
+   "choices": [
+    "Miriam Arora",
+    "Meghna Roy"
+   ],
+   "id": "c144",
+   "level": "School",
+   "entity": "Round Rock ISD"
+  },
+  {
+   "title": "Round Rock ISD Board of Trustees, Place 6",
+   "type": "candidate",
+   "choices": [
+    "Fabian Cuero",
+    "Troy J. Evanovich"
+   ],
+   "id": "c145",
+   "level": "School",
+   "entity": "Round Rock ISD"
+  },
+  {
+   "title": "Round Rock ISD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE Ratifying the ad valorem tax rate of $0.9484 per $100 valuation in Round Rock Independent School District for the current year, a rate that will result in an increase of 3.09 percent in maintenance and operations tax revenue for the District for the current year as compared to the preceding year, which is an additional $12,313,099. Distrito Escolar Independiente de",
+   "id": "c146",
+   "level": "School",
+   "entity": "Round Rock ISD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Confirming Creation of Eastwood Municipal Utility District.",
+   "id": "c147",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; an operation and maintenance tax for the district not to exceed one dollar and twenty cents ($1.20)per one hundred dollars ($100) valuation of taxable property.",
+   "id": "c148",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $164,000,000 bonds for water, wastewater and drainage system facilities, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c149",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $47,500,000 bonds for roads, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c150",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $27,000,000 bonds for park and recreational facilities, and the levy of tax sufficient to pay principal of and interest on the bonds.",
+   "id": "c151",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $286,500,000 bonds for refunding water, wastewater, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds.",
+   "id": "c152",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Proposition G",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $71,250,000 bonds for refunding road bonds (including refunding bonds issued therefor) Issued pursuant to Section 52, Article III of the Texas Constitution, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c153",
+   "level": "Special district",
+   "entity": "Eastwood MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Eastwood MUD Permanent Directors (vote for up to 5)",
+   "type": "candidate",
+   "choices": [
+    "Carrington Saathoff",
+    "Ryan Sullivan",
+    "Grant Ballew",
+    "John Berry",
+    "William Waller"
+   ],
+   "id": "c154",
+   "level": "Special district",
+   "entity": "Eastwood MUD"
+  },
+  {
+   "title": "Hero Way West MUD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE The issuance of $178,500,000 bonds for water, sanitary sewer, and drainage and storm sewer systems and for refunding water, sanitary sewer, and drainage and storm sewer systems bonds of the District, and the levy of taxes, without limit as to rate or amount, sufficient to pay the principal of and interest on the bonds.",
+   "id": "c155",
+   "level": "Special district",
+   "entity": "Hero Way West MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Hero Way West MUD Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE The issuance of $16,500,000 bonds for recreational facilities and for refunding recreational facilities bonds of the District, and the levy of taxes, without limit as to rate or amount, sufficient to pay the principal of and interest on the bonds.",
+   "id": "c156",
+   "level": "Special district",
+   "entity": "Hero Way West MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Hero Way West MUD Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE The issuance of $90,000,000 bonds for roads and for refunding road bonds of the District, and the levy of taxes, without limit as to rate or amount, sufficient to pay the principal of and interest on the bonds.",
+   "id": "c157",
+   "level": "Special district",
+   "entity": "Hero Way West MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Confirmation of the District Hidden Lakes MUD Núm. 1",
+   "id": "c158",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $600,000,000 in bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said bonds (water, sanitary sewer, drainage and storm sewer, organization and administration) Hidden Lakes MUD Núm. 1",
+   "id": "c159",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $600,000,000 in refunding bonds to refund bonds issued for water, sanitary sewer, drainage and storm sewer, organization and administration, or refunding of such bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to the pay principal and interest on said refunding bonds Hidden Lakes MUD Núm. 1",
+   "id": "c160",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $300,000,000 in bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said bonds (macadamized, graveled, or paved roads and turnpikes, or improvements, including storm drainage in aid of those roads) Hidden Lakes MUD Núm. 1",
+   "id": "c161",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $300,000,000 in refunding bonds to refund bonds issued for macadamized, graveled, or paved roads and turnpikes, or improvements, including storm drainage in aid of those roads, or refunding of such bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said refunding bonds Hidden Lakes MUD Núm. 1",
+   "id": "c162",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $26,000,000 in park and recreational facilities bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said bonds Hidden Lakes MUD Núm. 1",
+   "id": "c163",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition G",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $26,000,000 in refunding bonds to refund bonds issued for park and recreational facilities or refunding of such bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said refunding bonds Hidden Lakes MUD Núm. 1",
+   "id": "c164",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition H",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The levy of an operation and maintenance tax not to exceed one dollar and twenty cents ($1.20)per one hundred dollars ($100.00)of assessed valuation (water, sanitary sewer, drainage and storm sewer, organization and administration) Hidden Lakes MUD Núm. 1",
+   "id": "c165",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition I",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The levy of an operation and maintenance tax not to exceed one dollar and twenty cents ($1.20) per one hundred dollars ($100.00)of assessed valuation (roads) Hidden Lakes MUD Núm. 1",
+   "id": "c166",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 Proposition J",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The levy of an operation and maintenance tax not to exceed ten cents ($0.10) per one hundred dollars ($100.00) of assessed valuation (park and recreational facilities) Hidden Lakes MUD Núm. 1",
+   "id": "c167",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Hidden Lakes MUD No. 1 of Travis County, Board of Directors (vote for up to 5)",
+   "type": "candidate",
+   "choices": [
+    "Nicodemus Abowd",
+    "Denis Fletcher",
+    "Jeff Markey",
+    "Mariano Ravelo",
+    "Barry Marotz"
+   ],
+   "id": "c168",
+   "level": "Special district",
+   "entity": "Hidden Lakes MUD No. 1"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Confirming Creation of Kennedy Hill Municipal Utility District.",
+   "id": "c169",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; an operation and maintenance tax for the district not to exceed one dollar and twenty cents ($1.20) per one hundred dollars ($100) valuation of taxable property",
+   "id": "c170",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $175,000,000 bonds for water, wastewater and drainage system facilities, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c171",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $60,000,000 bonds for roads, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c172",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $13,265,000 bonds for park and recreational facilities, and the levy of tax sufficient to pay principal of and interest on the bonds.",
+   "id": "c173",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $282,397,500 bonds for refunding water, wastewater, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued there for) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds.",
+   "id": "c174",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Proposition G",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $90,000,000 bonds for refunding road bonds (including refunding bonds issued therefor) issued pursuant to Section 52, Article III of the Texas Constitution, and the levy of taxes sufficient to pay the principal of and interest on the bonds.",
+   "id": "c175",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD",
+   "kind": "measure"
+  },
+  {
+   "title": "Kennedy Hill MUD Permanent Directors (vote for up to 5)",
+   "type": "candidate",
+   "choices": [
+    "Daniel McElrath",
+    "Chase Nixon",
+    "Jacob Clark",
+    "Ross Hamilton",
+    "Dane Rymer"
+   ],
+   "id": "c176",
+   "level": "Special district",
+   "entity": "Kennedy Hill MUD"
+  },
+  {
+   "title": "North Austin MUD No. 1 Director, Place 2",
+   "type": "candidate",
+   "choices": [
+    "Don Conklin"
+   ],
+   "id": "c177",
+   "level": "Special district",
+   "entity": "North Austin MUD No. 1"
+  },
+  {
+   "title": "North Austin MUD No. 1 Director, Place 4",
+   "type": "candidate",
+   "choices": [
+    "Diana Christiano",
+    "Jennifer Wiebe"
+   ],
+   "id": "c178",
+   "level": "Special district",
+   "entity": "North Austin MUD No. 1"
+  },
+  {
+   "title": "Northtown MUD Directors (vote for up to 3)",
+   "type": "candidate",
+   "choices": [
+    "Scott Moser",
+    "Brenda Vrabel",
+    "R. Lee Hill",
+    "Chris Capers"
+   ],
+   "id": "c179",
+   "level": "Special district",
+   "entity": "Northtown MUD"
+  },
+  {
+   "title": "Sunfield MUD No. 2 Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $279,500,000 in bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said bonds (water, sanitary sewer, drainage and storm sewer, organization and administration)",
+   "id": "c180",
+   "level": "Special district",
+   "entity": "Sunfield MUD No. 2",
+   "kind": "measure"
+  },
+  {
+   "title": "Sunfield MUD No. 2 Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $165,300,000 in bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said bonds (paved roads and turnpikes)",
+   "id": "c181",
+   "level": "Special district",
+   "entity": "Sunfield MUD No. 2",
+   "kind": "measure"
+  },
+  {
+   "title": "Sunfield MUD No. 2 Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $33,800,000 in bonds and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said bonds (parks and recreational facilities)",
+   "id": "c182",
+   "level": "Special district",
+   "entity": "Sunfield MUD No. 2",
+   "kind": "measure"
+  },
+  {
+   "title": "Sunfield MUD No. 2 Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $419,250,000 in refunding bonds to refund bonds issued for water, sanitary sewer, drainage and storm sewer facilities and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said refunding bonds",
+   "id": "c183",
+   "level": "Special district",
+   "entity": "Sunfield MUD No. 2",
+   "kind": "measure"
+  },
+  {
+   "title": "Sunfield MUD No. 2 Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $247,950,000 in refunding bonds to refund bonds issued for macadamized, graveled, and paved roads and turnpikes or improvements, including storm drainage, in aid of those roads, and the levy of ad valorem taxes, without limit as to rate or amount, sufficient to pay the principal and interest on said refunding road bonds",
+   "id": "c184",
+   "level": "Special district",
+   "entity": "Sunfield MUD No. 2",
+   "kind": "measure"
+  },
+  {
+   "title": "Sunfield MUD No. 2 Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The issuance of $50,700,000 in refunding bonds to refund bonds issued for park and recreational facilities or refunding of such bonds and the levy of ad valorem taxes, without limitas to rate or amount, sufficient to pay the principal and interest on said refunding bonds",
+   "id": "c185",
+   "level": "Special district",
+   "entity": "Sunfield MUD No. 2",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; an operation and maintenance tax for the district not to exceed one dollar and twenty cents ($1.20) per one hundred dollars ($100) valuation of taxable property. Condado de Travis MMD Núm.1",
+   "id": "c186",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $420,275,000 bonds for water, wastewater and drainage system facilities, and the levy of taxes sufficient to pay the principal of and interest on the bonds. Condado de Travis MMD Núm.1",
+   "id": "c187",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $130,825,000 bonds for roads, and the levy of taxes sufficient to pay the principal of and interest on the bonds. Condado de Travis MMD Núm.1",
+   "id": "c188",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $188,300,000 bonds for park and recreational facilities, and the levy of tax sufficient to pay principal of and interest on the bonds. Condado de Travis MMD Núm.1",
+   "id": "c189",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $912,865,000 bonds for refunding water, wastewater, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds. Condado de Travis MMD Núm.1",
+   "id": "c190",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $196,240,000 bonds for refunding road bonds (including refunding bonds issued therefor) issued pursuant to Section 52, Article III of the Texas Constitution, and the levy of taxes sufficient to pay the principal of and interest on the bonds. Condado de Travis MMD Núm.1",
+   "id": "c191",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MMD No. 1 Permanent Directors (vote for up to 5)",
+   "type": "candidate",
+   "choices": [
+    "Felicity Maxwell",
+    "Casey Paulson",
+    "Mickey Jamail",
+    "Daniel Kavelman",
+    "Ryan Puzycki"
+   ],
+   "id": "c192",
+   "level": "Special district",
+   "entity": "Travis County MMD No. 1"
+  },
+  {
+   "title": "Travis County MUD No. 41 Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Confirmation Creation of Travis County Municipal Utility District No. 41. Condado de Travis MUD Núm. 41",
+   "id": "c193",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MUD No. 41 Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; an operation and maintenance tax for the district not to exceed one dollar and twenty cents ($1.20) per one hundred dollars ($100) valuation of taxable property. Condado de Travis MUD Núm. 41",
+   "id": "c194",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MUD No. 41 Proposition C",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $59,000,000 bonds for water, wastewater and drainage system facilities, and the levy of taxes sufficient to pay the principal of and interest on the bonds. Condado de Travis MUD Núm. 41",
+   "id": "c195",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MUD No. 41 Proposition D",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $15,500,000 bonds for roads, and the levy of taxes sufficient to pay the principal of and interest on the bonds. Condado de Travis MUD Núm. 41",
+   "id": "c196",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MUD No. 41 Proposition E",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $88,500,000 bonds for refunding water, wastewater, and drainage system facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds. Condado de Travis MUD Núm. 41",
+   "id": "c197",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MUD No. 41 Proposition F",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE; the issuance of $23,250,000 bonds for refunding road bonds (including refunding bonds issued therefor) issued pursuant to Section 52, Article III of the Texas Constitution, and the levy of taxes sufficient to pay the principal of and interest on the bonds. Condado de Travis MUD Núm. 41",
+   "id": "c198",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County MUD No. 41 Permanent Directors (vote for up to 5)",
+   "type": "candidate",
+   "choices": [
+    "Jason Nobbe",
+    "Kelly Schill",
+    "Ashtyn Bogue",
+    "Lyndsey Mylius",
+    "Jared Williams"
+   ],
+   "id": "c199",
+   "level": "Special district",
+   "entity": "Travis County MUD No. 41"
+  },
+  {
+   "title": "Vista MUD of Travis County Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "The Fire Protection Plan and the implementation of the Fire Protection Plan for the provision of fire protection services to persons, buildings, and property located within the boundaries of the District Vista MUD del Condado de Travis",
+   "id": "c200",
+   "level": "Special district",
+   "entity": "Vista MUD of Travis County",
+   "kind": "measure"
+  },
+  {
+   "title": "Vista MUD of Travis County Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE The provisions of the Fire Protection Agreement and the levy of a tax to make payments thereunder Vista MUD del Condado de Travis",
+   "id": "c201",
+   "level": "Special district",
+   "entity": "Vista MUD of Travis County",
+   "kind": "measure"
+  },
+  {
+   "title": "Williamson-Travis Counties MUD No. 1 Directors (vote for up to 3)",
+   "type": "candidate",
+   "choices": [
+    "Beth Jones",
+    "Stephen Bodnarchuk Jr.",
+    "Hanoi Avila",
+    "David Flores",
+    "Kimberly Massaro",
+    "Linda Fabre",
+    "Thomas Vacek"
+   ],
+   "id": "c202",
+   "level": "Special district",
+   "entity": "Williamson-Travis Counties MUD No. 1"
+  },
+  {
+   "title": "Cypress Ranch WCID No. 1, Board of Directors (vote for up to 3)",
+   "type": "candidate",
+   "choices": [
+    "Richard Kenyon",
+    "Travis Wright",
+    "Rick Shute",
+    "Jason Blair"
+   ],
+   "id": "c203",
+   "level": "Special district",
+   "entity": "Cypress Ranch WCID No. 1"
+  },
+  {
+   "title": "Travis County WCID No. 17 Directors (vote for up to 3)",
+   "type": "candidate",
+   "choices": [
+    "Elicia Michaud",
+    "Larry Harlan",
+    "Phil Han",
+    "Sonja DeLaFuente",
+    "Ryan Carretta"
+   ],
+   "id": "c204",
+   "level": "Special district",
+   "entity": "Travis County WCID No. 17"
+  },
+  {
+   "title": "Travis County ESD No. 4 Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Adding all territory along the east shore of the Colorado River between Pennybacker Bridge and Emma Long Park that is currently not in Travis County ESD 4 into the Emergency Services District. Territory along the east shore of the Colorado River between Pennybacker Bridge and Emma Long Park assuming its proportionate share of the outstanding debts and taxes of the District. Condado de Travis ESD Núm. 4",
+   "id": "c205",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 4",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 9 Proposition A (current district)",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Adding the territory generally described as certain lots (and as applicable, tracts) fronting on Lake Austin between Tom Miller Dam and 2940 Oestrick Lane, to the extent such territory is described in City of Austin Ordinance Nos. 20251120- 064, 20251211-089, 20251211-090, 20260122-063, 20260226-060, 20260226-062, 20260312-030, 20260326-057, 20260326-058, 20260326-063, 20260326-064, and 20260326-062 save and except for 3963 Westlake Drive, to the Travis County Emergency Services District No. 9. Condado de Travis ESD Núm. 9",
+   "id": "c206",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 9",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 9 Proposition B (current district)",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "The territory generally described as certain lots (and as applicable, tracts) fronting on Lake Austin between Tom Miller Dam and 2940 Oestrick Lane, to the extent such territory is described in City of Austin Ordinance Nos. 20251120- 064, 20251211-089, 20251211-090, 20260122-063, 20260226-060, 20260226-062, 20260312-030, 20260326-057, 20260326-058, 20260326-063, 20260326-064, and 20260326-062 save and except for 3963 Westlake Drive, assuming its proportionate share of the outstanding debts and taxes of the Travis County Emergency Services District No. 9, if it is added to the district. Condado de Travis ESD Núm. 9",
+   "id": "c207",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 9",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 9 Proposition A (territory to be annexed)",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Adding the territory generally described as certain lots (and as applicable, tracts) fronting on Lake Austin between Tom Miller Dam and 2940 Oestrick Lane, to the extent such territory is described in City of Austin Ordinance Nos. 20251120- 064, 20251211-089, 20251211-090, 20260122-063, 20260226-060, 20260226-062, 20260312-030, 20260326-057, 20260326-058, 20260326-063, 20260326-064, and 20260326-062 save and except for 3963 Westlake Drive, to the Travis County Emergency Services District No. 9. Condado de Travis ESD Núm. 9",
+   "id": "c208",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 9",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 9 Proposition B (territory to be annexed)",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "The territory generally described as certain lots (and as applicable, tracts) fronting on Lake Austin between Tom Miller Dam and 2940 Oestrick Lane, to the extent such territory is described in City of Austin Ordinance Nos. 20251120- 064, 20251211-089, 20251211-090, 20260122-063, 20260226-060, 20260226-062, 20260312-030, 20260326-057, 20260326-058, 20260326-063, 20260326-064, and 20260326-062 save and except for 3963 Westlake Drive, assuming its proportionate share of the outstanding debts and taxes of the Travis County Emergency Services District No. 9, if it is added to the district. Condado de Travis ESD Núm. 9",
+   "id": "c209",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 9",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 10 Proposition A",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "Adding the Edgewater and River Terrace Service Area to the Travis County Emergency Services District No. 10. Condado de Travis ESD Núm. 10",
+   "id": "c210",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 10",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 10 Proposition B",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "The Edgewater and River Terrace Service Area assuming its proportionate share of the outstanding debts and taxes of the Travis County Emergency Services District No. 10, if it is added to the district. Condado de Travis ESD Núm. 10",
+   "id": "c211",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 10",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 10 Proposition A (second ballot version)",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. Adding the Edgewater and River Terrace Service Area to the Travis County Emergency Services District No. 10. Condado de Travis ESD Núm. 10",
+   "id": "c212",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 10",
+   "kind": "measure"
+  },
+  {
+   "title": "Travis County ESD No. 10 Proposition B (second ballot version)",
+   "type": "measure",
+   "choices": [
+    "FOR",
+    "AGAINST"
+   ],
+   "text": "THIS IS A TAX INCREASE. The Edgewater and River Terrace Service Area assuming its proportionate share of the outstanding debts and taxes of the Travis County Emergency Services District No. 10, if it is added to the district. Condado de Travis ESD Núm. 10",
+   "id": "c213",
+   "level": "Special district",
+   "entity": "Travis County ESD No. 10",
+   "kind": "measure"
+  },
+  {
+   "title": "Wells Branch Community Library District Board of Trustees (vote for up to 3)",
+   "type": "candidate",
+   "choices": [
+    "Rudolf J. Valenti",
+    "Paul Wadehra",
+    "Philip Waters",
+    "Abigail Joffrain",
+    "Elizabeth Martin"
+   ],
+   "id": "c214",
+   "level": "Special district",
+   "entity": "Wells Branch Community Library District"
+  }
+ ]
+}

@@ -1,0 +1,2498 @@
+{
+ "c001": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c002": {
+  "clauses": [
+   {
+    "CD": [
+     "G10"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c003": {
+  "clauses": [
+   {
+    "CD": [
+     "G37"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c004": {
+  "clauses": [
+   {
+    "CD": [
+     "G11"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c005": {
+  "clauses": [
+   {
+    "CD": [
+     "G27"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c006": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c007": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c008": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c009": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c010": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c011": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c012": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c013": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c014": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c015": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c016": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c017": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c018": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c019": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c020": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c021": {
+  "clauses": [
+   {
+    "SD": [
+     "N21"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c022": {
+  "clauses": [
+   {
+    "HD": [
+     "L19"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c023": {
+  "clauses": [
+   {
+    "HD": [
+     "L46"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c024": {
+  "clauses": [
+   {
+    "HD": [
+     "L47"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c025": {
+  "clauses": [
+   {
+    "HD": [
+     "L48"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c026": {
+  "clauses": [
+   {
+    "HD": [
+     "L49"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c027": {
+  "clauses": [
+   {
+    "HD": [
+     "L50"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c028": {
+  "clauses": [
+   {
+    "HD": [
+     "L51"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c029": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c030": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c031": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c032": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c033": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c034": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c035": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c036": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c037": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c038": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c039": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c040": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c041": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c042": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c043": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c044": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c045": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c046": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c047": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c048": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c049": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c050": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c051": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c052": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c053": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c054": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c055": {
+  "clauses": [
+   {
+    "Commissioner": [
+     "P02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c056": {
+  "clauses": [
+   {
+    "Commissioner": [
+     "P04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c057": {
+  "clauses": [
+   {
+    "JPConstable": [
+     "J01"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c058": {
+  "clauses": [
+   {
+    "JPConstable": [
+     "J02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c059": {
+  "clauses": [
+   {
+    "JPConstable": [
+     "J03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c060": {
+  "clauses": [
+   {
+    "JPConstable": [
+     "J04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c061": {
+  "clauses": [
+   {
+    "JPConstable": [
+     "J05"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c062": {
+  "clauses": [
+   {
+    "JPConstable": [
+     "J04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c063": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c064": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c065": {
+  "clauses": [
+   {}
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c066": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10",
+     "C11"
+    ],
+    "MuniSMD": [
+     "CA1"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c067": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10",
+     "C11"
+    ],
+    "MuniSMD": [
+     "CA3"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c068": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10",
+     "C11"
+    ],
+    "MuniSMD": [
+     "CA5"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c069": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10",
+     "C11"
+    ],
+    "MuniSMD": [
+     "CA8"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c070": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10",
+     "C11"
+    ],
+    "MuniSMD": [
+     "CA9"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c071": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c072": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c073": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c074": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c075": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c076": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c077": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c078": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c079": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c080": {
+  "clauses": [
+   {
+    "Muni": [
+     "C10"
+    ]
+   },
+   {
+    "Muni": [
+     "C11"
+    ],
+    "_conf": "medium"
+   }
+  ],
+  "conf": "high",
+  "note": "Austin limited-purpose residents may or may not vote on city propositions (asking the Tax Office)."
+ },
+ "c081": {
+  "clauses": [
+   {
+    "Muni": [
+     "C21"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "The ballot doesn't say whether this is citywide or Ward 1 only; no Travis address is coded to Ward 1."
+ },
+ "c082": {
+  "clauses": [
+   {
+    "Muni": [
+     "C01"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c083": {
+  "clauses": [
+   {
+    "Muni": [
+     "C01"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c084": {
+  "clauses": [
+   {
+    "Muni": [
+     "C01"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c085": {
+  "clauses": [
+   {
+    "Muni": [
+     "C02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c086": {
+  "clauses": [
+   {
+    "Muni": [
+     "C02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c087": {
+  "clauses": [
+   {
+    "Muni": [
+     "C02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c088": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c089": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c090": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c091": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c092": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c093": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c094": {
+  "clauses": [
+   {
+    "Muni": [
+     "C03"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c095": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c096": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c097": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c098": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c099": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c100": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c101": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c102": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c103": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c104": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c105": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c106": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c107": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c108": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c109": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c110": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c111": {
+  "clauses": [
+   {
+    "Muni": [
+     "C04"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c112": {
+  "clauses": [
+   {
+    "Muni": [
+     "C06"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c113": {
+  "clauses": [
+   {
+    "Muni": [
+     "C06"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c114": {
+  "clauses": [
+   {
+    "Muni": [
+     "C06"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c115": {
+  "clauses": [
+   {
+    "Muni": [
+     "C22"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c116": {
+  "clauses": [
+   {
+    "Muni": [
+     "C22"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c117": {
+  "clauses": [
+   {
+    "College": [
+     "ACC"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c118": {
+  "clauses": [
+   {
+    "College": [
+     "ACC"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c119": {
+  "clauses": [
+   {
+    "College": [
+     "ACC"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c120": {
+  "clauses": [
+   {
+    "Temp": [
+     "ACCX"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c121": {
+  "clauses": [
+   {
+    "ISD": [
+     "S01"
+    ],
+    "ISDSMD": [
+     "T41"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c122": {
+  "clauses": [
+   {
+    "ISD": [
+     "S01"
+    ],
+    "ISDSMD": [
+     "T44"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c123": {
+  "clauses": [
+   {
+    "ISD": [
+     "S01"
+    ],
+    "ISDSMD": [
+     "T46"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c124": {
+  "clauses": [
+   {
+    "ISD": [
+     "S01"
+    ],
+    "ISDSMD": [
+     "T47"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c125": {
+  "clauses": [
+   {
+    "ISD": [
+     "S01"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c126": {
+  "clauses": [
+   {
+    "ISD": [
+     "S15"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c127": {
+  "clauses": [
+   {
+    "ISD": [
+     "S02"
+    ],
+    "ISDSMD": [
+     "D23"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c128": {
+  "clauses": [
+   {
+    "ISD": [
+     "S02"
+    ],
+    "ISDSMD": [
+     "D25"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c129": {
+  "clauses": [
+   {
+    "ISD": [
+     "S02"
+    ],
+    "ISDSMD": [
+     "D27"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c130": {
+  "clauses": [
+   {
+    "ISD": [
+     "S02"
+    ],
+    "ISDSMD": [
+     "D28"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c131": {
+  "clauses": [
+   {
+    "ISD": [
+     "S02"
+    ],
+    "ISDSMD": [
+     "D29"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c132": {
+  "clauses": [
+   {
+    "ISD": [
+     "S02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c133": {
+  "clauses": [
+   {
+    "ISD": [
+     "S10"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c134": {
+  "clauses": [
+   {
+    "ISD": [
+     "S10"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c135": {
+  "clauses": [
+   {
+    "ISD": [
+     "S10"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c136": {
+  "clauses": [
+   {
+    "ISD": [
+     "S10"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c137": {
+  "clauses": [
+   {
+    "ISD": [
+     "S10"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c138": {
+  "clauses": [
+   {
+    "ISD": [
+     "S11"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c139": {
+  "clauses": [
+   {
+    "ISD": [
+     "S11"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c140": {
+  "clauses": [
+   {
+    "ISD": [
+     "S13"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c141": {
+  "clauses": [
+   {
+    "ISD": [
+     "S13"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c142": {
+  "clauses": [
+   {
+    "ISD": [
+     "S14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c143": {
+  "clauses": [
+   {
+    "ISD": [
+     "S14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c144": {
+  "clauses": [
+   {
+    "ISD": [
+     "S14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c145": {
+  "clauses": [
+   {
+    "ISD": [
+     "S14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c146": {
+  "clauses": [
+   {
+    "ISD": [
+     "S14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c147": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c148": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c149": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c150": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c151": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c152": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c153": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c154": {
+  "clauses": [
+   {
+    "MUD": [
+     "M123"
+    ]
+   },
+   {
+    "Temp": [
+     "M123"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c155": {
+  "clauses": [
+   {
+    "MUD": [
+     "M118"
+    ]
+   },
+   {
+    "Temp": [
+     "M118"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c156": {
+  "clauses": [
+   {
+    "MUD": [
+     "M118"
+    ]
+   },
+   {
+    "Temp": [
+     "M118"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c157": {
+  "clauses": [
+   {
+    "MUD": [
+     "M118"
+    ]
+   },
+   {
+    "Temp": [
+     "M118"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c158": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c159": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c160": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c161": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c162": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c163": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c164": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c165": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c166": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c167": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c168": {
+  "clauses": [
+   {
+    "MUD": [
+     "M127"
+    ]
+   },
+   {
+    "Temp": [
+     "M127"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c169": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c170": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c171": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c172": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c173": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c174": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c175": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c176": {
+  "clauses": [
+   {
+    "MUD": [
+     "M126"
+    ]
+   },
+   {
+    "Temp": [
+     "M126"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c177": {
+  "clauses": [
+   {
+    "MUD": [
+     "M20"
+    ]
+   },
+   {
+    "Temp": [
+     "M20"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c178": {
+  "clauses": [
+   {
+    "MUD": [
+     "M20"
+    ]
+   },
+   {
+    "Temp": [
+     "M20"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c179": {
+  "clauses": [
+   {
+    "MUD": [
+     "M23"
+    ]
+   },
+   {
+    "Temp": [
+     "M23"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c180": {
+  "clauses": [
+   {
+    "MUD": [
+     "M93"
+    ]
+   },
+   {
+    "Temp": [
+     "M93"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c181": {
+  "clauses": [
+   {
+    "MUD": [
+     "M93"
+    ]
+   },
+   {
+    "Temp": [
+     "M93"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c182": {
+  "clauses": [
+   {
+    "MUD": [
+     "M93"
+    ]
+   },
+   {
+    "Temp": [
+     "M93"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c183": {
+  "clauses": [
+   {
+    "MUD": [
+     "M93"
+    ]
+   },
+   {
+    "Temp": [
+     "M93"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c184": {
+  "clauses": [
+   {
+    "MUD": [
+     "M93"
+    ]
+   },
+   {
+    "Temp": [
+     "M93"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c185": {
+  "clauses": [
+   {
+    "MUD": [
+     "M93"
+    ]
+   },
+   {
+    "Temp": [
+     "M93"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c186": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c187": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c188": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c189": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c190": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c191": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c192": {
+  "clauses": [
+   {
+    "MUD": [
+     "M125"
+    ]
+   },
+   {
+    "Temp": [
+     "M125"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
+ },
+ "c193": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c194": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c195": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c196": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c197": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c198": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c199": {
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No county code found for this district yet; asking the Tax Office."
+ },
+ "c200": {
+  "clauses": [
+   {
+    "MUD": [
+     "M14"
+    ]
+   },
+   {
+    "Temp": [
+     "M14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c201": {
+  "clauses": [
+   {
+    "MUD": [
+     "M14"
+    ]
+   },
+   {
+    "Temp": [
+     "M14"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c202": {
+  "clauses": [
+   {
+    "MUD": [
+     "M50"
+    ]
+   },
+   {
+    "Temp": [
+     "M50"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c203": {
+  "clauses": [
+   {
+    "WCID": [
+     "W02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c204": {
+  "clauses": [
+   {
+    "WCID": [
+     "W17"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ },
+ "c205": {
+  "clauses": [
+   {
+    "Temp": [
+     "E04A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Expansion-area election; the county tags 140 addresses, but which voters receive it is unconfirmed."
+ },
+ "c206": {
+  "clauses": [
+   {
+    "ESD": [
+     "E09"
+    ],
+    "Temp!": [
+     "E09A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Current-district version; voter group unconfirmed."
+ },
+ "c207": {
+  "clauses": [
+   {
+    "ESD": [
+     "E09"
+    ],
+    "Temp!": [
+     "E09A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Current-district version; voter group unconfirmed."
+ },
+ "c208": {
+  "clauses": [
+   {
+    "Temp": [
+     "E09A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Annexation-territory version; voter group unconfirmed."
+ },
+ "c209": {
+  "clauses": [
+   {
+    "Temp": [
+     "E09A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Annexation-territory version; voter group unconfirmed."
+ },
+ "c210": {
+  "clauses": [
+   {
+    "ESD": [
+     "E10"
+    ],
+    "Temp!": [
+     "E10A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two versions of these measures exist; which group gets which is unconfirmed."
+ },
+ "c211": {
+  "clauses": [
+   {
+    "ESD": [
+     "E10"
+    ],
+    "Temp!": [
+     "E10A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two versions of these measures exist; which group gets which is unconfirmed."
+ },
+ "c212": {
+  "clauses": [
+   {
+    "Temp": [
+     "E10A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two versions of these measures exist; which group gets which is unconfirmed."
+ },
+ "c213": {
+  "clauses": [
+   {
+    "Temp": [
+     "E10A"
+    ]
+   }
+  ],
+  "conf": "medium",
+  "note": "Two versions of these measures exist; which group gets which is unconfirmed."
+ },
+ "c214": {
+  "clauses": [
+   {
+    "Library": [
+     "L02"
+    ]
+   }
+  ],
+  "conf": "high",
+  "note": null
+ }
+}
