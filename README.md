@@ -2,7 +2,7 @@
 
 **Your ballot, considered together.** Enter the Travis County, Texas address where you're registered to vote, see exactly what's on your November 3, 2026 ballot, make picks with private notes, and print a crib sheet to bring to the polls (Texas bans phones where you vote; paper notes are allowed).
 
-Live test: https://lanebecker.github.io/ballotta/ (moving to https://ballotta.org, see "Custom domain" below)
+Live test: https://ballotta.org (the old lanebecker.github.io/ballotta address redirects there)
 
 ## How it works
 

@@ -8,7 +8,7 @@ import json, re, pathlib
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 # Public address of the site. Switch to "https://ballotta.org/" once the custom domain is live (see README).
-BASE_URL = "https://lanebecker.github.io/ballotta/"
+BASE_URL = "https://ballotta.org/"
 # Umami Cloud website ID (anonymous, cookieless counts). Empty string = no analytics script at all.
 UMAMI_ID = "51b98962-382e-4070-bbd0-f43aba4143ae"
 # Hostnames whose visits count; anything else (local test runs, previews) is ignored by the tracker.
