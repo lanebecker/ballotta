@@ -1,0 +1,2040 @@
+{
+ "Ken Paxton (REP)": {
+  "contest": "c001",
+  "in_guide": true,
+  "page": 2,
+  "site": "KenPaxton.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://KenPaxton.com",
+  "http": "200"
+ },
+ "James Talarico (DEM)": {
+  "contest": "c001",
+  "in_guide": true,
+  "page": 2,
+  "site": "jamestalarico.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://jamestalarico.com",
+  "http": "200"
+ },
+ "Ted Brown (LIB)": {
+  "contest": "c001",
+  "in_guide": true,
+  "page": 2,
+  "site": "tedbrown.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://tedbrown.org",
+  "http": "200"
+ },
+ "Chris Gober (REP)": {
+  "contest": "c002",
+  "in_guide": true,
+  "page": 3,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Caitlin Rourk (DEM)": {
+  "contest": "c002",
+  "in_guide": true,
+  "page": 3,
+  "site": "www.caitlinrourk.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.caitlinrourk.com",
+  "http": "200"
+ },
+ "August Pfluger (REP)": {
+  "contest": "c004",
+  "in_guide": true,
+  "page": 3,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Claire Reynolds (DEM)": {
+  "contest": "c004",
+  "in_guide": true,
+  "page": 3,
+  "site": "www.clairereynoldsforcongress.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.clairereynoldsforcongress.org",
+  "http": "200"
+ },
+ "Michael Cloud (REP)": {
+  "contest": "c005",
+  "in_guide": true,
+  "page": 4,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Tanya Lloyd (DEM)": {
+  "contest": "c005",
+  "in_guide": true,
+  "page": 4,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Lauren B. Peña (REP)": {
+  "contest": "c003",
+  "in_guide": true,
+  "page": 5,
+  "site": "lauren4congress.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://lauren4congress.com",
+  "http": "200"
+ },
+ "Greg Casar (DEM)": {
+  "contest": "c003",
+  "in_guide": true,
+  "page": 5,
+  "site": "www.casarforcongress.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.casarforcongress.com",
+  "http": "200"
+ },
+ "Greg Abbott (REP)": {
+  "contest": "c006",
+  "in_guide": true,
+  "page": 5,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Gina Hinojosa (DEM)": {
+  "contest": "c006",
+  "in_guide": true,
+  "page": 5,
+  "site": "www.ginafortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.ginafortexas.com",
+  "http": "200"
+ },
+ "Pat Dixon (LIB)": {
+  "contest": "c006",
+  "in_guide": true,
+  "page": 6,
+  "site": "patdixon.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://patdixon.org",
+  "http": "200"
+ },
+ "Dan Patrick (REP)": {
+  "contest": "c007",
+  "in_guide": true,
+  "page": 6,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Vikki Goodwin (DEM)": {
+  "contest": "c007",
+  "in_guide": true,
+  "page": 6,
+  "site": "Goodwin4Texas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://Goodwin4Texas.com",
+  "http": "200"
+ },
+ "Kevin McCormick (GRN)": {
+  "contest": "c007",
+  "in_guide": true,
+  "page": 6,
+  "site": "kmm2026.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://kmm2026.org",
+  "http": "200"
+ },
+ "Anthony Cristo (LIB)": {
+  "contest": "c007",
+  "in_guide": true,
+  "page": 7,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Mayes Middleton (REP)": {
+  "contest": "c008",
+  "in_guide": true,
+  "page": 7,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Nathan Johnson (DEM)": {
+  "contest": "c008",
+  "in_guide": true,
+  "page": 7,
+  "site": "www.nathanfortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.nathanfortexas.com",
+  "http": "200"
+ },
+ "Tom Oxford (LIB)": {
+  "contest": "c008",
+  "in_guide": true,
+  "page": 7,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Don Huffines (REP)": {
+  "contest": "c009",
+  "in_guide": true,
+  "page": 8,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Sarah Eckhardt (DEM)": {
+  "contest": "c009",
+  "in_guide": true,
+  "page": 8,
+  "site": "saraheckhardt.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://saraheckhardt.com",
+  "http": "200"
+ },
+ "Shehla Faizi (GRN)": {
+  "contest": "c009",
+  "in_guide": true,
+  "page": 8,
+  "site": "www.faizifortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.faizifortexas.com",
+  "http": "200"
+ },
+ "V. Alonzo Echavarria-Garza (LIB)": {
+  "contest": "c009",
+  "in_guide": true,
+  "page": 8,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Dawn Buckingham (REP)": {
+  "contest": "c010",
+  "in_guide": true,
+  "page": 8,
+  "site": "www.dawnbuckingham.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.dawnbuckingham.com",
+  "http": "200"
+ },
+ "Benjamin Flores (DEM)": {
+  "contest": "c010",
+  "in_guide": true,
+  "page": 9,
+  "site": "letsgowithben.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://letsgowithben.com",
+  "http": "200"
+ },
+ "Neill Snider (LIB)": {
+  "contest": "c010",
+  "in_guide": true,
+  "page": 9,
+  "site": "voteneillsnider.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://voteneillsnider.com",
+  "http": "200"
+ },
+ "Nate Sheets (REP)": {
+  "contest": "c011",
+  "in_guide": true,
+  "page": 9,
+  "site": "NateSheets.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://NateSheets.com",
+  "http": "200"
+ },
+ "Clayton Tucker (DEM)": {
+  "contest": "c011",
+  "in_guide": true,
+  "page": 10,
+  "site": "www.claytontuckertx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.claytontuckertx.com",
+  "http": "403"
+ },
+ "Austin R. Kelly (LIB)": {
+  "contest": "c011",
+  "in_guide": true,
+  "page": 10,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Bo French (REP)": {
+  "contest": "c012",
+  "in_guide": true,
+  "page": 10,
+  "site": "bofrench.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://bofrench.com",
+  "http": "200"
+ },
+ "Jon Rosenthal (DEM)": {
+  "contest": "c012",
+  "in_guide": true,
+  "page": 10,
+  "site": "jonrosenthaltx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://jonrosenthaltx.com",
+  "http": "200"
+ },
+ "Arthur DiBianca (LIB)": {
+  "contest": "c012",
+  "in_guide": true,
+  "page": 11,
+  "site": "votedibianca.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://votedibianca.com",
+  "http": "200"
+ },
+ "Jimmy Blacklock (REP)": {
+  "contest": "c013",
+  "in_guide": true,
+  "page": 11,
+  "site": "www.JimmyBlacklock.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.JimmyBlacklock.com",
+  "http": "200"
+ },
+ "Maggie Ellis (DEM)": {
+  "contest": "c013",
+  "in_guide": true,
+  "page": 11,
+  "site": "www.maggieforjustice.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.maggieforjustice.com",
+  "http": "200"
+ },
+ "James P. Sullivan (REP)": {
+  "contest": "c014",
+  "in_guide": true,
+  "page": 12,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Chari Kelly (DEM)": {
+  "contest": "c014",
+  "in_guide": true,
+  "page": 12,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Kyle Hawkins (REP)": {
+  "contest": "c015",
+  "in_guide": true,
+  "page": 12,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Kristen Hawkins (DEM)": {
+  "contest": "c015",
+  "in_guide": true,
+  "page": 12,
+  "site": "www.judgehawkins.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.judgehawkins.com",
+  "http": "200"
+ },
+ "Brett Busby (REP)": {
+  "contest": "c016",
+  "in_guide": true,
+  "page": 13,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Gisela D. Triana (DEM)": {
+  "contest": "c016",
+  "in_guide": true,
+  "page": 13,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Thomas Smith (REP)": {
+  "contest": "c017",
+  "in_guide": true,
+  "page": 13,
+  "site": "www.smithfortexas.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.smithfortexas.org",
+  "http": "200"
+ },
+ "Okey Anyiam (DEM)": {
+  "contest": "c017",
+  "in_guide": true,
+  "page": 13,
+  "site": "okeyanyiamforjudge.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://okeyanyiamforjudge.com",
+  "http": "000"
+ },
+ "Mark Ash (LIB)": {
+  "contest": "c017",
+  "in_guide": true,
+  "page": 14,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Kevin Patrick Yeary (REP)": {
+  "contest": "c018",
+  "in_guide": true,
+  "page": 14,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Audra Riley (DEM)": {
+  "contest": "c018",
+  "in_guide": true,
+  "page": 14,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "John Messinger (REP)": {
+  "contest": "c019",
+  "in_guide": true,
+  "page": 14,
+  "site": "messingerforjustice.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://messingerforjustice.com",
+  "http": "200"
+ },
+ "Holly Taylor (DEM)": {
+  "contest": "c019",
+  "in_guide": true,
+  "page": 14,
+  "site": "www.hollytforjudge.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.hollytforjudge.com",
+  "http": "200"
+ },
+ "Mica Arellano (REP)": {
+  "contest": "c020",
+  "in_guide": true,
+  "page": 15,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Allison Bush (DEM)": {
+  "contest": "c020",
+  "in_guide": true,
+  "page": 15,
+  "site": "www.allisonfortx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.allisonfortx.com",
+  "http": "200"
+ },
+ "Scott Brister (REP)": {
+  "contest": "c029",
+  "in_guide": true,
+  "page": 15,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Jerry Zimmerer (DEM)": {
+  "contest": "c029",
+  "in_guide": true,
+  "page": 15,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Scott K. Field (REP)": {
+  "contest": "c030",
+  "in_guide": true,
+  "page": 16,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Tom Baker (DEM)": {
+  "contest": "c030",
+  "in_guide": true,
+  "page": 16,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "April Farris (REP)": {
+  "contest": "c031",
+  "in_guide": true,
+  "page": 16,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Marc M. Meyer (DEM)": {
+  "contest": "c031",
+  "in_guide": true,
+  "page": 16,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Cory Liu (REP)": {
+  "contest": "c032",
+  "in_guide": true,
+  "page": 17,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Darlene Byrne (DEM)": {
+  "contest": "c032",
+  "in_guide": true,
+  "page": 17,
+  "site": "Www.justicedarlenebyrne.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://Www.justicedarlenebyrne.com",
+  "http": "200"
+ },
+ "Julie Dahlberg (REP)": {
+  "contest": "c021",
+  "in_guide": true,
+  "page": 17,
+  "site": "juliefortexassenate.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://juliefortexassenate.com",
+  "http": "503"
+ },
+ "Judith Zaffirini (DEM)": {
+  "contest": "c021",
+  "in_guide": true,
+  "page": 18,
+  "site": "www.judithzaffirini.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.judithzaffirini.com",
+  "http": "200"
+ },
+ "Ellen Troxclair (REP)": {
+  "contest": "c022",
+  "in_guide": true,
+  "page": 19,
+  "site": "troxclairfortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://troxclairfortexas.com",
+  "http": "200"
+ },
+ "Tom Luck (DEM)": {
+  "contest": "c022",
+  "in_guide": true,
+  "page": 19,
+  "site": "luckfortexashouse.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://luckfortexashouse.com",
+  "http": "200"
+ },
+ "Sheryl Cole (DEM)": {
+  "contest": "c023",
+  "in_guide": true,
+  "page": 20,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Jennifer Mushtaler (REP)": {
+  "contest": "c024",
+  "in_guide": true,
+  "page": 20,
+  "site": "www.drjenfortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.drjenfortexas.com",
+  "http": "200"
+ },
+ "Pooja Sethi (DEM)": {
+  "contest": "c024",
+  "in_guide": true,
+  "page": 20,
+  "site": "Poojafortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://Poojafortexas.com",
+  "http": "200"
+ },
+ "Anthony Gupta (REP)": {
+  "contest": "c025",
+  "in_guide": true,
+  "page": 20,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Donna Howard (DEM)": {
+  "contest": "c025",
+  "in_guide": true,
+  "page": 20,
+  "site": "www.teamhowardtx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.teamhowardtx.com",
+  "http": "200"
+ },
+ "Montserrat Garibay (DEM)": {
+  "contest": "c026",
+  "in_guide": true,
+  "page": 20,
+  "site": "www.MontserratForTexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.MontserratForTexas.com",
+  "http": "200"
+ },
+ "Arshia Papari (GRN)": {
+  "contest": "c026",
+  "in_guide": true,
+  "page": 21,
+  "site": "arshiafortexas.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://arshiafortexas.org",
+  "http": "200"
+ },
+ "Howard Olsen (REP)": {
+  "contest": "c027",
+  "in_guide": true,
+  "page": 21,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Samantha Lopez-Resendez (DEM)": {
+  "contest": "c027",
+  "in_guide": true,
+  "page": 21,
+  "site": "www.samanthafortexas.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.samanthafortexas.com",
+  "http": "200"
+ },
+ "Jessica Martinez (REP)": {
+  "contest": "c028",
+  "in_guide": true,
+  "page": 21,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Maria Luisa “Lulu” Flores (DEM)": {
+  "contest": "c028",
+  "in_guide": true,
+  "page": 21,
+  "site": "www.voteluluflores.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.voteluluflores.com",
+  "http": "200"
+ },
+ "Amy Clark Meachum (DEM)": {
+  "contest": "c034",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Kennon Lily Wooten (DEM)": {
+  "contest": "c035",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Daniella Deseta Lyttle (DEM)": {
+  "contest": "c036",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Catherine A. Mauzy (DEM)": {
+  "contest": "c040",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Laurie Eiserloh (DEM)": {
+  "contest": "c041",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Maya Guerra Gamble (DEM)": {
+  "contest": "c043",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Cliff Brown (DEM)": {
+  "contest": "c033",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Karen R. Sage (DEM)": {
+  "contest": "c037",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Chantal Melissa Eldridge (DEM)": {
+  "contest": "c038",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Brandy Mueller (DEM)": {
+  "contest": "c039",
+  "in_guide": true,
+  "page": 22,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Todd Wong (DEM)": {
+  "contest": "c042",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Leslie Dippel (DEM)": {
+  "contest": "c045",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Bianca Garcia (DEM)": {
+  "contest": "c046",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Dimple Malhotra (DEM)": {
+  "contest": "c047",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Mary Ann Espiritu (DEM)": {
+  "contest": "c048",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Denise Hernández (DEM)": {
+  "contest": "c049",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Elisabeth Earle (DEM)": {
+  "contest": "c050",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Guy Herman (DEM)": {
+  "contest": "c051",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Velva L. Price (DEM)": {
+  "contest": "c052",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Dyana Limon-Mercado (DEM)": {
+  "contest": "c053",
+  "in_guide": true,
+  "page": 23,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Dolores Ortega Carter (DEM)": {
+  "contest": "c054",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Andy Brown (DEM)": {
+  "contest": "c044",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Brigid Shea (DEM)": {
+  "contest": "c055",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "George Morales III (DEM)": {
+  "contest": "c056",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Ciara Parks (DEM)": {
+  "contest": "c057",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Mariel Kelley (DEM)": {
+  "contest": "c058",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Sylvia Holmes (DEM)": {
+  "contest": "c059",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Raul Arturo Gonzalez (DEM)": {
+  "contest": "c060",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Tanisa Jeffers (DEM)": {
+  "contest": "c061",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Gabriel Padilla (DEM)": {
+  "contest": "c062",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Skyler A. Korgel": {
+  "contest": "c063",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Brian Peña": {
+  "contest": "c064",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Phil Gorman": {
+  "contest": "c065",
+  "in_guide": true,
+  "page": 24,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Yvonne Muñoz": {
+  "contest": "c065",
+  "in_guide": true,
+  "page": 25,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Alexandria Anderson": {
+  "contest": "c066",
+  "in_guide": true,
+  "page": 29,
+  "site": "www.alexandriaforaustin.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.alexandriaforaustin.com",
+  "http": "200"
+ },
+ "Steven Brown": {
+  "contest": "c066",
+  "in_guide": true,
+  "page": 29,
+  "site": "brownforaustind1.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://brownforaustind1.com",
+  "http": "200"
+ },
+ "Amber K. Goodwin": {
+  "contest": "c066",
+  "in_guide": true,
+  "page": 30,
+  "site": "www.amberforaustin.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.amberforaustin.com",
+  "http": "200"
+ },
+ "Michael Nahas": {
+  "contest": "c066",
+  "in_guide": true,
+  "page": 30,
+  "site": "mike4austin.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://mike4austin.org",
+  "http": "200"
+ },
+ "Misael Ramos": {
+  "contest": "c066",
+  "in_guide": true,
+  "page": 30,
+  "site": "misaelforaustin.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://misaelforaustin.com",
+  "http": "200"
+ },
+ "Portia Riggins": {
+  "contest": "c066",
+  "in_guide": true,
+  "page": 30,
+  "site": "www.eventbrite.com/e/donate-to-portia-riggins-for-austin-city-council-district-1-tickets",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.eventbrite.com/e/donate-to-portia-riggins-for-austin-city-council-district-1-tickets",
+  "http": "404"
+ },
+ "Gavin Fernandez Jr.": {
+  "contest": "c067",
+  "in_guide": true,
+  "page": 30,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Eduardo “Lalito” Romero": {
+  "contest": "c067",
+  "in_guide": true,
+  "page": 31,
+  "site": "instagram.com/eduardoforaustin",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://instagram.com/eduardoforaustin",
+  "http": "200"
+ },
+ "Neha Shah": {
+  "contest": "c067",
+  "in_guide": true,
+  "page": 31,
+  "site": "nehaforatx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://nehaforatx.com",
+  "http": "200"
+ },
+ "Brock Skinner": {
+  "contest": "c067",
+  "in_guide": true,
+  "page": 31,
+  "site": "connect-campaigns-now.lovable.app",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://connect-campaigns-now.lovable.app",
+  "http": "404"
+ },
+ "José Velásquez": {
+  "contest": "c067",
+  "in_guide": true,
+  "page": 31,
+  "site": "www.joseforatx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.joseforatx.com",
+  "http": "200"
+ },
+ "Farrah Abraham": {
+  "contest": "c068",
+  "in_guide": true,
+  "page": 31,
+  "site": "www.FarrahAbraham.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://www.FarrahAbraham.com",
+  "http": "503"
+ },
+ "Ryan Alter": {
+  "contest": "c068",
+  "in_guide": true,
+  "page": 31,
+  "site": "Ryan@RyanforATX.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://RyanforATX.com",
+  "http": "200"
+ },
+ "Liz Brink": {
+  "contest": "c068",
+  "in_guide": true,
+  "page": 32,
+  "site": "lizbrinkatx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://lizbrinkatx.com",
+  "http": "200"
+ },
+ "David Weinberg": {
+  "contest": "c068",
+  "in_guide": true,
+  "page": 32,
+  "site": "www.davidforatx.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.davidforatx.com",
+  "http": "200"
+ },
+ "Jeffery Bowen": {
+  "contest": "c069",
+  "in_guide": true,
+  "page": 32,
+  "site": "www.jeffbowenforaustincitycouncil.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.jeffbowenforaustincitycouncil.com",
+  "http": "200"
+ },
+ "Selena Xie": {
+  "contest": "c069",
+  "in_guide": true,
+  "page": 32,
+  "site": "www.selenaforaustin.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.selenaforaustin.com",
+  "http": "200"
+ },
+ "Rich Heyman": {
+  "contest": "c070",
+  "in_guide": true,
+  "page": 32,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Kai Huang": {
+  "contest": "c070",
+  "in_guide": true,
+  "page": 33,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Katie Kam": {
+  "contest": "c070",
+  "in_guide": true,
+  "page": 33,
+  "site": "www.katiekamforaustin.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.katiekamforaustin.com",
+  "http": "200"
+ },
+ "Zohaib “Zo” Qadri": {
+  "contest": "c070",
+  "in_guide": true,
+  "page": 33,
+  "site": "zoforaustin.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://zoforaustin.com",
+  "http": "200"
+ },
+ "Dave Thadani": {
+  "contest": "c070",
+  "in_guide": true,
+  "page": 33,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Adam Benefield": {
+  "contest": "c085",
+  "in_guide": true,
+  "page": 36,
+  "site": "www.facebook.com/profile.php?id=61561346850397",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.facebook.com/profile.php?id=61561346850397",
+  "http": "200"
+ },
+ "Arminae McDonald": {
+  "contest": "c085",
+  "in_guide": true,
+  "page": 37,
+  "site": "www.facebook.com/ArminaeMcDonaldLagoVista",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.facebook.com/ArminaeMcDonaldLagoVista",
+  "http": "200"
+ },
+ "Norma Owen": {
+  "contest": "c086",
+  "in_guide": true,
+  "page": 37,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "David vonOhlerking III": {
+  "contest": "c087",
+  "in_guide": true,
+  "page": 37,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Robert Edward Battaile": {
+  "contest": "c088",
+  "in_guide": true,
+  "page": 37,
+  "site": "SavingManor.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://SavingManor.org",
+  "http": "200"
+ },
+ "Anne Weir": {
+  "contest": "c088",
+  "in_guide": true,
+  "page": 37,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Sam Samaripa": {
+  "contest": "c089",
+  "in_guide": true,
+  "page": 38,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Sonia A. Wallace": {
+  "contest": "c089",
+  "in_guide": true,
+  "page": 38,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Selena Chambers": {
+  "contest": "c090",
+  "in_guide": true,
+  "page": 38,
+  "site": "www.facebook.com/selena4manor",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.facebook.com/selena4manor",
+  "http": "200"
+ },
+ "Tracy Medearis": {
+  "contest": "c090",
+  "in_guide": true,
+  "page": 38,
+  "site": "www.facebook.com/profile.php?id=61593208034110",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.facebook.com/profile.php?id=61593208034110",
+  "http": "200"
+ },
+ "Felix Paiz": {
+  "contest": "c090",
+  "in_guide": true,
+  "page": 38,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "David Rogers": {
+  "contest": "c095",
+  "in_guide": true,
+  "page": 39,
+  "site": "electmisterrogers.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://electmisterrogers.com",
+  "http": "200"
+ },
+ "Ceasar Ruiz": {
+  "contest": "c095",
+  "in_guide": true,
+  "page": 40,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Trent Barlow": {
+  "contest": "c096",
+  "in_guide": true,
+  "page": 40,
+  "site": "Trentforpf.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://Trentforpf.com",
+  "http": "200"
+ },
+ "Gregory L. Harrington": {
+  "contest": "c096",
+  "in_guide": true,
+  "page": 40,
+  "site": "www.gregory-harrington.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.gregory-harrington.com",
+  "http": "200"
+ },
+ "De Juana “De J.” Lozada": {
+  "contest": "c096",
+  "in_guide": true,
+  "page": 40,
+  "site": "votedej.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://votedej.com",
+  "http": "200"
+ },
+ "Oscar R. Mitchell": {
+  "contest": "c097",
+  "in_guide": true,
+  "page": 40,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Marc Bruner": {
+  "contest": "c112",
+  "in_guide": true,
+  "page": 42,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Robert Johnson": {
+  "contest": "c113",
+  "in_guide": true,
+  "page": 42,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Sarah Ponder": {
+  "contest": "c113",
+  "in_guide": true,
+  "page": 43,
+  "site": "www.linkedin.com/in/spponder",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.linkedin.com/in/spponder",
+  "http": "200"
+ },
+ "Charles Young": {
+  "contest": "c113",
+  "in_guide": true,
+  "page": 43,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Gloria Gonzales-Dholakia": {
+  "contest": "c117",
+  "in_guide": true,
+  "page": 44,
+  "site": "gloriaforacc.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://gloriaforacc.com",
+  "http": "200"
+ },
+ "Dana Walker": {
+  "contest": "c117",
+  "in_guide": true,
+  "page": 45,
+  "site": "DanaWalkerforACC.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://DanaWalkerforACC.com",
+  "http": "200"
+ },
+ "Gigi Edwards Bryant": {
+  "contest": "c118",
+  "in_guide": true,
+  "page": 45,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Trevor Hale": {
+  "contest": "c119",
+  "in_guide": true,
+  "page": 45,
+  "site": "en.wikipedia.org/wiki/Trevor_Hale",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://en.wikipedia.org/wiki/Trevor_Hale",
+  "http": "200"
+ },
+ "Nan McRaven": {
+  "contest": "c119",
+  "in_guide": true,
+  "page": 45,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Cheryl Bradley": {
+  "contest": "c121",
+  "in_guide": true,
+  "page": 46,
+  "site": "cherylbradleyford1.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://cherylbradleyford1.com",
+  "http": "200"
+ },
+ "Candace L. Hunter": {
+  "contest": "c121",
+  "in_guide": true,
+  "page": 46,
+  "site": "hunterforaisd.wixsite.com/my-site",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://hunterforaisd.wixsite.com/my-site",
+  "http": "200"
+ },
+ "Edward M. Bradfield": {
+  "contest": "c122",
+  "in_guide": true,
+  "page": 46,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Tricia Mitchell Kim": {
+  "contest": "c122",
+  "in_guide": true,
+  "page": 46,
+  "site": "www.tricia4aisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.tricia4aisd.com",
+  "http": "200"
+ },
+ "Jessica Jessie Neufeld": {
+  "contest": "c122",
+  "in_guide": true,
+  "page": 46,
+  "site": "jessieforaisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://jessieforaisd.com",
+  "http": "200"
+ },
+ "Sarah Dille": {
+  "contest": "c123",
+  "in_guide": true,
+  "page": 47,
+  "site": "sarahforaisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://sarahforaisd.com",
+  "http": "200"
+ },
+ "Marie Lebron": {
+  "contest": "c123",
+  "in_guide": true,
+  "page": 47,
+  "site": "MarieforAISDTrustee.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://MarieforAISDTrustee.com",
+  "http": "200"
+ },
+ "Alex San Martin": {
+  "contest": "c123",
+  "in_guide": true,
+  "page": 47,
+  "site": "www.alexforaisd6.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.alexforaisd6.com",
+  "http": "200"
+ },
+ "Jimmy Counihan": {
+  "contest": "c124",
+  "in_guide": true,
+  "page": 47,
+  "site": "www.jimmyforaisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.jimmyforaisd.com",
+  "http": "200"
+ },
+ "Laurie Solis": {
+  "contest": "c124",
+  "in_guide": true,
+  "page": 48,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Kirk Becker": {
+  "contest": "c125",
+  "in_guide": true,
+  "page": 48,
+  "site": "Kirk4AISD.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://Kirk4AISD.com",
+  "http": "200"
+ },
+ "Pamela Mathai": {
+  "contest": "c125",
+  "in_guide": true,
+  "page": 48,
+  "site": "pamelaforaisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://pamelaforaisd.com",
+  "http": "200"
+ },
+ "Cynthia Soliz": {
+  "contest": "c125",
+  "in_guide": true,
+  "page": 48,
+  "site": "www.cynthiasolizforaisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.cynthiasolizforaisd.com",
+  "http": "200"
+ },
+ "Charles Burton": {
+  "contest": "c127",
+  "in_guide": true,
+  "page": 48,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Claire Campos-O'Neal": {
+  "contest": "c127",
+  "in_guide": true,
+  "page": 49,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Jason Sierra": {
+  "contest": "c128",
+  "in_guide": true,
+  "page": 49,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Josh Castro": {
+  "contest": "c129",
+  "in_guide": true,
+  "page": 49,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Susanna Ledesma Woody": {
+  "contest": "c129",
+  "in_guide": true,
+  "page": 49,
+  "site": "VoteSusanna.net",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://VoteSusanna.net",
+  "http": "200"
+ },
+ "Robert “Bobby” Hidrogo": {
+  "contest": "c130",
+  "in_guide": true,
+  "page": 49,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Darla Wegner": {
+  "contest": "c130",
+  "in_guide": true,
+  "page": 49,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Stephanie Arellano": {
+  "contest": "c131",
+  "in_guide": true,
+  "page": 49,
+  "site": "www.facebook.com/share/1Gkm7yYz5Q/?mibextid=wwXIfr",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.facebook.com/share/1Gkm7yYz5Q/?mibextid=wwXIfr",
+  "http": "200"
+ },
+ "Mike Randolph": {
+  "contest": "c131",
+  "in_guide": true,
+  "page": 50,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Gloria Vera-Bedolla": {
+  "contest": "c131",
+  "in_guide": true,
+  "page": 50,
+  "site": null,
+  "answered": false,
+  "unopposed": false
+ },
+ "Serenity Coats": {
+  "contest": "c133",
+  "in_guide": true,
+  "page": 51,
+  "site": "www.serenity4lisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.serenity4lisd.com",
+  "http": "429"
+ },
+ "Gerald Prater": {
+  "contest": "c133",
+  "in_guide": true,
+  "page": 51,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Meg Dean": {
+  "contest": "c134",
+  "in_guide": true,
+  "page": 51,
+  "site": "megdean.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://megdean.org",
+  "http": "200"
+ },
+ "Perla Muñoz Hopkins": {
+  "contest": "c134",
+  "in_guide": true,
+  "page": 51,
+  "site": "www.PERLA4LISD.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.PERLA4LISD.com",
+  "http": "200"
+ },
+ "Chitra Nedun": {
+  "contest": "c134",
+  "in_guide": true,
+  "page": 52,
+  "site": "www.chitraforlisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.chitraforlisd.com",
+  "http": "200"
+ },
+ "Laura Marques": {
+  "contest": "c135",
+  "in_guide": true,
+  "page": 52,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Jason Embry": {
+  "contest": "c136",
+  "in_guide": true,
+  "page": 52,
+  "site": "jasonembry.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://jasonembry.com",
+  "http": "200"
+ },
+ "Paul Gauthier": {
+  "contest": "c136",
+  "in_guide": true,
+  "page": 52,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Jean Mayer": {
+  "contest": "c140",
+  "in_guide": true,
+  "page": 53,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Nicole Toran": {
+  "contest": "c140",
+  "in_guide": true,
+  "page": 54,
+  "site": "nicoleforpflugerville.org",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://nicoleforpflugerville.org",
+  "http": "200"
+ },
+ "Chevonne Lorigo-Johst": {
+  "contest": "c141",
+  "in_guide": true,
+  "page": 54,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Gregory Andrew": {
+  "contest": "c142",
+  "in_guide": true,
+  "page": 54,
+  "site": null,
+  "answered": true,
+  "unopposed": false
+ },
+ "Amber Feller Landrum": {
+  "contest": "c142",
+  "in_guide": true,
+  "page": 54,
+  "site": "www.facebook.com/AmberFellerForRRISDSchoolBoard",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.facebook.com/AmberFellerForRRISDSchoolBoard",
+  "http": "200"
+ },
+ "Ayaan Moledina": {
+  "contest": "c142",
+  "in_guide": true,
+  "page": 55,
+  "site": "ayaan4rrisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://ayaan4rrisd.com",
+  "http": "200"
+ },
+ "Vera Southwell": {
+  "contest": "c142",
+  "in_guide": true,
+  "page": 55,
+  "site": "verasouthwell.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://verasouthwell.com",
+  "http": "200"
+ },
+ "Alicia Markum": {
+  "contest": "c143",
+  "in_guide": true,
+  "page": 55,
+  "site": null,
+  "answered": false,
+  "unopposed": true
+ },
+ "Miriam Arora": {
+  "contest": "c144",
+  "in_guide": true,
+  "page": 55,
+  "site": "miriamforrrisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://miriamforrrisd.com",
+  "http": "200"
+ },
+ "Meghna Roy": {
+  "contest": "c144",
+  "in_guide": true,
+  "page": 55,
+  "site": "www.meghnaroy.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.meghnaroy.com",
+  "http": "200"
+ },
+ "Fabian Cuero": {
+  "contest": "c145",
+  "in_guide": true,
+  "page": 56,
+  "site": "cuero4rrisd.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "http://cuero4rrisd.com",
+  "http": "503"
+ },
+ "Troy J. Evanovich": {
+  "contest": "c145",
+  "in_guide": true,
+  "page": 56,
+  "site": "www.troyfortrustee.com",
+  "answered": true,
+  "unopposed": false,
+  "url": "https://www.troyfortrustee.com",
+  "http": "200"
+ },
+ "Vincent Kuhn": {
+  "contest": "c082",
+  "in_guide": false
+ },
+ "Mark Holmstrom": {
+  "contest": "c082",
+  "in_guide": false
+ },
+ "Dave Nelsen": {
+  "contest": "c083",
+  "in_guide": false
+ },
+ "Linda Bush": {
+  "contest": "c084",
+  "in_guide": false
+ },
+ "Max Spadafore": {
+  "contest": "c084",
+  "in_guide": false
+ },
+ "Tom Blauvelt": {
+  "contest": "c115",
+  "in_guide": false
+ },
+ "Mark Rook": {
+  "contest": "c115",
+  "in_guide": false
+ },
+ "Eric Peeters": {
+  "contest": "c116",
+  "in_guide": false
+ },
+ "Tony Ruff": {
+  "contest": "c116",
+  "in_guide": false
+ },
+ "Carrington Saathoff": {
+  "contest": "c154",
+  "in_guide": false
+ },
+ "Ryan Sullivan": {
+  "contest": "c154",
+  "in_guide": false
+ },
+ "Grant Ballew": {
+  "contest": "c154",
+  "in_guide": false
+ },
+ "John Berry": {
+  "contest": "c154",
+  "in_guide": false
+ },
+ "William Waller": {
+  "contest": "c154",
+  "in_guide": false
+ },
+ "Nicodemus Abowd": {
+  "contest": "c168",
+  "in_guide": false
+ },
+ "Denis Fletcher": {
+  "contest": "c168",
+  "in_guide": false
+ },
+ "Jeff Markey": {
+  "contest": "c168",
+  "in_guide": false
+ },
+ "Mariano Ravelo": {
+  "contest": "c168",
+  "in_guide": false
+ },
+ "Barry Marotz": {
+  "contest": "c168",
+  "in_guide": false
+ },
+ "Daniel McElrath": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Chase Nixon": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Jacob Clark": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Ross Hamilton": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Dane Rymer": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Don Conklin": {
+  "contest": "c177",
+  "in_guide": false
+ },
+ "Diana Christiano": {
+  "contest": "c178",
+  "in_guide": false
+ },
+ "Jennifer Wiebe": {
+  "contest": "c178",
+  "in_guide": false
+ },
+ "Scott Moser": {
+  "contest": "c179",
+  "in_guide": false
+ },
+ "Brenda Vrabel": {
+  "contest": "c179",
+  "in_guide": false
+ },
+ "R. Lee Hill": {
+  "contest": "c179",
+  "in_guide": false
+ },
+ "Chris Capers": {
+  "contest": "c179",
+  "in_guide": false
+ },
+ "Felicity Maxwell": {
+  "contest": "c192",
+  "in_guide": false
+ },
+ "Casey Paulson": {
+  "contest": "c192",
+  "in_guide": false
+ },
+ "Mickey Jamail": {
+  "contest": "c192",
+  "in_guide": false
+ },
+ "Daniel Kavelman": {
+  "contest": "c192",
+  "in_guide": false
+ },
+ "Ryan Puzycki": {
+  "contest": "c192",
+  "in_guide": false
+ },
+ "Jason Nobbe": {
+  "contest": "c199",
+  "in_guide": false
+ },
+ "Kelly Schill": {
+  "contest": "c199",
+  "in_guide": false
+ },
+ "Ashtyn Bogue": {
+  "contest": "c199",
+  "in_guide": false
+ },
+ "Lyndsey Mylius": {
+  "contest": "c199",
+  "in_guide": false
+ },
+ "Jared Williams": {
+  "contest": "c199",
+  "in_guide": false
+ },
+ "Beth Jones": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Stephen Bodnarchuk Jr.": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Hanoi Avila": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "David Flores": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Kimberly Massaro": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Linda Fabre": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Thomas Vacek": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Richard Kenyon": {
+  "contest": "c203",
+  "in_guide": false
+ },
+ "Travis Wright": {
+  "contest": "c203",
+  "in_guide": false
+ },
+ "Rick Shute": {
+  "contest": "c203",
+  "in_guide": false
+ },
+ "Jason Blair": {
+  "contest": "c203",
+  "in_guide": false
+ },
+ "Elicia Michaud": {
+  "contest": "c204",
+  "in_guide": false
+ },
+ "Larry Harlan": {
+  "contest": "c204",
+  "in_guide": false
+ },
+ "Phil Han": {
+  "contest": "c204",
+  "in_guide": false
+ },
+ "Sonja DeLaFuente": {
+  "contest": "c204",
+  "in_guide": false
+ },
+ "Ryan Carretta": {
+  "contest": "c204",
+  "in_guide": false
+ },
+ "Rudolf J. Valenti": {
+  "contest": "c214",
+  "in_guide": false
+ },
+ "Paul Wadehra": {
+  "contest": "c214",
+  "in_guide": false
+ },
+ "Philip Waters": {
+  "contest": "c214",
+  "in_guide": false
+ },
+ "Abigail Joffrain": {
+  "contest": "c214",
+  "in_guide": false
+ },
+ "Elizabeth Martin": {
+  "contest": "c214",
+  "in_guide": false
+ }
+}

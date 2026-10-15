@@ -1,6 +1,6 @@
 {
  "election": "Travis County Joint General and Special Elections, November 3, 2026",
- "source": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+ "source": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final.pdf", "source_corrected": "2026-10-14",
  "source_note": "Consolidated ('bedsheet') ballot listing every contest in the county. No single voter sees all of these; each ballot is a subset by precinct.",
  "unopposed_not_on_ballot": [
   "Coupland ISD trustees (declared elected unopposed)",
@@ -427,7 +427,7 @@
    "title": "District Judge, 331st Judicial District",
    "type": "candidate",
    "choices": [
-    "Chantal Melissa Eldridge"
+    "Chantal Melissa Eldridge (DEM)"
    ],
    "id": "c038",
    "level": "Courts",
@@ -2042,7 +2042,7 @@
     "FOR",
     "AGAINST"
    ],
-   "text": "THIS IS A TAX INCREASE; the issuance of $282,397,500 bonds for refunding water, wastewater, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued there for) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds.",
+   "text": "THIS IS A TAX INCREASE; the issuance of $282,397,500 bonds for refunding water, waste water, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued there for) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds.",
    "id": "c174",
    "level": "Special district",
    "entity": "Kennedy Hill MUD",
@@ -2246,7 +2246,7 @@
     "FOR",
     "AGAINST"
    ],
-   "text": "THIS IS A TAX INCREASE; the issuance of $912,865,000 bonds for refunding water, wastewater, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds. Condado de Travis MMD Núm.1",
+   "text": "THIS IS A TAX INCREASE; the issuance of $912,865,000 bonds for refunding water, waste water, and drainage system facilities bonds and parks and recreational facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds. Condado de Travis MMD Núm.1",
    "id": "c190",
    "level": "Special district",
    "entity": "Travis County MMD No. 1",
@@ -2338,7 +2338,7 @@
     "FOR",
     "AGAINST"
    ],
-   "text": "THIS IS A TAX INCREASE; the issuance of $88,500,000 bonds for refunding water, wastewater, and drainage system facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds. Condado de Travis MUD Núm. 41",
+   "text": "THIS IS A TAX INCREASE; the issuance of $88,500,000 bonds for refunding water, waste water, and drainage system facilities bonds (including refunding bonds issued therefor) issued pursuant to Section 59, Article XVI of the Texas Constitution, and the levy of taxes sufficient to pay principal of and interest on the bonds. Condado de Travis MUD Núm. 41",
    "id": "c197",
    "level": "Special district",
    "entity": "Travis County MUD No. 41",
