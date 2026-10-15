@@ -750,6 +750,106 @@ def desk_hostile_friend_is_escaped(b):
     assert '<script>x</script>' in pg.inner_text('#dk-paper') and '<img src=x' in pg.inner_text('#dk-notes')
     ctx.close()
 
+TAGLINE = 'Don’t wait to meet your ballot in the booth.'                                        # Lane, Oct 15
+FAQ = [('What is Ballotta?', 'A free, independent tool for Travis County voters.'),
+       ('Does it tell me how to vote?', 'No. Ballotta doesn’t endorse, rank or recommend anyone.'),
+       ('Where does the information come from?', 'We link to them rather than rewrite them.'),
+       ('What happens to my address and picks?', 'the U.S. Census geocoder); we never receive it.'),        # audit: the Census fallback too
+       ('What won’t you allow here?', 'No ads, no paid placement, no campaign content, and no selling or sharing data. We try to block'),
+       ('Is this official?', 'Check your official sample ballot at VoteTravis.gov before you vote.')]
+
+def rgba(c): v = [float(x) for x in c[c.index('(') + 1:c.index(')')].split(',')]; return v[:3], (v[3] if len(v) > 3 else 1.0)
+def lum(rgb):                                                                                     # WCAG relative luminance of an opaque 'rgb(r, g, b)'
+    def ch(v): v /= 255; return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    r, g, b_ = rgba(rgb)[0]
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b_)
+def contrast(fg, bg):                                                                             # a see-through colour is blended over its background first
+    (f, a), (b_, _) = rgba(fg), rgba(bg)
+    mix = 'rgb(' + ','.join(str(a * x + (1 - a) * y) for x, y in zip(f, b_)) + ')'
+    hi, lo = sorted([lum(mix), lum(bg)], reverse=True); return (hi + 0.05) / (lo + 0.05)
+
+def box(pg, sel): return pg.locator(sel).first.bounding_box()
+def css(pg, sel, prop, pseudo='null'): return pg.evaluate(f"getComputedStyle(document.querySelector('{sel}'), {pseudo}).{prop}")
+PLUM = 'rgb(75, 42, 107)'
+
+def landing_band_checks(pg, paper_sel, side_sel, width):
+    # Option B (Lane, Oct 15): a full-width plum band with a big logo and the tagline; the paper overlaps its foot,
+    # the side column starts below it, and there's no plum corner box any more.
+    assert pg.is_visible('#dk-hero'), width
+    hero = box(pg, '#dk-hero')
+    assert css(pg, '#dk-hero', 'backgroundColor') == PLUM and hero['x'] == 0 and abs(hero['width'] - width) <= 1, (width, hero)
+    assert css(pg, '#dk-hdr', 'backgroundColor') == PLUM, 'the whole top bar is plum on the landing page'
+    assert css(pg, '#dk-hdr', 'display', "'::before'") == 'none' or css(pg, '#dk-hdr', 'content', "'::before'") == 'none'
+    assert pg.is_hidden('.dk-brand'), 'no small logo in the corner'
+    only = box(pg, '#dk-hero .dk-only')                                                              # Lane, Oct 15: say plainly it's Travis County only
+    assert css(pg, '#dk-hero .dk-only', 'backgroundColor') == 'rgb(233, 169, 42)' and only['x'] == 0 and abs(only['width'] - width) <= 1, (width, only)
+    assert abs(only['y'] - hero['y']) <= 1 and only['y'] + only['height'] <= box(pg, '#dk-hero .dk-word')['y'], 'a gold strip across the top of the band'
+    assert 'only works for Travis County' in pg.inner_text('#dk-hero .dk-only')
+    assert contrast(css(pg, '#dk-hero .dk-only', 'color'), 'rgb(233, 169, 42)') >= 4.5
+    word = pg.locator('#dk-hero .dk-word')
+    assert word.inner_text() == 'Ballotta' and float(css(pg, '#dk-hero .dk-word', 'fontSize')[:-2]) >= 64, 'a big logo'
+    assert pg.inner_text('#dk-hero .dk-tagline') == TAGLINE and 'share them with friends' in pg.inner_text('#dk-hero .dk-sub')
+    for sel in ('.dk-word', '.dk-tagline', '.dk-sub'):
+        seen = pg.evaluate(f"(() => {{ let e = document.querySelector('#dk-hero {sel}'), o = 1; for (; e; e = e.parentElement) {{ const c = getComputedStyle(e); o *= +c.opacity; if (c.filter !== 'none') o = 0; }} return o; }})()")
+        assert contrast(css(pg, f'#dk-hero {sel}', 'color'), PLUM) >= 4.5 and seen == 1, (sel, width, seen)   # parents' opacity and filters too
+    assert 'every race' not in pg.inner_text('#dk-hero .dk-sub'), 'audit: some small districts have no neutral sources'
+    for sel in ('#dk-loc', '#dk-when'):
+        if pg.is_visible(sel): assert contrast(css(pg, sel, 'color'), PLUM) >= 4.5, (sel, width)
+    sub, paper, side = box(pg, '#dk-hero .dk-sub'), box(pg, paper_sel), box(pg, side_sel)
+    hb = hero['y'] + hero['height']
+    assert sub['y'] + sub['height'] + 16 <= paper['y'] < hb - 40, ('the paper overlaps the foot of the band, clear of the words', width, sub, paper, hb)
+    assert side['y'] >= hb + 12, ('the side column starts below the band, never dark text on plum', width, side, hb)
+    tops = [r['y'] for e in pg.locator(f'{side_sel} *').all() if e.is_visible() and (r := e.bounding_box())]   # display:contents has no box
+    assert tops and min(tops) >= hb + 12, width
+
+def faq_checks(pg, above_sel):
+    assert pg.is_visible('#dk-faq') and pg.inner_text('#dk-faq h2') == 'What’s going on here?'
+    qs = pg.locator('#dk-faq h3'); assert qs.count() == 6
+    for i, (q, a) in enumerate(FAQ):
+        card = pg.locator('#dk-faq .dk-q').nth(i)                                                  # inner_text reads hidden text too
+        assert card.is_visible() and qs.nth(i).inner_text() == q and a in card.inner_text(), (q, a)
+    assert pg.get_attribute('#dk-faq a[href*="votetravis.gov"]', 'rel') == 'noopener'
+    assert 'Draft' not in pg.inner_text('#dk-faq'), 'Lane approved the wording'
+    f, above = box(pg, '#dk-faq'), box(pg, above_sel)
+    assert f['y'] >= above['y'] + above['height'], 'the FAQ sits below the paper'
+
+@desk_test
+def desk_landing_plum_band_and_faq(b):
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    for width in (1024, 1280, 1440, 1920):
+        pg.set_viewport_size({'width': width, 'height': 900}); pg.wait_for_function(f'innerWidth === {width}')
+        landing_band_checks(pg, '#start', '.dk-steps', width)
+        faq_checks(pg, '#start')
+    for w, h in ((1440, 789), (1366, 657), (1280, 680), (1024, 768), (1024, 820), (1024, 880)):       # real browser windows, not screens (audit)
+        pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_function(f'innerHeight === {h}')
+        landing_band_checks(pg, '#start', '.dk-steps', w)
+        assert box(pg, '#go')['y'] + box(pg, '#go')['height'] <= h, ('Show my ballot is above the fold', w, h)
+    pg.set_viewport_size({'width': 1280, 'height': 600}); pg.wait_for_function('innerHeight === 600')
+    assert box(pg, '#street')['y'] + box(pg, '#street')['height'] <= 600, 'even on a 150%-scaled screen the address box shows'
+    pg.set_viewport_size({'width': 1440, 'height': 900})
+    lookup_wide(pg)                                                                                   # the app itself is unchanged
+    assert pg.is_hidden('#dk-hero') and pg.is_hidden('#dk-faq') and pg.is_visible('.dk-brand')
+    assert css(pg, '#dk-hdr', 'backgroundColor') != PLUM and css(pg, '#dk-hdr', 'content', "'::before'") != 'none'
+    pg.click('#dk-help'); pg.click('[data-help="address"]')                                         # "Change address" is the landing page too
+    landing_band_checks(pg, '#start', '.dk-steps', 1440); faq_checks(pg, '#start')
+    assert pg.is_visible('#dk-back') and pg.is_visible('#dk-share')
+    for w, h in ((1366, 657), (1024, 768), (1024, 821), (1024, 880), (1024, 881)):                    # the Back button adds ~46px (audit #2)
+        pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_function(f'innerHeight === {h}')
+        assert box(pg, '#go')['y'] + box(pg, '#go')['height'] <= h, ('Change address: Show my ballot above the fold', w, h)
+    pg.set_viewport_size({'width': 1440, 'height': 900})
+    bg = css(pg, '#dk-share', 'backgroundColor')
+    assert contrast(bg, PLUM) >= 3 and contrast(css(pg, '#dk-share', 'color'), bg) >= 4.5, 'Share my picks still reads as a button on the plum bar'
+    ctx.close()
+    ctx, pg = new_page(b, wide=True); fresh_goto(pg, link('s', DESK_FRIEND)); pg.wait_for_selector('#friend:not(.hidden)')
+    for width in (1024, 1440):
+        pg.set_viewport_size({'width': width, 'height': 900}); pg.wait_for_function(f'innerWidth === {width}')
+        landing_band_checks(pg, '#friend', '#start', width)                                         # a friend's picks on the paper, your form beside it
+        faq_checks(pg, '#friend')
+    ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE)                                                              # phones: the next round, not this one
+    assert pg.is_hidden('#dk-hero') and pg.is_hidden('#dk-faq')
+    ctx.close()
+
 @desk_test
 def desk_phone_layout_matches_live_page(b):
     # Phones must not change: the preview at phone width is pixel-for-pixel the live page, before and after a lookup.

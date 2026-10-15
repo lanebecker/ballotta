@@ -181,7 +181,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 .small{font-size:13px}
 /*DESK*/
 /* ---------- laptop layout (1024px and wider); phones and printouts never see any of this ---------- */
-.dk-hdr,.dk-app,.dk-steps,.dk-fcta,.dk-back{display:none}
+.dk-hdr,.dk-app,.dk-steps,.dk-fcta,.dk-back,.dk-hero,.dk-faq{display:none}
 #start{display:flex;flex-direction:column;gap:18px}  /* on phones, exactly the spacing .wrap gave these two blocks */
 #crib.two{column-count:2;column-gap:24px}
 #crib.two .ch{column-span:all}
@@ -353,11 +353,48 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   body.dk-friend #lookup{background:transparent}
   body.dk-friend .dk-fcta{display:flex;flex-direction:column;gap:10px}
   body.dk-friend .dk-steps,body.dk-friend #f-own,body.dk-friend #f-cmp{display:none}
+  /* landing band (Lane's option B, Oct 15): the whole top bar plum, a big logo and the tagline on a full-width plum band,
+     a gold "Travis County only" strip across its top; the paper overlaps the band's foot, the side column starts below it */
+  body:not(.dk-app-on) .dk-hdr{background:var(--plum);padding-left:24px}
+  body:not(.dk-app-on) .dk-hdr::before,body:not(.dk-app-on) .dk-brand{display:none}
+  body:not(.dk-app-on) .dk-loc,body:not(.dk-app-on) .dk-loc b{color:var(--ground)}
+  body:not(.dk-app-on) .dk-when{color:var(--lilac)}
+  body:not(.dk-app-on) .dk-btn.pri{background:var(--gold);border-color:var(--gold);color:var(--ink)}  /* a plum button would vanish on the plum bar */
+  body:not(.dk-app-on) .dk-hero{display:flex}
+  .dk-hero{flex-direction:column;align-items:center;gap:14px;background:var(--plum);text-align:center;padding:0 24px 120px}
+  .dk-only{align-self:stretch;margin:0 -24px 12px;padding:9px 24px;background:var(--gold);color:var(--ink);font-size:15px;font-weight:600}
+  .dk-logo{display:flex;align-items:center;gap:16px}
+  .dk-word{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-weight:600;font-size:80px;line-height:1;color:var(--ground)}
+  .dk-tagline{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:32px;font-weight:700;line-height:1.15;color:var(--ground)}
+  .dk-sub{font-size:17px;max-width:680px;color:var(--lilac)}
+  body:not(.dk-app-on) .wrap{margin-top:-96px;padding-top:0}
+  .dk-steps,body.dk-friend #start{margin-top:112px}  /* the whole column clears the band (96px of overlap), with 16px to spare */
+  /* "What's going on here?" under the form */
+  body:not(.dk-app-on) .dk-faq{display:flex}
+  .dk-faq{grid-column:1/-1;margin-top:40px;flex-direction:column;gap:18px}
+  .dk-faq h2{font-size:34px}
+  .dk-faqgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .dk-q{background:#fff;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 0 var(--line2)}
+  .dk-q h3{text-transform:none;letter-spacing:0;font-size:16px;color:var(--ink);font-weight:700}
+  .dk-q p{font-size:14px;color:var(--ink2);line-height:1.5}
 }
 @media screen and (min-width:1024px) and (max-width:1279px){
   .dk-desk{grid-template-columns:minmax(0,720px);padding:28px 32px 64px}
   .dk-notes{max-width:720px}
   .dk-when{display:none}
+  .dk-faqgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media screen and (min-width:1024px) and (max-height:880px){
+  /* short laptop windows (a 1366x768 screen leaves ~657px): a tighter band and form keep Show my ballot above the fold,
+     even with the Back to my ballot button on "Change address" */
+  .dk-hero{gap:8px}
+  .dk-only{padding:6px 24px;margin-bottom:6px;font-size:14px}
+  .dk-logo svg{width:48px;height:58px}
+  .dk-word{font-size:64px}
+  .dk-tagline{font-size:26px}
+  .dk-sub{font-size:15px;max-width:760px}
+  body:not(.dk-friend) #start{padding-top:32px;gap:16px}
+  #start h1{font-size:44px}
 }
 /*/DESK*/
 </style>
@@ -401,6 +438,12 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <aside class="dk-notes" id="dk-notes" aria-label="Notes"></aside>
   </div>
 </div>
+<section class="dk-hero" id="dk-hero" aria-label="About Ballotta">
+  <p class="dk-only">For now, Ballotta only works for Travis County, Texas addresses.</p>
+  <p class="dk-logo"><svg width="72" height="87" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path></svg><b class="dk-word">Ballotta</b></p>
+  <p class="dk-tagline">Don’t wait to meet your ballot in the booth.</p>
+  <p class="dk-sub">See exactly what’s on your Travis County ballot for Nov 3, learn about the races from neutral sources, make your picks at your own pace, and share them with friends.</p>
+</section>
 <!--/DESK-->
 <main class="wrap">
   <div class="brand"><span><svg width="24" height="29" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#4B2A6B" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#4B2A6B" stroke-width="8" stroke-linecap="round"></path></svg><b>Ballotta</b></span><span class="tag">Early test · Travis County</span></div>
@@ -431,6 +474,17 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <div><span class="ov">2 · Neutral sources beside each choice</span><p class="lead">League of Women Voters answers, campaign sites and official measure text, the same way for every candidate.</p></div>
     <div><span class="ov">3 · Print it, keep it, share it</span><p class="lead">A crib sheet for the booth (phones must be off where you vote), a private link to yourself, and a link for friends.</p></div>
   </aside>
+  <section class="dk-faq" id="dk-faq" aria-labelledby="dk-faqh">
+    <div><span class="ov">New here?</span><h2 id="dk-faqh">What’s going on here?</h2></div>
+    <div class="dk-faqgrid">
+      <div class="dk-q"><h3>What is Ballotta?</h3><p>A free, independent tool for Travis County voters. Enter your address, see every race and proposition on your Nov 3 ballot, and work through them one at a time.</p></div>
+      <div class="dk-q"><h3>Does it tell me how to vote?</h3><p>No. Ballotta doesn’t endorse, rank or recommend anyone. Every candidate gets the same links, and we say so when something’s missing.</p></div>
+      <div class="dk-q"><h3>Where does the information come from?</h3><p>Travis County’s own ballot and district data, the League of Women Voters of the Austin Area voters guide, and official sources for each measure. We link to them rather than rewrite them.</p></div>
+      <div class="dk-q"><h3>What happens to my address and picks?</h3><p>Your address goes from your browser to Travis County’s map server (and, if the county can’t match it, the U.S. Census geocoder); we never receive it. Picks and reasons stay in your browser unless you send yourself or a friend a link.</p></div>
+      <div class="dk-q"><h3>What won’t you allow here?</h3><p>No ads, no paid placement, no campaign content, and no selling or sharing data. We try to block share names that pretend to be the League, the county or a party. We count anonymous taps, never who you are.</p></div>
+      <div class="dk-q"><h3>Is this official?</h3><p>No. Ballotta isn’t affiliated with Travis County, the League or any campaign. Check your official sample ballot at <a href="https://votetravis.gov/current-election-information/current-election/" target="_blank" rel="noopener">VoteTravis.gov</a> before you vote.</p></div>
+    </div>
+  </section>
 <!--/DESK-->
 
   <div id="result" class="hidden" style="display:flex;flex-direction:column;gap:16px">
