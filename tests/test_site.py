@@ -437,6 +437,8 @@ def live_build_is_unchanged_until_promotion(b):
         got = hashlib.sha256(live.encode('utf-8')).hexdigest()
         assert got == LIVE_SHA, f'live index.html changed ({got}). Expected only after a data rebuild: re-pin LIVE_SHA in that commit.'
     assert 'id="dk-app"' in prev and 'data-domains="preview.invalid"' in prev and 'src="../umami.js"' in prev
+    assert (ROOT / 'index.html').read_text(encoding='utf-8') == live, 'index.html on disk is not what the build writes (stale, or left mutated)'
+    if not m.DESK_LIVE: assert (ROOT / 'next/index.html').read_text(encoding='utf-8') == prev, 'next/index.html on disk is not what the build writes'
     assert "url('../fonts/" in prev and '[Preview]' in prev and 'data-domains="preview.invalid"' not in live
 
 @desk_test
@@ -851,16 +853,85 @@ def desk_landing_plum_band_and_faq(b):
     ctx.close()
 
 @desk_test
+def desk_launch_audit_fixes(b):
+    # Pre-launch cold audit (Oct 15): #25 rail labels, #26 damaged link in the app, #30 shortcuts, #31 landmark and focus, #35 touch.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    for w in (1024, 1280, 1440):                                                                      # #25: Place 3 vs Place 4 must be readable
+        pg.set_viewport_size({'width': w, 'height': 900}); pg.wait_for_function(f'innerWidth === {w}')
+        clipped = pg.evaluate("[...document.querySelectorAll('.dk-rt b')].filter(e => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1).map(e => e.textContent)")
+        assert not clipped, (w, clipped[:5])
+    assert pg.locator('.dk-row[title]').count() == 0, 'titles wrap, so no tooltip (a screen reader would hear each title twice)'
+    pg.set_viewport_size({'width': 1440, 'height': 900})
+    main = pg.get_by_role('main')                                                                     # #31: the app is the page's main content
+    assert main.count() == 1 and main.locator('#dk-paper').count() == 1
+    pg.click('.dk-row[data-row="c001"]')
+    assert css(pg, '#dk-paper', 'outlineStyle') == 'none', 'no focus ring after a mouse click'
+    pg.focus('#dk-help'); pg.keyboard.press('2')                                                       # #30: not while on a header button…
+    pg.focus('.dk-row[data-row="c002"]'); pg.keyboard.press('s')                                       # …or a rail row (WCAG 2.1.4)
+    assert cur(pg, 'c001') == [], cur(pg, 'c001')
+    pg.click('.dk-row[data-row="c001"]'); pg.keyboard.press('2')                                       # on the paper: yes, and said out loud
+    assert cur(pg, 'c001') == ['James Talarico']
+    live = pg.locator('#dk-live'); assert live.get_attribute('aria-live') == 'polite'
+    pg.wait_for_function("document.getElementById('dk-live').textContent.includes('James Talarico')", timeout=2000)
+    assert 'United States Senator' in live.inner_text()
+    pg.keyboard.press('s'); pg.wait_for_function("/skip/i.test(document.getElementById('dk-live').textContent)", timeout=2000)
+    pg.keyboard.press('n'); assert pg.evaluate('document.activeElement.id') == 'dk-paper'
+    assert css(pg, '#dk-paper', 'outlineStyle') != 'none', 'the paper shows keyboard focus'           # #31
+    # Pass 1: shortcuts must not die after ordinary mouse use
+    pg.click('#dk-views [data-view="glance"]'); pg.click('#dk-views [data-view="decide"]')        # back to Decide: keys work again
+    c = pg.get_attribute('.dk-row[aria-current="true"]', 'data-row'); pg.keyboard.press('1'); assert cur(pg, c) != [], 'shortcuts after switching views'
+    pg.focus('.dk-row[data-row="c002"]'); pg.keyboard.press('/')                                    # Pass 2: '/' is a single-key shortcut too (WCAG 2.1.4)
+    assert pg.evaluate('document.activeElement.dataset.row') == 'c002', '/ does nothing off the paper'
+    pg.click('#dk-paper h1'); pg.keyboard.press('/'); assert pg.evaluate('document.activeElement.id') == 'dk-q', '/ reaches search from the paper'
+    pg.keyboard.press('Escape'); pg.click('#dk-paper h1')
+    pg.focus('#dk-views [data-view="decide"]'); pg.keyboard.press('Enter')                         # Pass 2: keyboard users stay on the tabs
+    assert pg.evaluate('document.activeElement.dataset.view') == 'decide'
+    pg.click('#dk-paper h1')
+    pg.click('#dk-w'); pg.keyboard.press('Escape'); c = pg.get_attribute('.dk-row[aria-current="true"]', 'data-row'); pg.keyboard.press('s')   # Escape from the reason box
+    assert cur(pg, c) == ['__skip'], 'shortcuts after Escape from the reason box'
+    assert 'ballot paper' in pg.inner_text('.dk-keysec').lower(), 'the Shortcuts box says where they work'
+    fresh_goto(pg, BASE + '#s=not-a-real-payload')                                                    # #26: a damaged link with a ballot open
+    pg.wait_for_selector('body.dk-app-on'); pg.wait_for_selector('#dk-say:not(.hidden)', timeout=5000)
+    assert 'damaged' in pg.inner_text('#dk-say') and pg.get_attribute('#dk-say', 'role') == 'status'
+    say, paper = box(pg, '#dk-say'), box(pg, '#dk-paper')
+    assert say['y'] + say['height'] <= paper['y'], 'the notice sits above the paper, covering nothing'
+    pg.click('#dk-say button'); assert pg.is_hidden('#dk-say')
+    fresh_goto(pg, BASE + '#s=not-a-real-payload'); pg.wait_for_selector('#dk-say:not(.hidden)', timeout=5000)
+    pg.evaluate('h => { location.hash = h; }', link('s', DESK_FRIEND).split('#', 1)[1]); pg.wait_for_selector('.dk-fchip')
+    assert pg.is_hidden('#dk-say'), 'a good link clears the old warning'
+    pg.click('#dk-views [data-view="glance"]'); pg.evaluate('window.scrollTo(0, 3000)'); pg.wait_for_function('scrollY > 1000')   # Pass 2: scrolled far down
+    pg.evaluate("location.hash = '#s=not-a-real-payload-2'"); pg.wait_for_selector('#dk-say:not(.hidden)', timeout=5000)
+    r = box(pg, '#dk-say'); assert r['y'] >= 0 and r['y'] + r['height'] <= 900, ('the warning is on screen', r)
+    pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)'); lookup_wide(pg)              # Change address, then a new lookup
+    assert pg.is_hidden('#dk-say'), 'no stale warning after Change address'
+    ctx.close()
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE + '#s=not-a-real-payload')                       # on the landing page the form shows it
+    pg.wait_for_selector('#lookupmsg:not(.hidden)'); lookup_wide(pg)
+    assert pg.is_hidden('#dk-say'), 'no stale warning once the ballot opens'
+    ctx.close()
+    ctx = b.new_context(viewport={'width': 1366, 'height': 1024}, has_touch=True, is_mobile=True)    # #35: a tablet in landscape
+    ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
+    pg = ctx.new_page(); pg.goto(BASE); lookup_wide(pg)
+    assert pg.evaluate("matchMedia('(pointer: coarse)').matches")
+    assert pg.locator('.kbd:visible').count() == 0, 'no keyboard hints on a touch screen'
+    ctx.close()
+
+@test
 def desk_phone_layout_matches_live_page(b):
-    # Phones must not change: the preview at phone width is pixel-for-pixel the live page, before and after a lookup.
-    shots = []
-    for page in ['index.html', PAGE]:
-        ctx, pg = new_page(b); pg.goto(f'http://127.0.0.1:{PORT}/{page}'); pg.wait_for_timeout(600)
+    # Phones must not change: at phone width the page with the laptop code is pixel-for-pixel the page without it,
+    # before and after a lookup. Both are built in memory from the template, so this still guards phones after
+    # promotion, when index.html itself carries the laptop layout (audit #28).
+    m = build_module(); shots = []
+    for name, desk in (('_parity_plain.html', False), ('_parity_desk.html', True)):              # served from memory: nothing is written (Pass 1)
+        html = m.build(desk=desk)
+        ctx, pg = new_page(b); ctx.route(f'**/{name}', (lambda h: lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=h))(html))
+        pg.goto(f'http://127.0.0.1:{PORT}/{name}'); pg.wait_for_timeout(600)
+        assert pg.evaluate('!!document.getElementById("dk-app")') == desk, (name, 'built the wrong flavour')
         first = pg.screenshot(full_page=True)
         lookup(pg); open_race(pg, 'c070'); pg.evaluate('window.scrollTo(0, 0)'); pg.wait_for_timeout(600)
         shots.append((first, pg.screenshot(full_page=True))); ctx.close()
-    assert shots[0][0] == shots[1][0], 'landing differs from the live page at phone width'
-    assert shots[0][1] == shots[1][1], 'ballot differs from the live page at phone width'
+    assert shots[0][0] == shots[1][0], 'landing differs at phone width with the laptop code in'
+    assert shots[0][1] == shots[1][1], 'ballot differs at phone width with the laptop code in'
 
 def main():
     srv = serve()

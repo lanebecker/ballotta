@@ -50,7 +50,8 @@ def strip_desk(html):
     return html
 
 
-def build(preview=False):
+def build(preview=False, desk=None):
+    """desk: include the laptop layout (default: on for the preview, or once DESK_LIVE). The phone-parity test builds both."""
     key = json.load(open(HERE / "answer_key.json", encoding="utf-8"))
     rules = json.load(open(HERE / "rules.json"))
     tlc = json.load(open(HERE / "tlc_precincts.json"))
@@ -62,7 +63,7 @@ def build(preview=False):
     data = json.dumps({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites}, ensure_ascii=False)
     data = data.replace("</", "<\\/")  # never let data close the inline <script>
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
-    if not (preview or DESK_LIVE):
+    if not (desk if desk is not None else (preview or DESK_LIVE)):
         html = strip_desk(html)
     html = html.replace("__DATA__", data)
 
@@ -93,7 +94,8 @@ def build(preview=False):
 if __name__ == "__main__":
     preview = "--preview" in sys.argv[1:]
     if preview and DESK_LIVE:
-        sys.exit("The laptop layout is live, and next/index.html is a redirect to the main page: not overwriting it.")
+        print("The laptop layout is live, and next/index.html is a redirect to the main page: not overwriting it.")
+        sys.exit(0)  # not an error, so `--preview && build_site.py` still builds the live page (Pass 2)
     html = build(preview)
     out = ROOT / ("next/index.html" if preview else "index.html")
     out.parent.mkdir(exist_ok=True)

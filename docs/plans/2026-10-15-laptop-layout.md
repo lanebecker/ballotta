@@ -1740,3 +1740,29 @@ Tasks 0–9: about an hour (the code is written and dry-run; the test and mutati
   - **Copy changes to the approved wording, made for accuracy:** the FAQ privacy answer, "We try to block…", and "the races". Lane to see them in the preview.
   - **Filed, pre-existing:** #21 look-alike letters and "Dems" in share names; #22 the "change" link's focus ring is clipped; #23 a very long unbroken friend name scrolls the page sideways; #24 the friend card says every race links to neutral sources.
   - **Final:** live sha256 `fcbf41e3…a7f5` unchanged; 20/20 + 20 skipped (index.html); 40/40 (next/index.html). Run the landing mutants with `python3 tests/mutate_desk.py 48 71`.
+- **Task 13, pre-launch cold audit (Oct 15, midday).** One independent agent audited the whole laptop layout. Survivors were filed under the milestone "Laptop layout: audit (Oct 2026)" (#25–#38; #13 efficiency was argued down: about 4ms per keystroke is fine).
+  - **Fixed before launch, RED-first:**
+    - #25: rail titles wrap, so "…Place 3" and "…Place 4" stay readable.
+    - #26: a damaged or too-old link shows a dismissible notice above the paper when the app is open.
+    - #27: a stale mutant anchor; the runner now checks every anchor first and picks the right page after promotion.
+    - #28: the phone-parity test now builds both flavours in memory, so it still guards phones after promotion.
+    - #30: single-key shortcuts act only on the ballot paper (WCAG 2.1.4); picks and skips are announced politely.
+    - #31: `role=main` on the desk, and a `:focus-visible` ring on the paper.
+    - #35: no key hints on touch screens.
+  - **Pass 1 on those fixes:**
+    - Shortcuts died after view tabs and dialogs; Decide by pointer now returns focus to the paper.
+    - A warning stayed up after a good link or Change address.
+    - The notice covered the friend's Hide button; it now sits in the page flow above the paper.
+    - Screen readers heard rail titles twice; the tooltips were removed.
+    - The mutation runner could leave the live page mutated on SIGTERM; a signal handler now restores it.
+    - The parity test could leave temp files; it now serves both builds from memory.
+    - New guard: pages on disk must equal what the build writes.
+  - **Pass 2:**
+    - '/' falls under the same 2.1.4 gate.
+    - Keyboard activation of Decide keeps focus on the tab.
+    - The notice scrolls into view when it appears.
+    - Atomic mutant writes, and a second signal can't interrupt the restore.
+    - `--preview` exits 0 after promotion.
+  - **Pass 3:** converged (two Lows filed as #40 and #41). Pre-existing #39 (J/K/N are silent for screen readers) was filed too.
+  - **Final:** live sha256 `fcbf41e3…a7f5` unchanged before promotion; 21/21 + 20 skipped (index.html); 41/41 (next/index.html); **89 of 89 mutants killed** (`python3 tests/mutate_desk.py 0 89`).
+
