@@ -20,9 +20,15 @@ Each race links to neutral sources: every candidate gets the same two slots (the
 - **Share** (`#s=…`) packs only the sections you choose (all on by default), optionally your reasons, a first name, a random 8-character link code and a generation number.
 - Browsers never send the fragment to servers. A script at the top of the page also removes it from the address bar before anything else runs, including analytics.
 
+### Laptop layout (preview)
+
+On screens 1024px and wider the page switches to a laptop layout: a plum column with your ballot's outline (search, filters, progress), one contest at a time on a white "paper" with the office note and neutral sources beside it, keyboard shortcuts (1–9 pick, S skip, N next undecided, J/K next and previous, R reason, / search), an at-a-glance table, where to vote with a map drawn on the page (no map service sees your address), and a crib-sheet preview with print options. Phones keep the existing layout, pixel for pixel. Both layouts read the same picks and reasons, so resizing a window never loses anything.
+
+The laptop code is marked in `source/template-travis.html` (`/*DESK*/ … /*/DESK*/` in CSS and JS, `<!--DESK--> … <!--/DESK-->` in HTML). Until it's approved, `build_site.py` strips those blocks from the live page, so `index.html` stays byte-for-byte what it was (a test checks its fingerprint), and `build_site.py --preview` writes `next/index.html`, served at https://ballotta.org/next/, with the laptop layout on. The preview loads the same tracker with a domain list no real site matches, so it never counts anything. To promote: set `DESK_LIVE = True` in `source/build_site.py`, rebuild, and replace `next/index.html` with a redirect to the main page.
+
 ### Anonymous counts
 
-[Umami](https://umami.is) (cookieless) counts page views and these events, with only the details listed: `ballot_found` (match type), `share_sheet_open`, `share_created` (section keys, reasons yes/no, picks 1–5/6–15/16+, share sheet or copy, generation, link code), `share_opened` (generation, already had picks, link code; once per browser per link), `share_own_ballot`, `share_compare`, `keep_created`, `keep_restored`, `crib_printed`. Never sent: addresses, precincts, districts, picks, reasons or names. The tracker is a pinned copy (`umami.js`, fetched 2026-10-14) so it can't change underneath the page; it reports to gateway.umami.is, and only on the hostnames in `UMAMI_DOMAINS`.
+[Umami](https://umami.is) (cookieless) counts page views and these events, with only the details listed: `ballot_found` (match type), `share_sheet_open`, `share_created` (section keys, reasons yes/no, picks 1–5/6–15/16+, share sheet or copy, generation, link code), `share_opened` (generation, already had picks, link code; once per browser per link), `share_own_ballot`, `share_compare` (phone: each Compare tap, no details; laptop: `layout: laptop`, once per friend link when one of their races is first shown beside your ballot), `keep_created`, `keep_restored`, `crib_printed`. Never sent: addresses, precincts, districts, picks, reasons or names. The tracker is a pinned copy (`umami.js`, fetched 2026-10-14) so it can't change underneath the page; it reports to gateway.umami.is, and only on the hostnames in `UMAMI_DOMAINS`.
 
 Contests marked **Double-check** aren't confirmed for your address yet. Always confirm with your official sample ballot at [VoteTravis.gov](https://votetravis.gov).
 
@@ -55,7 +61,9 @@ python3 source/parse_lwv.py LWVAA-VG-EN.pdf source/answer_key.json source/data/l
 python3 source/check_sites.py                       # after any parse: records which listed sites load
 python3 source/build_learn.py
 python3 source/build_site.py                        # writes index.html
+python3 source/build_site.py --preview              # writes next/index.html (laptop layout preview)
 python3 tests/test_site.py                          # end-to-end checks (Playwright, live county services)
+BALLOTTA_PAGE=next/index.html python3 tests/test_site.py   # the same checks against the preview, plus the laptop ones
 ```
 
 `parse_lwv.py` stops the build if a listed site can't be credited, if a contested race shows an "unopposed" candidate, or if a sole candidate is shown as answering without a hand check.

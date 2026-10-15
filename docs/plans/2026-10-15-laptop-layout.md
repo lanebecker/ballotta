@@ -1,6 +1,6 @@
 # Ballotta: laptop layout — build plan
 
-*Written Oct 15, 2026 for Lane. Status: **awaiting Lane's approval.** No code in the repo or on the live site has changed; this plan is committed on its own (on top of `0ae877c`) so it isn't lost.*
+*Written Oct 15, 2026 for Lane. Status: **approved by Lane (Oct 15, 7:24am) and executed; preview pushed.** The audits in Task 10 changed the code after this plan was written (see "Execution log" at the end): the repo, not the code blocks below, is now the source of truth.*
 
 ## The request (verbatim)
 
@@ -1717,3 +1717,19 @@ Tasks 0–9: about an hour (the code is written and dry-run; the test and mutati
 - **Spec coverage:** every screen on the canvas's laptop column maps to a task: landing (Task 3 E3/E4 + CSS), decide race and measure, at a glance, where to vote, crib sheet, friend arrival and decide-with-friend, share, keep, restore, help & info (Tasks 2–5); preview-first (Tasks 1, 11); live page unchanged (Tasks 1, 8, 11); phones unchanged (Task 6's pixel test). Deviations are listed above for Lane.
 - **Placeholder scan:** `grep -nE 'TBD|appropriate error handling|write tests for the above|similar to Task|«' docs/plans/2026-10-15-laptop-layout.md` → only this line and the struck-through verification item 1.
 - **Names and types:** element ids (`dk-*`), storage key `ballotta.desk`, hooks `desk.ballot / refresh / render / cribSkip`, test names and mutant names are identical across Tasks 2–9 (the plan is assembled from the dry-run files, and the dry run applies the plan's own text).
+
+## Execution log (Oct 15)
+
+- **Tasks 0–9** ran exactly as written: base `142ee7f` (this plan's commit on top of `0ae877c`), 19/19 baseline, the plan applied literally (byte-identical to the dry run), live sha256 unchanged, 20/20 + 16 skipped, 36/36, 31 of 31 mutants.
+- **Task 10, remediation-audit Pass 1** (cold agent, executed reproductions) found 7; all fixed RED-first:
+  1. A non-text reason in storage made laptop code throw inside a hook and stop `start()`, so a friend link never opened on phones. Now `hasWhy` checks the type, and all four hooks are wrapped in `try … catch`, so laptop code can never stop the shared flow.
+  2. `share_compare` was counted on every reload, on links with no shared race, and twice across layouts. Now once per link code per browser (`ballotta.compared`), only when one of the friend's races is on your ballot, and labelled `{layout: 'laptop'}` so it isn't confused with the phone's Compare tap. **Deviation from item 10 above ("no new details"): Lane to confirm.**
+  3. `strip_desk` could silently delete shared code if text followed a closing marker. Now a single loop both checks and removes blocks, and refuses any stray marker.
+  4. Laptop print options stayed on after switching to the phone layout; now they reset.
+  5. A held number key toggled the pick on and off; key repeat is now ignored for picks (and so is IME composition).
+  6. J/K/N dropped keyboard focus; they now keep it on the paper.
+  7. (Hypothesis, made defensive) IME composition guard.
+- **Pass 2** (the rework only) found 2 real defects in that rework, both fixed RED-first: a real print (narrower than 1024px) was mistaken for a switch to the phone layout and wiped the print options, so the printout ignored them (now guarded by `beforeprint`/`afterprint`, tested with a real `page.pdf()`); and odd whitespace (CR, NBSP, form feed) after a closing marker still let a block swallow code (now one definition of "alone" for checking and removal). Also: the compare count could be blocked by a first view with no shared race (fixed); weak test spots tightened.
+- **Pass 3** (that rework only): a stray marker *inside* a block could still swallow code (now refused); the PDF check now normalises wrapped lines and has a positive control; the print flag clears on the next key or tap in case a browser never sends `afterprint`. Converged.
+- **Filed, not fixed (pre-existing, affects the live page):** #20, non-text reasons in storage make Keep and Share throw. It touches shared code outside the markers, which must stay byte-identical until promotion.
+- **Final:** live sha256 `fcbf41e3…a7f5` unchanged; `20/20 passed, 18 skipped (index.html)`; `38/38 passed (next/index.html)`; **44 of 44 mutants killed**, each kill re-checked against the unmutated file. The mutation runner is kept at `tests/mutate_desk.py` (run from the repo root after both builds, in slices: `python3 tests/mutate_desk.py 0 15`, `15 30`, `30 44`).

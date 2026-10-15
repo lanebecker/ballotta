@@ -179,15 +179,233 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   @page{margin:0.5in}
 }
 .small{font-size:13px}
+/*DESK*/
+/* ---------- laptop layout (1024px and wider); phones and printouts never see any of this ---------- */
+.dk-hdr,.dk-app,.dk-steps,.dk-fcta,.dk-back{display:none}
+#start{display:flex;flex-direction:column;gap:18px}  /* on phones, exactly the spacing .wrap gave these two blocks */
+#crib.two{column-count:2;column-gap:24px}
+#crib.two .ch{column-span:all}
+@media screen and (min-width:1024px){
+  body{background:var(--lilac)}
+  .kbd{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;border:1px solid var(--line2);border-bottom-width:2px;background:#fff;font:700 11px/1 ui-monospace,Menlo,monospace;color:var(--muted);flex-shrink:0}
+  .btn .kbd{background:transparent;color:inherit;border-color:currentColor;opacity:.75}
+  .dk-link{border:none;background:none;padding:0;font:inherit;color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .dk-link.muted{color:var(--muted)}
+  /* header: plum logo block over the rail, the rest on lilac */
+  .dk-hdr{display:flex;align-items:center;gap:14px;height:56px;padding:0 24px 0 312px;position:sticky;top:0;z-index:20;background:var(--lilac)}
+  .dk-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:288px;background:var(--plum)}
+  .dk-brand{position:absolute;left:18px;top:0;bottom:0;display:flex;align-items:center;gap:9px;z-index:1}
+  .dk-brand b{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:23px;font-weight:600;color:var(--ground)}
+  .dk-loc{font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .dk-loc b{font-weight:600;color:var(--ink)}
+  .dk-sp{flex:1}
+  .dk-when{font-size:13px;color:var(--muted);white-space:nowrap}
+  .dk-btn{display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line2);background:var(--ground);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .dk-btn.pri{background:var(--plum);border-color:var(--plum);color:#fff}
+  .dk-menuwrap{position:relative}
+  .dk-menu{position:absolute;right:0;top:46px;width:310px;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(36,26,46,.22);padding:8px;display:flex;flex-direction:column;z-index:30}
+  .dk-menu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;font:inherit;color:var(--ink);cursor:pointer}
+  .dk-menu button:hover,.dk-menu button:focus-visible{background:#F5EEFA}
+  .dk-menu b{font-size:14px;font-weight:600}
+  .dk-menu small{font-size:12px;color:var(--muted)}
+  .dk-menu .bad b{color:var(--bad)}
+  .dk-menu hr{border:none;border-top:1px solid var(--divider);margin:4px 0}
+  /* the app: plum rail | lilac desk (paper + notes) */
+  body.dk-app-on .wrap{display:none}
+  body.dk-app-on .dk-app{display:grid}
+  .dk-app{grid-template-columns:288px minmax(0,1fr);min-height:calc(100vh - 56px);background:linear-gradient(90deg,var(--plum) 288px,transparent 288px)}
+  .dk-rail{position:sticky;top:56px;height:calc(100vh - 56px);background:var(--plum);color:var(--ground);display:flex;flex-direction:column;min-height:0}
+  .dk-rhd{padding:12px 18px;display:flex;flex-direction:column;gap:8px}
+  .dk-rhd h2{font-size:22px;color:#fff}
+  .dk-rhd span{font-size:13px;color:rgba(255,249,241,.8)}
+  .dk-rbar{display:block;height:6px;border-radius:999px;background:rgba(255,249,241,.18);overflow:hidden}
+  .dk-rbar i{display:block;height:6px;background:var(--gold);width:0}
+  .dk-views{display:flex;flex-direction:column;padding:4px 10px 10px;border-bottom:1px solid rgba(255,249,241,.14)}
+  .dk-views button{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:none;background:transparent;color:rgba(255,249,241,.85);font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-align:left}
+  .dk-views button[aria-current=page]{background:rgba(255,249,241,.14);color:#fff}
+  .dk-search{margin:12px 14px 6px;height:36px;border-radius:8px;background:rgba(255,249,241,.10);display:flex;align-items:center;gap:8px;padding:0 10px}
+  .dk-search input{flex:1;min-width:0;height:34px;border:none;background:transparent;color:#fff;font:inherit;font-size:13px;padding:0}
+  .dk-search input::placeholder{color:rgba(255,249,241,.7)}
+  .dk-search .kbd{background:transparent;color:var(--ground);border-color:rgba(255,249,241,.4)}
+  .dk-filt{display:flex;gap:6px;padding:4px 14px 10px}
+  .dk-filt button{height:30px;padding:0 10px;border-radius:8px;border:none;background:transparent;color:#fff;font:inherit;font-size:12px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,249,241,.35);cursor:pointer;white-space:nowrap}
+  .dk-filt button[aria-pressed=true]{background:var(--ground);color:var(--plum);box-shadow:none}
+  .dk-out{flex:1;overflow:auto;padding-bottom:8px}
+  .dk-g{display:flex;justify-content:space-between;padding:10px 18px 3px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,249,241,.65)}
+  .dk-row{display:flex;align-items:center;gap:10px;width:100%;padding:5px 18px;border:none;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+  .dk-row:hover{background:rgba(255,249,241,.08)}
+  .dk-row[aria-current=true]{background:rgba(255,249,241,.14);box-shadow:inset 3px 0 0 var(--gold)}
+  .dk-d{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,249,241,.55);flex-shrink:0}
+  .dk-d.on{background:var(--gold);box-shadow:none}
+  .dk-rt{min-width:0;flex:1;display:flex;flex-direction:column}
+  .dk-rt b{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dk-rt small{font-size:12px;color:rgba(255,249,241,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dk-fa{width:18px;height:18px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+  .dk-rail .dk-fa.diff{background:transparent;color:var(--ground);box-shadow:inset 0 0 0 2px var(--gold)}
+  .dk-empty{padding:12px 18px;font-size:13px;color:rgba(255,249,241,.75)}
+  .dk-foot{padding:12px 14px;border-top:1px solid rgba(255,249,241,.14);display:flex;gap:8px}
+  .dk-foot button{flex:1;height:36px;border-radius:8px;border:none;background:transparent;color:#fff;font:inherit;font-size:13px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,249,241,.35);cursor:pointer}
+  /* three equal gutters (at least 24px each): before the paper, between paper and notes, after the notes */
+  .dk-desk{display:grid;grid-template-columns:minmax(0,720px) 320px;justify-content:space-evenly;gap:24px;align-items:start;min-width:0;padding:28px 24px 64px}
+  .dk-desk.wide{grid-template-columns:minmax(0,1040px);padding:28px 32px 64px}
+  .dk-desk.wide .dk-notes{display:none}
+  .dk-paper{background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:36px 44px;display:flex;flex-direction:column;gap:18px;min-width:0;outline:none}
+  .dk-paper h1{font-size:40px}
+  .dk-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .dk-meta{font-size:14px;font-weight:600;color:var(--ink2);margin-top:-10px}
+  .dk-lines{display:flex;flex-direction:column}
+  .dk-lw{border-top:1px solid var(--divider);padding:4px 0}
+  .dk-lines .dk-lw:first-child{border-top:2px solid var(--ink)}
+  .dk-lw:has(.dk-line[aria-pressed=true]){background:linear-gradient(90deg,var(--warnsoft),#fff 70%);margin:0 -16px;padding:4px 16px;border-radius:6px}
+  .dk-line{display:flex;align-items:center;gap:14px;width:100%;min-height:48px;padding:6px 0;border:none;background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+  .dk-oval{width:30px;height:20px;border-radius:50%;border:2px solid var(--lc);flex-shrink:0}
+  .dk-line[aria-pressed=true] .dk-oval{border:none;background:var(--ink)}
+  .dk-nm{flex:1;font-size:18px;font-weight:600;line-height:1.25}
+  .dk-nm small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+  .dk-paper .links{padding:0 0 8px 44px;margin:-8px 0 0}
+  .dk-fp{display:flex;gap:8px;align-items:center;padding:0 0 8px 44px;font-size:13px;color:var(--plum)}
+  .dk-mrow{flex-direction:row;gap:16px}
+  .dk-mrow .dk-lw,.dk-mrow .dk-lw:has(.dk-line[aria-pressed=true]){flex:1;border-top:2px solid var(--ink);margin:0;padding:4px 12px}
+  .dk-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .dk-why{display:flex;flex-direction:column;gap:8px}
+  .dk-why label{display:flex;gap:6px;align-items:center;font-size:15px;font-weight:600}
+  .dk-why label span:not(.kbd){flex:1;color:var(--muted);font-weight:400}
+  .dk-why textarea{border:none;border-bottom:2px solid var(--lc);border-radius:0;font-family:Georgia,'Times New Roman',serif;font-size:17px;padding:6px 0;min-height:48px}
+  .dk-prompts{display:flex;gap:6px;flex-wrap:wrap}
+  .dk-prompts button{padding:3px 10px;border-radius:999px;background:var(--ground);border:1px solid var(--line);font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
+  .dk-nav{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .dk-nav .btn{max-width:72%;min-width:0}
+  .dk-nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .dk-fchip{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;padding:4px 12px 4px 4px;border-radius:999px;background:var(--lilac);color:var(--plum);font-size:13px;font-weight:600}
+  .dk-notes{display:flex;flex-direction:column;gap:22px;padding:8px 0;min-width:0}
+  .dk-notes h3{margin-bottom:6px;font-size:11px;letter-spacing:.09em}
+  .dk-notes section > p{font-size:14px;color:var(--ink2)}
+  .dk-notes .lnk{border-top:none;border-bottom:1px dotted var(--lc)}
+  .dk-fbox{background:#fff;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .dk-kv{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:6px}
+  .dk-kv b{display:block;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:26px;line-height:1.1}
+  .dk-kv span{font-size:12px;color:var(--muted)}
+  .dk-keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2)}
+  .dk-keys span{white-space:nowrap;display:inline-flex;gap:4px;align-items:center}
+  /* at a glance */
+  .dk-gh{display:flex;align-items:flex-end;gap:16px;justify-content:space-between}
+  .dk-gh h1{font-size:36px}
+  .dk-tog{display:inline-flex;gap:8px;align-items:center;font-size:14px;font-weight:600;white-space:nowrap}
+  .dk-tbl{border-collapse:collapse;width:100%;font-size:14px}
+  .dk-tbl thead th{text-align:left;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid var(--ink)}
+  .dk-tbl tbody th,.dk-tbl td{text-align:left;font-weight:400;padding:9px 10px;border-bottom:1px solid var(--divider);vertical-align:top}
+  .dk-tbl tbody th{width:34%}
+  .dk-tbl tbody th .dk-link{font-weight:600;text-decoration:none;text-align:left}
+  .dk-tbl small{display:block;font-size:12px;color:var(--muted)}
+  .dk-tbl small.dk-chk{color:var(--warn)}
+  .dk-tbl tr.dk-tg th{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 10px 4px;border-bottom:none}
+  .dk-tbl a{white-space:nowrap}
+  .dk-sel{width:100%;max-width:260px;height:36px;padding:0 8px;border:1px solid var(--lc);border-radius:8px;background:#fff;font:inherit;font-size:14px;color:var(--ink)}
+  .dk-wt{color:var(--ink2)}
+  /* where to vote */
+  .dk-vote{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:28px;align-items:start}
+  .dk-vote > div{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .dk-sites{list-style:none;margin:0;padding:0}
+  .dk-site{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--divider)}
+  .dk-site .site{flex:1;border:none;padding:0}
+  .dk-num{width:24px;height:24px;border-radius:50%;background:var(--plum);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .dk-num.blank{background:transparent}
+  .dk-map{width:100%;height:auto;background:var(--ground);border-radius:8px;display:block}
+  .dk-map line{stroke:var(--divider)}
+  .dk-map text{font:11px 'Public Sans',system-ui,sans-serif;fill:var(--muted);text-anchor:middle}
+  .dk-map circle{fill:var(--lc);stroke:#fff;stroke-width:1.5}
+  .dk-map circle.late{fill:var(--gold)}
+  .dk-map .top circle{fill:var(--plum)}
+  .dk-map .top text{fill:#fff;font-weight:700}
+  /* crib sheet preview (same look as the printout) */
+  .dk-page{background:#fff;border:1px solid var(--line2);box-shadow:0 2px 12px rgba(36,26,46,.12);padding:28px 32px}
+  .dk-page.two{column-count:2;column-gap:24px}
+  .dk-page .ch{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:4px;column-span:all}
+  .dk-page .ln{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #DDD;font-size:12px;break-inside:avoid}
+  .dk-page .ln span:last-child{font-weight:800;text-align:right}
+  .dk-page .why{font-size:11px;color:#333;padding:0 0 4px}
+  .dk-page .grp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:10px;break-after:avoid}
+  /* dialogs become centered windows */
+  dialog.sheet{max-width:520px;margin:auto;border-radius:16px;padding:24px 28px}
+  dialog.sheet .handle{display:none}
+  .dk-info{display:flex;flex-direction:column;gap:22px}
+  .dk-info section{display:flex;flex-direction:column;gap:10px}
+  .dk-info h3{font-size:12px}
+  /* landing (no ballot yet, or "Change address"): the same form, laid out as a paper plus a side column */
+  body:not(.dk-app-on) .wrap{max-width:1248px;padding:56px 48px 80px;display:grid;grid-template-columns:minmax(0,1fr) 400px;column-gap:56px;row-gap:18px;align-items:start}
+  .wrap > .brand{display:none}
+  body:not(.dk-app-on) .wrap > section.card,body:not(.dk-app-on) .wrap > footer,body:not(.dk-app-on) #result{display:none !important}
+  #start{grid-column:1;grid-row:1;background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:48px 56px;display:flex;flex-direction:column;gap:22px}
+  #start h1{font-size:56px}
+  #start .lead{font-size:18px}
+  #lookup{border:none;padding:0;display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+  #lookup > *{grid-column:1/-1}
+  #lookup > .field{grid-column:1}
+  #lookup .row{display:contents}
+  #lookup .row > .field{grid-column:auto}
+  .dk-steps{display:flex;grid-column:2;grid-row:1;flex-direction:column;gap:18px;padding-top:32px}
+  body.dk-has .dk-back{display:inline-flex;align-self:flex-start;min-height:0;padding:0}
+  body.dk-friend #friend{grid-column:1;grid-row:1;background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:36px 44px}
+  body.dk-friend #start{grid-column:2;grid-row:1;background:transparent;box-shadow:none;padding:24px 0 0}
+  body.dk-friend #start > div:has(> h1){display:none !important}  /* beats the div's inline display:flex */
+  body.dk-friend #lookup{background:transparent}
+  body.dk-friend .dk-fcta{display:flex;flex-direction:column;gap:10px}
+  body.dk-friend .dk-steps,body.dk-friend #f-own,body.dk-friend #f-cmp{display:none}
+}
+@media screen and (min-width:1024px) and (max-width:1279px){
+  .dk-desk{grid-template-columns:minmax(0,720px);padding:28px 32px 64px}
+  .dk-notes{max-width:720px}
+  .dk-when{display:none}
+}
+/*/DESK*/
 </style>
 </head>
 <body>
+<!--DESK-->
+<header class="dk-hdr" id="dk-hdr">
+  <span class="dk-brand"><svg width="21" height="26" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path></svg><b>Ballotta</b></span>
+  <span class="dk-loc" id="dk-loc">Travis County · Nov 3, 2026 election</span>
+  <span class="dk-sp"></span>
+  <span class="dk-when" id="dk-when"></span>
+  <div class="dk-menuwrap">
+    <button type="button" class="dk-btn" id="dk-help" aria-haspopup="menu" aria-expanded="false" aria-controls="dk-menu">Help &amp; info</button>
+    <div class="dk-menu hidden" id="dk-menu" role="menu" aria-label="Help and info">
+      <button type="button" role="menuitem" data-help="feedback"><b>Send feedback</b><small>Opens an email with your precinct, never your address</small></button>
+      <button type="button" role="menuitem" data-help="privacy"><b>How your privacy works</b><small>What goes where, in plain words</small></button>
+      <button type="button" role="menuitem" data-help="about"><b>About Ballotta &amp; sources</b><small>Not affiliated with the county, the League or any campaign</small></button>
+      <button type="button" role="menuitem" data-help="address"><b>Change address</b><small>Look up a different ballot</small></button>
+      <hr>
+      <button type="button" role="menuitem" data-help="clear" class="bad"><b>Clear my picks…</b><small>Asks before deleting anything</small></button>
+    </div>
+  </div>
+  <button type="button" class="dk-btn pri hidden" id="dk-share">Share my picks</button>
+</header>
+<div class="dk-app" id="dk-app">
+  <nav class="dk-rail" aria-label="Your ballot">
+    <div class="dk-rhd"><h2>Your ballot</h2><span id="dk-count"></span><span class="dk-rbar"><i id="dk-bar"></i></span></div>
+    <div class="dk-views" id="dk-views">
+      <button type="button" data-view="decide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Decide</button>
+      <button type="button" data-view="glance"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>At a glance</button>
+      <button type="button" data-view="vote"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Where to vote</button>
+      <button type="button" data-view="crib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Crib sheet</button>
+    </div>
+    <div class="dk-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="dk-q" type="search" placeholder="Find a race or a name" aria-label="Find a race or a name" autocomplete="off"><span class="kbd" aria-hidden="true">/</span></div>
+    <div class="dk-filt" id="dk-filt" role="group" aria-label="Show"><button type="button" data-f="all"></button><button type="button" data-f="und"></button><button type="button" data-f="why"></button></div>
+    <div class="dk-out" id="dk-out"></div>
+    <div class="dk-foot"><button type="button" id="dk-keep">Keep my picks</button><button type="button" id="dk-print">Print</button></div>
+  </nav>
+  <div class="dk-desk" id="dk-desk">
+    <article class="dk-paper" id="dk-paper" tabindex="-1" aria-label="Ballot paper"></article>
+    <aside class="dk-notes" id="dk-notes" aria-label="Notes"></aside>
+  </div>
+</div>
+<!--/DESK-->
 <main class="wrap">
   <div class="brand"><span><svg width="24" height="29" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#4B2A6B" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#4B2A6B" stroke-width="8" stroke-linecap="round"></path></svg><b>Ballotta</b></span><span class="tag">Early test · Travis County</span></div>
 
   <section id="friend" class="hidden" aria-labelledby="fh" style="display:flex;flex-direction:column;gap:12px"></section>
 
-  <div style="display:flex;flex-direction:column;gap:10px">
+  <!--DESK--><div id="start"><button type="button" class="btn text dk-back" id="dk-back">← Back to my ballot</button><div class="dk-fcta" id="dk-fcta"></div><!--/DESK--><div style="display:flex;flex-direction:column;gap:10px">
     <h1>What's on your ballot?</h1>
     <p class="lead">Enter the address where you're registered. We'll build your ballot for the November 3, 2026 election from Travis County's own voter-district data.</p>
   </div>
@@ -204,7 +422,14 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <div id="status" class="status hidden" role="status"></div>
     <div id="units" class="unit hidden"></div>
     <p class="note">Your browser sends your address straight to Travis County's public map server (and, if the county can't match it, the U.S. Census geocoder) to find your districts. Ballotta never receives your address, and your picks and reasons stay in this browser. We count anonymous taps, like “a share link was opened”, never your address or your picks.</p>
-  </section>
+  </section><!--DESK--></div><!--/DESK-->
+<!--DESK-->
+  <aside class="dk-steps" aria-label="How Ballotta works">
+    <div><span class="ov">1 · Your ballot, race by race</span><p class="lead">Every race and proposition for your address, in ballot order, from the county’s own district data.</p></div>
+    <div><span class="ov">2 · Neutral sources beside each choice</span><p class="lead">League of Women Voters answers, campaign sites and official measure text, the same way for every candidate.</p></div>
+    <div><span class="ov">3 · Print it, keep it, share it</span><p class="lead">A crib sheet for the booth (phones must be off where you vote), a private link to yourself, and a link for friends.</p></div>
+  </aside>
+<!--/DESK-->
 
   <div id="result" class="hidden" style="display:flex;flex-direction:column;gap:16px">
     <section class="card" aria-labelledby="yb">
@@ -299,6 +524,13 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <p class="linkout hidden" id="share-out"></p>
   <p class="note">Local races can hint at your neighborhood. The link holds only what you chose here; Ballotta never sees it.</p>
 </dialog>
+<!--DESK-->
+
+<dialog class="sheet" id="d-info" aria-labelledby="dih">
+  <div class="sheethead"><h2 id="dih" style="font-size:26px">Help &amp; info</h2><button type="button" class="x" data-close>Close</button></div>
+  <div class="dk-info" id="dk-info"></div>
+</dialog>
+<!--/DESK-->
 
 <script>
 const DATA = __DATA__;
@@ -484,7 +716,7 @@ function showBallot(list, meta) {
   $('groups').querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => pick(btn.dataset.c, btn.dataset.pick)));
   $('groups').querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { whys[t.dataset.c] = t.value; LS.set('ballotta.whys', whys); renderCrib(); }));
   refresh();
-  renderVote();
+  renderVote();/*DESK*/ if (window.desk) try { desk.ballot(meta); } catch (e) {}/*/DESK*/
 }
 function chev() { return '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'; }
 const ARROW = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg>';
@@ -557,12 +789,12 @@ function refresh() {
   $('meter').style.width = (total ? Math.round(100 * done / total) : 0) + '%';
   $('meterlabel').setAttribute('aria-label', done + ' of ' + total + ' contests decided');
   renderCrib();
-  if (!$('compare').classList.contains('hidden')) renderCompare();
+  if (!$('compare').classList.contains('hidden')) renderCompare();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/
 }
 function renderCrib() {
   const withWhy = $('withwhy').checked;
   let html = '<div class="ch"><b style="font-size:15px">My ballot notes</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
-  ballot.forEach(b => {
+  ballot.forEach(b => {/*DESK*/ try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}/*/DESK*/
     if (b.c.level !== last) { last = b.c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
     const v = current(b.c.id), txt = !v.length || v[0] === '__skip' ? '______' : v.join(', ');
     html += '<div class="ln"><span>' + esc(cleanTitle(b.c)) + (b.conf === 'medium' ? ' *' : '') + '</span><span>' + esc(txt) + '</span></div>';
@@ -854,7 +1086,7 @@ function openFriend(o, fresh) {
       LS.set('ballotta.opened', seen.concat(friend.code).slice(-50));
     }
     if (!LS.get('ballotta.gen', null)) LS.set('ballotta.gen', friend.gen + 1);
-  }
+  }/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
 }
 let wantCompare = false;
 function ownTracked() {
@@ -917,6 +1149,362 @@ $('feedback').addEventListener('click', (e) => {
 $('print').addEventListener('click', () => { track('crib_printed', {}); window.print(); });
 $('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
 
+/*DESK*/
+/* ---------- laptop layout (1024px and wider) ----------
+   Draws from the same state as the phone layout (ballot, picks, whys, friend); picking goes through pick(), so both
+   layouts always agree. It renders even on phones (hidden by CSS) so resizing a window never shows stale picks, but
+   it only tracks events and takes keyboard shortcuts when the wide layout is actually on screen. */
+const desk = (() => {
+  const WIDE = window.matchMedia('(min-width: 1024px)');
+  const saved = LS.get('ballotta.desk', {}) || {};
+  const ui = { view: ['decide', 'glance', 'vote', 'crib'].includes(saved.v) ? saved.v : 'decide', cur: typeof saved.c === 'string' ? saved.c : '',
+    filter: 'all', q: '', landing: false, addr: '', hideUnopp: false, two: false, hideCrib: false, cmpFor: null };
+  const P = () => $('dk-paper'), N = () => $('dk-notes');
+  const save = () => LS.set('ballotta.desk', { v: ui.view, c: ui.cur });
+  const idx = (cid) => ballot.findIndex(b => b.c.id === cid);
+  const curB = () => ballot[idx(ui.cur)] || ballot[0];
+  const decided = (cid) => current(cid).length > 0;
+  const hasWhy = (cid) => typeof whys[cid] === 'string' && whys[cid].trim() !== '';
+  const isUnopp = (c) => c.type !== 'measure' && optionsOf(c).length === 1;
+  const initial = () => esc((friend && friend.name ? friend.name : '?').charAt(0).toUpperCase());
+  const possessive = () => esc(friend && friend.name ? friend.name + '’s' : 'your friend’s');
+  function nextUndecided(from) {
+    const i = idx(from);
+    for (let k = 1; k <= ballot.length; k++) { const b = ballot[(i + k + ballot.length) % ballot.length]; if (b && !decided(b.c.id)) return b; }
+    return null;
+  }
+  function samePick(id) { const f = friend.P[id], m = current(id); return m.length > 0 && m[0] !== '__skip' && m.length === f.length && m.every(x => f.includes(x)); }
+  function whenLine() {
+    const d = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()).getTime(), t = (m, day) => new Date(2026, m, day).getTime();
+    if (d < t(9, 19)) return 'Early voting starts Mon Oct 19';
+    if (d <= t(9, 30)) return 'Early voting through Fri Oct 30 · 7am–7pm';
+    if (d < t(10, 3)) return 'Election Day is Tue Nov 3 · 7am–7pm';
+    if (d === t(10, 3)) return 'Election Day today · 7am–7pm';
+    return 'Election Day was Nov 3';
+  }
+
+  /* ----- frame: which screen, header, rail ----- */
+  function mode() {
+    const app = ballot.length > 0 && !ui.landing, cls = document.body.classList;
+    cls.toggle('dk-app-on', app);
+    cls.toggle('dk-has', ballot.length > 0);
+    cls.toggle('dk-friend', !app && !!friend);
+    $('dk-fcta').innerHTML = friend ? '<span class="ov">Next: your own ballot</span><h2 style="font-size:28px">See ' + possessive() + ' picks beside yours</h2><p class="lead">Enter the address where you’re registered. ' + (friend.name ? esc(friend.name) + '’s' : 'Their') + ' picks show up next to yours, race by race, and never change them.</p>' : '';
+    return app;
+  }
+  function header() {
+    const n = ballot.length;
+    $('dk-share').classList.toggle('hidden', !n);
+    $('dk-loc').innerHTML = n ? '<b>Precinct ' + esc(String(lastLookup.precinct || '')) + '</b>' + (ui.addr ? ' · ' + esc(ui.addr) : '') + ' · <button type="button" class="dk-link" id="dk-change">change</button>' : 'Travis County · Nov 3, 2026 election';
+    if (n) $('dk-change').addEventListener('click', toLanding);
+    $('dk-when').textContent = whenLine();
+  }
+  function matches(b) {
+    if (ui.filter === 'und' && decided(b.c.id)) return false;
+    if (ui.filter === 'why' && !hasWhy(b.c.id)) return false;
+    return !ui.q || (cleanTitle(b.c) + ' ' + optionsOf(b.c).join(' ')).toLowerCase().includes(ui.q.toLowerCase());
+  }
+  function rail() {
+    const n = ballot.length, done = ballot.filter(b => decided(b.c.id)).length;
+    $('dk-count').textContent = done + ' of ' + n + ' decided';
+    $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%';
+    document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
+    const counts = { all: 'All ' + n, und: 'Undecided ' + (n - done), why: 'Reasons ' + ballot.filter(b => hasWhy(b.c.id)).length };
+    document.querySelectorAll('#dk-filt button').forEach(b => { b.textContent = counts[b.dataset.f]; b.setAttribute('aria-pressed', b.dataset.f === ui.filter ? 'true' : 'false'); });
+    const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));
+    let html = '';
+    LEVELS.filter(L => byLevel[L]).forEach(L => {
+      const all = byLevel[L], shown = all.filter(matches);
+      if (!shown.length) return;
+      html += '<div class="dk-g"><span>' + esc(LEVEL_LABEL[L] || L) + '</span><span>' + all.filter(b => decided(b.c.id)).length + '/' + all.length + '</span></div>';
+      html += shown.map(b => {
+        const id = b.c.id, v = current(id), sub = !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : v.map(x => optLabel(b.c, x)).join(', ');
+        const fa = friend && friend.P[id] ? '<span class="dk-fa' + (samePick(id) ? '' : ' diff') + '" title="' + possessive() + ' pick: ' + esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) + '">' + initial() + '</span>' : '';
+        return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + '</small></span>' + fa + '</button>';
+      }).join('');
+    });
+    $('dk-out').innerHTML = html || '<p class="dk-empty">' + (ui.q ? 'Nothing matches “' + esc(ui.q) + '”.' : ui.filter === 'und' ? 'Every contest is decided.' : 'No reasons written yet.') + '</p>';
+    $('dk-out').querySelectorAll('.dk-row').forEach(r => r.addEventListener('click', () => go(r.dataset.row, true)));
+  }
+
+  /* ----- views ----- */
+  function render() {
+    const app = mode(); header();
+    if (!ballot.length) return;
+    if (idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
+    rail();
+    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' ? ' wide' : '');
+    ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib })[ui.view]();
+    if (app && friend && WIDE.matches && ui.cmpFor !== friend) {
+      // Counted when at least one of their races is on your ballot: once per page for links without a code, once per
+      // browser for links with one (like share_opened). The detail tells it apart from the phone layout's Compare tap.
+      const mine = new Set(ballot.map(b => b.c.id)), k = friend.code || '', seen = LS.get('ballotta.compared', []), list = Array.isArray(seen) ? seen : [];
+      if (Object.keys(friend.P).some(id => mine.has(id))) {
+        ui.cmpFor = friend;
+        if (!(k && list.includes(k))) { track('share_compare', { layout: 'laptop' }); if (k) LS.set('ballotta.compared', list.concat(k).slice(-50)); }
+      }
+    }
+  }
+  function go(cid, focus) {
+    if (idx(cid) < 0) return;
+    ui.cur = cid; ui.view = 'decide'; save(); render();
+    if (!WIDE.matches) return;
+    window.scrollTo(0, 0);
+    if (focus) P().focus({ preventScroll: true });
+    const r = $('dk-out').querySelector('[aria-current="true"]'); if (r) r.scrollIntoView({ block: 'nearest' });
+  }
+  function setView(v) { ui.view = v; save(); render(); if (WIDE.matches) window.scrollTo(0, 0); }
+  function nextLabel() {
+    const nx = nextUndecided(ui.cur);
+    return nx ? '<span class="dk-nt">Next undecided: ' + esc(cleanTitle(nx.c)) + '</span> <span class="kbd" aria-hidden="true">N</span>' : '<span class="dk-nt">All decided · see At a glance</span>';
+  }
+  function line(c, val, sub, k, links) {
+    const on = current(c.id).includes(val), F = friend && friend.P[c.id];
+    const fr = F && F.includes(val) ? '<div class="dk-fp"><span class="dk-fa">' + initial() + '</span><span><b>' + esc(friendName()) + ' picked this</b>' + (friend.W[c.id] ? ' · “' + esc(friend.W[c.id]) + '”' : '') + '</span></div>' : '';
+    return '<div class="dk-lw"><button type="button" class="dk-line" data-c="' + c.id + '" data-pick="' + esc(val) + '" aria-pressed="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, val)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (k < 9 ? '<span class="kbd" aria-hidden="true">' + (k + 1) + '</span>' : '') + '</button>' + (links || '') + fr + '</div>';
+  }
+  function viewDecide() {
+    const b = curB(), c = b.c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure', n = seats(c), opts = optionsOf(c), cur = current(c.id), i = idx(c.id);
+    const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level);
+    let h = friend ? '<div class="dk-fchip"><span class="dk-fa">' + initial() + '</span>Showing ' + possessive() + ' picks · <button type="button" class="dk-link" data-act="hidefriend">Hide</button></div>' : '';
+    h += '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span><span class="note">Saved on this device</span></div>';
+    const t = cleanTitle(c);  // the entity is already on the line above, so the heading drops it
+    h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
+    if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</div>';
+    if (b.conf === 'medium') h += '<span class="flag">Double-check</span><p class="note">' + esc(b.note || 'Not yet confirmed for your address.') + '</p>';
+    if (isM) {
+      if (c.text) h += '<div class="sub"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
+      if (L.plain) h += '<div class="sub"><span class="ov">In plain words</span><p>' + esc(L.plain) + '</p>' + (L.for ? '<div class="meaning"><b>FOR</b><span>' + esc(L.for) + '</span><b>AGAINST</b><span>' + esc(L.against) + '</span></div>' : '') + '</div>';
+      if (L.money || L.tax) h += '<div class="dk-two">' + (L.money ? '<div class="sub"><span class="ov">Where the money goes</span><div>' + L.money.map(m => '<div class="bar"><span>' + esc(m[0]) + '</span><b>' + esc(m[1]) + '</b></div>').join('') + '</div><p class="note">' + esc(L.moneyNote || '') + '</p></div>' : '') + (L.tax ? '<div class="sub"><span class="ov">Effect on taxes</span><p>' + esc(L.tax) + '</p></div>' : '') + '</div>';
+      if (L.note) h += '<p class="note">' + esc(L.note) + '</p>';
+      h += '<div class="dk-lines dk-mrow">' + opts.map((o, k) => line(c, o, '', k, '')).join('') + '</div>';
+    } else {
+      const raw = c.choices.filter(x => x !== 'Write-in');
+      h += '<div class="dk-lines">' + raw.map((o, k) => { const m = o.match(/\((REP|DEM|LIB|GRN)\)$/); return line(c, opts[k], m ? PARTY[m[1]] : '', k, candLinks(L, opts[k])); }).join('') + '</div>';
+    }
+    h += '<button type="button" class="skip" data-c="' + c.id + '" data-pick="__skip" aria-pressed="' + (cur[0] === '__skip') + '">Skip this ' + (isM ? 'measure' : 'race') + ' <span class="kbd" aria-hidden="true">S</span></button>';
+    h += '<div class="dk-why"><label for="dk-w">Why? <span>Private unless you choose to share it</span><span class="kbd" aria-hidden="true">R</span></label><textarea id="dk-w" placeholder="Your reasoning, in your words">' + esc(whys[c.id] || '') + '</textarea>' +
+      '<div class="dk-prompts"><button type="button" data-prompt="What matters most to me here: ">What matters most to me here…</button><button type="button" data-prompt="Still deciding because ">Still deciding because…</button></div></div>';
+    h += '<div class="dk-nav"><button type="button" class="btn secondary small" data-act="prev"' + (i <= 0 ? ' disabled' : '') + '><span class="kbd" aria-hidden="true">K</span> Previous</button><button type="button" class="btn small" data-act="next" id="dk-next">' + nextLabel() + '</button></div>';
+    P().innerHTML = h;
+    P().querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => pick(btn.dataset.c, btn.dataset.pick)));
+    const ta = $('dk-w');
+    ta.addEventListener('input', () => {
+      whys[c.id] = ta.value; LS.set('ballotta.whys', whys);
+      const pw = $('w' + c.id); if (pw) pw.value = ta.value;  // keep the phone layout's box in step
+      renderCrib(); rail();
+    });
+    P().querySelectorAll('[data-prompt]').forEach(btn => btn.addEventListener('click', () => {
+      ta.value = ta.value.trim() ? ta.value.replace(/\s*$/, ' ') + btn.dataset.prompt : btn.dataset.prompt;
+      ta.dispatchEvent(new Event('input')); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    }));
+    P().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
+    notesDecide();
+  }
+  function notesDecide() {
+    const c = curB().c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure';
+    let h = '';
+    if (friend) {
+      const mine = new Set(ballot.map(b => b.c.id)), ids = Object.keys(friend.P).filter(id => mine.has(id));
+      const same = ids.filter(samePick).length, none = ids.filter(id => !current(id).length).length, diff = ids.length - same - none;
+      h += '<section class="dk-fbox"><h3>You and ' + esc(friendName()) + '</h3><div class="dk-kv"><div><b>' + same + '</b><span>same pick</span></div><div><b>' + diff + '</b><span>different</span></div><div><b>' + none + '</b><span>you haven’t picked</span></div></div><p class="note">Only races ' + esc(friendName()) + ' picked that are also on your ballot. Their picks never change yours. <button type="button" class="dk-link" data-act="hidefriend">Hide ' + possessive() + ' picks</button></p></section>';
+    }
+    if (L.office) h += '<section><h3>About this office</h3><p>' + esc(L.office) + '</p></section>';
+    if (L.src && L.src.length) h += '<section><h3>' + (isM ? 'Sources' : 'Learn more · neutral sources') + '</h3>' + srcHTML(L.src) + '</section>';
+    h += '<section><h3>Shortcuts</h3><div class="dk-keys"><span><span class="kbd">1</span>–<span class="kbd">9</span> pick</span><span><span class="kbd">S</span> skip</span><span><span class="kbd">N</span> next undecided</span><span><span class="kbd">J</span><span class="kbd">K</span> next, previous</span><span><span class="kbd">R</span> reason</span><span><span class="kbd">/</span> search</span></div></section>';
+    if (!isM && L.lwvRace) h += '<p class="note">Campaign sites and answers as listed in the League of Women Voters of the Austin Area 2026 Voters Guide. Links open outside Ballotta. We link to every candidate the same way, say so when something’s missing, and never write about candidates ourselves.</p>';
+    else if (!isM) h += '<p class="note">The League of Women Voters guide doesn’t cover this race.</p>';
+    N().innerHTML = h;
+    N().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
+  }
+  function viewGlance() {
+    let rows = '', last = '';
+    ballot.forEach(b => {
+      const c = b.c, id = c.id, v = current(id), L = DATA.learn[id] || {}, lw = (L.src || []).find(s => s.lwv);
+      if (ui.hideUnopp && isUnopp(c)) return;
+      if (c.level !== last) { last = c.level; rows += '<tr class="dk-tg"><th colspan="4" scope="colgroup">' + esc(LEVEL_LABEL[last] || last) + '</th></tr>'; }
+      const ctl = seats(c) > 1
+        ? esc(v.length ? (v[0] === '__skip' ? 'Skipping' : v.join(', ')) : 'Undecided') + ' · <button type="button" class="dk-link" data-go="' + id + '">Choose</button>'
+        : '<select class="dk-sel" data-sel="' + id + '" aria-label="Your pick: ' + esc(cleanTitle(c)) + '"><option value="">Pick one…</option>' + optionsOf(c).map(o => '<option value="' + esc(o) + '"' + (v[0] === o ? ' selected' : '') + '>' + esc(optLabel(c, o)) + '</option>').join('') + '<option value="__skip"' + (v[0] === '__skip' ? ' selected' : '') + '>Skip</option></select>';
+      const why = hasWhy(id) ? '<span class="dk-wt">' + esc(whys[id]) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
+      rows += '<tr data-tr="' + id + '"><th scope="row"><button type="button" class="dk-link" data-go="' + id + '">' + esc(cleanTitle(c)) + '</button>' + (isUnopp(c) ? '<small>Unopposed</small>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th><td>' + ctl + '</td><td>' + why + '</td><td>' + (lw ? '<a href="' + esc(lw.u) + '" target="_blank" rel="noopener">League guide, p. ' + esc(lw.u.split('#page=')[1] || '') + '</a>' : '<span class="note">—</span>') + '</td></tr>';
+    });
+    P().innerHTML = '<div class="dk-gh"><div><span class="ov">At a glance</span><h1>Your whole ballot</h1></div><label class="dk-tog"><input type="checkbox" id="dk-hideu"' + (ui.hideUnopp ? ' checked' : '') + '> Hide unopposed races</label></div>' +
+      '<table class="dk-tbl"><thead><tr><th scope="col">Contest</th><th scope="col">Your pick</th><th scope="col">Your reason</th><th scope="col">Learn more</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    P().querySelectorAll('[data-sel]').forEach(sel => sel.addEventListener('change', () => {
+      const id = sel.dataset.sel, v = current(id), val = sel.value;
+      if (!val) { if (v.length) pick(id, v[0]); }       // "Pick one…" clears: pick() toggles the current choice off
+      else if (v[0] !== val) pick(id, val);
+    }));
+    P().querySelectorAll('[data-go]').forEach(btn => btn.addEventListener('click', () => { go(btn.dataset.go, !btn.dataset.why); if (btn.dataset.why && $('dk-w')) $('dk-w').focus(); }));
+    $('dk-hideu').addEventListener('change', () => { ui.hideUnopp = $('dk-hideu').checked; viewGlance(); $('dk-hideu').focus(); });
+    N().innerHTML = '';
+  }
+  // Orientation labels for the map (approximate centers of well-known places).
+  const PLACES = [['Downtown', -97.7431, 30.2672], ['UT campus', -97.7341, 30.2849], ['Zilker', -97.7729, 30.2669], ['East Austin', -97.7150, 30.2620],
+    ['Mueller', -97.7050, 30.2980], ['The Domain', -97.7253, 30.4021], ['Pflugerville', -97.6200, 30.4394], ['Manor', -97.5569, 30.3405],
+    ['Lakeway', -97.9795, 30.3638], ['Oak Hill', -97.8710, 30.2349], ['Del Valle', -97.6420, 30.2018], ['Sunset Valley', -97.8131, 30.2266]];
+  function sitesNow() {
+    const all = DATA.sites[period].map(s => ({ name: s[0], room: s[1], street: s[2], city: s[3], f: s[4], pt: [s[5], s[6]], d: here ? miles(here, [s[5], s[6]]) : null }));
+    if (here) all.sort((a, b) => a.d - b.d); else all.sort((a, b) => a.name.localeCompare(b.name));
+    return all;
+  }
+  function dotMap(all) {
+    if (!here) return '<p class="note">Look up your address to see the closest vote centers on a map.</p>';
+    const W = 560, H = 520, sx = 0.12, sy = sx * H / W * Math.cos(here[1] * Math.PI / 180);
+    const X = (lon) => (lon - here[0] + sx / 2) / sx * W, Y = (lat) => (here[1] + sy / 2 - lat) / sy * H;
+    const inView = (p) => X(p[0]) >= 8 && X(p[0]) <= W - 8 && Y(p[1]) >= 8 && Y(p[1]) <= H - 8;
+    let g = '';
+    for (let k = 50; k < W; k += 50) g += '<line x1="' + k + '" y1="0" x2="' + k + '" y2="' + H + '"></line>';
+    for (let k = 50; k < H; k += 50) g += '<line x1="0" y1="' + k + '" x2="' + W + '" y2="' + k + '"></line>';
+    const labels = PLACES.filter(p => inView([p[1], p[2]])).map(p => '<text x="' + X(p[1]).toFixed(0) + '" y="' + Y(p[2]).toFixed(0) + '">' + esc(p[0]) + '</text>').join('');
+    const rest = all.slice(5).filter(s => inView(s.pt)).map(s => '<circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="6"' + (s.f.includes('L') ? ' class="late"' : '') + '><title>' + esc(s.name) + '</title></circle>').join('');
+    const top = all.slice(0, 5).map((s, k) => [s, k]).filter(([s]) => inView(s.pt)).map(([s, k]) => '<g class="top"><circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="11"><title>' + esc(s.name) + '</title></circle><text x="' + X(s.pt[0]).toFixed(1) + '" y="' + (Y(s.pt[1]) + 4).toFixed(1) + '">' + (k + 1) + '</text></g>').join('');
+    const you = '<g aria-hidden="true"><circle cx="' + W / 2 + '" cy="' + H / 2 + '" r="16" style="fill:#E9A92A;opacity:.3;stroke:none"></circle><rect x="' + (W / 2 - 6) + '" y="' + (H / 2 - 6) + '" width="12" height="12" rx="2" fill="#241A2E" transform="rotate(45 ' + W / 2 + ' ' + H / 2 + ')"></rect></g>';
+    return '<svg class="dk-map" id="dk-map" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Map of vote centers around your address, with the five closest numbered">' + g + labels + rest + top + you + '</svg>' +
+      '<p class="note">Drawn on your device from the county’s list; no map company sees where you live. Numbers match the list. Gold dots stay open till 10pm Oct 29–30.</p>';
+  }
+  function viewVote() {
+    const all = sitesNow(), list = (showAll || !here) ? all : all.slice(0, 5);
+    const items = list.map((s, k) => {
+      const tags = (s.f.includes('B') ? '<span class="chip">On a bus route</span>' : '') + (s.f.includes('L') ? '<span class="chip gold">Open till 10pm Oct 29–30</span>' : '') + (s.f.includes('F') ? '<span class="chip gold">Fri Oct 30 only</span>' : '');
+      const dir = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.street + ', ' + s.city + ', TX');
+      return '<li class="dk-site"><span class="dk-num' + (here && k < 5 ? '' : ' blank') + '" aria-hidden="true">' + (here && k < 5 ? k + 1 : '') + '</span><div class="site"><div class="top"><b>' + esc(s.name) + '</b>' + (s.d != null ? '<span class="note" style="white-space:nowrap">' + s.d.toFixed(1) + ' mi</span>' : '') + '</div><span class="addr">' + esc(s.street + ', ' + s.city) + ' · ' + esc(s.room) + '</span><div class="chips">' + tags + '<a href="' + dir + '" target="_blank" rel="noopener">Directions</a></div></div></li>';
+    }).join('');
+    const extra = [...$('vote').querySelectorAll(':scope > .sub:not(#hours), :scope > p.note')].map(e => e.outerHTML).join('');
+    P().innerHTML = '<span class="ov">Where to vote</span><h1>Where and when to vote</h1>' +
+      '<div class="dk-vote"><div><div class="seg" role="group" aria-label="Voting period"><button type="button" data-period="early" aria-pressed="' + (period === 'early') + '">Early voting · Oct 19–30</button><button type="button" data-period="eday" aria-pressed="' + (period === 'eday') + '">Election Day · Nov 3</button></div>' +
+      '<p>You can vote at <b>any</b> vote center in Travis County.</p><div class="sub">' + $('hours').innerHTML + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="ov">' + esc($('sitehead').textContent) + '</span>' + (here ? '<button type="button" class="dk-link" id="dk-all">' + (showAll ? 'Show closest 5' : 'See all ' + all.length) + '</button>' : '') + '</div>' +
+      '<ul class="dk-sites" id="dk-sites">' + items + '</ul><a class="btn secondary small" href="' + esc($('waits').href) + '" target="_blank" rel="noopener">Check live wait times</a>' + extra + '</div>' +
+      '<div>' + dotMap(all) + '</div></div>';
+    P().querySelectorAll('[data-period]').forEach(btn => btn.addEventListener('click', () => { period = btn.dataset.period; renderVote(); viewVote(); }));
+    if ($('dk-all')) $('dk-all').addEventListener('click', () => { showAll = !showAll; renderVote(); viewVote(); });
+    N().innerHTML = '';
+  }
+  function cribPaper() {
+    P().innerHTML = '<span class="ov">Crib sheet</span><h1>Print your notes</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p><div class="dk-page' + (ui.two ? ' two' : '') + '" id="dk-page">' + $('crib').innerHTML + '</div>';
+  }
+  function viewCrib() {
+    cribPaper();
+    N().innerHTML = '<section><h3>Print options</h3><div class="sw"><label for="dk-cw">Include my reasons</label><input type="checkbox" role="switch" id="dk-cw"' + ($('withwhy').checked ? ' checked' : '') + '></div>' +
+      '<div class="sw"><label for="dk-c2">Two columns</label><input type="checkbox" role="switch" id="dk-c2"' + (ui.two ? ' checked' : '') + '></div>' +
+      '<div class="sw"><label for="dk-cu">Hide unopposed races</label><input type="checkbox" role="switch" id="dk-cu"' + (ui.hideCrib ? ' checked' : '') + '></div></section>' +
+      '<button class="btn" type="button" data-act="print">Print crib sheet</button><p class="note">The printout has your picks and, if you choose, your reasons. Nothing else.</p>';
+    $('dk-cw').addEventListener('change', () => { $('withwhy').checked = $('dk-cw').checked; renderCrib(); cribPaper(); });
+    $('dk-c2').addEventListener('change', () => { ui.two = $('dk-c2').checked; $('crib').classList.toggle('two', ui.two); cribPaper(); });
+    $('dk-cu').addEventListener('change', () => { ui.hideCrib = $('dk-cu').checked; renderCrib(); cribPaper(); });
+    N().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
+  }
+
+  /* ----- actions ----- */
+  function act(a, focus) {
+    if (a === 'prev') { const i = idx(ui.cur); if (i > 0) go(ballot[i - 1].c.id, focus); }
+    else if (a === 'next') { const nx = nextUndecided(ui.cur); if (nx) go(nx.c.id, focus); else setView('glance'); }
+    else if (a === 'hidefriend') { if ($('f-hide')) $('f-hide').click(); render(); if (WIDE.matches) P().focus({ preventScroll: true }); }
+    else if (a === 'print') $('print').click();
+  }
+  function toLanding() { ui.landing = true; render(); window.scrollTo(0, 0); setTimeout(() => $('street').focus(), 50); }
+  function info(which) {
+    const box = $('dk-info');
+    if (!box.dataset.built) {
+      // Same words as the phone layout, copied from the page so the two never drift apart.
+      const priv = document.createElement('section'), about = document.createElement('section');
+      priv.id = 'dk-i-privacy'; about.id = 'dk-i-about';
+      priv.innerHTML = '<h3>How your privacy works</h3>'; about.innerHTML = '<h3>About Ballotta &amp; sources</h3>';
+      priv.append(document.querySelector('#lookup > p.note').cloneNode(true), document.querySelector('#d-keep > p.note').cloneNode(true));
+      $('feedback').closest('footer').previousElementSibling.querySelectorAll('p').forEach(p => about.append(p.cloneNode(true)));
+      box.append(priv, about); box.dataset.built = '1';
+    }
+    $('d-info').showModal();
+    $('dk-i-' + which).scrollIntoView({ block: 'start' });
+  }
+  function menu(open) {
+    $('dk-menu').classList.toggle('hidden', !open);
+    $('dk-help').setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) $('dk-menu').querySelector('button').focus();
+  }
+  $('dk-help').addEventListener('click', () => menu($('dk-menu').classList.contains('hidden')));
+  document.addEventListener('click', (e) => { if (!$('dk-menu').classList.contains('hidden') && !e.target.closest('.dk-menuwrap')) menu(false); });
+  document.querySelector('.dk-menuwrap').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('dk-menu').classList.contains('hidden')) { e.preventDefault(); menu(false); $('dk-help').focus(); }
+  });
+  document.querySelector('.dk-menuwrap').addEventListener('focusout', () => setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a !== document.body && !a.closest('.dk-menuwrap')) menu(false);
+  }, 0));
+  $('dk-menu').addEventListener('keydown', (e) => {
+    const items = [...$('dk-menu').querySelectorAll('button')], i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+  $('dk-menu').querySelectorAll('[data-help]').forEach(btn => btn.addEventListener('click', () => {
+    menu(false); $('dk-help').focus();  // the item is about to be hidden: give focus somewhere a closing window can return it
+    const a = btn.dataset.help;
+    if (a === 'feedback') $('feedback').click();
+    else if (a === 'privacy' || a === 'about') info(a);
+    else if (a === 'address') toLanding();
+    else if (a === 'clear') { $('reset').click(); render(); }
+  }));
+  $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });  // after the button's own handler
+  $('dk-share').addEventListener('click', () => $('a-share').click());
+  $('dk-keep').addEventListener('click', () => $('a-keep').click());
+  $('dk-print').addEventListener('click', () => $('print').click());
+  $('dk-back').addEventListener('click', () => { ui.landing = false; render(); });
+  document.querySelectorAll('#dk-views button').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
+  document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { ui.filter = btn.dataset.f; rail(); }));
+  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); rail(); });
+  $('dk-q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('dk-q').value = ''; ui.q = ''; rail(); } });
+  document.addEventListener('keydown', (e) => {
+    if (!WIDE.matches || !ballot.length || ui.landing || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || e.isComposing) return;
+    if (document.querySelector('dialog[open]') || !$('dk-menu').classList.contains('hidden')) return;
+    const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+    if (typing) { if (e.key === 'Escape') t.blur(); return; }
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (k === '/') { e.preventDefault(); $('dk-q').focus(); return; }
+    if (ui.view !== 'decide') return;
+    if (e.repeat && (/^[1-9]$/.test(k) || k === 's')) return;  // a held key picks once (pick() toggles)
+    const b = curB();
+    if (/^[1-9]$/.test(k)) { const o = optionsOf(b.c)[+k - 1]; if (o !== undefined) { e.preventDefault(); pick(b.c.id, o); } }
+    else if (k === 's') { e.preventDefault(); pick(b.c.id, '__skip'); }
+    else if (k === 'n') { e.preventDefault(); act('next', true); }
+    else if (k === 'j') { e.preventDefault(); const i = idx(b.c.id); if (i < ballot.length - 1) go(ballot[i + 1].c.id, true); }
+    else if (k === 'k') { e.preventDefault(); act('prev', true); }
+    else if (k === 'r') { e.preventDefault(); $('dk-w').focus(); }
+  });
+  let printing = false;  // Chrome lays a printout out narrower than 1024px: that is not a switch to the phone layout
+  window.addEventListener('beforeprint', () => { printing = true; });
+  window.addEventListener('afterprint', () => { printing = false; });
+  ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { printing = false; }, true));  // in case a browser never sends afterprint
+  WIDE.addEventListener('change', () => {
+    if (!WIDE.matches && !printing && !matchMedia('print').matches && (ui.two || ui.hideCrib)) { ui.two = ui.hideCrib = false; $('crib').classList.remove('two'); renderCrib(); }  // laptop-only print options
+    render();
+  });
+
+  /* ----- hooks the shared code calls (the DESK one-liners in showBallot, refresh, renderCrib and openFriend) ----- */
+  return {
+    render,
+    ballot(meta) {
+      ui.landing = false;
+      if (!ballot.length) return render();
+      const first = String(meta.where || '').split(' · ')[0];
+      // The street is shown for this visit only; it is never saved (the saved ballot keeps just the precinct).
+      ui.addr = /^Precinct /.test(first) ? '' : first.split(',')[0].toLowerCase().replace(/\b[a-z]/g, ch => ch.toUpperCase());
+      if (idx(ui.cur) < 0) ui.cur = (nextUndecided('') || ballot[0]).c.id;
+      render();
+    },
+    refresh() {
+      if (!ballot.length) return;
+      rail();
+      if (ui.view === 'decide' && $('dk-next')) { $('dk-next').innerHTML = nextLabel(); notesDecide(); }
+      else if (ui.view === 'crib') cribPaper();
+    },
+    cribSkip: (c) => ui.hideCrib && isUnopp(c),
+  };
+})();
+window.desk = desk;
+desk.render();
+/*/DESK*/
 /* ---------- start ---------- */
 (function start() {
   const st = LS.get('ballotta.ballot', null);
