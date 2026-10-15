@@ -447,14 +447,17 @@ def desk_layout_header_and_rail(b):
     assert pg.is_hidden('main.wrap') and pg.is_visible('#dk-paper') and pg.is_visible('#dk-notes')
     loc = pg.inner_text('#dk-loc'); assert 'Precinct 300' in loc and '1000 Guadalupe St' in loc and 'change' in loc, loc
     h, s = pg.locator('#dk-help').bounding_box(), pg.locator('#dk-share').bounding_box()
-    assert h['x'] + h['width'] <= s['x'], 'Help & info sits left of Share my picks'
+    assert h['x'] + h['width'] <= s['x'], 'Feedback & Info sits left of Share my picks'
+    assert pg.inner_text('#dk-help') == 'Feedback & Info', pg.inner_text('#dk-help')                 # Lane, Oct 15
     assert pg.locator('.dk-row').count() == 63 and pg.inner_text('#dk-count') == '0 of 63 decided'
     assert 'United States Senator' in pg.inner_text('#dk-paper h1')                                 # first undecided contest
-    for width in (1280, 1366, 1440, 1920):                                                         # notes sit evenly between paper and edge
+    for width in (1280, 1366, 1412, 1440, 1920, 2560):                                                   # paper and notes centred together; gap 24 to 32px
         pg.set_viewport_size({'width': width, 'height': 900})
         p, n = pg.locator('#dk-paper').bounding_box(), pg.locator('#dk-notes').bounding_box()
         left, mid, right = p['x'] - 288, n['x'] - (p['x'] + p['width']), width - (n['x'] + n['width'])
-        assert min(left, mid, right) >= 23 and abs(mid - right) <= 2 and abs(left - mid) <= 2, (width, left, mid, right)
+        assert min(left, mid, right) >= 23 and abs(left - right) <= 2, (width, left, mid, right)           # centred, never cramped
+        assert mid <= 33 and abs(mid - min(32, left)) <= 2, (width, left, mid, right)                  # Lane: at most 1/3 inch apart
+        if width == 1412: assert abs(left - 28) <= 1 and abs(mid - 28) <= 1, (width, left, mid)        # mid-way, all three grow together
     pg.set_viewport_size({'width': 1440, 'height': 900})
     stored = json.dumps(pg.evaluate('Object.assign({}, localStorage)')).upper()
     assert 'GUADALUPE' not in stored, 'the street is shown for this visit only, never saved'
@@ -485,6 +488,35 @@ def desk_decide_pick_keys_and_sync(b):
     assert cur(pg, 'c071') == ['AGAINST'], 'holding a number key picks once, it does not flicker'
     pg.keyboard.press('/'); assert pg.evaluate('document.activeElement.id') == 'dk-q'
     pg.keyboard.type('Qadri'); assert pg.locator('.dk-row').count() == 1
+    ctx.close()
+
+LONG_WHY = ('I read both candidates’ League answers twice. ' * 4 + '\n') * 4                       # a few real paragraphs
+
+def fits(pg, sel):                                                                                # shows everything, no inner scrollbar
+    return pg.evaluate(f"(() => {{ const t = document.querySelector('{sel}'); return t.scrollHeight <= t.clientHeight + 1 && t.clientHeight > 150; }})()")
+
+@desk_test
+def desk_why_box_grows_with_the_reason(b):
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    pg.click('.dk-row[data-row="c070"]'); h0 = pg.locator('#dk-w').bounding_box()['height']
+    card = pg.evaluate("""(() => { const w = document.querySelector('.dk-why'), s = getComputedStyle(w), r = w.getBoundingClientRect(),
+        k = document.querySelector('#dk-paper .skip').getBoundingClientRect();
+        return {bg: s.backgroundColor, border: s.borderTopStyle, pad: parseFloat(s.paddingLeft), holds: w.contains(document.getElementById('dk-w')) && !!w.querySelector('label'), gap: r.top - k.bottom}; })()""")
+    assert card['bg'] not in ('rgba(0, 0, 0, 0)', 'rgb(255, 255, 255)') and card['border'] == 'solid' and card['pad'] >= 12 and card['holds'], card
+    assert card['gap'] >= 24, ('the reason card sits apart from Skip', card)                      # Lane, Oct 15: "notes card" (option A)
+    pg.click('#dk-w'); pg.keyboard.type(LONG_WHY)
+    assert fits(pg, '#dk-w') and pg.locator('#dk-w').bounding_box()['height'] > h0 * 3, 'the laptop box grows as you type'
+    pg.click('.dk-row[data-row="c071"]'); pg.click('.dk-row[data-row="c070"]')
+    assert fits(pg, '#dk-w'), 'a long saved reason opens at full height'
+    pg.fill('#dk-w', LONG_WHY * 4)                                                                # long enough to fill the screen
+    pg.evaluate("() => { const t = document.getElementById('dk-w'); t.focus({preventScroll: true}); t.setSelectionRange(t.value.length, t.value.length); }")
+    pg.evaluate('window.scrollTo(0, document.documentElement.scrollHeight)'); y = pg.evaluate('scrollY')
+    pg.keyboard.type('x')
+    assert abs(pg.evaluate('scrollY') - y) <= 30, ('typing at the bottom does not jump the page', y, pg.evaluate('scrollY'))
+    pg.set_viewport_size({'width': 400, 'height': 900}); open_race(pg, 'c070'); pg.wait_for_timeout(100)
+    assert pg.evaluate("getComputedStyle(document.getElementById('wc070')).height") == '70px', 'phones unchanged until the phone round'
+    open_race(pg, 'c071'); pg.click('#wc071'); pg.keyboard.type(LONG_WHY)
+    assert pg.evaluate("(() => { const t = document.getElementById('wc071'); return getComputedStyle(t).height + '|' + t.style.height; })()") == '70px|', 'typing on a phone leaves the box as it is today'
     ctx.close()
 
 @desk_test
@@ -578,9 +610,9 @@ def desk_help_menu_info_address_and_clear(b):
     pg.click('#dk-help'); pg.click('[data-help="privacy"]'); pg.wait_for_selector('#d-info[open]')
     t = pg.inner_text('#d-info')
     assert 'Ballotta never receives your address' in t and 'packed inside the link itself' in t and "isn't affiliated with Travis County" in t, t
-    pg.keyboard.press('Escape'); assert pg.evaluate('document.activeElement.id') == 'dk-help', 'focus comes back to Help & info'
+    pg.keyboard.press('Escape'); assert pg.evaluate('document.activeElement.id') == 'dk-help', 'focus comes back to Feedback & Info'
     pg.click('#dk-help'); pg.keyboard.press('Shift+Tab'); pg.keyboard.press('Escape')               # Escape from the button, menu open
-    assert pg.is_hidden('#dk-menu'), 'Escape closes the menu from the Help & info button too'
+    assert pg.is_hidden('#dk-menu'), 'Escape closes the menu from the Feedback & Info button too'
     pg.click('#dk-help')
     for _ in range(6): pg.keyboard.press('Tab')                                                  # tab out of the menu
     pg.wait_for_selector('#dk-menu', state='hidden', timeout=2000)                              # leaving the menu with the keyboard closes it

@@ -194,7 +194,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   /* header: plum logo block over the rail, the rest on lilac */
   .dk-hdr{display:flex;align-items:center;gap:14px;height:56px;padding:0 24px 0 312px;position:sticky;top:0;z-index:20;background:var(--lilac)}
   .dk-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:288px;background:var(--plum)}
-  .dk-brand{position:absolute;left:18px;top:0;bottom:0;display:flex;align-items:center;gap:9px;z-index:1}
+  .dk-brand{position:absolute;left:18px;top:0;bottom:0;display:flex;align-items:center;gap:9px;z-index:1;background:var(--plum)}  /* sits on the plum block; says so itself */
   .dk-brand b{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:23px;font-weight:600;color:var(--ground)}
   .dk-loc{font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .dk-loc b{font-weight:600;color:var(--ink)}
@@ -225,7 +225,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-views button[aria-current=page]{background:rgba(255,249,241,.14);color:#fff}
   .dk-search{margin:12px 14px 6px;height:36px;border-radius:8px;background:rgba(255,249,241,.10);display:flex;align-items:center;gap:8px;padding:0 10px}
   .dk-search input{flex:1;min-width:0;height:34px;border:none;background:transparent;color:#fff;font:inherit;font-size:13px;padding:0}
-  .dk-search input::placeholder{color:rgba(255,249,241,.7)}
+  .dk-search input::placeholder{color:#CBB6DE}  /* a tint of the plum: 4.6:1 on the box, and still unlike typed (white) text */
   .dk-search .kbd{background:transparent;color:var(--ground);border-color:rgba(255,249,241,.4)}
   .dk-filt{display:flex;gap:6px;padding:4px 14px 10px}
   .dk-filt button{height:30px;padding:0 10px;border-radius:8px;border:none;background:transparent;color:#fff;font:inherit;font-size:12px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,249,241,.35);cursor:pointer;white-space:nowrap}
@@ -245,8 +245,10 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-empty{padding:12px 18px;font-size:13px;color:rgba(255,249,241,.75)}
   .dk-foot{padding:12px 14px;border-top:1px solid rgba(255,249,241,.14);display:flex;gap:8px}
   .dk-foot button{flex:1;height:36px;border-radius:8px;border:none;background:transparent;color:#fff;font:inherit;font-size:13px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,249,241,.35);cursor:pointer}
-  /* three equal gutters (at least 24px each): before the paper, between paper and notes, after the notes */
-  .dk-desk{display:grid;grid-template-columns:minmax(0,720px) 320px;justify-content:space-evenly;gap:24px;align-items:start;min-width:0;padding:28px 24px 64px}
+  /* paper and notes stay together, centred: the gap between them grows from 24px to at most 32px (1/3 inch, Lane,
+     Oct 15), then only the outer margins grow. Below 1064px of content width all gaps are 24px and the paper narrows;
+     from 1064 to 1088px all three grow together to 32px. */
+  .dk-desk{display:grid;grid-template-columns:minmax(0,720px) 320px;justify-content:center;gap:24px;column-gap:clamp(24px,calc((100% - 992px) / 3),32px);align-items:start;min-width:0;padding:28px 24px 64px}
   .dk-desk.wide{grid-template-columns:minmax(0,1040px);padding:28px 32px 64px}
   .dk-desk.wide .dk-notes{display:none}
   .dk-paper{background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:36px 44px;display:flex;flex-direction:column;gap:18px;min-width:0;outline:none}
@@ -267,12 +269,12 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-mrow{flex-direction:row;gap:16px}
   .dk-mrow .dk-lw,.dk-mrow .dk-lw:has(.dk-line[aria-pressed=true]){flex:1;border-top:2px solid var(--ink);margin:0;padding:4px 12px}
   .dk-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .dk-why{display:flex;flex-direction:column;gap:8px}
+  .dk-why{display:flex;flex-direction:column;gap:10px;background:var(--ground);border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px;margin-top:6px}  /* the notes card (Lane, Oct 15) */
   .dk-why label{display:flex;gap:6px;align-items:center;font-size:15px;font-weight:600}
   .dk-why label span:not(.kbd){flex:1;color:var(--muted);font-weight:400}
-  .dk-why textarea{border:none;border-bottom:2px solid var(--lc);border-radius:0;font-family:Georgia,'Times New Roman',serif;font-size:17px;padding:6px 0;min-height:48px}
+  .dk-why textarea{background:#fff;border:1px solid var(--lc);border-radius:10px;font-family:Georgia,'Times New Roman',serif;font-size:17px;padding:10px 12px;min-height:64px;resize:none;overflow:hidden}
   .dk-prompts{display:flex;gap:6px;flex-wrap:wrap}
-  .dk-prompts button{padding:3px 10px;border-radius:999px;background:var(--ground);border:1px solid var(--line);font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
+  .dk-prompts button{padding:3px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
   .dk-nav{display:flex;justify-content:space-between;align-items:center;gap:12px}
   .dk-nav .btn{max-width:72%;min-width:0}
   .dk-nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -338,7 +340,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   #start{grid-column:1;grid-row:1;background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:48px 56px;display:flex;flex-direction:column;gap:22px}
   #start h1{font-size:56px}
   #start .lead{font-size:18px}
-  #lookup{border:none;padding:0;display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+  #lookup{border:none;padding:0;background:transparent;display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
   #lookup > *{grid-column:1/-1}
   #lookup > .field{grid-column:1}
   #lookup .row{display:contents}
@@ -368,8 +370,8 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <span class="dk-sp"></span>
   <span class="dk-when" id="dk-when"></span>
   <div class="dk-menuwrap">
-    <button type="button" class="dk-btn" id="dk-help" aria-haspopup="menu" aria-expanded="false" aria-controls="dk-menu">Help &amp; info</button>
-    <div class="dk-menu hidden" id="dk-menu" role="menu" aria-label="Help and info">
+    <button type="button" class="dk-btn" id="dk-help" aria-haspopup="menu" aria-expanded="false" aria-controls="dk-menu">Feedback &amp; Info</button>
+    <div class="dk-menu hidden" id="dk-menu" role="menu" aria-label="Feedback and info">
       <button type="button" role="menuitem" data-help="feedback"><b>Send feedback</b><small>Opens an email with your precinct, never your address</small></button>
       <button type="button" role="menuitem" data-help="privacy"><b>How your privacy works</b><small>What goes where, in plain words</small></button>
       <button type="button" role="menuitem" data-help="about"><b>About Ballotta &amp; sources</b><small>Not affiliated with the county, the League or any campaign</small></button>
@@ -527,7 +529,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 <!--DESK-->
 
 <dialog class="sheet" id="d-info" aria-labelledby="dih">
-  <div class="sheethead"><h2 id="dih" style="font-size:26px">Help &amp; info</h2><button type="button" class="x" data-close>Close</button></div>
+  <div class="sheethead"><h2 id="dih" style="font-size:26px">Feedback &amp; Info</h2><button type="button" class="x" data-close>Close</button></div>
   <div class="dk-info" id="dk-info"></div>
 </dialog>
 <!--/DESK-->
@@ -1168,6 +1170,16 @@ const desk = (() => {
   const isUnopp = (c) => c.type !== 'measure' && optionsOf(c).length === 1;
   const initial = () => esc((friend && friend.name ? friend.name : '?').charAt(0).toUpperCase());
   const possessive = () => esc(friend && friend.name ? friend.name + '’s' : 'your friend’s');
+  // A reason box grows to fit what's in it (CSS min-height still sets the smallest size).
+  function fit(ta) {
+    if (!ta || !ta.isConnected) return;
+    // Measuring needs height:auto for a moment; hold the card's height meanwhile so the page can't shrink and jump.
+    const card = ta.parentNode, keep = card.style.minHeight;
+    card.style.minHeight = card.offsetHeight + 'px';
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + ta.offsetHeight - ta.clientHeight) + 'px';
+    card.style.minHeight = keep;
+  }
   function nextUndecided(from) {
     const i = idx(from);
     for (let k = 1; k <= ballot.length; k++) { const b = ballot[(i + k + ballot.length) % ballot.length]; if (b && !decided(b.c.id)) return b; }
@@ -1289,7 +1301,9 @@ const desk = (() => {
     P().innerHTML = h;
     P().querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => pick(btn.dataset.c, btn.dataset.pick)));
     const ta = $('dk-w');
+    fit(ta);
     ta.addEventListener('input', () => {
+      fit(ta);
       whys[c.id] = ta.value; LS.set('ballotta.whys', whys);
       const pw = $('w' + c.id); if (pw) pw.value = ta.value;  // keep the phone layout's box in step
       renderCrib(); rail();
@@ -1446,7 +1460,7 @@ const desk = (() => {
     else if (a === 'address') toLanding();
     else if (a === 'clear') { $('reset').click(); render(); }
   }));
-  $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });  // after the button's own handler
+  $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });  // runs after the button's own handler (it's on the container)
   $('dk-share').addEventListener('click', () => $('a-share').click());
   $('dk-keep').addEventListener('click', () => $('a-keep').click());
   $('dk-print').addEventListener('click', () => $('print').click());

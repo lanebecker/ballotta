@@ -36,7 +36,6 @@ M = [
  ('M25 compare counted before open', PREV, "  f.classList.remove('hidden');\n", "  f.classList.remove('hidden'); if (window.desk) desk.render();\n", ['desk_friend_link_with_saved_ballot_counts_in_order']),
  ('M26 focus lost after Help window', PREV, "menu(false); $('dk-help').focus();  //", "menu(false);  //", ['desk_help_menu_info_address_and_clear']),
  ('M27 menu stays open after Tab', PREV, "    if (a && a !== document.body && !a.closest('.dk-menuwrap')) menu(false);", "", ['desk_help_menu_info_address_and_clear']),
- ('M28 no gutters at 1280', PREV, "justify-content:space-evenly;gap:24px;align-items:start;min-width:0;padding:28px 24px 64px}", "justify-content:space-evenly;align-items:start;min-width:0;padding:28px 0 64px}", ['desk_layout_header_and_rail']),
  ('M29 hiding a friend leaves the landing broken', PREV, "  $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });", "", ['desk_friend_hide_on_landing']),
  ('M30 Escape only inside the list', PREV, "    if (e.key === 'Escape' && !$('dk-menu').classList.contains('hidden')) { e.preventDefault(); menu(false); $('dk-help').focus(); }", "", ['desk_help_menu_info_address_and_clear']),
  ('M22 phone takes laptop shortcuts', PREV, "if (!WIDE.matches || !ballot.length || ui.landing", "if (!ballot.length || ui.landing", ['desk_stays_quiet_on_phones']),
@@ -53,7 +52,12 @@ M = [
  ('M40 laptop compare looks like a phone tap', PREV, "track('share_compare', { layout: 'laptop' })", "track('share_compare', {})", ['desk_compare_counted_once_per_link']),
  ('M41 stray marker inside a block accepted', BLD, "            assert not re.search(OPEN + '|' + CLOSE, line), f\"line {n}: a DESK marker inside a block isn't alone on its line\"", "            pass", ['live_build_is_unchanged_until_promotion']),
  ('M42 print flag can stick', PREV, "  ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { printing = false; }, true));", "", ['desk_crib_options_and_print']),
- ('M23 uneven gutters', PREV, "justify-content:space-evenly", "justify-content:center", ['desk_layout_header_and_rail']),
+ ('M43 laptop box does not grow', PREV, "      fit(ta);\n      whys[c.id] = ta.value;", "      whys[c.id] = ta.value;", ['desk_why_box_grows_with_the_reason']),
+ ('M23 card and notes drift apart', PREV, "column-gap:clamp(24px,calc((100% - 992px) / 3),32px);", "column-gap:calc((100% - 992px) / 3);", ['desk_layout_header_and_rail']),
+ ('M28 no gutters at 1280', PREV, "justify-content:center;gap:24px;column-gap:clamp(24px,calc((100% - 992px) / 3),32px);align-items:start;min-width:0;padding:28px 24px 64px}", "justify-content:center;align-items:start;min-width:0;padding:28px 0 64px}", ['desk_layout_header_and_rail']),
+ ('M44 long saved reason opens squashed', PREV, "    fit(ta);\n    ta.addEventListener('input', () => {", "    ta.addEventListener('input', () => {", ['desk_why_box_grows_with_the_reason']),
+ ('M45 typing at the bottom jumps the page', PREV, "    card.style.minHeight = card.offsetHeight + 'px';\n", "", ['desk_why_box_grows_with_the_reason']),
+ ('M46 reason card not a card', PREV, "gap:10px;background:var(--ground);border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px;margin-top:6px}", "gap:8px}", ['desk_why_box_grows_with_the_reason']),
 ]
 if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
 srv = T.serve(); res = []
