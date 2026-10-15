@@ -18,7 +18,7 @@ UMAMI_DOMAINS = "ballotta.org,www.ballotta.org,lanebecker.github.io"
 # The laptop layout (1024px and wider) is marked in the template: /*DESK*/ ... /*/DESK*/ in CSS and JS,
 # <!--DESK--> ... <!--/DESK--> in HTML. Until Lane approves the preview at ballotta.org/next/, the live build
 # removes every marked block, so index.html stays byte-for-byte what it was. Promotion: set DESK_LIVE = True.
-DESK_LIVE = False
+DESK_LIVE = True
 
 OPEN, CLOSE = r'(?:/\*DESK\*/|<!--DESK-->)', r'(?:/\*/DESK\*/|<!--/DESK-->)'
 
