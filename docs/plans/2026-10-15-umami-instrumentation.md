@@ -1083,3 +1083,34 @@ Checked and confirmed by the first verifier:
 - the phone-only (rollback) build parses and its tests pass;
 - links outside a race carry no level on phones;
 - page titles and URLs are static.
+
+## Execution log
+
+- 2026-10-15: executed Tasks 0 to 6.
+  - **Task 0:** base `69834da` (this plan's commit, docs only on top of `4c4510a`); port free; 41/41. The four scripts on disk were byte-identical to the code blocks above.
+  - **Tasks 1 to 4:**
+    - `applied 5 test edits`, and the six new tests failed exactly as listed.
+    - `applied 27 edits`, `index.html 336 KB`; both builds parse.
+    - `applied 2 README edits`; the six passed; 47/47.
+  - **Task 5:** `150 of 150 mutants killed` on the plan's code. The runner restored every file byte for byte.
+  - **Task 6, Pass 1** (cold agent, executed reproductions):
+    - **Held:** no path sent anything personal; Do Not Track and Global Privacy Control sent 0 requests on every path (page views, events, the queued flush, page speed); the fail-closed stand-in held through a syntax error and a runtime error; the rollback build works.
+    - **Fixed, RED-first** (`rework1.py`):
+      1. Progress events burst on page load for returning voters, and a keep link counted one voter twice. Milestones now count only when a pick or skip crosses one; a ballot that is *shown* already decided counts nothing. What was reached is kept in memory only, and `ballotta.progress` is gone. This also fixes item 6, below, and replaces the plan's "Known, accepted effects" about first-visit bursts, keep links and the 5-ballot memory.
+      2. `faq_seen` fired without scrolling on windows about 1050px tall or taller. It now counts only after a scroll.
+      3. The referrer's path got through. It is now reduced to its site.
+      4. With browser storage blocked, Clear everything did nothing. Each storage area is now read inside its own `try`.
+      5. Another open tab wrote cleared data back. A `storage` listener now reloads it.
+      6. `ballotta.progress` kept full contest lists for 5 ballots. Gone, with item 1.
+      7. No test checked that Clear everything leaves non-Ballotta keys (`umami.disabled`) alone. Now it does.
+      8. Links in the laptop's "At a glance" rows had no race level. They do now.
+      10. The README said `filter_used` counts once per visit; it counts once per filter.
+    - **Filed:** #42 (on phones, no way to reach Clear everything without a ballot of your own; for the phone round).
+  - **Task 6, Pass 2** (only the rework; `rework2.py`):
+    - `siteOf` turned app referrers (`android-app://…`, live in the data) and `about:blank` into the string `"null"`. Fixed: protocol plus host, or empty.
+    - Two test gaps: a returning voter's next pick, and the other-tab reload's condition. Both are now pinned (V73, V74).
+    - The FAQ count is now armed only by a scroll on the landing page itself (V75).
+    - Two low hypotheses (back/forward-cache tabs; another tab's own sessionStorage) were added to #40.
+    - Pass 3 was not run: Pass 2's code changes were one line each (`siteOf`, a one-line guard), with tests.
+  - **Final:** 47/47; mutants: see the next line.
+  - **Mutants:** 161 of 161 killed (V1–V75 plus every earlier mutant; V16, V22, V53 retired).

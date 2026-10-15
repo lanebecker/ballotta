@@ -421,6 +421,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
       <button type="button" role="menuitem" data-help="address"><b>Change address</b><small>Look up a different ballot</small></button>
       <hr>
       <button type="button" role="menuitem" data-help="clear" class="bad"><b>Clear my picks…</b><small>Asks before deleting anything</small></button>
+      <button type="button" role="menuitem" data-help="clearall" class="bad"><b>Clear everything on this device…</b><small>Ballot, picks, reasons, location and share name</small></button>
     </div>
   </div>
   <button type="button" class="dk-btn pri hidden" id="dk-share">Share my picks</button>
@@ -474,7 +475,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <button class="btn" id="go" type="button">Show my ballot</button>
     <div id="status" class="status hidden" role="status"></div>
     <div id="units" class="unit hidden"></div>
-    <p class="note">Your browser sends your address straight to Travis County's public map server (and, if the county can't match it, the U.S. Census geocoder) to find your districts. Ballotta never receives your address, and your picks and reasons stay in this browser. We count anonymous taps, like “a share link was opened”, never your address or your picks.</p>
+    <p class="note">Your browser sends your address straight to Travis County's public map server (and, if the county can't match it, the U.S. Census geocoder) to find your districts. Ballotta never receives your address, and your picks and reasons stay in this browser. We count anonymous taps, like “a share link was opened”, and how quickly pages load, never your address or your picks. If your browser sends Do Not Track or Global Privacy Control, we count nothing at all.</p>
   </section><!--DESK--></div><!--/DESK-->
 <!--DESK-->
   <aside class="dk-steps" aria-label="How Ballotta works">
@@ -488,7 +489,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
       <div class="dk-q"><h3>What is Ballotta?</h3><p>A free, independent tool for Travis County voters. Enter your address, see every race and proposition on your Nov 3 ballot, and work through them one at a time.</p></div>
       <div class="dk-q"><h3>Does it tell me how to vote?</h3><p>No. Ballotta doesn’t endorse, rank or recommend anyone. Every candidate gets the same links, and we say so when something’s missing.</p></div>
       <div class="dk-q"><h3>Where does the information come from?</h3><p>Travis County’s own ballot and district data, the League of Women Voters of the Austin Area voters guide, and official sources for each measure. We link to them rather than rewrite them.</p></div>
-      <div class="dk-q"><h3>What happens to my address and picks?</h3><p>Your address goes from your browser to Travis County’s map server (and, if the county can’t match it, the U.S. Census geocoder); we never receive it. Picks and reasons stay in your browser unless you send yourself or a friend a link.</p></div>
+      <div class="dk-q"><h3>What happens to my address and picks?</h3><p>Your address goes from your browser to Travis County’s map server (and, if the county can’t match it, the U.S. Census geocoder); we never receive it. Picks and reasons stay in your browser unless you send yourself or a friend a link. If your browser sends Do Not Track or Global Privacy Control, we count nothing at all.</p></div>
       <div class="dk-q"><h3>What won’t you allow here?</h3><p>No ads, no paid placement, no campaign content, and no selling or sharing data. We try to block share names that pretend to be the League, the county or a party. We count anonymous taps, never who you are.</p></div>
       <div class="dk-q"><h3>Is this official?</h3><p>No. Ballotta isn’t affiliated with Travis County, the League or any campaign. Check your official sample ballot at <a href="https://votetravis.gov/current-election-information/current-election/" target="_blank" rel="noopener">VoteTravis.gov</a> before you vote.</p></div>
     </div>
@@ -541,6 +542,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
         <button class="btn" id="print" type="button">Print crib sheet</button>
         <button class="btn secondary" id="reset" type="button">Clear my picks</button>
       </div>
+      <button type="button" class="x" id="reset-all" style="align-self:flex-start">Clear everything on this device</button>
     </section>
   </div>
 
@@ -613,10 +615,78 @@ const ORDER = Object.fromEntries(DATA.contests.map((c, i) => [c.id, i]));
 const num = (cid) => parseInt(cid.slice(1), 10);
 const cidOf = (n) => 'c' + String(n).padStart(3, '0');
 
-/* ---------- anonymous counts (Umami; no-op when not configured) ---------- */
+/* ---------- anonymous counts (Umami) ----------
+   The privacy firewall. Every event Ballotta may count is listed in EVENTS, with the only values each property may
+   take. track() and the tracker's before-send hook (window.ballottaBeforeSend, named in the tracker tag) both pass
+   everything through clean(), which drops any event or property not listed here. So a new feature or a bug can't send
+   an address, precinct, district, race, candidate, pick, reason or name. A browser sending Do Not Track or Global
+   Privacy Control turns counting off entirely, page views included. README.md lists the same events. */
+const ONE_OF = (...vals) => (v) => vals.includes(v);
+const YN = ONE_OF('yes', 'no'), FEW = ONE_OF('0', '1-5', '6+');
+const GEN = (v) => /^[1-9][0-9]?$/.test(v), CODE = (v) => /^[a-z0-9]{1,8}$/.test(v);
+const SECTION_KEYS = ['federal', 'state', 'county', 'city', 'school', 'special'];  // the share sheet's sections
+const EVENTS = {
+  lookup_started: {},
+  lookup_failed: { reason: ONE_OF('no_street', 'bad_zip', 'not_found', 'no_voters_nearby', 'county_unreachable') },
+  units_asked: {},
+  ballot_found: { match: ONE_OF('exact', 'nearby', 'near a line') },
+  address_changed: {},
+  link_damaged: { kind: ONE_OF('damaged', 'too_old') },
+  progress: { at: ONE_OF('25', '50', '75', '100'), reasons: FEW, skipped: FEW },
+  source_opened: { kind: ONE_OF('league_guide', 'campaign_site', 'official', 'news', 'reference', 'other'), level: ONE_OF('federal', 'state', 'courts', 'county', 'city', 'school', 'special', 'measure') },
+  directions_opened: { period: ONE_OF('early', 'eday') },
+  wait_times_opened: { period: ONE_OF('early', 'eday') },
+  view_opened: { view: ONE_OF('decide', 'glance', 'vote', 'crib') },
+  shortcut_used: { kind: ONE_OF('pick', 'skip', 'move', 'reason', 'search') },
+  search_used: {},
+  filter_used: { filter: ONE_OF('all', 'und', 'why') },
+  faq_seen: {},
+  help_opened: { item: ONE_OF('feedback', 'privacy', 'about', 'address', 'clear', 'clearall') },
+  cleared: { what: ONE_OF('picks', 'everything') },
+  crib_printed: { two_col: YN, hide_unopposed: YN },
+  keep_created: { via: ONE_OF('share', 'copy', 'shown', 'email') },
+  keep_restored: {},
+  share_sheet_open: {},
+  share_created: { sections: (v) => v === '' || v.split(',').every(k => SECTION_KEYS.includes(k)), reasons: YN, picks: ONE_OF('1-5', '6-15', '16+'), via: ONE_OF('share', 'copy', 'shown'), generation: GEN, link: CODE },
+  share_opened: { generation: GEN, has_picks: YN, link: CODE },
+  share_own_ballot: { generation: GEN },
+  share_compare: {},
+};
+const LAYOUT = ONE_OF('phone', 'laptop');
+const dropped = [];  // what clean() removed: kept in this page only, so the tests can prove our own calls never trip it
+window.ballottaDropped = dropped;
+function clean(name, data) {
+  const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  if (typeof name !== 'string' || !has(EVENTS, name)) { dropped.push(String(name)); return null; }
+  const spec = EVENTS[name], out = {}, d = data && typeof data === 'object' ? data : {};
+  Object.keys(d).forEach(k => {
+    const v = d[k], ok = (typeof v === 'string' || typeof v === 'number') && (k === 'layout' ? LAYOUT(String(v)) : has(spec, k) && spec[k](String(v)));
+    if (ok) out[k] = v; else dropped.push(name + '.' + k);
+  });
+  return out;
+}
+const NO_COUNT = (() => { try { return navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1'; } catch (e) { return false; } })();
+// The tracker calls this with every payload it is about to send. Only page views, events and page-speed reports
+// pass, rebuilt from a fixed list of text fields (the page address without ?query or #fragment, the referrer as its site only): no distinct id, no
+// identify data, nothing a future tracker might add. A stand-in defined before the tracker tag drops everything
+// until this one exists, so if this script failed to run, nothing would be sent (build_site.py).
+const TOP = ['website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'tag', 'name'];
+const SPEED = ['ttfb', 'fcp', 'lcp', 'cls', 'inp', 'duration'];
+const siteOf = (r) => { try { const u = new URL(r); return u.host ? u.protocol + '//' + u.host : ''; } catch (e) { return ''; } };  // a referrer becomes just its site (or app)
+window.ballottaBeforeSend = (type, p) => {
+  if (NO_COUNT || !p || typeof p !== 'object' || (type !== 'event' && type !== 'performance')) return null;
+  const out = {};
+  TOP.forEach(k => { if (typeof p[k] === 'string') out[k] = k === 'url' ? p[k].split(/[?#]/)[0] : k === 'referrer' ? siteOf(p[k]) : p[k]; });
+  if (type === 'performance') SPEED.forEach(k => { if (typeof p[k] === 'number') out[k] = p[k]; });
+  if (out.name !== undefined) { const d = clean(out.name, p.data); if (!d) return null; out.data = d; }  // page views carry no details
+  return out;
+};
 const TQ = [];
 function track(name, data) {
-  try { if (window.umami && typeof umami.track === 'function') umami.track(name, data || {}); else if (TQ.length < 20) TQ.push([name, data || {}]); } catch (e) {}
+  if (NO_COUNT) return;
+  const d = clean(name, Object.assign({}, data, { layout: window.desk && matchMedia('(min-width: 1024px)').matches ? 'laptop' : 'phone' }));
+  if (!d) return;
+  try { if (window.umami && typeof umami.track === 'function') umami.track(name, d); else if (TQ.length < 20) TQ.push([name, d]); } catch (e) {}
 }
 window.addEventListener('load', () => { let n = 0; const t = setInterval(() => { if (window.umami && typeof umami.track === 'function') { TQ.splice(0).forEach(([a, b]) => { try { umami.track(a, b); } catch (e) {} }); clearInterval(t); } else if (++n > 20) clearInterval(t); }, 500); });
 
@@ -663,8 +733,9 @@ $('go').addEventListener('click', lookup);
 async function lookup() {
   const street = $('street').value.trim(), unit = $('unit').value.trim(), zip = $('zip').value.trim();
   $('units').className = 'unit hidden';
-  if (!street) { show('bad', 'Enter your street address.'); return; }
-  if (!/^\d{5}$/.test(zip)) { show('bad', 'Enter your 5-digit ZIP code.'); return; }
+  if (!street) { show('bad', 'Enter your street address.'); track('lookup_failed', { reason: 'no_street' }); return; }
+  if (!/^\d{5}$/.test(zip)) { show('bad', 'Enter your 5-digit ZIP code.'); track('lookup_failed', { reason: 'bad_zip' }); return; }
+  track('lookup_started');
   show('warn', 'Finding your address in Travis County’s records…');
   try {
     const g = await getJSON(SVC + 'AdMas_wPrecinctFraction/GeocodeServer/findAddressCandidates?' + new URLSearchParams({ SingleLine: street + ', ' + zip, outFields: 'Addr_type,Precinct', maxLocations: '3', outSR: '4326', f: 'json' }));
@@ -672,8 +743,8 @@ async function lookup() {
     if (!cand || cand.score < 80) {
       // Not a registered voting address in the county file: place it with the free Census geocoder, then use nearby addresses
       const pt = await censusPoint(street, zip);
-      if (!pt) { show('bad', 'We couldn’t find that address. Check the spelling and ZIP. Only Travis County addresses are supported.'); return; }
-      return nearby(pt, pt.label);
+      if (!pt) { show('bad', 'We couldn’t find that address. Check the spelling and ZIP. Only Travis County addresses are supported.'); track('lookup_failed', { reason: 'not_found' }); return; }
+      return await nearby(pt, pt.label);  // awaited, so a county outage here shows its message (it used to hang)
     }
     const addr = cand.address.split(',')[0].toUpperCase().replace(/\s+(UNIT|APT|STE|#).*$/, '');
     let where = "Address = '" + q(addr) + "' AND ZIP = " + Number(zip);
@@ -691,9 +762,10 @@ async function lookup() {
       if (keys.length === 1) { hideStatus(); render(recs[0], 'exact', cand.address, null, pt); return; }
       hideStatus(); chooseUnit(profiles, cand.address, pt); return;
     }
-    return nearby(cand.location, cand.address);
+    return await nearby(cand.location, cand.address);
   } catch (e) {
     show('bad', 'We couldn’t reach Travis County’s map server just now (' + e.message + '). Check your connection and try again in a minute.');
+    track('lookup_failed', { reason: 'county_unreachable' });
   }
 }
 function censusPoint(street, zip) {
@@ -710,7 +782,7 @@ function censusPoint(street, zip) {
 async function nearby(p, label) {
   const d = await getJSON(SVC + 'VotingAddresses/VA/MapServer/0/query?' + new URLSearchParams({ geometry: p.x + ',' + p.y, geometryType: 'esriGeometryPoint', inSR: '4326', distance: '120', units: 'esriSRUnit_Meter', spatialRel: 'esriSpatialRelIntersects', outFields: FIELDS + ',LongitudeX,LatitudeY', returnGeometry: 'false', f: 'json' }));
   const near = (d.features || []).map(f => f.attributes);
-  if (!near.length) { show('bad', 'We placed that address on the map, but there are no registered voting addresses near it. Check with the Travis County Tax Office.'); return; }
+  if (!near.length) { show('bad', 'We placed that address on the map, but there are no registered voting addresses near it. Check with the Travis County Tax Office.'); track('lookup_failed', { reason: 'no_voters_nearby' }); return; }
   const dist = r => Math.hypot((r.LongitudeX - p.x) * 96000, (r.LatitudeY - p.y) * 111000);
   near.sort((a, b) => dist(a) - dist(b));
   const keys = new Set(near.map(profileKey));
@@ -724,6 +796,7 @@ function chooseUnit(profiles, label, pt) {
     groups.map((g, i) => '<button type="button" class="btn secondary small" data-i="' + i + '">' + esc(g.slice(0, 6).map(r => r.Unit || '(no unit)').join(', ') + (g.length > 6 ? ' +' + (g.length - 6) + ' more' : '')) + '</button>').join('');
   box.className = 'unit';
   box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { box.className = 'unit hidden'; render(groups[+b.dataset.i][0], 'exact', label, null, pt); }));
+  track('units_asked');
 }
 
 /* ---------- render ---------- */
@@ -746,11 +819,14 @@ function render(rec, mode, label, neighbors, pt) {
     all.forEach(id => { if (!mine.has(id)) list.push({ c: BYID[id], conf: 'medium', note: 'Your address is near a district line, so this contest may be on your ballot.' }); });
     list.sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
   }
+  const before = ballot.map(b => b.c.id).join(','), after = list.map(b => b.c.id).join(',');
   here = pt ? [Math.round(pt.x * 1000) / 1000, Math.round(pt.y * 1000) / 1000] : null;
   const where = label.replace(/, AUSTIN, TX/i, ', Austin') + ' · Precinct ' + rec.Precinct + ' · Nov 3, 2026';
   LS.set('ballotta.ballot', { pr: String(rec.Precinct), b: list.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), mode, at: Date.now(), pt: here });
-  showBallot(list, { mode, precinct: rec.Precinct, where });
+  // Counted before the ballot shows, so a progress milestone the new ballot triggers comes after ballot_found.
   track('ballot_found', { match: { exact: 'exact', nearby: 'nearby', 'nearby-mixed': 'near a line' }[mode] || mode });
+  if (before && before !== after) track('address_changed');  // came back and looked up an address with a different ballot
+  showBallot(list, { mode, precinct: rec.Precinct, where });
   afterBallot();
 }
 function cleanBallot(b) {
@@ -779,7 +855,7 @@ function showBallot(list, meta) {
   $('groups').innerHTML = LEVELS.filter(L => byLevel[L]).map(L => '<div style="display:flex;flex-direction:column;gap:8px"><h3>' + esc(LEVEL_LABEL[L] || L) + '</h3><div class="list">' + byLevel[L].map(raceHTML).join('') + '</div></div>').join('');
   $('groups').querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => pick(btn.dataset.c, btn.dataset.pick)));
   $('groups').querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { whys[t.dataset.c] = t.value; LS.set('ballotta.whys', whys); renderCrib(); }));
-  refresh();
+  quietProgress = true; try { refresh(); } finally { quietProgress = false; }  // showing a ballot isn't progress
   renderVote();/*DESK*/ if (window.desk) try { desk.ballot(meta); } catch (e) {}/*/DESK*/
 }
 function chev() { return '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'; }
@@ -854,6 +930,26 @@ function refresh() {
   $('meterlabel').setAttribute('aria-label', done + ' of ' + total + ' contests decided');
   renderCrib();
   if (!$('compare').classList.contains('hidden')) renderCompare();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/
+  milestones();
+}
+// Counted when a pick or skip crosses 25, 50, 75 or 100% decided on the ballot showing (a skip counts as decided),
+// with rough counts of reasons written and races skipped. A ballot shown already decided (a saved ballot, a keep link,
+// a returning voter) counts nothing: what it had reached is noted in memory only, never stored. Never which races.
+let progressSeen = { sig: '', at: [] }, quietProgress = false;
+function milestones() {
+  const ids = ballot.map(b => b.c.id), n = ids.length;
+  if (!n) return;
+  const sig = ids.join(',');
+  if (progressSeen.sig !== sig) progressSeen = { sig, at: [] };
+  const done = ids.filter(id => current(id).length).length;
+  const now = [25, 50, 75, 100].filter(p => done * 100 >= p * n && !progressSeen.at.includes(p));
+  if (!now.length) return;
+  progressSeen.at.push(...now);
+  if (quietProgress) return;  // the ballot was just shown: nothing was decided just now
+  const few = (k) => k === 0 ? '0' : k <= 5 ? '1-5' : '6+';
+  const reasons = few(ids.filter(id => typeof whys[id] === 'string' && whys[id].trim() !== '').length);
+  const skipped = few(ids.filter(id => current(id)[0] === '__skip').length);
+  now.forEach(p => track('progress', { at: String(p), reasons, skipped }));
 }
 function renderCrib() {
   const withWhy = $('withwhy').checked;
@@ -898,6 +994,29 @@ function renderVote() {
   $('waits').href = 'https://updates.electionlink.net/widgets/travistx/2026-11-03/' + (period === 'early' ? 'Early%20Voting%20Dashboard.html' : 'Election%20Day%20Voting%20Dashboard.html');
   $('waitsnote').textContent = 'Travis County map' + (started ? '' : ' · fills in once voting starts Oct 19');
 }
+// Outbound links: count the kind of link and the race's level, never which race or which candidate.
+const KIND_BY_HOST = [[/(^|\.)austinvotersguide\.org$/, 'league_guide'], [/\.gov$/, 'official'],
+  [/(^|\.)(texastribune\.org|kut\.org|statesman\.com|apnews\.com|votebeat\.org)$/, 'news'], [/(^|\.)(ballotpedia\.org|wikipedia\.org)$/, 'reference']];
+function raceLevel(a) {
+  const box = a.closest('details.race, tr[data-tr], #dk-paper, #dk-notes'), p = $('dk-paper');
+  const id = !box ? '' : box.matches('details.race') ? box.id.slice(1) : box.matches('tr[data-tr]') ? box.dataset.tr : (p && p.dataset.c) || '';
+  const c = BYID[id];
+  return !c ? '' : c.type === 'measure' ? 'measure' : c.level === 'Special district' ? 'special' : c.level.toLowerCase();
+}
+function outbound(e) {
+  if (e.type === 'auxclick' && e.button !== 1) return;  // a middle click opens a link too
+  const a = e.target && e.target.closest ? e.target.closest('a[href^="http"]') : null;
+  if (!a) return;
+  let host = '';
+  try { host = new URL(a.href).hostname; } catch (err) { return; }
+  if (host === 'www.google.com' && a.pathname.startsWith('/maps/dir')) return track('directions_opened', { period });
+  if (host === 'updates.electionlink.net') return track('wait_times_opened', { period });
+  const kind = a.textContent.trim() === 'Campaign site' ? 'campaign_site' : (KIND_BY_HOST.find(([re]) => re.test(host)) || [null, 'other'])[1];
+  const level = raceLevel(a);
+  track('source_opened', level ? { kind, level } : { kind });
+}
+document.addEventListener('click', outbound, true);
+document.addEventListener('auxclick', outbound, true);
 $('t-early').addEventListener('click', () => { period = 'early'; renderVote(); });
 $('t-eday').addEventListener('click', () => { period = 'eday'; renderVote(); });
 $('allsites').addEventListener('click', () => { showAll = !showAll; renderVote(); });
@@ -1210,8 +1329,17 @@ $('feedback').addEventListener('click', (e) => {
   const body = 'What I tried:\n\n\nWhat happened (or what looked wrong):\n\n\nPhone or computer, and browser:\n\n\n---\n' + ctx + '\nPage: ' + baseURL();
   location.href = 'mailto:' + to + '?' + new URLSearchParams({ subject: 'Ballotta test feedback', body }).toString().replace(/\+/g, '%20');
 });
-$('print').addEventListener('click', () => { track('crib_printed', {}); window.print(); });
-$('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
+$('print').addEventListener('click', () => { track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print(); });
+// Clear everything on this device (#29): every ballotta.* key in this browser, then a fresh page. Asks first.
+$('reset-all').addEventListener('click', () => {
+  if (!confirm('Clear everything Ballotta saved in this browser: your ballot, picks, reasons, map location and share name?')) return;
+  track('cleared', { what: 'everything' });
+  ['localStorage', 'sessionStorage'].forEach(n => { try { const s = window[n]; Object.keys(s).filter(k => k.startsWith('ballotta.')).forEach(k => s.removeItem(k)); } catch (e) {} });  // blocked storage can't stop the reload
+  location.replace(location.pathname);
+});
+// Clear everything in another tab: this tab's copy is stale, so start fresh instead of writing it back.
+window.addEventListener('storage', (e) => { if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null) location.replace(location.pathname); });
+$('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
 
 /*DESK*/
 /* ---------- laptop layout (1024px and wider) ----------
@@ -1307,6 +1435,7 @@ const desk = (() => {
     if (!ballot.length) return;
     if (idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
     rail();
+    P().dataset.c = ui.view === 'decide' ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
     $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' ? ' wide' : '');
     ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib })[ui.view]();
     if (app && friend && WIDE.matches && ui.cmpFor !== friend) {
@@ -1315,7 +1444,7 @@ const desk = (() => {
       const mine = new Set(ballot.map(b => b.c.id)), k = friend.code || '', seen = LS.get('ballotta.compared', []), list = Array.isArray(seen) ? seen : [];
       if (Object.keys(friend.P).some(id => mine.has(id))) {
         ui.cmpFor = friend;
-        if (!(k && list.includes(k))) { track('share_compare', { layout: 'laptop' }); if (k) LS.set('ballotta.compared', list.concat(k).slice(-50)); }
+        if (!(k && list.includes(k))) { track('share_compare'); if (k) LS.set('ballotta.compared', list.concat(k).slice(-50)); }
       }
     }
   }
@@ -1523,10 +1652,12 @@ const desk = (() => {
   $('dk-menu').querySelectorAll('[data-help]').forEach(btn => btn.addEventListener('click', () => {
     menu(false); $('dk-help').focus();  // the item is about to be hidden: give focus somewhere a closing window can return it
     const a = btn.dataset.help;
+    track('help_opened', { item: a });
     if (a === 'feedback') $('feedback').click();
     else if (a === 'privacy' || a === 'about') info(a);
     else if (a === 'address') toLanding();
     else if (a === 'clear') { $('reset').click(); render(); }
+    else if (a === 'clearall') $('reset-all').click();
   }));
   $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });  // runs after the button's own handler (it's on the container)
   $('dk-share').addEventListener('click', () => $('a-share').click());
@@ -1534,9 +1665,20 @@ const desk = (() => {
   $('dk-print').addEventListener('click', () => $('print').click());
   $('dk-back').addEventListener('click', () => { ui.landing = false; render(); });
   $('dk-say').querySelector('button').addEventListener('click', () => $('dk-say').classList.add('hidden'));
-  document.querySelectorAll('#dk-views button').forEach(btn => btn.addEventListener('click', (e) => setView(btn.dataset.view, e.detail > 0)));
-  document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { ui.filter = btn.dataset.f; rail(); }));
-  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); rail(); });
+  const once = new Set();  // counted once per visit (page load), so a busy keyboard doesn't count 63 times
+  const countOnce = (key, name, data) => { if (!once.has(key)) { once.add(key); track(name, data); } };
+  document.querySelectorAll('#dk-views button').forEach(btn => btn.addEventListener('click', (e) => { setView(btn.dataset.view, e.detail > 0); track('view_opened', { view: btn.dataset.view }); }));
+  document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { ui.filter = btn.dataset.f; rail(); countOnce('f:' + btn.dataset.f, 'filter_used', { filter: btn.dataset.f }); }));
+  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); rail(); countOnce('search', 'search_used'); });
+  if ('IntersectionObserver' in window) {  // did the FAQ scroll into view? once per visit, after a scroll (a tall window shows it at once)
+    const arm = () => {
+      if (document.body.classList.contains('dk-app-on')) return;  // a scroll in the app doesn't count: only one on the landing page
+      window.removeEventListener('scroll', arm);
+      const io = new IntersectionObserver((es) => { if (es.some(x => x.isIntersecting)) { countOnce('faq', 'faq_seen'); io.disconnect(); } }, { threshold: 0.25 });
+      io.observe($('dk-faq'));
+    };
+    window.addEventListener('scroll', arm, { passive: true });
+  }
   $('dk-q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('dk-q').value = ''; ui.q = ''; rail(); } });
   document.addEventListener('keydown', (e) => {
     if (!WIDE.matches || !ballot.length || ui.landing || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || e.isComposing) return;
@@ -1545,16 +1687,17 @@ const desk = (() => {
     if (typing) { if (e.key === 'Escape') t.blur(); return; }
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     if (t && t !== document.body && !t.closest('#dk-paper')) return;  // single-key shortcuts only on the ballot paper (WCAG 2.1.4, audit #30)
-    if (k === '/') { e.preventDefault(); $('dk-q').focus(); return; }
+    const used = (kind) => countOnce('k:' + kind, 'shortcut_used', { kind });
+    if (k === '/') { e.preventDefault(); $('dk-q').focus(); used('search'); return; }
     if (ui.view !== 'decide') return;
     if (e.repeat && (/^[1-9]$/.test(k) || k === 's')) return;  // a held key picks once (pick() toggles)
     const b = curB();
-    if (/^[1-9]$/.test(k)) { const o = optionsOf(b.c)[+k - 1]; if (o !== undefined) { e.preventDefault(); pick(b.c.id, o); announce(b.c); } }
-    else if (k === 's') { e.preventDefault(); pick(b.c.id, '__skip'); announce(b.c); }
-    else if (k === 'n') { e.preventDefault(); act('next', true); }
-    else if (k === 'j') { e.preventDefault(); const i = idx(b.c.id); if (i < ballot.length - 1) go(ballot[i + 1].c.id, true); }
-    else if (k === 'k') { e.preventDefault(); act('prev', true); }
-    else if (k === 'r') { e.preventDefault(); $('dk-w').focus(); }
+    if (/^[1-9]$/.test(k)) { const o = optionsOf(b.c)[+k - 1]; if (o !== undefined) { e.preventDefault(); pick(b.c.id, o); announce(b.c); used('pick'); } }
+    else if (k === 's') { e.preventDefault(); pick(b.c.id, '__skip'); announce(b.c); used('skip'); }
+    else if (k === 'n') { e.preventDefault(); act('next', true); used('move'); }
+    else if (k === 'j') { e.preventDefault(); const i = idx(b.c.id); if (i < ballot.length - 1) go(ballot[i + 1].c.id, true); used('move'); }
+    else if (k === 'k') { e.preventDefault(); act('prev', true); used('move'); }
+    else if (k === 'r') { e.preventDefault(); $('dk-w').focus(); used('reason'); }
   });
   let printing = false;  // Chrome lays a printout out narrower than 1024px: that is not a switch to the phone layout
   window.addEventListener('beforeprint', () => { printing = true; });
@@ -1584,6 +1727,7 @@ const desk = (() => {
       else if (ui.view === 'crib') cribPaper();
     },
     cribSkip: (c) => ui.hideCrib && isUnopp(c),
+    cribOpts: () => ({ two_col: ui.two ? 'yes' : 'no', hide_unopposed: ui.hideCrib ? 'yes' : 'no' }),
     // A message about an incoming link: the landing page shows it in the form; in the app that form is hidden, so say it here (audit #26).
     say(t) {  // '' clears it: every new link does (Pass 1)
       const box = $('dk-say'); box.classList.add('hidden');
@@ -1611,12 +1755,12 @@ async function handleIncoming(inc, fresh) {
   const o = await unpackFrag(inc);
   if (my !== incSeq) return;
   $('lookupmsg').classList.add('hidden');/*DESK*/ if (window.desk) try { desk.say(''); } catch (e) {}/*/DESK*/
-  if (o === TOO_OLD) return say('This browser is too old to open that link. Update your phone’s software, or open the link in a current browser such as Chrome, Firefox or Safari.');
-  if (!o || typeof o !== 'object' || o.v !== 1) return damaged();
+  if (o === TOO_OLD) { track('link_damaged', { kind: 'too_old' }); return say('This browser is too old to open that link. Update your phone’s software, or open the link in a current browser such as Chrome, Firefox or Safari.'); }
+  if (!o || typeof o !== 'object' || o.v !== 1) { track('link_damaged', { kind: 'damaged' }); return damaged(); }
   try {
     if (inc[0] === 'k') { SS.del('ballotta.incoming'); if (fresh) openRestore(o); }
     else openFriend(o, fresh);
-  } catch (e) { damaged(); }
+  } catch (e) { track('link_damaged', { kind: 'damaged' }); damaged(); }
 }
 // A link opened in a tab that's already on Ballotta only changes the fragment: handle it the same way.
 window.addEventListener('hashchange', () => {

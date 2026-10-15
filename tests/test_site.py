@@ -61,7 +61,7 @@ def lookup_courthouse_and_ballot_found(b):
     ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)
     assert pg.text_content('#k-total') == '63', pg.text_content('#k-total')
     ev = events(pg)
-    assert ['ballot_found', {'match': 'exact'}] in ev, ev
+    assert ['ballot_found', {'match': 'exact', 'layout': 'phone'}] in ev and ['lookup_started', {'layout': 'phone'}] in ev, ev
     ctx.close()
 
 @test
@@ -125,7 +125,7 @@ def keep_link_round_trip(b):
     url = pg.inner_text('#keep-out')
     frag = url.split('#', 1)[1]
     assert re.fullmatch(r'k2[A-Za-z0-9_-]{16,}', frag), url                 # v2: nothing after '#' that chat apps cut at
-    assert ['keep_created', {'via': 'copy'}] in events(pg)
+    assert ['keep_created', {'via': 'copy', 'layout': 'phone'}] in events(pg)
     ctx.close()
     sent2 = []
     ctx, pg = new_page(b, sent2); pg.goto(url)
@@ -174,7 +174,7 @@ def share_friend_compare_and_events(b):
     assert 'Maya shared 2 picks' in f and 'Qadri' in f and '“More shade and pools near us.”' in f and 'Ted Brown' not in f, f
     pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'share_opened')")
     op = [e for e in events(pg) if e[0] == 'share_opened'][0][1]
-    assert op == {'generation': 1, 'has_picks': 'no', 'link': ev['link']}, op
+    assert op == {'generation': 1, 'has_picks': 'no', 'link': ev['link'], 'layout': 'phone'}, op
     pg.reload(); pg.wait_for_selector('#friend:not(.hidden)')       # survives a refresh, and is not double-counted
     pg.wait_for_timeout(1500)
     assert names(pg).count('share_opened') == 0
@@ -677,6 +677,7 @@ def desk_failures_never_break_the_phone_flow(b):
     pg.click('#f-own'); lookup(pg)
     pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'ballot_found')", timeout=30000)
     assert 'United States Senator' in pg.inner_text('#crib') and not errs, errs                          # the crib sheet still renders
+    assert 'lookup_failed' not in names(pg) and pg.locator('#status.bad').count() == 0, 'a laptop-code failure is not reported as a county outage'
     ctx.close()
     ctx, pg = new_page(b, wide=True); pg.add_init_script(JUNK_STORAGE); pg.goto(BASE)
     pg.wait_for_selector('body.dk-app-on'); assert pg.locator('.dk-row').count() == 2
@@ -932,6 +933,266 @@ def desk_phone_layout_matches_live_page(b):
         shots.append((first, pg.screenshot(full_page=True))); ctx.close()
     assert shots[0][0] == shots[1][0], 'landing differs at phone width with the laptop code in'
     assert shots[0][1] == shots[1][1], 'ballot differs at phone width with the laptop code in'
+
+# ---------------------------------------------------------------- anonymous counts: the privacy firewall (Umami round)
+def event_names_in_page():
+    src = (ROOT / 'source/template-travis.html').read_text(encoding='utf-8')
+    block = src[src.index('const EVENTS = {'):src.index('};', src.index('const EVENTS = {'))]
+    return re.findall(r'^  ([a-z_]+): \{', block, re.M)
+
+def no_link_opens(pg):                                     # links still fire our counting listener, but never navigate
+    pg.evaluate("document.addEventListener('click', e => { if (e.target.closest && e.target.closest('a[href^=\"http\"]')) e.preventDefault(); })")
+
+def journey_check(pg, layout):
+    # Everything counted is on the list, carries the layout, and nothing our own code sent was trimmed by the firewall.
+    names_ok = set(event_names_in_page())
+    for n, d in events(pg):
+        assert n in names_ok and d.get('layout') == layout, (n, d)
+        blob = json.dumps(d)
+        assert not re.search(r'Guadalupe|78701|Precinct|Paxton|Talarico|Qadri|Senator', blob), blob
+    assert pg.evaluate('window.ballottaDropped') == [], pg.evaluate('window.ballottaDropped')
+
+@test
+def privacy_firewall_drops_anything_unlisted(b):
+    ctx, pg = new_page(b); pg.goto(BASE)
+    bs = lambda p: pg.evaluate('p => window.ballottaBeforeSend("event", p)', p)
+    assert bs({'name': 'not_an_event', 'data': {}}) is None, 'an unlisted event never leaves the browser'
+    got = bs({'name': 'lookup_failed', 'data': {'reason': 'not_found', 'street': '1000 Guadalupe St', 'layout': 'phone'}, 'id': 'someone', 'url': '/'})
+    assert got['data'] == {'reason': 'not_found', 'layout': 'phone'} and 'id' not in got and got['url'] == '/', got
+    assert bs({'name': 'lookup_failed', 'data': {'reason': '1000 Guadalupe St'}})['data'] == {}, 'a value off the list is dropped'
+    assert bs({'name': 'progress', 'data': {'at': {'x': 1}}})['data'] == {}, 'objects are never values'
+    assert bs({'name': 'share_created', 'data': {'sections': ['federal']}})['data'] == {}, 'arrays are never values'
+    assert bs({'url': '/', 'title': 'Ballotta'}) == {'url': '/', 'title': 'Ballotta'}, 'page views pass'
+    # Verification pass: payloads without a name, other payload types and extra fields can't carry anything either.
+    assert bs({'url': '/', 'data': {'street': '1000 Guadalupe St'}, 'precinct': '300'}) == {'url': '/'}, 'a page view carries no details'
+    odd = {'url': '/?addr=1000+Guadalupe#k=x', 'referrer': 'https://forum.example/thread/1000-guadalupe-st?q=1', 'title': {'street': 'x'}, 'tag': ['78701'], 'website': 'w'}
+    assert bs(odd) == {'url': '/', 'referrer': 'https://forum.example', 'website': 'w'}, 'only text fields; no query or fragment; a referrer is just its site'
+    assert bs({'url': '/', 'referrer': 'not a url'}) == {'url': '/', 'referrer': ''}
+    assert bs({'referrer': 'android-app://com.google.android.googlequicksearchbox/'}) == {'referrer': 'android-app://com.google.android.googlequicksearchbox'}, 'an app referrer keeps its name'
+    assert bs({'referrer': 'about:blank'}) == {'referrer': ''} and bs({'referrer': 'file:///x'}) == {'referrer': ''}, 'never the string "null"'
+    assert pg.evaluate('window.ballottaBeforeSend("identify", { data: { street: "1000 Guadalupe St" } })') is None, 'no session data'
+    perf = pg.evaluate('window.ballottaBeforeSend("performance", { url: "/", lcp: 812.5, cls: 0.01, street: "x", data: { a: 1 } })')
+    assert perf == {'url': '/', 'lcp': 812.5, 'cls': 0.01}, perf
+    for ev, d in (('share_opened', {'generation': 100, 'has_picks': 'yes', 'link': 'ABC!!'}), ('share_created', {'sections': 'federal,bogus'}),
+                  ('faq_seen', {'layout': 'tablet'})):
+        assert bs({'name': ev, 'data': d})['data'] == ({'has_picks': 'yes'} if ev == 'share_opened' else {}), (ev, d)   # pattern checks
+    pg.evaluate("track('lookup_failed', { reason: 'Guadalupe' })")
+    assert events(pg)[-1] == ['lookup_failed', {'layout': 'phone'}] and 'lookup_failed.reason' in pg.evaluate('window.ballottaDropped')
+    for sel in ('#lookup > p.note', '#dk-faq'):                                                # the promise is on the page, too
+        assert 'Do Not Track or Global Privacy Control' in pg.text_content(sel), sel
+    tag = (ROOT / 'index.html').read_text(encoding='utf-8')
+    assert 'data-before-send="ballottaBeforeSend"' in tag and 'data-do-not-track="true"' in tag and 'data-performance="true"' in tag
+    assert -1 < tag.find('<script>window.ballottaBeforeSend = () => null;</script>') < tag.find('data-before-send='), 'fails closed until the page defines its check'
+    assert 'and how quickly pages load, never your address or your picks' in pg.text_content('#lookup > p.note')
+    ctx.close()
+    for signal in ("Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true })",
+                   "Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' })"):
+        ctx, pg = new_page(b); pg.add_init_script(signal); pg.goto(BASE)
+        assert pg.evaluate('window.ballottaBeforeSend("event", { url: "/" })') is None, signal
+        pg.evaluate("track('lookup_started')"); pg.fill('#street', ''); pg.click('#go')
+        assert events(pg) == [], (signal, 'no events (page views: see real_tracker_sends_only_listed_events)')
+        ctx.close()
+    plain = build_module().build(desk=False)                                                    # after a rollback, wide screens are phones
+    ctx, pg = new_page(b, wide=True); ctx.route('**/_rollback.html', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=plain))
+    pg.goto(f'http://127.0.0.1:{PORT}/_rollback.html'); pg.evaluate("track('faq_seen')")
+    assert events(pg)[-1] == ['faq_seen', {'layout': 'phone'}], events(pg)
+    ctx.close()
+
+@test
+def real_tracker_sends_only_listed_events(b):
+    # The real pinned umami.js, pointed at this test server: every request it makes is caught and checked.
+    TOP = {'website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'tag', 'name', 'data', 'ttfb', 'fcp', 'lcp', 'cls', 'inp', 'duration'}
+    for gpc in ('', "Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true })",
+                "Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' })"):
+        sent = []
+        ctx = b.new_context(viewport={'width': 400, 'height': 900})
+        if gpc: ctx.add_init_script(gpc)
+        def page(route):
+            r = route.fetch(); body = r.text().replace('data-domains="ballotta.org,www.ballotta.org,lanebecker.github.io"', 'data-domains="127.0.0.1"')
+            route.fulfill(response=r, body=body)
+        ctx.route(re.compile(r'.*/index\.html$|.*:%d/$' % PORT), page)
+        ctx.route('https://gateway.umami.is/**', lambda r: (sent.append(r.request.post_data_json), r.fulfill(status=200, content_type='application/json', body='{}')))
+        pg = ctx.new_page(); pg.goto(f'http://127.0.0.1:{PORT}/index.html')
+        lookup(pg); pick(pg, 'c070', 'Qadri'); pg.wait_for_timeout(1500)
+        pg.evaluate("Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange'))")
+        pg.wait_for_timeout(1500)                                                                 # the tracker sends its page-speed report on hide
+        if gpc:
+            assert sent == [], ('Do Not Track or Global Privacy Control: nothing at all is sent, not even page views', gpc, sent)
+        else:
+            names_ok = set(event_names_in_page())
+            kinds = [p['payload'].get('name') for p in sent if p['type'] == 'event']
+            assert None in kinds and 'lookup_started' in kinds and 'ballot_found' in kinds, kinds   # a page view and our events
+            speed = [p['payload'] for p in sent if p['type'] == 'performance']
+            assert speed and any(isinstance(speed[0].get(k), (int, float)) for k in ('ttfb', 'fcp', 'lcp', 'duration')), speed
+            for p in sent:
+                pl, blob = p['payload'], json.dumps(p)
+                assert p['type'] in ('event', 'performance') and set(pl) <= TOP, p
+                assert pl.get('name') is not None or 'data' not in pl, p
+                assert pl.get('name') is None or pl['name'] in names_ok, p
+                assert '#' not in pl.get('url', '') and '?' not in pl.get('url', ''), p
+                assert not re.search(r'Guadalupe|78701|Precinct|Qadri', blob), blob
+        ctx.close()
+
+@test
+def counts_where_people_drop_off(b):
+    ctx, pg = new_page(b); pg.goto(BASE)
+    pg.click('#go'); pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '787'); pg.click('#go')
+    assert [e[1].get('reason') for e in events(pg) if e[0] == 'lookup_failed'] == ['no_street', 'bad_zip']
+    pg.evaluate("chooseUnit({ a: [{ Unit: '1' }], b: [{ Unit: '2' }] }, '1 Main St', null)")
+    assert names(pg).count('units_asked') == 1
+    lookup(pg)
+    assert names(pg).count('lookup_started') == 1 and names(pg).count('address_changed') == 0 and names(pg).count('ballot_found') == 1
+    found = lambda k: pg.wait_for_function(f"(window.__events||[]).filter(e => e[0] === 'ballot_found').length === {k}", timeout=30000)
+    lookup(pg); found(2)                                                                         # the same address again: not a change
+    assert names(pg).count('address_changed') == 0
+    pg.evaluate("renderStored({ pr: '9', b: [1, 2], mode: 'saved' }, 'test')"); lookup(pg); found(3)   # a different ballot was showing
+    assert names(pg).count('address_changed') == 1
+    journey_check(pg, 'phone'); ctx.close()
+    ctx, pg = new_page(b); ctx.route(re.compile(r'https://taxmaps\.traviscountytx\.gov/.*'), lambda r: r.abort()); pg.goto(BASE)
+    pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
+    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'lookup_failed')", timeout=15000)
+    assert events(pg)[-1] == ['lookup_failed', {'reason': 'county_unreachable', 'layout': 'phone'}]; ctx.close()
+    def census(route, match):
+        cb = re.search(r'callback=([A-Za-z0-9_]+)', route.request.url).group(1)
+        m = '[{"coordinates":{"x":-97.74,"y":30.27},"matchedAddress":"1 NOWHERE ST, AUSTIN, TX, 78701"}]' if match else '[]'
+        route.fulfill(status=200, content_type='application/javascript', body=cb + '({"result":{"addressMatches":' + m + '}})')
+    for match, reason, va in ((False, 'not_found', 'empty'), (True, 'no_voters_nearby', 'empty'), (True, 'county_unreachable', 'down')):
+        ctx, pg = new_page(b)
+        ctx.route(re.compile(r'.*GeocodeServer/findAddressCandidates.*'), lambda r: r.fulfill(status=200, content_type='application/json', body='{"candidates":[]}'))
+        ctx.route(re.compile(r'.*VotingAddresses/VA/MapServer/0/query.*'), (lambda v: lambda r: r.abort() if v == 'down' else r.fulfill(status=200, content_type='application/json', body='{"features":[]}'))(va))
+        ctx.route(re.compile(r'https://geocoding\.geo\.census\.gov/.*'), (lambda m: lambda r: census(r, m))(match))   # Playwright passes the request as a 2nd argument
+        pg.goto(BASE); pg.fill('#street', '1 Nowhere St'); pg.fill('#zip', '78701'); pg.click('#go')
+        pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'lookup_failed')", timeout=15000)
+        assert events(pg)[-1] == ['lookup_failed', {'reason': reason, 'layout': 'phone'}], events(pg)
+        if va == 'down': assert 'couldn’t reach Travis County’s map server' in pg.inner_text('#status'), 'no longer stuck on "Finding your address"'
+        ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE + '#s=not-a-real-payload')
+    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'link_damaged')")
+    assert events(pg)[-1] == ['link_damaged', {'kind': 'damaged', 'layout': 'phone'}]
+    frag = pg.evaluate("packFrag('s', { v: 1, n: 'Ana', c: 'abcd2345', g: 1, p: { 70: 0 } })"); ctx.close()
+    ctx, pg = new_page(b); pg.add_init_script('delete window.DecompressionStream'); pg.goto(BASE + '#' + frag)   # an old browser
+    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'link_damaged')")
+    assert events(pg)[-1] == ['link_damaged', {'kind': 'too_old', 'layout': 'phone'}], events(pg); ctx.close()
+
+@test
+def counts_progress_sources_and_clearing(b):
+    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); no_link_opens(pg)
+    n = pg.evaluate('ballot.length')
+    pg.evaluate("ballot.slice(0, Math.ceil(ballot.length / 4)).forEach(x => pick(x.c.id, '__skip'))")
+    prog = lambda: [e[1] for e in events(pg) if e[0] == 'progress']
+    assert prog() == [{'at': '25', 'reasons': '0', 'skipped': '6+', 'layout': 'phone'}], prog()
+    pg.evaluate("ballot.forEach(x => { if (!current(x.c.id).length) pick(x.c.id, '__skip'); })")
+    assert [p['at'] for p in prog()] == ['25', '50', '75', '100'], (n, prog())
+    pg.evaluate("renderStored({ pr: '9', b: [1, 2, 3, 4], mode: 'saved' }, 'test')")                  # shown already decided: counts nothing
+    assert len(prog()) == 4, ('a ballot shown already decided is not progress', prog())
+    pg.evaluate("renderStored({ pr: '9', b: [210, 211, 212, 213], mode: 'saved' }, 'test'); pick('c210', '__skip')")
+    assert len(prog()) == 5 and prog()[-1]['at'] == '25', ('a pick that crosses a milestone counts', prog())
+    assert pg.evaluate("localStorage.getItem('ballotta.progress')") is None, 'nothing about progress is stored'
+    pg.evaluate("renderStored(JSON.parse(localStorage.getItem('ballotta.ballot')), 'test')")
+    pg.reload(); pg.wait_for_selector('#result:not(.hidden)'); pg.wait_for_timeout(500)
+    assert names(pg).count('progress') == 0, 'a returning voter is not counted again (audit #1)'
+    pg.evaluate("pick(ballot.find(x => current(x.c.id)[0] === '__skip').c.id, '__skip')")               # un-skip one: still over 75%
+    pg.evaluate("pick(ballot.find(x => !current(x.c.id).length).c.id, '__skip')")                      # and decide it again: back to 100%
+    assert names(pg).count('progress') == 0, 'milestones reached before the reload are noted when the ballot shows (Pass 2)'
+    no_link_opens(pg); open_race(pg, 'c001')
+    pg.locator('#rc001 a', has_text='League guide answers').first.click()
+    pg.locator('#rc001 a', has_text='Campaign site').first.click()
+    src = [e[1] for e in events(pg) if e[0] == 'source_opened']
+    assert src == [{'kind': 'league_guide', 'level': 'federal', 'layout': 'phone'}, {'kind': 'campaign_site', 'level': 'federal', 'layout': 'phone'}], src
+    for href, kind in (('https://www.texastribune.org/x', 'news'), ('https://ballotpedia.org/x', 'reference'), ('https://votetravis.gov/x', 'official'), ('https://example.com/x', 'other')):
+        pg.evaluate("h => { const a = document.createElement('a'); a.href = h; a.textContent = 'x'; a.id = 'tmp-a'; document.body.append(a); a.click(); a.remove(); }", href)
+        assert events(pg)[-1] == ['source_opened', {'kind': kind, 'layout': 'phone'}], (href, events(pg)[-1])   # outside a race: no level
+    pg.locator('#rc001 a', has_text='League guide answers').first.click(button='middle')            # a middle click opens a link too
+    assert events(pg)[-1] == ['source_opened', {'kind': 'league_guide', 'level': 'federal', 'layout': 'phone'}], events(pg)[-1]
+    pg.click('#t-early')                                                                         # from Oct 31 the page opens on Election Day
+    pg.locator('#sites a', has_text='Directions').first.click(); pg.click('#waits')
+    assert events(pg)[-2:] == [['directions_opened', {'period': 'early', 'layout': 'phone'}], ['wait_times_opened', {'period': 'early', 'layout': 'phone'}]], events(pg)[-2:]
+    pg.evaluate('window.print = () => {}'); pg.click('#print')
+    assert events(pg)[-1] == ['crib_printed', {'two_col': 'no', 'hide_unopposed': 'no', 'layout': 'phone'}]
+    pg.once('dialog', lambda d: d.accept()); pg.click('#reset')
+    assert events(pg)[-1] == ['cleared', {'what': 'picks', 'layout': 'phone'}]
+    journey_check(pg, 'phone')
+    LS_KEYS = "Object.keys(localStorage).filter(k => k.startsWith('ballotta.')).concat(Object.keys(sessionStorage).filter(k => k.startsWith('ballotta.')))"
+    assert pg.evaluate(LS_KEYS), 'something is saved before clearing'
+    pg.evaluate("localStorage.setItem('umami.disabled', '1'); localStorage.setItem('other.site', 'x')")   # not Ballotta's: must survive
+    pg.evaluate("umami.track = (n, d) => sessionStorage.setItem('__last', JSON.stringify([n, d]))")   # survives the reload
+    pg.once('dialog', lambda d: d.accept()); pg.click('#reset-all')
+    pg.wait_for_function("!document.getElementById('result') || document.getElementById('result').classList.contains('hidden')")
+    pg.wait_for_load_state()
+    assert pg.evaluate(LS_KEYS) == [], pg.evaluate(LS_KEYS)
+    assert pg.evaluate("JSON.parse(sessionStorage.getItem('__last'))") == ['cleared', {'what': 'everything', 'layout': 'phone'}]
+    assert pg.is_hidden('#result') and pg.evaluate('location.hash') == ''
+    assert pg.evaluate("[localStorage.getItem('umami.disabled'), localStorage.getItem('other.site')]") == ['1', 'x'], 'only ballotta.* keys are cleared'
+    ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); pick(pg, 'c070', 'Qadri')                    # another open tab doesn't write it back (audit #5)
+    pg2 = ctx.new_page(); pg2.goto(BASE); pg2.wait_for_selector('#result:not(.hidden)')
+    pg2.evaluate('window.__mark = 1'); lookup(pg); pg.wait_for_timeout(500)                          # a lookup elsewhere doesn't reload this tab
+    assert pg2.evaluate('window.__mark') == 1, 'only Clear everything reloads other tabs (Pass 2)'
+    pg.once('dialog', lambda d: d.accept()); pg.click('#reset-all'); pg.wait_for_load_state()
+    pg2.wait_for_function("document.getElementById('result').classList.contains('hidden')", timeout=5000)
+    pg2.click('#go')
+    assert pg2.evaluate(LS_KEYS) == [], ('the other tab started fresh', pg2.evaluate(LS_KEYS))
+    ctx.close()
+    ctx, pg = new_page(b)                                                                         # storage blocked: Clear everything still clears (audit #4)
+    ctx.add_init_script("for (const n of ['localStorage', 'sessionStorage']) Object.defineProperty(window, n, { get() { throw new DOMException('blocked', 'SecurityError'); } })")
+    pg.goto(BASE); lookup(pg)
+    pg.once('dialog', lambda d: d.accept()); pg.click('#reset-all')
+    pg.wait_for_function("document.getElementById('result').classList.contains('hidden')", timeout=10000)
+    ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)                                             # asking first: Cancel keeps everything
+    pg.once('dialog', lambda d: d.dismiss()); pg.click('#reset-all')
+    assert pg.evaluate("localStorage.getItem('ballotta.ballot')") and pg.is_visible('#result')
+    ctx.close()
+
+@desk_test
+def desk_counts_laptop_features(b):
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    ctx2, pg2 = new_page(b, wide=True); pg2.set_viewport_size({'width': 2560, 'height': 1300}); pg2.goto(BASE); pg2.wait_for_timeout(800)
+    assert 'faq_seen' not in names(pg2), 'a tall window shows the FAQ at once: not counted until the visitor scrolls (audit #2)'
+    pg2.evaluate("document.body.classList.add('dk-app-on'); window.dispatchEvent(new Event('scroll')); document.body.classList.remove('dk-app-on')"); pg2.wait_for_timeout(600)
+    assert 'faq_seen' not in names(pg2), 'a scroll in the app view does not arm the FAQ count (Pass 2)'
+    pg2.mouse.wheel(0, 200); pg2.wait_for_function("(window.__events||[]).some(e => e[0] === 'faq_seen')", timeout=3000)
+    ctx2.close()
+    pg.locator('#dk-faq').scroll_into_view_if_needed(); pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'faq_seen')")
+    pg.evaluate('window.scrollTo(0, 0)'); lookup_wide(pg); no_link_opens(pg)
+    pg.click('.dk-row[data-row="c001"]')
+    for k in ('1', '1', 's', 'n', 'j', '/'): pg.keyboard.press(k)                                   # each kind counted once
+    pg.keyboard.press('Escape'); pg.click('#dk-paper h1'); pg.keyboard.press('r'); pg.keyboard.press('Escape')
+    used = [e[1]['kind'] for e in events(pg) if e[0] == 'shortcut_used']
+    assert used == ['pick', 'skip', 'move', 'search', 'reason'], used
+    pg.fill('#dk-q', 'gov'); pg.fill('#dk-q', 'gove'); pg.fill('#dk-q', '')
+    pg.click('#dk-filt [data-f="und"]'); pg.click('#dk-filt [data-f="und"]'); pg.click('#dk-filt [data-f="all"]')
+    assert names(pg).count('search_used') == 1 and [e[1]['filter'] for e in events(pg) if e[0] == 'filter_used'] == ['und', 'all']
+    for v in ('glance', 'vote', 'crib'): pg.click(f'#dk-views [data-view="{v}"]')
+    pg.click('#dk-views [data-view="glance"]')                                                    # a glance row's link knows its race (audit #8)
+    pg.locator('tr[data-tr="c001"] a', has_text='League').first.click()
+    assert events(pg)[-1] == ['source_opened', {'kind': 'league_guide', 'level': 'federal', 'layout': 'laptop'}], events(pg)[-1]
+    pg.click('#dk-views [data-view="crib"]')
+    pg.click('#dk-c2'); pg.evaluate('window.print = () => {}'); pg.click('#dk-print')
+    assert events(pg)[-1] == ['crib_printed', {'two_col': 'yes', 'hide_unopposed': 'no', 'layout': 'laptop'}], events(pg)[-1]
+    pg.click('#dk-views [data-view="decide"]'); pg.click('.dk-row[data-row="c001"]')
+    pg.locator('#dk-paper a', has_text='League guide answers').first.click()
+    pg.locator('#dk-notes a', has_text='League of Women Voters guide').first.click()
+    assert [e[1] for e in events(pg) if e[0] == 'source_opened'] == [{'kind': 'league_guide', 'level': 'federal', 'layout': 'laptop'}] * 3   # glance, paper, notes
+    assert [e[1]['view'] for e in events(pg) if e[0] == 'view_opened'] == ['glance', 'vote', 'crib', 'glance', 'crib', 'decide']
+    pg.click('#dk-views [data-view="vote"]')                                                       # no race level outside Decide
+    pg.locator('#dk-paper a', has_text='VoteTravis.gov').first.click(); pg.locator('#dk-paper a', has_text='Check live wait times').first.click()
+    assert events(pg)[-3:] == [['view_opened', {'view': 'vote', 'layout': 'laptop'}], ['source_opened', {'kind': 'official', 'layout': 'laptop'}],
+                               ['wait_times_opened', {'period': pg.evaluate('period'), 'layout': 'laptop'}]], events(pg)[-3:]
+    pg.click('#dk-help'); pg.click('[data-help="privacy"]'); pg.keyboard.press('Escape')
+    assert events(pg)[-1] == ['help_opened', {'item': 'privacy', 'layout': 'laptop'}]
+    journey_check(pg, 'laptop')
+    pg.once('dialog', lambda d: d.accept()); pg.click('#dk-help'); pg.click('[data-help="clearall"]')
+    pg.wait_for_selector('body:not(.dk-app-on)'); pg.wait_for_load_state()
+    assert pg.evaluate("Object.keys(localStorage).filter(k => k.startsWith('ballotta.'))") == [] and pg.is_visible('#dk-hero')
+    ctx.close()
+
+@test
+def readme_lists_every_counted_event(b):
+    readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+    missing = [n for n in event_names_in_page() if f'`{n}`' not in readme]
+    assert not missing, ('README must list every counted event', missing)
+    assert 'Global Privacy Control' in readme and 'ballotta.ownTracked' in readme and 'ballotta.progress' not in readme
 
 def main():
     srv = serve()

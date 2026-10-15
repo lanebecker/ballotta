@@ -76,7 +76,12 @@ def build(preview=False, desk=None):
     # The tracker is a pinned copy of https://cloud.umami.is/script.js (umami.js, fetched 2026-10-14) served from this
     # site, so a change on Umami's side can never run new code on this page. It still reports to gateway.umami.is.
     analytics = (f'<script defer src="umami.js" data-website-id="{UMAMI_ID}" '
-                 f'data-domains="{UMAMI_DOMAINS}" data-exclude-search="true" data-exclude-hash="true"></script>') if UMAMI_ID else ""
+                 f'data-domains="{UMAMI_DOMAINS}" data-exclude-search="true" data-exclude-hash="true" '
+                 # The privacy firewall in the page checks every payload; Do Not Track is honoured twice (here and there);
+                 # page-speed measurements (load time, responsiveness) carry no personal data (Lane, Oct 15).
+                 f'data-do-not-track="true" data-before-send="ballottaBeforeSend" data-performance="true"></script>') if UMAMI_ID else ""
+    # Fail closed: until the page's own check is defined, the tracker's before-send drops everything.
+    if analytics: analytics = '<script>window.ballottaBeforeSend = () => null;</script>' + analytics
     if preview:
         # The preview lives one folder down (next/index.html). It loads the same pinned tracker, so it behaves like the
         # live page, but with a domain list no real site matches: the tracker then never sends anything.
