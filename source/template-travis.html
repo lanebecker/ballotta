@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
-/* Runs before anything else (including analytics): move a saved-picks (#k=) or shared-picks (#s=) payload
-   out of the address bar so the fragment can never be read by a script, logged, or copied by accident. */
+/* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
+   (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
+   or copied by accident. */
 (function () {
   var h = location.hash;
-  if (/^#[ks]=/.test(h)) {
+  if (/^#[ks][=2]/.test(h)) {
     window.__incoming = h.slice(1);
     try { sessionStorage.setItem('ballotta.incoming', h.slice(1)); } catch (e) {}
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
@@ -607,6 +608,37 @@ $('allsites').addEventListener('click', () => { showAll = !showAll; renderVote()
 
 /* ---------- links: picks packed into the #fragment ---------- */
 function b64e(o) { const by = new TextEncoder().encode(JSON.stringify(o)); let s = ''; by.forEach(x => s += String.fromCharCode(x)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+// Links (v2): "s2"/"k2" + base64url(deflate-raw(JSON)). Only letters, digits, "-" and "_" after the "#", so chat apps
+// don't cut the link short, and about half the length of v1 ("s="/"k=" + base64url(JSON)), which is still read.
+// Anything a chat app tacks on after the link (a period, ")", "%20") is ignored rather than breaking it.
+const FRAG_RE = /^[ks][=2]/;
+let incSeq = 0;  // see handleIncoming
+const TOO_OLD = { tooOld: true };  // v2 link, but this browser can't decompress it
+function bytesB64(u8) { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+async function packFrag(kind, o) {
+  try {
+    const stream = new Blob([JSON.stringify(o)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    return kind + '2' + bytesB64(new Uint8Array(await new Response(stream).arrayBuffer()));
+  } catch (e) { return kind + '=' + b64e(o); }  // older browsers: longer v1 link, still works everywhere
+}
+async function unpackFrag(frag) {
+  // Returns the payload object, or null for anything unreadable. Decompression is capped so a crafted link can't balloon.
+  if (typeof frag !== 'string' || frag.length > 200000 || !FRAG_RE.test(frag)) return null;
+  const body = frag.slice(2).match(/^[A-Za-z0-9_-]*/)[0];
+  try {
+    if (frag[1] === '=') return b64d(body);
+    if (body.length < 16 || body.length > 40000) return null;  // real v2 links are a few KB
+    let ds;
+    try { ds = new DecompressionStream('deflate-raw'); } catch (e) { return TOO_OLD; }
+    const b = body.replace(/-/g, '+').replace(/_/g, '/'); const bin = atob(b), u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const reader = new Blob([u8]).stream().pipeThrough(ds).getReader();
+    const parts = []; let total = 0;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; total += value.length; if (total > 500000) { reader.cancel(); return null; } parts.push(value); }
+    const out = new Uint8Array(total); let off = 0; parts.forEach(p => { out.set(p, off); off += p.length; });
+    return JSON.parse(new TextDecoder().decode(out));
+  } catch (e) { return null; }
+}
 function b64d(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); const b = atob(s); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return JSON.parse(new TextDecoder().decode(u)); }
 function baseURL() { return location.origin + location.pathname; }
 function packPicks(ids, withSkips, withWhy) {
@@ -637,9 +669,11 @@ function unpackPicks(o) {
 }
 const countPicks = (ids) => ids.filter(id => { const v = current(id); return v.length && v[0] !== '__skip'; }).length;
 const countWhys = (ids) => ids.filter(id => { const v = current(id); return v.length && v[0] !== '__skip' && whys[id] && whys[id].trim(); }).length;
-async function handOff(url, title, text, outEl, btn) {
+async function handOff(url, data, outEl, btn) {
+  // navigator.share must be the first thing awaited after the tap (Safari ties it to the gesture), so links are packed
+  // ahead of time when a sheet opens or its options change.
   if (navigator.share) {
-    try { await navigator.share({ title, text, url }); return 'share'; }
+    try { await navigator.share(Object.assign({ url }, data)); return 'share'; }
     catch (e) { if (e && e.name === 'AbortError') return null; }
   }
   return copyLink(url, outEl, btn);
@@ -647,7 +681,7 @@ async function handOff(url, title, text, outEl, btn) {
 async function copyLink(url, outEl, btn) {
   outEl.textContent = url; outEl.classList.remove('hidden');
   try { await navigator.clipboard.writeText(url); if (btn) { const t = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = t, 2000); } return 'copy'; }
-  catch (e) { const r = document.createRange(); r.selectNodeContents(outEl); const s = getSelection(); s.removeAllRanges(); s.addRange(r); return 'copy'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(outEl); const s = getSelection(); s.removeAllRanges(); s.addRange(r); return 'shown'; }
 }
 document.querySelectorAll('dialog [data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
 document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => {
@@ -658,25 +692,32 @@ document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e =
 }));
 
 /* ---------- keep (send to myself) ---------- */
-function keepURL() {
+async function keepURL() {
   const ids = ballot.map(b => b.c.id), pk = packPicks(ids, true, true);
   const st = LS.get('ballotta.ballot', null);
-  return baseURL() + '#k=' + b64e({ v: 1, at: Math.floor(Date.now() / 1000), pr: st ? st.pr : String(lastLookup.precinct || ''), b: ballot.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), p: pk.p, w: pk.w });
+  return baseURL() + '#' + await packFrag('k', { v: 1, at: Math.floor(Date.now() / 1000), pr: st ? st.pr : String(lastLookup.precinct || ''), b: ballot.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), p: pk.p, w: pk.w });
 }
+let keepPrep = null, keeping = false;  // { p: Promise<url>, url }; keeping ignores a second tap mid-share
+function prepKeep() { const k = { url: null }; k.p = keepURL().then(u => (k.url = u)); keepPrep = k; return k; }
 $('a-keep').addEventListener('click', () => {
+  prepKeep();
   const ids = ballot.map(b => b.c.id), n = countPicks(ids), r = countWhys(ids);
   $('keepcount').textContent = 'Your ' + n + ' pick' + (n === 1 ? '' : 's') + ' and ' + r + ' reason' + (r === 1 ? '' : 's') + ' live only in this browser. Send yourself a private link to pick up on your phone or laptop. No account needed.';
   $('keep-out').classList.add('hidden');
   $('d-keep').showModal();
 });
 $('keep-send').addEventListener('click', async () => {
-  const url = keepURL();
+  if (keeping) return;
+  const k = keepPrep || prepKeep(), url = k.url || await k.p;
   let via = null;
-  if (navigator.share) via = await handOff(url, 'My Ballotta picks', 'My saved ballot picks (private link, just for me)', $('keep-out'));
-  else { location.href = 'mailto:?' + new URLSearchParams({ subject: 'My Ballotta picks', body: 'My saved ballot picks (private link, just for me):\n' + url }).toString().replace(/\+/g, '%20'); via = 'email'; }
+  keeping = true;
+  try {
+    if (navigator.share) via = await handOff(url, { title: 'My Ballotta picks' }, $('keep-out'));
+    else { location.href = 'mailto:?' + new URLSearchParams({ subject: 'My Ballotta picks', body: 'My saved ballot picks (private link, just for me):\n' + url }).toString().replace(/\+/g, '%20'); via = 'email'; }
+  } finally { keeping = false; }
   if (via) track('keep_created', { via });
 });
-$('keep-copy').addEventListener('click', async () => { const via = await copyLink(keepURL(), $('keep-out'), $('keep-copy')); if (via) track('keep_created', { via }); });
+$('keep-copy').addEventListener('click', async () => { const k = keepPrep || prepKeep(); const via = await copyLink(k.url || await k.p, $('keep-out'), $('keep-copy')); if (via) track('keep_created', { via }); });
 
 /* ---------- restore a keep link ---------- */
 let incomingKeep = null;
@@ -730,7 +771,18 @@ function updateShareSum() {
   $('sharewhycount').textContent = countWhys(ids) + ' of these picks ' + (countWhys(ids) === 1 ? 'has a reason' : 'have reasons');
   $('sharesum').innerHTML = n ? '<b>They’ll see ' + n + ' pick' + (n === 1 ? '' : 's') + ' and ' + r + ' reason' + (r === 1 ? '' : 's') + '</b> from ' + esc(labels.join(', ')) + ' races. Nothing else.' : 'Turn on at least one section to share.';
   $('share-go').disabled = !n; $('share-go').style.opacity = n ? '1' : '.5';
+  prepShare();
 }
+let sharePrep = null;  // the link for the sheet's current choices, packed ahead of the tap
+function prepShare() {
+  const ids = chosenIds(), name = $('sharename').value.trim().slice(0, 30), withWhy = $('sharewhy').checked;
+  const pk = packPicks(ids, false, withWhy), gen = Math.max(1, Math.min(99, LS.get('ballotta.gen', 1) || 1)), code = rand8();
+  const st = { ids, name, withWhy, pk, gen, code, url: null };
+  $('share-out').classList.add('hidden');  // never leave an older link on screen next to new choices
+  st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = baseURL() + '#' + f));
+  sharePrep = st; return st;
+}
+$('sharename').addEventListener('input', prepShare);
 $('a-share').addEventListener('click', () => {
   const secs = shareSections();
   $('sharename').value = LS.get('ballotta.name', '') || '';
@@ -743,14 +795,19 @@ $('a-share').addEventListener('click', () => {
 });
 $('sharewhy').addEventListener('change', updateShareSum);
 function rand8() { const a = 'abcdefghijkmnpqrstuvwxyz23456789', r = new Uint8Array(8); crypto.getRandomValues(r); return [...r].map(x => a[x % a.length]).join(''); }
+let sharing = false;  // ignore a second tap while the share sheet is still open
 $('share-go').addEventListener('click', async () => {
-  const ids = chosenIds(); if (!ids.length) return;
-  const name = $('sharename').value.trim().slice(0, 30); LS.set('ballotta.name', name);
-  const withWhy = $('sharewhy').checked, pk = packPicks(ids, false, withWhy);
-  const gen = Math.max(1, Math.min(99, LS.get('ballotta.gen', 1) || 1)), code = rand8();
-  const url = baseURL() + '#s=' + b64e({ v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w });
-  const via = await handOff(url, 'My Ballotta picks', (name ? name + '’s' : 'My') + ' picks for the Nov 3 election', $('share-out'), $('share-go'));
+  if (sharing) return;
+  const st = sharePrep || prepShare();
+  const { ids, name, withWhy, pk, gen, code } = st; if (!ids.length) return;
+  const url = st.url || await st.p;
+  // Only the link: chat apps then show the preview card instead of the long link as text.
+  sharing = true;
+  let via;
+  try { via = await handOff(url, {}, $('share-out'), $('share-go')); } finally { sharing = false; }
   if (!via) return;
+  LS.set('ballotta.name', name);
+  prepShare();  // a fresh link code for any further share from this sheet
   if (!LS.get('ballotta.gen', null)) LS.set('ballotta.gen', gen);  // your place in a chain is fixed by your first share or first friend link
   const n = ids.length;
   track('share_created', { sections: [...document.querySelectorAll('#sharesecs input:checked')].map(i => i.dataset.k).join(','), reasons: withWhy && Object.keys(pk.w).length ? 'yes' : 'no', picks: n <= 5 ? '1-5' : n <= 15 ? '6-15' : '16+', via, generation: gen, link: code });
@@ -868,10 +925,14 @@ $('reset').addEventListener('click', () => { if (confirm('Clear all your picks a
   const inc = window.__incoming || SS.get('ballotta.incoming');
   if (inc) handleIncoming(inc, !!window.__incoming);
 })();
-function handleIncoming(inc, fresh) {
-  const damaged = () => { const m = $('lookupmsg'); m.textContent = 'That link looks incomplete or damaged, so we couldn’t read any picks from it.'; m.classList.remove('hidden'); SS.del('ballotta.incoming'); };
-  let o = null;
-  try { o = inc.length < 200000 ? b64d(inc.slice(2)) : null; } catch (e) { o = null; }
+async function handleIncoming(inc, fresh) {
+  const my = ++incSeq;  // if another link arrives while this one decodes, only the newest one is handled
+  const say = (t) => { const m = $('lookupmsg'); m.textContent = t; m.classList.remove('hidden'); SS.del('ballotta.incoming'); };
+  const damaged = () => say('That link looks incomplete or damaged, so we couldn’t read any picks from it.');
+  const o = await unpackFrag(inc);
+  if (my !== incSeq) return;
+  $('lookupmsg').classList.add('hidden');
+  if (o === TOO_OLD) return say('This browser is too old to open that link. Update your phone’s software, or open the link in a current browser such as Chrome, Firefox or Safari.');
   if (!o || typeof o !== 'object' || o.v !== 1) return damaged();
   try {
     if (inc[0] === 'k') { SS.del('ballotta.incoming'); if (fresh) openRestore(o); }
@@ -881,7 +942,7 @@ function handleIncoming(inc, fresh) {
 // A link opened in a tab that's already on Ballotta only changes the fragment: handle it the same way.
 window.addEventListener('hashchange', () => {
   const h = location.hash;
-  if (!/^#[ks]=/.test(h)) return;
+  if (!FRAG_RE.test(h.slice(1))) return;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   SS.set('ballotta.incoming', h.slice(1));
   handleIncoming(h.slice(1), true);

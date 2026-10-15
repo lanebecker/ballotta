@@ -117,7 +117,9 @@ def keep_link_round_trip(b):
     pg.click('#keep-copy')
     pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'keep_created')")
     url = pg.inner_text('#keep-out')
-    assert '#k=' in url and ['keep_created', {'via': 'copy'}] in events(pg)
+    frag = url.split('#', 1)[1]
+    assert re.fullmatch(r'k2[A-Za-z0-9_-]{16,}', frag), url                 # v2: nothing after '#' that chat apps cut at
+    assert ['keep_created', {'via': 'copy'}] in events(pg)
     ctx.close()
     sent2 = []
     ctx, pg = new_page(b, sent2); pg.goto(url.replace(url.split('/index.html')[0], f'http://127.0.0.1:{PORT}'))
@@ -130,7 +132,7 @@ def keep_link_round_trip(b):
     assert 'Qadri' in pg.inner_text('#sc070') and pg.input_value('#wc071') == 'More shade and pools near us.'
     pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'keep_restored')")
     for u in sent + sent2:
-        assert '#k=' not in u and 'shade' not in urllib.parse.unquote(u), u
+        assert frag[2:40] not in u and 'shade' not in urllib.parse.unquote(u), u
     ctx.close()
 
 @test
@@ -154,7 +156,7 @@ def share_friend_compare_and_events(b):
     assert 'and 0 reasons' in pg.inner_text('#sharesum')
     pg.click('#share-go')
     pg.wait_for_function("(window.__events||[]).filter(e => e[0] === 'share_created').length === 2")
-    o = pg.evaluate("b64d(document.getElementById('share-out').textContent.split('#s=')[1])")
+    o = pg.evaluate("unpackFrag(document.getElementById('share-out').textContent.split('#')[1])")
     assert not o.get('w') and len(o['p']) == 2, o
     assert [e for e in events(pg) if e[0] == 'share_created'][1][1]['reasons'] == 'no'
     ctx.close()
@@ -184,7 +186,7 @@ def share_friend_compare_and_events(b):
         blob = json.dumps(e)
         assert 'Qadri' not in blob and 'Maya' not in blob and '300' not in blob and 'Guadalupe' not in blob, blob
     for u in sent:
-        assert '#s=' not in u and 'Maya' not in u, u
+        assert url.split('#', 1)[1][2:40] not in u and 'Maya' not in u, u
     ctx.close()
 
 @test
@@ -332,6 +334,56 @@ def audit_b3_b4_counts_and_dedupe(b):
     pg.wait_for_selector('#friend:not(.hidden)')
     pg.click('#f-own'); pg.click('#f-own'); pg.wait_for_timeout(1500)
     assert names(pg).count('share_own_ballot') == 1, events(pg)                                                       # B4
+    ctx.close()
+
+@test
+def links_are_short_and_safe_for_chat_apps(b):
+    # Lane's real share (48 picks, 9 reasons) was 1,427 characters as v1 and got cut at "#s" in Messages.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    o = {'v': 1, 'n': 'Lane', 'c': 'kpbykhry', 'g': 1, 'p': {str(i): i % 3 for i in range(1, 73)},
+         'w': {str(i): 'I can not stress enough how necessary this bond measure is for our parks, honestly. ' * 2 for i in range(1, 10)}}
+    v2 = pg.evaluate("o => packFrag('s', o)", o)
+    v1 = 's=' + pg.evaluate("o => b64e(o)", o)
+    assert re.fullmatch(r's2[A-Za-z0-9_-]+', v2) and len(v2) < len(v1) * 0.6, (len(v2), len(v1))
+    assert pg.evaluate("f => unpackFrag(f)", v2) == o
+    assert pg.evaluate("f => unpackFrag(f)", v1) == o                       # older links still open
+    assert pg.evaluate("f => unpackFrag(f)", 's2' + 'A' * 40) is None       # garbage → null, not a crash
+    ctx.close()
+    # Chat apps sometimes glue punctuation onto the end of a link: it must still open, and leave the address bar.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    v2 = pg.evaluate("o => packFrag('s', o)", {'v': 1, 'n': 'Al', 'c': 'trailing', 'g': 1, 'p': {'70': 0}})
+    for tail in ['.', ')', '%20']:
+        fresh_goto(pg, BASE + '#' + v2 + tail)
+        pg.wait_for_selector('#friend:not(.hidden)')
+        assert pg.evaluate('location.hash') == '' and 'Al shared 1 pick' in pg.inner_text('#friend'), tail
+    fresh_goto(pg, BASE + '#s2abc')                                         # cut short
+    pg.wait_for_function("!document.getElementById('lookupmsg').classList.contains('hidden')")
+    assert pg.evaluate('location.hash') == '' and 'damaged' in pg.inner_text('#lookupmsg')
+    pg.goto(BASE + '#' + v2)                                                # then a good link in the same tab
+    pg.wait_for_selector('#friend:not(.hidden)')
+    assert pg.locator('#lookupmsg.hidden').count() == 1                     # the old error doesn't linger
+    ctx.close()
+    # A browser without deflate-raw: links still get made (older format), and a v2 link says "too old", not "damaged".
+    ctx, pg = new_page(b)
+    pg.add_init_script("window.CompressionStream = function(){ throw new TypeError('Unsupported compression format'); }; window.DecompressionStream = window.CompressionStream;")
+    pg.goto(BASE)
+    assert pg.evaluate("o => packFrag('s', o)", {'v': 1, 'p': {}}).startswith('s=')
+    fresh_goto(pg, BASE + '#' + v2)
+    pg.wait_for_function("!document.getElementById('lookupmsg').classList.contains('hidden')")
+    assert 'too old' in pg.inner_text('#lookupmsg'), pg.inner_text('#lookupmsg')
+    ctx.close()
+    src = (ROOT / 'index.html').read_text()
+    assert "handOff(url, {}, $('share-out')" in src                          # share sheet gets the link only, no long text
+
+@test
+def double_tap_share_counts_once(b):
+    ctx, pg = new_page(b)
+    pg.add_init_script("navigator.share = () => new Promise(r => setTimeout(r, 800));")   # a share sheet that stays open a moment
+    pg.goto(BASE); lookup(pg); pick(pg, 'c001', 'Ted Brown')
+    pg.click('#a-share'); pg.fill('#sharename', 'Dee'); pg.wait_for_timeout(200)
+    pg.click('#share-go'); pg.click('#share-go', force=True); pg.wait_for_timeout(1500)
+    made = [e for e in events(pg) if e[0] == 'share_created']
+    assert len(made) == 1 and made[0][1]['via'] == 'share', made
     ctx.close()
 
 def main():
