@@ -1,7 +1,7 @@
 """End-to-end checks for the Ballotta test site (index.html), run against the live Travis County lookup services.
 
     python3 tests/test_site.py                                    # builds nothing; checks the live page (index.html)
-    BALLOTTA_PAGE=next/index.html python3 tests/test_site.py      # checks the preview, laptop layout included
+    BALLOTTA_PAGE=next/index.html python3 tests/test_site.py      # checks the preview, phone layout included
 
 Analytics: cloud.umami.is is stubbed so each test can see exactly which events (and which details) would be sent.
 """
@@ -13,9 +13,10 @@ PORT = int(os.environ.get('BALLOTTA_PORT', '8765'))
 PAGE = os.environ.get('BALLOTTA_PAGE', 'index.html')
 BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
-# sha256 of the live index.html as built from commit 0ae877c (Oct 14). The laptop layout must not change it until
+HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
+# sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'fcbf41e3792c67b0efedc81f5e12c6c3519437fa62a5be0640d222c7d7a0a7f5'
+LIVE_SHA = '8e6eaf368729c6b9f9fb5e43c2285d477bb77397e82ee080dfddf2e7b2de5a2e'
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -27,10 +28,12 @@ def serve():
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s
 
-def new_page(browser, sent=None, wide=False, csp=False, touch=False):
+def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, sw=False, ua=None):
     # The page's Content-Security-Policy (#36) forbids eval, which Playwright's wait_for_function polls with: tests run
-    # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()).
-    ctx = browser.new_context(viewport={'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'], bypass_csp=not csp, has_touch=touch)
+    # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()). The offline copy
+    # (sw.js) is blocked unless a test asks (sw=True): a service worker would answer requests the stubs below expect.
+    ctx = browser.new_context(viewport=size or ({'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}), permissions=['clipboard-read', 'clipboard-write'],
+                              bypass_csp=not csp, has_touch=touch, service_workers='allow' if sw else 'block', **({'user_agent': ua} if ua else {}))
     ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
@@ -397,6 +400,23 @@ def double_tap_share_counts_once(b):
 # ---------- laptop layout (preview build only; skipped when the page has no laptop layout) ----------
 DESK_TESTS = set()
 def desk_test(fn): TESTS.append(fn); DESK_TESTS.add(fn.__name__); return fn
+PHONE_TESTS = set()                                            # run only where the page has the phone layout (the preview)
+def phone_test(fn): TESTS.append(fn); PHONE_TESTS.add(fn.__name__); return fn
+# These drive the phone page as it is live today (the accordion list, its cards and buttons). On the preview a phone
+# gets the new layout instead, so they run on index.html only; promotion moves them to the new layout (plan, Task 13).
+OLD_PHONE_TESTS = {
+    'audit_a10_a11_generation_and_own_ballot', 'audit_a14_a15_tracker_and_targets', 'audit_a1_a2_a3_guide_data',
+    'audit_a4_a9_keep_link_limits', 'audit_a6_sheet_padding_tap_keeps_it_open', 'audit_b3_b4_counts_and_dedupe',
+    'backup_nudge_after_fifth_pick', 'counts_progress_sources_and_clearing', 'counts_where_people_drop_off',
+    'desk_crib_options_and_print', 'desk_failures_never_break_the_phone_flow', 'desk_landing_plum_band_and_faq',
+    'desk_old_link_warning_gone_after_new_lookup', 'desk_resize_keeps_layouts_in_step', 'desk_stays_quiet_on_phones',
+    'desk_why_box_grows_with_the_reason', 'double_tap_share_counts_once', 'extra_pick_is_explained',
+    'friend_card_long_names_and_honest_copy', 'keep_link_round_trip', 'lookup_courthouse_and_ballot_found',
+    'measure_card_prop_a', 'page_is_locked_down', 'persistent_storage_asked_at_first_pick',
+    'phone_can_clear_everything_from_the_footer', 'phone_new_day_keeps_focus_on_a_directions_link',
+    'race_learn_more_is_symmetric_and_attributed', 'share_friend_compare_and_events', 'stored_junk_in_share_fields',
+    'stored_junk_never_breaks_keep_or_share', 'where_to_vote_sorted_by_distance'
+}
 
 def build_module():
     spec = importlib.util.spec_from_file_location('build_site', ROOT / 'source' / 'build_site.py')
@@ -431,16 +451,31 @@ def live_build_is_unchanged_until_promotion(b):
         except AssertionError:
             refused = True
         assert refused, f'malformed markers must stop the build, not eat shared code: {bad!r}'
+    assert m.strip_phone('a\n<!--PHONE-->\nb\n<!--/PHONE-->\nc;/*PHONE*/ d;/*/PHONE*/\n') == 'a\nc;\n'      # the same rules, for PHONE
+    for bad in ('/*PHONE*/ x', 'a\n/*PHONE*/\nb\n/*/PHONE*/ }\n', 'x /*PHONE*/ y\n/*/PHONE*/\n', 'a /*PHONE*/ b <!--/PHONE--> c <!--PHONE--> d /*/PHONE*/\n'):
+        try:
+            m.strip_phone(bad); refused = False
+        except AssertionError:
+            refused = True
+        assert refused, f'malformed PHONE markers must stop the build: {bad!r}'
     live, prev = m.build(preview=False), m.build(preview=True)
     if m.DESK_LIVE:
         assert 'id="dk-app"' in live, 'promoted: the live page carries the laptop layout'
     else:
         assert 'id="dk-app"' not in live and 'DESK' not in live, 'laptop layout leaked into the live build'
+    if m.PHONE_LIVE:
+        assert 'id="ph-bar"' in live and "worker-src 'self'" in live, 'promoted: the live page carries the phone layout'
+    else:
+        assert 'id="ph-bar"' not in live and 'PHONE' not in live and 'rel="manifest"' not in live and "worker-src" not in live, 'phone layout leaked into the live build'
         got = hashlib.sha256(live.encode('utf-8')).hexdigest()
         assert got == LIVE_SHA, f'live index.html changed ({got}). Expected only after a data rebuild: re-pin LIVE_SHA in that commit.'
+        assert (ROOT / 'next/index.html').read_bytes() == prev.encode('utf-8'), 'next/index.html on disk is not what the build writes'
+        assert (ROOT / 'next/manifest.webmanifest').read_text(encoding='utf-8') == m.manifest(True) and (ROOT / 'next/sw.js').read_text(encoding='utf-8') == (m.sw_js(True) if m.OFFLINE else m.sw_off_js(True))
+        assert not (ROOT / 'sw.js').exists() and not (ROOT / 'manifest.webmanifest').exists(), 'no offline copy on the live site before promotion'
+    assert 'id="ph-bar"' in prev and "manifest-src 'self'; worker-src 'self'" in prev and '"name": "Ballotta (preview)"' in m.manifest(True)
     assert 'id="dk-app"' in prev and 'data-domains="preview.invalid"' in prev and 'src="../umami.js"' in prev
-    assert (ROOT / 'index.html').read_text(encoding='utf-8') == live, 'index.html on disk is not what the build writes (stale, or left mutated)'
-    if not m.DESK_LIVE: assert (ROOT / 'next/index.html').read_text(encoding='utf-8') == prev, 'next/index.html on disk is not what the build writes'
+    assert (ROOT / 'index.html').read_bytes() == live.encode('utf-8'), 'index.html on disk is not what the build writes (stale, left mutated, or its line endings changed)'
+    if not m.PHONE_LIVE: assert hashlib.sha256((ROOT / 'index.html').read_bytes()).hexdigest() == LIVE_SHA, 'the file on disk differs from the pinned live page'
     assert "url('../fonts/" in prev and '[Preview]' in prev and 'data-domains="preview.invalid"' not in live
 
 @desk_test
@@ -940,7 +975,7 @@ def desk_phone_layout_matches_live_page(b):
 def event_names_in_page():
     src = (ROOT / 'source/template-travis.html').read_text(encoding='utf-8')
     block = src[src.index('const EVENTS = {'):src.index('};', src.index('const EVENTS = {'))]
-    return re.findall(r'^  ([a-z_]+): \{', block, re.M)
+    return re.findall(r'^  ([a-z_]+): \{', block, re.M) + re.findall(r'^EVENTS\.([a-z_]+) = \{', src, re.M)   # the phone layout adds its own (PHONE)
 
 def no_link_opens(pg):                                     # links still fire our counting listener, but never navigate
     pg.evaluate("document.addEventListener('click', e => { if (e.target.closest && e.target.closest('a[href^=\"http\"]')) e.preventDefault(); })")
@@ -1793,6 +1828,640 @@ def persistent_storage_asked_at_first_pick(b):
         assert pg.evaluate('window.__persist') == want and pg.evaluate('window.__checked') == 1, (already, pg.evaluate('[window.__persist, window.__checked]'))
         ctx.close()
 
+# ---------------------------------------------------------------- phone layout (preview build only until promotion)
+import urllib.request
+PHONE = {'width': 390, 'height': 844}                      # an iPhone 13/14/15's screen in CSS pixels
+
+def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None):
+    ctx, pg = new_page(b, sent, csp=csp, touch=True, size=size or PHONE, sw=sw, ua=ua)
+    if init: pg.add_init_script(init)
+    errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.__dict__['errs'] = errs
+    return ctx, pg
+
+def lookup_phone(pg):
+    pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
+    pg.wait_for_selector('body.dk-app-on', timeout=30000)
+    pg.wait_for_function("/ of \\d+ decided$/.test(document.getElementById('ph-count').textContent)", timeout=30000)
+
+def h1(pg): return pg.inner_text('#dk-paper h1')
+def focused(pg): return pg.evaluate("(() => { const a = document.activeElement; return a ? (a.id || a.tagName) : null; })()")
+def sideways(pg): return pg.evaluate('document.scrollingElement.scrollWidth - document.scrollingElement.clientWidth')
+def to_contest(pg, title):                                  # through the "Your ballot" sheet, as a voter would
+    pg.click('#ph-list'); pg.fill('#dk-q', title); pg.locator('.dk-row', has_text=title).first.click()
+    expect(pg.locator('.dk-rail')).to_be_hidden()
+
+@phone_test
+def phone_landing_band_form_and_faq(b):
+    ctx, pg = phone_page(b); pg.goto(BASE)
+    for sel in ('#dk-hdr', '#dk-hero', '#start', '#lookup', '.dk-steps', '#ph-faq', '#dk-help'):
+        expect(pg.locator(sel)).to_be_visible()
+    for sel in ('.wrap > .brand', '#dk-faq', '#ph-bar', '#dk-share', '.dk-logo', '#dk-loc', '#ph-paste'):
+        expect(pg.locator(sel).first).to_be_hidden()
+    assert pg.locator('.wrap > section.card:visible, .wrap > footer:visible').count() == 0, 'About and Feedback live in the menu'
+    assert pg.text_content('.dk-tagline') == 'Don’t wait to meet your ballot in the booth.'
+    assert css(pg, '#dk-hdr', 'backgroundColor') == PLUM and css(pg, '#dk-hero', 'backgroundColor') == PLUM
+    hero, paper = box(pg, '#dk-hero'), box(pg, '#start')
+    assert paper['y'] < hero['y'] + hero['height'] - 40, ('the paper overlaps the band', hero, paper)
+    qs = pg.locator('#ph-faq details')
+    assert qs.count() == pg.locator('#dk-faq .dk-q').count() == 6 and pg.locator('#ph-faq details[open]').count() == 0
+    pg.mouse.wheel(0, 3000); pg.wait_for_function("(window.__events || []).some(e => e[0] === 'faq_seen')", timeout=5000)
+    assert [e for e in events(pg) if e[0] == 'faq_seen'] == [['faq_seen', {'layout': 'phone'}]]
+    qs.nth(3).locator('summary').click()
+    assert pg.inner_text('#ph-faq details[open] p') == pg.locator('#dk-faq .dk-q p').nth(3).inner_text()   # the same words
+    hb = box(pg, '#dk-help')
+    assert hb['width'] >= 44 and hb['height'] >= 44 and pg.get_by_role('button', name='Feedback & Info').count() == 1
+    assert sideways(pg) <= 0
+    pg.set_viewport_size({'width': 320, 'height': 640}); pg.wait_for_timeout(100)
+    assert sideways(pg) <= 0, 'nothing sideways on a 320px phone'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@phone_test
+def phone_lookup_opens_the_app_at_its_top(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); pg.evaluate('window.scrollTo(0, 400)'); lookup_phone(pg)
+    expect(pg.locator('#ph-bar')).to_be_visible(); expect(pg.locator('.wrap')).to_be_hidden(); expect(pg.locator('.dk-rail')).to_be_hidden()
+    assert pg.text_content('#ph-count') == '0 of 63 decided' and pg.text_content('#ph-next') == 'Next undecided →'
+    assert h1(pg) == 'United States Senator' and focused(pg) == 'H1' and pg.evaluate('scrollY') == 0
+    assert 'Precinct 300' in pg.inner_text('#dk-loc') and pg.is_visible('#dk-share')
+    sb = box(pg, '#dk-share'); assert sb['width'] >= 44 and pg.get_by_role('button', name='Share my picks').count() == 1
+    assert ['ballot_found', {'match': 'exact', 'layout': 'phone'}] in events(pg)
+    paper, bar = box(pg, '#dk-paper'), box(pg, '#ph-bar')
+    assert abs(bar['y'] + bar['height'] - PHONE['height']) < 1 and paper['x'] >= 8, (paper, bar)
+    assert sideways(pg) <= 0 and pg.errs == [], pg.errs
+    ctx.close()
+
+PERSIST = ("window.__persist = 0; Object.defineProperty(navigator, 'storage', { configurable: true, value: {"
+           " persisted: () => Promise.resolve(false), persist: () => { window.__persist++; return Promise.resolve(true); } } });")
+
+@phone_test
+def phone_pick_reason_fold_and_steps(b):
+    ctx, pg = phone_page(b, init=PERSIST); pg.goto(BASE); lookup_phone(pg)
+    to_contest(pg, 'District 9')
+    assert h1(pg) == 'City Council Member, District 9' and focused(pg) == 'H1'
+    pg.locator('.dk-line', has_text='Qadri').click()
+    assert pg.locator('.dk-line', has_text='Qadri').get_attribute('aria-pressed') == 'true' and cur(pg, 'c070') == ['Zohaib “Zo” Qadri']
+    pg.wait_for_function("document.getElementById('ph-count').textContent === '1 of 63 decided'")
+    pg.fill('#dk-w', 'Knows the district')
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys')).c070") == 'Knows the district'
+    assert pg.evaluate('window.__persist') == 1, 'the browser is asked to keep the picks at the first one (#49)'
+    fold = pg.locator('#ph-fold')
+    assert fold.inner_text() == 'About this office · Learn more' and fold.get_attribute('aria-expanded') == 'false'
+    expect(pg.locator('#dk-notes')).to_be_hidden()
+    fold.click()
+    expect(pg.locator('#dk-notes')).to_be_visible(); assert 'One of 10 district council members' in pg.inner_text('#dk-notes')
+    assert fold.get_attribute('aria-expanded') == 'true' and not pg.is_visible('.dk-keysec'), 'no keyboard shortcuts on a phone'
+    pg.click('#ph-step-next')
+    assert h1(pg) == 'Austin Proposition A' or h1(pg).endswith('Proposition A'), h1(pg)
+    assert fold.inner_text() == 'Sources' and fold.get_attribute('aria-expanded') == 'true', 'the fold stays open from contest to contest'
+    assert focused(pg) == 'H1'
+    pg.click('#ph-prev'); assert h1(pg) == 'City Council Member, District 9'
+    to_contest(pg, 'United States Senator')
+    assert pg.is_disabled('#ph-prev') and not pg.is_disabled('#ph-step-next')
+    expect(pg.locator('.dk-nav')).to_be_hidden()
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@phone_test
+def phone_next_undecided_then_the_crib_sheet(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+    assert h1(pg) == 'United States Senator' and pg.text_content('#ph-count') == '0 of 3 decided'
+    assert focused(pg) == 'BODY', 'a ballot saved on this phone opens without moving focus'
+    pg.locator('.dk-line', has_text='Ted Brown').click(); pg.click('#ph-next')
+    assert h1(pg) == 'City Council Member, District 9' and focused(pg) == 'H1'
+    pg.click('.skip'); pg.click('#ph-next'); assert h1(pg).endswith('Proposition A'), h1(pg)
+    pg.locator('.dk-line', has_text='For').first.click()
+    pg.wait_for_function("document.getElementById('ph-next').textContent === 'Crib sheet →'")
+    pg.click('#ph-next')
+    assert h1(pg) == 'Print your notes' and pg.is_hidden('#ph-next') and ['view_opened', {'view': 'crib', 'layout': 'phone'}] in events(pg)
+    ctx.close()
+
+@phone_test
+def phone_ballot_list_sheet(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg); to_contest(pg, 'District 9')
+    pg.click('#ph-list')
+    rail = box(pg, '.dk-rail'); assert rail['x'] == 0 and rail['y'] == 0 and rail['width'] == PHONE['width'] and rail['height'] == PHONE['height'], rail
+    assert pg.evaluate("['dk-hdr', 'dk-desk', 'ph-bar'].every(id => document.getElementById(id).inert)"), 'the page behind is out of reach'
+    assert pg.evaluate("document.activeElement.getAttribute('aria-current')") == 'true' and 'District 9' in pg.evaluate('document.activeElement.textContent')
+    assert pg.get_attribute('#ph-list', 'aria-expanded') == 'true'
+    pg.keyboard.press('Escape'); expect(pg.locator('.dk-rail')).to_be_hidden(); assert focused(pg) == 'ph-list'
+    assert not pg.evaluate("document.getElementById('dk-desk').inert")
+    pg.click('#ph-list'); pg.click('#ph-done'); expect(pg.locator('.dk-rail')).to_be_hidden(); assert focused(pg) == 'ph-list'
+    pg.click('#ph-list'); assert pg.input_value('#dk-q') == 'District 9' and pg.locator('.dk-row').count() == 1   # the search stays, as on a laptop
+    pg.fill('#dk-q', ''); pg.click('#dk-filt [data-f="und"]'); expect(pg.locator('.dk-rail')).to_be_visible()
+    assert pg.locator('.dk-row').count() == 63
+    pg.click('#dk-keep'); pg.wait_for_selector('#d-keep[open]'); pg.click('#d-keep [data-close]'); expect(pg.locator('.dk-rail')).to_be_visible()
+    pg.click('#dk-views [data-view="glance"]'); expect(pg.locator('.dk-rail')).to_be_hidden()
+    assert h1(pg) == 'Your whole ballot' and focused(pg) == 'H1' and ['view_opened', {'view': 'glance', 'layout': 'phone'}] in events(pg)
+    pg.click('#ph-list'); pg.click('#dk-print'); expect(pg.locator('.dk-rail')).to_be_hidden()
+    assert h1(pg) == 'Print your notes' and pg.evaluate('document.activeElement.dataset.act') == 'print'
+    ctx.close()
+
+@phone_test
+def phone_glance_vote_and_crib_fit_the_screen(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg)
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]')
+    assert css(pg, '[data-sel="c006"]', 'fontSize') == '16px' and css(pg, '#dk-q', 'fontSize') == '16px', 'iPhones zoom into smaller fields'
+    pg.locator('[data-sel="c006"]').select_option(index=1); assert cur(pg, 'c006') == [pg.evaluate("optionsOf(BYID.c006)[0]")]
+    pg.evaluate('window.scrollTo(0, 2000)'); pg.locator('[data-go="c070"]').first.click()
+    assert h1(pg) == 'City Council Member, District 9' and pg.evaluate('scrollY') == 0 and focused(pg) == 'H1', 'a name in At a glance opens its contest at the top'
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]')
+    expect(pg.locator('.dk-tbl thead')).to_be_hidden(); expect(pg.locator('.dk-tbl td:nth-child(4)').first).to_be_hidden()
+    assert sideways(pg) <= 0
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="vote"]')
+    assert pg.locator('.dk-site').count() == 5 and pg.locator('.ph-mapfold:not([open])').count() == 1
+    expect(pg.locator('#dk-map')).to_be_hidden(); pg.click('.ph-mapfold summary'); expect(pg.locator('#dk-map')).to_be_visible()
+    pg.click('[data-period="eday"]'); assert pg.locator('.ph-mapfold').count() == 1, 'redrawn: one fold, never two'
+    assert sideways(pg) <= 0
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="crib"]')
+    for t in ('#dk-cw', '#dk-c2', '#dk-cu'): expect(pg.locator(t)).to_be_visible()
+    pg.click('#dk-c2'); pg.click('#dk-cu'); assert pg.get_attribute('#dk-page', 'class') == 'dk-page two'
+    pg.evaluate("() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; }")
+    pg.click('#dk-notes [data-act="print"]')
+    assert pg.evaluate('window.__printed') == 1 and events(pg)[-1] == ['crib_printed', {'two_col': 'yes', 'hide_unopposed': 'yes', 'layout': 'phone'}], events(pg)[-1]
+    pg.emulate_media(media='print')                                                  # what the printer gets: the crib sheet alone
+    assert pg.is_visible('#crib') and 'two' in pg.get_attribute('#crib', 'class') and not pg.is_visible('#dk-app') and not pg.is_visible('#ph-bar') and not pg.is_visible('#dk-hdr')
+    pg.emulate_media(media='screen')
+    pg.set_viewport_size({'width': 320, 'height': 640}); pg.wait_for_timeout(100); assert sideways(pg) <= 0
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(100); assert pg.is_checked('#dk-c2') and pg.is_checked('#dk-cu')
+    pg.set_viewport_size(PHONE); pg.wait_for_timeout(100)
+    assert pg.is_checked('#dk-c2') and pg.is_checked('#dk-cu') and 'two' in pg.get_attribute('#crib', 'class'), 'print options survive a narrower window: a phone shows them now'
+    ctx.close()
+
+@phone_test
+def phone_menu_is_a_sheet(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg)
+    assert pg.get_attribute('#dk-help', 'aria-haspopup') == 'dialog' and pg.get_attribute('#dk-help', 'aria-controls') is None
+    pg.click('#dk-help'); pg.wait_for_selector('#ph-menu[open]'); expect(pg.locator('#dk-menu')).to_be_hidden()
+    got = pg.locator('#ph-mitems button b').all_inner_texts(); want = pg.locator('#dk-menu button b').all_text_contents()   # the laptop menu's own items
+    assert got == want[:4] + ['Add to your Home Screen'] + want[4:] and pg.locator('#ph-mitems hr').count() == 1, (got, want)
+    pg.locator('#ph-mitems button', has_text='How your privacy works').click()
+    pg.wait_for_selector('#d-info[open]'); assert not pg.evaluate("document.getElementById('ph-menu').open")
+    assert ['help_opened', {'item': 'privacy', 'layout': 'phone'}] in events(pg)
+    pg.click('#d-info [data-close]')
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Change address').click()
+    expect(pg.locator('#start')).to_be_visible(); expect(pg.locator('#dk-back')).to_be_visible(); expect(pg.locator('#ph-bar')).to_be_hidden()
+    pg.click('#dk-back'); expect(pg.locator('#ph-bar')).to_be_visible()
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(100)
+    assert pg.get_attribute('#dk-help', 'aria-haspopup') == 'menu'
+    pg.click('#dk-help'); expect(pg.locator('#dk-menu')).to_be_visible(); assert not pg.evaluate("document.getElementById('ph-menu').open")
+    ctx.close()
+
+@phone_test
+def phone_friend_link_landing_then_inline(b):
+    o = {'v': 1, 'n': 'Maya', 'c': 'abcd1234', 'g': 1, 'p': {'70': 2, '71': 0}, 'w': {'70': 'Knows the district.'}}
+    ctx, pg = phone_page(b); pg.goto(BASE); fresh_goto(pg, link('s', o))
+    expect(pg.locator('#friend')).to_be_visible(); assert 'Maya shared 2 picks' in pg.inner_text('#friend')
+    expect(pg.locator('#f-own')).to_be_hidden(); expect(pg.locator('#f-cmp')).to_be_hidden()
+    expect(pg.locator('.dk-fcta')).to_be_visible(); assert 'See Maya’s picks beside yours' in pg.inner_text('.dk-fcta')
+    assert box(pg, '#friend')['y'] < box(pg, '#start')['y'], 'their picks first, then the form'
+    lookup_phone(pg); to_contest(pg, 'District 9')
+    expect(pg.locator('.dk-fchip')).to_be_visible(); assert 'Maya picked this' in pg.inner_text('.dk-fp')
+    assert pg.inner_text('#ph-fold').startswith('You and Maya · ')
+    assert [e for e in events(pg) if e[0] == 'share_compare'] == [['share_compare', {'layout': 'phone'}]], events(pg)
+    pg.click('#ph-next'); assert [e for e in events(pg) if e[0] == 'share_compare'] == [['share_compare', {'layout': 'phone'}]], 'once'
+    pg.locator('.dk-fchip [data-act="hidefriend"]').click(); expect(pg.locator('.dk-fchip')).to_be_hidden()
+    assert not pg.inner_text('#ph-fold').startswith('You and')
+    ctx.close()
+
+@phone_test
+def phone_backup_card_sits_above_the_bar(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, list(range(1, 41))); pg.wait_for_selector('body.dk-app-on')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5])
+    card = pg.locator('#dk-nudge'); expect(card).to_be_visible(); expect(pg.locator('#ph-home-nudge')).to_be_hidden()
+    c, bar = box(pg, '#dk-nudge'), box(pg, '#ph-bar'); assert c['y'] + c['height'] <= bar['y'], ('the card covers the bar', c, bar)
+    card.locator('[data-nudge="dismiss"]').click(); expect(card).to_be_hidden()
+    assert focused(pg) in ('dk-paper',) or pg.evaluate("document.activeElement.closest('#dk-paper') !== null"), focused(pg)
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[5:25])
+    expect(card).to_be_visible(); expect(pg.locator('#ph-home-nudge')).to_be_visible()
+    pg.click('#ph-home-nudge'); pg.wait_for_selector('#ph-install[open]'); expect(card).to_be_hidden()
+    ev = events(pg)
+    assert ['backup_nudge', {'at': '25', 'action': 'home', 'layout': 'phone'}] in ev and ['home_screen', {'action': 'opened', 'from': 'card', 'layout': 'phone'}] in ev, ev
+    assert pg.evaluate('window.ballottaDropped') == []
+    ctx.close()
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+FAKE_BIP = ("() => { const e = new Event('beforeinstallprompt', { cancelable: true }); e.prompt = () => { window.__prompted = (window.__prompted || 0) + 1; return Promise.resolve(); };"
+            " e.userChoice = Promise.resolve({ outcome: 'accepted' }); window.dispatchEvent(e); }")
+
+@phone_test
+def phone_add_to_home_screen_three_ways(b):
+    # Android (the browser's own prompt), iPhone (steps, and a copy of the picks to carry over), anything else (where to look).
+    ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg); pg.evaluate(FAKE_BIP)
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click(); pg.wait_for_selector('#ph-install[open]')
+    expect(pg.locator('#ph-i-add')).to_be_visible(); expect(pg.locator('#ph-i-ios')).to_be_hidden(); expect(pg.locator('#ph-i-other')).to_be_hidden()
+    pg.click('#ph-i-add'); pg.wait_for_function("!document.getElementById('ph-install').open")
+    pg.evaluate("window.dispatchEvent(new Event('appinstalled'))")
+    assert pg.evaluate('window.__prompted') == 1
+    hs = [e[1] for e in events(pg) if e[0] == 'home_screen']
+    assert hs == [{'action': 'opened', 'from': 'menu', 'layout': 'phone'}, {'action': 'prompted', 'layout': 'phone'}, {'action': 'added', 'layout': 'phone'}], hs
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click()
+    expect(pg.locator('#ph-i-other')).to_be_visible(); expect(pg.locator('#ph-i-add')).to_be_hidden()   # the prompt is used up: say where to look
+    ctx.close()
+    ctx, pg = phone_page(b, ua=IPHONE_UA); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click()
+    expect(pg.locator('#ph-i-carry')).to_be_hidden(), 'no picks yet: nothing to carry'
+    pg.click('#ph-install [data-close]'); pg.locator('.dk-line').first.click()
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click()
+    expect(pg.locator('#ph-i-ios')).to_be_visible(); expect(pg.locator('#ph-i-carry')).to_be_visible(); expect(pg.locator('#ph-i-add')).to_be_hidden()
+    pg.click('#ph-i-copy'); pg.wait_for_function("(window.__events || []).some(e => e[0] === 'keep_created')")
+    clip = pg.evaluate('navigator.clipboard.readText()')
+    assert re.fullmatch(re.escape(BASE) + r'#k2[A-Za-z0-9_-]{16,}', clip), clip
+    assert ['home_screen', {'action': 'copied', 'layout': 'phone'}] in events(pg) and ['keep_created', {'via': 'copy', 'layout': 'phone'}] in events(pg)
+    ctx.close()
+
+STANDALONE = "Object.defineProperty(navigator, 'standalone', { configurable: true, get: () => true });"
+
+@phone_test
+def phone_home_screen_app_pastes_picks(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("pick('c070', 'Zohaib “Zo” Qadri'); whys.c070 = 'Knows the district'; LS.set('ballotta.whys', whys)")
+    keep = pg.evaluate('keepURL()'); share = pg.evaluate("packFrag('s', { v: 1, n: 'Maya', p: { '70': 1 } })")
+    ctx.close()
+    ctx, pg = phone_page(b, init=STANDALONE); pg.goto(BASE)                                # Android's Home Screen app shares Chrome's storage
+    expect(pg.locator('#ph-paste')).to_be_hidden(); pg.click('#dk-help'); t = pg.inner_text('#ph-mitems')
+    assert 'Paste my picks link' not in t and 'Add to your Home Screen' not in t, t
+    ctx.close()
+    ctx, pg = phone_page(b, init=STANDALONE, ua=IPHONE_UA); pg.goto(BASE)
+    expect(pg.locator('#ph-paste')).to_be_visible()
+    pg.click('#dk-help'); t = pg.inner_text('#ph-mitems')
+    assert 'Paste my picks link' in t and 'Add to your Home Screen' not in t, t
+    pg.click('#ph-menu [data-close]'); pg.click('#ph-paste-open'); pg.wait_for_selector('#ph-paste-d[open]')
+    pg.fill('#ph-p-in', 'hello'); pg.click('#ph-p-go'); assert 'doesn’t look like a Ballotta link' in pg.inner_text('#ph-p-msg')
+    pg.fill('#ph-p-in', BASE + '#' + share); pg.click('#ph-p-go'); assert 'a friend shared' in pg.inner_text('#ph-p-msg')
+    pg.fill('#ph-p-in', 'My picks: ' + keep + '.'); pg.click('#ph-p-go')               # extra words around it, as in a note
+    pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
+    assert cur(pg, 'c070') == ['Zohaib “Zo” Qadri'] and pg.evaluate('whys.c070') == 'Knows the district'
+    ev = events(pg)
+    assert ['home_screen', {'action': 'pasted', 'layout': 'phone', 'app': 'yes'}] in ev and ['keep_restored', {'layout': 'phone', 'app': 'yes'}] in ev, ev
+    expect(pg.locator('#ph-paste')).to_be_hidden()
+    assert pg.evaluate('window.ballottaDropped') == []
+    ctx.close()
+    ctx, pg = phone_page(b, init=STANDALONE, ua=IPHONE_UA); pg.goto(BASE)                 # straight from the clipboard
+    pg.evaluate("navigator.clipboard.writeText('my bank PIN is 1234')"); pg.click('#ph-paste-open'); pg.click('#ph-p-clip')
+    pg.wait_for_selector('#ph-p-msg:not(.hidden)')                                     # the clipboard is read in the background
+    assert pg.input_value('#ph-p-in') == '' and 'doesn’t look like a Ballotta link' in pg.inner_text('#ph-p-msg'), 'other clipboard text is never shown'
+    pg.evaluate('u => navigator.clipboard.writeText(u)', keep)
+    pg.click('#ph-p-clip'); pg.wait_for_selector('#d-restore[open]')
+    ctx.close()
+
+class Flip(http.server.SimpleHTTPRequestHandler):           # the repo's files, except any path in swap (served as given) or gone (404)
+    swap, gone, fail, hits = {}, set(), {}, []             # fail: path -> a status to answer instead (503, say); hits: paths asked for
+    def log_message(self, *a): pass
+    def do_GET(self):
+        Flip.hits.append(self.path.split('?')[0])
+        if self.path.split('?')[0] in Flip.gone: return self.send_error(404)
+        if self.path.split('?')[0] in Flip.fail: return self.send_error(Flip.fail[self.path.split('?')[0]])
+        body = Flip.swap.get(self.path.split('?')[0])
+        if body is None: return super().do_GET()
+        self.send_response(200); self.send_header('Content-Type', 'application/javascript' if self.path.endswith('.js') else 'text/html; charset=utf-8'); self.send_header('Content-Length', str(len(body)))
+        self.end_headers(); self.wfile.write(body)
+
+def own_server():                                           # a spare port of the system's choosing, never 8765
+    s = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Flip, directory=str(ROOT)))
+    threading.Thread(target=s.serve_forever, daemon=True).start()
+    return s, f'http://127.0.0.1:{s.server_address[1]}/{PAGE}'
+
+@phone_test
+def phone_offline_copy_after_one_visit(b):
+    # Network first (Lane): online, a changed page shows at once; the page, its fonts and icons are kept; with the server
+    # gone (the offline copy's own network included), the kept copy opens. The page's CSP stays on throughout.
+    Flip.swap, Flip.gone = {}, set(); srv, url = own_server(); up = True
+    ctx, pg = phone_page(b, csp=True, sw=True); pg.add_init_script(CSP_WATCH)
+    try:
+        pg.goto(url.rsplit('/', 1)[0] + '/manifest.webmanifest')                           # same site, before any copy exists
+        pg.evaluate("u => caches.open('aaa-other').then(c => c.put(u, new Response('<h1>Not ours</h1>', { headers: { 'Content-Type': 'text/html' } })))", url)
+        pg.goto(url)
+        assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])'), 'no offline copy installed'
+        poll(pg, '!!navigator.serviceWorker.controller', 15)                             # and in charge of this page
+        meta = pg.get_attribute('meta[http-equiv="Content-Security-Policy"]', 'content')
+        assert "manifest-src 'self'" in meta and "worker-src 'self'" in meta, meta
+        scope = pg.evaluate("navigator.serviceWorker.getRegistration().then(r => r && r.scope)")
+        assert scope == url.rsplit('/', 1)[0] + '/', scope
+        murl = pg.evaluate("document.querySelector('link[rel=manifest]').href")    # read from here: the page itself may only fetch from the county
+        m = json.loads(urllib.request.urlopen(murl).read())
+        assert m['display'] == 'standalone' and m['start_url'] == './' and {i['purpose'] for i in m['icons']} == {'any', 'maskable'}, m
+        for i in m['icons']:
+            r = urllib.request.urlopen(urllib.parse.urljoin(murl, i['src'])); assert r.headers['Content-Type'] == 'image/png' and r.read(8) == b'\x89PNG\r\n\x1a\n', i
+        pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
+        Flip.swap['/' + PAGE] = (ROOT / PAGE).read_bytes().replace(b"<h1>What's on your ballot?</h1>", b"<h1>A newer page</h1>", 1)
+        pg.reload(); assert pg.inner_text('#start h1') == 'A newer page', 'online, the newest page wins (network first)'
+        Flip.swap = {}; pg.reload(); assert pg.inner_text('#start h1') == "What's on your ballot?"
+        kept = pg.evaluate("n => caches.open(n).then(c => c.keys()).then(ks => ks.map(r => r.url))", 'ballotta-next-1' if PAGE.startswith('next/') else 'ballotta-1')   # each scope its own
+        origin = url.split('/' + PAGE)[0]
+        assert url in kept and any(k.endswith('.woff2') for k in kept) and all(k.startswith(origin + '/') for k in kept), kept
+        srv.shutdown(); srv.server_close(); up = False                                   # now there is no network at all
+        pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
+        assert pg.inner_text('#start h1') == "What's on your ballot?" and pg.evaluate("document.fonts.check('16px \"Public Sans\"')"), 'offline, another cache answered'
+        assert pg.evaluate('window.__csp') == [], pg.evaluate('window.__csp')
+    finally:
+        ctx.close()
+        if up: srv.shutdown(); srv.server_close()
+
+@phone_test
+def laptops_get_no_offline_copy_or_install_prompt(b):
+    # Laptops stay as they are: no offline copy, and Chrome's own install offer is left alone.
+    ctx, pg = new_page(b, wide=True, sw=True); pg.goto(BASE); pg.wait_for_timeout(1500)
+    assert pg.evaluate("navigator.serviceWorker.getRegistration().then(r => !r)"), 'a laptop got the offline copy'
+    assert not pg.evaluate("() => { const e = new Event('beforeinstallprompt', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; }")
+    ctx.close()
+
+@phone_test
+def phone_whole_visit_counts_only_listed_events(b):
+    # Today's phone page has journey tests; this is the phone layout's: sources, directions, wait times, photo ID, a keep
+    # link there and back, a share link, clearing picks and everything. Everything counted is listed and says "phone".
+    ctx, pg = phone_page(b); pg.goto(BASE); no_link_opens(pg); lookup_phone(pg); to_contest(pg, 'District 9')
+    pg.locator('.dk-line', has_text='Qadri').click(); pg.fill('#dk-w', 'Knows the district')
+    pg.locator('.dk-paper .links a', has_text='Campaign site').first.click()
+    pg.click('#ph-fold'); pg.locator('#dk-notes a', has_text='League').first.click()
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="vote"]')
+    vote = pg.text_content('#dk-paper'); assert 'Bring a photo ID' in vote and 'Moved here from another Texas county' in vote, 'photo ID and notes, as on today\'s phone page'
+    pg.locator('#dk-paper a', has_text='Check live wait times').click(); pg.locator('#dk-paper a', has_text='Directions').first.click()
+    ev = events(pg)
+    for want in (['source_opened', {'kind': 'campaign_site', 'level': 'city', 'layout': 'phone'}], ['source_opened', {'kind': 'league_guide', 'level': 'city', 'layout': 'phone'}],
+                 ['wait_times_opened', {'period': pg.evaluate('period'), 'layout': 'phone'}], ['directions_opened', {'period': pg.evaluate('period'), 'layout': 'phone'}]):
+        assert want in ev, (want, ev)
+    pg.click('#ph-list'); pg.click('#dk-keep'); pg.click('#keep-copy'); pg.wait_for_selector('#keep-out:not(.hidden)')
+    keep = pg.inner_text('#keep-out'); pg.click('#d-keep [data-close]'); pg.click('#ph-done')   # Keep opened over the list; the list is still there
+    pg.click('#dk-share'); pg.fill('#sharename', 'Lane'); pg.click('#share-go'); pg.wait_for_selector('#share-out:not(.hidden)')
+    assert '#s2' in pg.inner_text('#share-out'); pg.click('#d-share [data-close]')
+    pg.once('dialog', lambda d: d.accept()); pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Clear my picks').click()
+    assert cur(pg, 'c070') == [] and pg.text_content('#ph-count') == '0 of 63 decided'
+    names_ = names(pg)
+    assert {'keep_created', 'share_sheet_open', 'share_created', 'cleared', 'help_opened'} <= set(names_), names_
+    journey_check(pg, 'phone')
+    ctx.close()
+    ctx, pg = phone_page(b); pg.goto(keep); pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go')
+    pg.wait_for_selector('body.dk-app-on'); assert cur(pg, 'c070') == ['Zohaib “Zo” Qadri'] and pg.evaluate('whys.c070') == 'Knows the district'
+    pg.once('dialog', lambda d: d.accept()); pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Clear everything').click()
+    pg.wait_for_function("!Object.keys(localStorage).some(k => k.startsWith('ballotta.'))", timeout=5000)
+    pg.wait_for_load_state(); expect(pg.locator('#start')).to_be_visible(); expect(pg.locator('#ph-bar')).to_be_hidden()
+    journey_check(pg, 'phone')
+    ctx.close()
+
+@phone_test
+def phone_runs_under_the_page_lock(b):
+    # The phone layout keeps the page's Content-Security-Policy (#36): a whole visit, a friend's link to the Home Screen
+    # steps, trips nothing (its icons are data: images, which the policy allows); an injected script still can't run.
+    ctx, pg = phone_page(b, csp=True); pg.add_init_script(CSP_WATCH); pg.goto(BASE)
+    fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2350', 'g': 1, 'p': {'70': 0}}))
+    poll(pg, "!document.getElementById('friend').classList.contains('hidden')")
+    pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
+    poll(pg, "document.body.classList.contains('dk-app-on') && / of \\d+ decided$/.test(document.getElementById('ph-count').textContent)")
+    pg.locator('.dk-line').first.click(); pg.click('#ph-fold'); pg.click('#ph-next')
+    for v in ('glance', 'vote', 'crib'):
+        pg.click('#ph-list'); pg.click(f'#dk-views [data-view="{v}"]')
+        if v == 'vote': pg.click('.ph-mapfold summary')
+    pg.click('#dk-help'); poll(pg, "document.getElementById('ph-menu').open")
+    pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click(); poll(pg, "document.getElementById('ph-install').open")
+    pg.click('#ph-install [data-close]'); pg.click('#dk-share'); poll(pg, "document.getElementById('d-share').open"); pg.click('#d-share [data-close]')
+    pg.wait_for_timeout(500)
+    assert pg.evaluate('window.__csp') == [], pg.evaluate('window.__csp')
+    pg.evaluate("() => { const s = document.createElement('script'); s.textContent = 'window.__pwned = 1'; document.body.appendChild(s); }")
+    pg.wait_for_timeout(200)
+    assert pg.evaluate('window.__pwned') is None and any(v.startswith('script-src') for v in pg.evaluate('window.__csp')), 'an injected script ran'
+    ctx.close()
+
+@phone_test
+def phone_resize_keeps_things_in_step(b):
+    ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg); pg.click('#ph-list')
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(100)
+    assert not pg.evaluate("document.body.classList.contains('ph-list') || document.getElementById('dk-desk').inert")
+    expect(pg.locator('.dk-rail')).to_be_visible(); expect(pg.locator('#ph-bar')).to_be_hidden(); expect(pg.locator('#ph-fold')).to_be_hidden()
+    pg.set_viewport_size(PHONE); pg.wait_for_timeout(100)
+    expect(pg.locator('#ph-bar')).to_be_visible(); expect(pg.locator('.dk-rail')).to_be_hidden()
+    ctx.close()
+
+@phone_test
+def laptop_unchanged_by_the_phone_code(b):
+    # Laptops must not change: at laptop widths the page with the phone code is pixel-for-pixel the page without it,
+    # on the landing page and in each view. Both are built in memory from the template (as the phone-parity test does).
+    m = build_module(); shots = {}
+    for name, ph in (('_lp_plain.html', False), ('_lp_phone.html', True)):
+        html = m.build(phone=ph)
+        for size in ({'width': 1440, 'height': 900}, {'width': 1024, 'height': 640}):
+            ctx, pg = new_page(b, wide=True); ctx.route(f'**/{name}', (lambda h: lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=h))(html))
+            pg.set_viewport_size(size); pg.goto(f'http://127.0.0.1:{PORT}/{name}'); pg.wait_for_timeout(500)
+            assert pg.evaluate('!!document.getElementById("ph-bar")') == ph, (name, 'built the wrong flavour')
+            got = [pg.screenshot(full_page=True)]
+            lookup_wide(pg); pg.wait_for_timeout(300); got.append(pg.screenshot(full_page=True))
+            pg.click('[data-row="c070"]'); pg.locator('.dk-line', has_text='Qadri').click(); pg.fill('#dk-w', 'Knows the district'); pg.wait_for_timeout(200)
+            got.append(pg.screenshot(full_page=True))
+            for v in ('glance', 'vote', 'crib'):
+                pg.click(f'#dk-views [data-view="{v}"]'); pg.wait_for_timeout(300); got.append(pg.screenshot(full_page=True))
+            pg.click('#dk-help'); pg.wait_for_timeout(100); got.append(pg.screenshot())
+            shots[(name, size['width'])] = got; ctx.close()
+    for w in (1440, 1024):
+        for k, (a, z) in enumerate(zip(shots[('_lp_plain.html', w)], shots[('_lp_phone.html', w)])):
+            assert a == z, f'laptop differs with the phone code in: width {w}, shot {k} (landing, ballot, pick, glance, vote, crib, menu)'
+
+# ---------------------------------------------------------------- phone audit, Pass 1 (Oct 16): findings A1–A9, B1–B3, C1–C7
+LANDSCAPE = {'width': 844, 'height': 390}                  # an iPhone on its side
+
+def obscured(pg):
+    # The focused control's box against the sticky top bar and anything fixed at the bottom (the backup card, the bar).
+    return pg.evaluate("""() => {
+      const a = document.activeElement; if (!a || a === document.body || a.closest('#dk-hdr, #ph-bar, #dk-nudge')) return null;
+      const r = a.getBoundingClientRect(), top = document.getElementById('dk-hdr').getBoundingClientRect().bottom;
+      const lows = ['ph-bar', 'dk-nudge'].map(id => document.getElementById(id)).filter(e => e.getClientRects().length).map(e => e.getBoundingClientRect().top);
+      const bottom = Math.min(innerHeight, ...lows);
+      return r.top < top - 1 || r.bottom > bottom + 1 ? [a.id || a.tagName, Math.round(r.top), Math.round(r.bottom), Math.round(top), Math.round(bottom)] : null; }""")
+
+@phone_test
+def phone_list_sheet_on_a_landscape_phone(b):
+    # A1, A5, A6 and the sheet's name: on a phone on its side the list still shows contests; Escape always closes it;
+    # widening the window keeps focus on the row it was on; open, it is a named modal sheet.
+    ctx, pg = phone_page(b, size=LANDSCAPE); pg.goto(BASE); saved_ballot(pg, list(range(1, 41))); pg.wait_for_selector('body.dk-app-on')
+    pg.click('#ph-list')
+    rail = pg.locator('.dk-rail')
+    assert rail.get_attribute('role') == 'dialog' and rail.get_attribute('aria-modal') == 'true' and rail.get_attribute('aria-label') == 'Your ballot'
+    rows = pg.evaluate("() => { const o = document.getElementById('dk-out').getBoundingClientRect(); return [...document.querySelectorAll('.dk-row')].filter(r => { const b = r.getBoundingClientRect(); return b.top >= Math.max(0, o.top) && b.bottom <= Math.min(innerHeight, o.bottom); }).length; }")
+    pg.evaluate("document.querySelector('.dk-rail').scrollTo(0, 99999)")
+    room = pg.evaluate("document.getElementById('dk-out').getBoundingClientRect().height")
+    assert room >= 3 * 48, ('no room for contests on a landscape phone', room, rows)   # three rows, at least, by scrolling the sheet
+    pg.locator('#dk-keep').scroll_into_view_if_needed(); assert pg.locator('#dk-keep').is_visible(), 'Keep my picks out of reach'
+    pg.click('.dk-rhd h2'); assert focused(pg) == 'BODY'
+    pg.keyboard.press('Escape'); expect(rail).to_be_hidden()
+    assert rail.get_attribute('role') is None and rail.get_attribute('aria-modal') is None, 'closed, it is the laptop rail again'
+    pg.click('#ph-list'); pg.fill('#dk-q', 'Senator'); pg.focus('#dk-q')
+    pg.keyboard.press('Escape'); assert pg.input_value('#dk-q') == '' and rail.is_visible(), 'the first Escape clears the search'
+    pg.keyboard.press('Escape'); expect(rail).to_be_hidden()
+    pg.click('#ph-list'); row = pg.locator('.dk-row').nth(1); row.focus(); rid = row.get_attribute('data-row')
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
+    assert pg.evaluate('document.activeElement.dataset.row') == rid, 'widening drops focus'
+    ctx.close()
+
+@phone_test
+def phone_long_friend_name_stays_on_screen(b):
+    # A2: the longest name a link may carry, with no spaces, arriving while the app is open.
+    nm = 'M' * 30
+    for w in (320, 390):
+        ctx, pg = phone_page(b, size={'width': w, 'height': 700}); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+        pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('s', {'v': 1, 'n': nm, 'c': 'abcd2351', 'g': 1, 'p': {'70': 0}}))
+        pg.wait_for_selector('.dk-fchip'); to_contest(pg, 'District 9')
+        assert pg.inner_text('#ph-fold').startswith('You and ' + nm[:5]) and sideways(pg) <= 0, (w, sideways(pg))
+        ctx.close()
+
+@phone_test
+def phone_focus_never_hides_under_the_bars(b):
+    # A3, A4, A8: Tab and Shift+Tab never leave the focused control under the top bar, the backup card or the bottom bar;
+    # on a phone on its side the card is compact; on a phone it comes after the paper in Tab order, on a laptop before.
+    for size, card in ((PHONE, False), (PHONE, True), (LANDSCAPE, False), (LANDSCAPE, True)):
+        ctx, pg = phone_page(b, size=size); pg.goto(BASE); saved_ballot(pg, list(range(1, 41))); pg.wait_for_selector('body.dk-app-on')
+        if card:
+            ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+            pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5]); expect(pg.locator('#dk-nudge')).to_be_visible()
+            if size == LANDSCAPE: assert box(pg, '#dk-nudge')['height'] <= 110, ('the card fills a landscape screen', box(pg, '#dk-nudge'))
+        for view in ('decide', 'glance'):
+            if view == 'glance': pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]')
+            for key in ('Tab', 'Shift+Tab'):
+                pg.evaluate('window.scrollTo(0, 600)'); pg.focus('#dk-paper'); bad = []
+                for _ in range(25):
+                    pg.keyboard.press(key); o = obscured(pg)
+                    if o: bad.append(o)
+                assert not bad, (size, card, view, key, bad[:3])
+        ctx.close()
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, list(range(1, 41))); pg.wait_for_selector('body.dk-app-on')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5])
+    pg.focus('#ph-step-next'); pg.keyboard.press('Tab')
+    assert pg.evaluate('document.activeElement.dataset.nudge') == 'keep', ('the card is skipped in Tab order', focused(pg))
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
+    assert pg.evaluate("document.getElementById('dk-nudge').nextElementSibling.id") == 'dk-paper', 'the laptop order changed'
+    ctx.close()
+
+@phone_test
+def phone_targets_and_resize_leftovers(b):
+    # A9, A7/C5, C3: contest names in At a glance are 44px targets; the menu button's state is true after a round trip;
+    # narrowing closes the laptop menu; widening closes every phone sheet (the laptop's keys work again).
+    ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg); pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]')
+    small = pg.evaluate("[...document.querySelectorAll('.dk-tbl tbody th .dk-link')].filter(e => e.getBoundingClientRect().height < 44).length")
+    assert small == 0, (small, 'contest names under 44px')
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(100); pg.click('#dk-help'); expect(pg.locator('#dk-menu')).to_be_visible()
+    pg.set_viewport_size({'width': 800, 'height': 900}); pg.wait_for_timeout(100)
+    assert pg.evaluate("document.getElementById('dk-menu').classList.contains('hidden')"), 'the laptop menu stays open on a phone'
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(100)
+    assert pg.get_attribute('#dk-help', 'aria-expanded') == ('false' if pg.evaluate("document.getElementById('dk-menu').classList.contains('hidden')") else 'true')
+    pg.click('#dk-help'); assert pg.get_attribute('#dk-help', 'aria-expanded') == 'true' and pg.is_visible('#dk-menu')
+    pg.keyboard.press('Escape')
+    pg.set_viewport_size(PHONE); pg.wait_for_timeout(100)
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click(); pg.wait_for_selector('#ph-install[open]')
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
+    assert pg.evaluate("[...document.querySelectorAll('dialog[open]')].map(d => d.id)") == [], 'a phone sheet left open on a laptop'
+    ctx.close()
+
+@phone_test
+def phone_paste_shows_only_the_link(b):
+    # B1 and the nit: a note around a link never reaches the screen, only the link does; a lone marker shows nothing;
+    # the box empties when the sheet closes; a damaged link isn't counted as pasted.
+    ctx, pg = phone_page(b, init=STANDALONE, ua=IPHONE_UA); pg.goto(BASE); pg.click('#ph-paste-open')
+    pg.evaluate("navigator.clipboard.writeText('Dr. Patel 2pm re: results. Maya: https://ballotta.org/#s2AAAAAAAAAAAAAAAAAAAA')"); pg.click('#ph-p-clip')
+    pg.wait_for_selector('#ph-p-msg:not(.hidden)'); v = pg.input_value('#ph-p-in')
+    assert 'Patel' not in v and v.endswith('#s2AAAAAAAAAAAAAAAAAAAA'), v
+    pg.evaluate("navigator.clipboard.writeText('reset code 739201 #k2 (ignore)')"); pg.click('#ph-p-clip'); pg.wait_for_timeout(300)
+    assert pg.input_value('#ph-p-in') == '', pg.input_value('#ph-p-in')
+    pg.fill('#ph-p-in', 'x'); pg.click('#ph-paste-d [data-close]'); pg.wait_for_timeout(200); assert pg.input_value('#ph-p-in') == '', 'the box keeps what was pasted'
+    pg.click('#ph-paste-open'); pg.fill('#ph-p-in', BASE + '#k2' + 'A' * 40); pg.click('#ph-p-go'); pg.wait_for_timeout(500)
+    assert 'pasted' not in [e[1].get('action') for e in events(pg) if e[0] == 'home_screen'], events(pg)
+    assert 'damaged' in pg.inner_text('#ph-p-msg') or 'incomplete' in pg.inner_text('#ph-p-msg'), pg.inner_text('#ph-p-msg')
+    ctx.close()
+
+@phone_test
+def phone_offline_kill_switch_and_promotion(b):
+    # B2, B3: OFFLINE = False removes the copy and its caches for good (a later load can't bring the cache back);
+    # the preview keeps its own cache name; once promoted, the build writes a self-removing next/sw.js.
+    m = build_module()
+    on, off = m.sw_js(True), m.sw_off_js(True)
+    assert "'ballotta-next-1'" in on and "'ballotta-1'" in m.sw_js(False) and "startsWith('ballotta-next-')" in off and "startsWith('ballotta-')" in m.sw_off_js(False)
+    m.PHONE_LIVE = True; out = m.outputs(False); m.PHONE_LIVE = False
+    assert out['next/sw.js'] == m.sw_off_js(True) and out['sw.js'] == m.sw_js(False) and 'next/index.html' not in out, sorted(out)
+    Flip.swap = {}; srv, url = own_server()
+    ctx, pg = phone_page(b, sw=True)
+    try:
+        pg.goto(url); assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])')
+        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, "caches.keys().then(k => k.includes('ballotta-next-1'))", 15)
+        m.OFFLINE = False; page = m.build(preview=True); m.OFFLINE = True
+        Flip.swap = {'/' + PAGE: page.encode('utf-8'), '/' + PAGE.rsplit('/', 1)[0] + '/sw.js': m.sw_off_js(True).encode('utf-8')}
+        pg.reload(); poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 0)", 15)
+        poll(pg, "caches.keys().then(k => !k.some(x => x.startsWith('ballotta')))", 15)
+        pg.evaluate("() => new Promise(ok => { const i = new Image(); i.onload = i.onerror = ok; i.src = '../icon-512.png?late'; })"); pg.wait_for_timeout(500)
+        assert pg.evaluate("caches.keys()") == [], 'a later load brought a cache back'
+        ctx.close()
+        for wide, gone in ((True, False), (False, 503)):                                  # a laptop-width window; a hiccup
+            Flip.swap, Flip.gone, Flip.fail = {}, set(), {}
+            ctx, pg = (new_page(b, wide=True, sw=True) if wide else phone_page(b, sw=True)); pg.goto(url)
+            if wide: pg.evaluate("navigator.serviceWorker.register('sw.js')")             # an older install, before laptops were left out
+            poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 1)", 15)
+            pg.evaluate("caches.open('ballotta-next-1').then(c => c.put(location.href, new Response('x')))")
+            Flip.swap = {'/' + PAGE: page.encode('utf-8')}
+            swp = '/' + PAGE.rsplit('/', 1)[0] + '/sw.js'
+            if gone == 503: Flip.fail = {swp: 503}
+            else: Flip.swap[swp] = m.sw_off_js(True).encode('utf-8')
+            pg.wait_for_timeout(3000); Flip.hits = []                                       # let the browser's own update check settle first
+            pg.reload()
+            if gone == 503:                                                                  # a hiccup is not "gone": the copy stays
+                pg.wait_for_timeout(2500)
+                assert 'getRegistration(\'./\')' in pg.content() and swp in Flip.hits, ('the kill switch never asked for sw.js', Flip.hits)
+                assert pg.evaluate("navigator.serviceWorker.getRegistrations().then(r => r.length)") == 1 and pg.evaluate("caches.has('ballotta-next-1')"), 'a 503 removed the copy'
+            else:
+                poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 0)", 15)
+                poll(pg, "caches.keys().then(k => !k.some(x => x.startsWith('ballotta')))", 15)
+            ctx.close()
+        Flip.swap, Flip.gone, Flip.fail = {}, set(), {}                                    # a page never touches another folder's copy (Pass 3)
+        ctx, pg = phone_page(b, sw=True); pg.goto(url); poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 1)", 15)
+        Flip.swap = {'/_other.html': m.build(phone=True).encode('utf-8')}; Flip.fail = {'/' + PAGE.rsplit('/', 1)[0] + '/sw.js': 503}
+        pg.goto(url.rsplit('/', 2)[0] + '/_other.html'); pg.wait_for_timeout(2500)
+        assert pg.evaluate("navigator.serviceWorker.getRegistrations().then(r => r.some(g => g.scope.endsWith('/next/')))"), 'another page removed the preview copy'
+    finally:
+        Flip.swap, Flip.gone, Flip.fail = {}, set(), {}; ctx.close(); srv.shutdown(); srv.server_close()
+
+@phone_test
+def laptops_stay_laptops_after_a_narrow_start(b):
+    # C1, C2: a narrow window on a laptop (a mouse, not a finger) never installs the offline copy; a laptop-wide Home
+    # Screen window adds no "app" detail to what it counts.
+    ctx, pg = new_page(b, sw=True, size={'width': 900, 'height': 800}); pg.goto(BASE); pg.wait_for_timeout(1500)
+    assert pg.evaluate("navigator.serviceWorker.getRegistration().then(r => !r)"), 'a narrow laptop window got the offline copy'
+    ctx.close()
+    ctx, pg = new_page(b, wide=True); pg.add_init_script(STANDALONE); pg.goto(BASE); pg.evaluate("track('faq_seen')")
+    assert events(pg)[-1] == ['faq_seen', {'layout': 'laptop'}], events(pg)[-1]
+    ctx.close()
+
+@phone_test
+def phone_taps_land_where_they_were_aimed(b):
+    # Pass 2: a tap or click on a control half under the backup card or the top bar lands on it (the keyboard's scroll
+    # doesn't move it from under the pointer); focus inside the card survives a width change; a view button in the
+    # sheet keeps focus when the window widens.
+    ctx, pg = phone_page(b, size={'width': 320, 'height': 844}); pg.goto(BASE); saved_ballot(pg, list(range(1, 41))); pg.wait_for_selector('body.dk-app-on')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5]); expect(pg.locator('#dk-nudge')).to_be_visible()
+    pg.evaluate('ids => pick(ids[5], optionsOf(BYID[ids[5]])[0])', ids)                     # the card stays (it shows once)
+    pg.wait_for_function("document.querySelector('#dk-nudge [role=status]').textContent.length > 0")   # its words arrive a moment later and it grows
+    btn = '[data-prompt^="Still deciding"]'
+    pg.evaluate("s => { const b = document.querySelector(s).getBoundingClientRect(), c = document.getElementById('dk-nudge').getBoundingClientRect(); window.scrollBy(0, b.top - (c.top - 12)); }", btn)
+    r = box(pg, btn); before = pg.evaluate('scrollY')
+    pg.mouse.click(r['x'] + 20, r['y'] + 5)
+    assert pg.input_value('#dk-w').startswith('Still deciding because'), ('the click missed', before, pg.evaluate('scrollY'))
+    pg.evaluate("() => { document.activeElement.blur(); const b = document.getElementById('dk-w').getBoundingClientRect(), c = document.getElementById('dk-nudge').getBoundingClientRect(); window.scrollBy(0, b.top - (c.top - 30)); }")
+    r = box(pg, '#dk-w'); before = pg.evaluate('scrollY'); pg.mouse.click(r['x'] + 20, r['y'] + 10)
+    assert focused(pg) == 'dk-w' and pg.evaluate('scrollY') == before, ('a tapped field jumped', before, pg.evaluate('scrollY'))
+    pg.keyboard.press('Tab'); pg.wait_for_timeout(100)                                  # one Tab: that focus may scroll
+    pg.evaluate("() => { const b = document.getElementById('dk-w').getBoundingClientRect(), c = document.getElementById('dk-nudge').getBoundingClientRect(); window.scrollBy(0, b.top - (c.top - 30)); }")
+    before = pg.evaluate('scrollY'); pg.evaluate("() => document.getElementById('dk-w').focus({ preventScroll: true })")
+    assert pg.evaluate('scrollY') == before, 'a script\'s preventScroll was overridden'
+    pg.evaluate("() => { const b = document.createElement('button'); b.id = 'ph-last-test'; b.textContent = 'x'; document.body.append(b); b.focus(); }")
+    pg.keyboard.press('Tab'); pg.wait_for_timeout(100)                                  # Tab out of the page: no focus arrives in it
+    pg.evaluate("() => { const b = document.getElementById('dk-w').getBoundingClientRect(), c = document.getElementById('dk-nudge').getBoundingClientRect(); window.scrollBy(0, b.top - (c.top - 30)); }")
+    before = pg.evaluate('scrollY'); pg.evaluate("() => document.getElementById('dk-w').focus({ preventScroll: true })")
+    assert pg.evaluate('scrollY') == before, 'a Tab out of the page left the flag set'
+    pg.focus('#dk-nudge [data-nudge="keep"]'); pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
+    assert pg.evaluate('document.activeElement.dataset.nudge') == 'keep', 'widening dropped focus from the card'
+    pg.set_viewport_size(PHONE); pg.wait_for_timeout(150)
+    assert pg.evaluate('document.activeElement.dataset.nudge') == 'keep', 'narrowing dropped focus from the card'
+    pg.click('#dk-nudge [data-nudge="dismiss"]'); pg.click('#ph-list'); pg.focus('#dk-views [data-view="vote"]')
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
+    assert pg.evaluate('document.activeElement.dataset.view') == 'vote', 'widening dropped focus from a view button'
+    ctx.close()
+
 def main():
     srv = serve()
     failed = skipped = 0
@@ -1801,6 +2470,10 @@ def main():
         for fn in TESTS:
             if fn.__name__ in DESK_TESTS and not HAS_DESK:
                 skipped += 1; print('SKIP', fn.__name__, '- no laptop layout in', PAGE); continue
+            if fn.__name__ in PHONE_TESTS and not HAS_PHONE:
+                skipped += 1; print('SKIP', fn.__name__, '- no phone layout in', PAGE); continue
+            if fn.__name__ in OLD_PHONE_TESTS and HAS_PHONE:
+                skipped += 1; print('SKIP', fn.__name__, '- drives today\'s phone page: runs on index.html'); continue
             try:
                 fn(b); print('PASS', fn.__name__)
             except Exception as e:

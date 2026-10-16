@@ -17,7 +17,7 @@ def put(f, text):                                          # write whole or not 
         signal.pthread_sigmask(signal.SIG_SETMASK, old)
 ROOT = pathlib.Path.cwd()
 LIVE = '\nDESK_LIVE = True\n' in (ROOT / 'source/build_site.py').read_text(encoding='utf-8')     # the setting's own line, not the comment
-os.environ['BALLOTTA_PAGE'] = 'index.html' if LIVE else 'next/index.html'   # after promotion the laptop layout is the live page
+os.environ['BALLOTTA_PAGE'] = os.environ.get('BALLOTTA_MUTATE_PAGE') or ('index.html' if LIVE else 'next/index.html')   # mutate_phone.py sets its own page
 sys.path.insert(0, str(ROOT / 'tests'))
 import test_site as T
 from playwright.sync_api import sync_playwright
@@ -66,7 +66,7 @@ M = [
  ('M38 printing resets the options', PREV, "!printing && !matchMedia('print').matches && ", "", ['desk_crib_options_and_print']),
  ('M39 a first no-overlap view blocks the count', PREV, "      const mine = new Set(ballot.map(b => b.c.id)), k = friend.code", "      ui.cmpFor = friend; const mine = new Set(ballot.map(b => b.c.id)), k = friend.code", ['desk_compare_counted_once_per_link']),
  ('M40 laptop compare counted twice', PREV, "track('share_compare');", "track('share_compare'); track('share_compare');", ['desk_compare_counted_once_per_link']),
- ('M41 stray marker inside a block accepted', BLD, "            assert not re.search(OPEN + '|' + CLOSE, line), f\"line {n}: a DESK marker inside a block isn't alone on its line\"", "            pass", ['live_build_is_unchanged_until_promotion']),
+ ('M41 stray marker inside a block accepted', BLD, "            assert not re.search(OPEN + '|' + CLOSE, line), f\"line {n}: a {tag} marker inside a block isn't alone on its line\"", "            pass", ['live_build_is_unchanged_until_promotion']),
  ('M42 print flag can stick', PREV, "  ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { printing = false; }, true));", "", ['desk_crib_options_and_print']),
  ('M43 laptop box does not grow', PREV, "      fit(ta);\n      whys[c.id] = ta.value;", "      whys[c.id] = ta.value;", ['desk_why_box_grows_with_the_reason']),
  ('M23 card and notes drift apart', PREV, "column-gap:clamp(24px,calc((100% - 992px) / 3),32px);", "column-gap:calc((100% - 992px) / 3);", ['desk_layout_header_and_rail']),
@@ -236,7 +236,7 @@ M = [
  ('M29 hiding a friend leaves the landing broken', PREV, 'friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/\n}\nfunction friendName', 'friend = null;\n}\nfunction friendName', ['desk_friend_hide_on_landing']),
  ('V40 clear everything missing from the menu', PREV, "    else if (a === 'clearall') clearEverything();\n", '', ['desk_counts_laptop_features']),
  ('F11 old warning survives a good link', PREV, "  notify('');\n", '', ['desk_launch_audit_fixes']),
- ('B1 no Content-Security-Policy', BLD, 'return html.replace("<!--CSP-->", csp_meta(html), 1)', 'return html', ['page_is_locked_down']),
+ ('B1 no Content-Security-Policy', BLD, 'return html.replace("<!--CSP-->", csp_meta(html, phone), 1)', 'return html', ['page_is_locked_down']),
  ('B2 inline scripts allowed', BLD, "script-src 'self' {hashes};", "script-src 'self' 'unsafe-inline';", ['page_is_locked_down']),
  ('B3 referrer sent', TPL, '<meta name="referrer" content="no-referrer">\n', '', ['page_is_locked_down']),
  ('B4 data may go anywhere', BLD, 'connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is;', 'connect-src *;', ['page_is_locked_down']),

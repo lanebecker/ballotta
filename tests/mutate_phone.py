@@ -1,0 +1,97 @@
+"""Mutation-kill check for the phone-layout tests: every mutant must turn at least one named test RED. The same runner
+as mutate_desk.py (files restored from an in-memory copy, even when stopped), against the page with the phone layout:
+next/index.html until promotion, index.html after. Run from the repo root after both builds:
+    python3 tests/mutate_phone.py [first last]   (a slice of the list, e.g. 0 10)"""
+import os, sys, pathlib
+ROOT = pathlib.Path.cwd()
+LIVE = '\nPHONE_LIVE = True\n' in (ROOT / 'source/build_site.py').read_text(encoding='utf-8')     # the setting's own line
+os.environ['BALLOTTA_MUTATE_PAGE'] = 'index.html' if LIVE else 'next/index.html'
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import mutate_desk as R
+
+PREV, TPL, BLD = R.PREV, R.TPL, R.BLD
+SW = PREV.parent / 'sw.js'
+L, P, G = 'phone_ballot_list_sheet', 'phone_pick_reason_fold_and_steps', 'phone_glance_vote_and_crib_fit_the_screen'
+M = [
+ ('P1 the bar misses picks', PREV, "  new MutationObserver(bar).observe($('dk-count'), { childList: true });", '', [P]),
+ ('P2 the page behind the list stays reachable', PREV, "    behind().forEach(e => { e.inert = true; });\n", '', [L]),
+ ('P3 tapping a contest leaves the list open', PREV, "if (NARROW.matches && e.target.closest('.dk-row')) closeList('paper');", '', [P]),
+ ('P4 Escape leaves the list open', PREV, "    e.preventDefault(); closeList();\n  }, true);", "  }, true);", [L]),
+ ('P5 Done drops focus', PREV, "    else (listFrom && listFrom.isConnected && listFrom.getClientRects().length ? listFrom : $('ph-list')).focus({ preventScroll: true });\n", '', [L]),
+ ('P6 a move says nothing to a screen reader', PREV, "    if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }\n", '', ['phone_lookup_opens_the_app_at_its_top']),
+ ('P7 a move keeps the old scroll', PREV, "  function moved() {\n    window.scrollTo(0, 0);\n", '  function moved() {\n', ['phone_lookup_opens_the_app_at_its_top']),
+ ('P8 the fold never folds', PREV, "$('dk-notes').classList.toggle('ph-open', foldOpen);", "$('dk-notes').classList.toggle('ph-open', true);", [P]),
+ ('P9 a measure\'s fold says "office"', PREV, "c.type === 'measure' ? 'Sources' : ", '', [P]),
+ ('P10 the fold forgets the friend', PREV, "(friend ? 'You and ' + friendName() + ' · ' : '') + what", 'what', ['phone_friend_link_landing_then_inline']),
+ ('P11 Previous never disabled', PREV, "$('ph-prev').disabled = i <= 0;", "$('ph-prev').disabled = false;", [P]),
+ ('P12 Next undecided with nothing left', PREV, "nx ? 'Next undecided →' : 'Crib sheet →'", "'Next undecided →'", ['phone_next_undecided_then_the_crib_sheet']),
+ ('P13 the bar button stays on the crib sheet', PREV, "$('ph-next').classList.toggle('hidden', !nx && D.ui.view === 'crib');", "$('ph-next').classList.toggle('hidden', false);", ['phone_next_undecided_then_the_crib_sheet']),
+ ('P14 the menu button opens the laptop dropdown', PREV, "    e.stopPropagation(); e.preventDefault(); $('ph-menu').showModal();\n", '', ['phone_menu_is_a_sheet']),
+ ('P15 no Home Screen item', PREV, "      else if (!standalone()) item('home', '<b>Add to your Home Screen</b><small>Opens like an app, and keeps your picks longer</small>');\n", '', ['phone_menu_is_a_sheet']),
+ ('P16 the menu button still says "menu"', PREV, "h.setAttribute('aria-haspopup', 'dialog'); h.removeAttribute('aria-expanded');", "h.setAttribute('aria-haspopup', 'menu'); h.removeAttribute('aria-expanded');", ['phone_menu_is_a_sheet']),
+ ('P17 the FAQ folds are empty', PREV, "d.append(s, q.querySelector('p').cloneNode(true));", 'd.append(s);', ['phone_landing_band_form_and_faq']),
+ ('P18 Android never gets its button', PREV, "$('ph-i-add').classList.toggle('hidden', !bip);", "$('ph-i-add').classList.toggle('hidden', true);", ['phone_add_to_home_screen_three_ways']),
+ ('P19 carry step without picks', PREV, "$('ph-i-carry').classList.toggle('hidden', !ios || !picked);", "$('ph-i-carry').classList.toggle('hidden', !ios);", ['phone_add_to_home_screen_three_ways']),
+ ('P20 the copied link isn\'t a kept link', PREV, "if (via) { track('home_screen', { action: 'copied' }); track('keep_created', { via }); nudgeKept(); }", "if (via) { track('home_screen', { action: 'copied' }); }", ['phone_add_to_home_screen_three_ways']),
+ ('P21 the browser\'s prompt is lost', PREV, "e.preventDefault(); bip = e; });", 'e.preventDefault(); });', ['phone_add_to_home_screen_three_ways']),
+ ('P22 a friend\'s link pasted as mine', PREV, "    if (m[1][0] !== 'k') return say('That’s a link a friend shared. To bring your own picks, use the link from Keep my picks.');\n", '', ['phone_home_screen_app_pastes_picks']),
+ ('P23 no paste box in a Home Screen app', PREV, "$('ph-paste').classList.toggle('ph-show', NARROW.matches && standalone() && iOS() && !ballot.length);", "$('ph-paste').classList.toggle('ph-show', false);", ['phone_home_screen_app_pastes_picks']),
+ ('P24 Home Screen line on the 5-pick card', PREV, "toggle('ph-show', at === 25 && NARROW.matches", "toggle('ph-show', NARROW.matches", ['phone_backup_card_sits_above_the_bar']),
+ ('P25 the card covers the bar', PREV, 'bottom:calc(84px + env(safe-area-inset-bottom));z-index:40', 'bottom:calc(12px + env(safe-area-inset-bottom));z-index:40', ['phone_backup_card_sits_above_the_bar']),
+ ('P26 "home" not on the list', PREV, "EVENTS.backup_nudge.action = ONE_OF('shown', 'keep', 'dismiss', 'home');\n", '', ['phone_backup_card_sits_above_the_bar']),
+ ('P27 Home Screen visits not marked', PREV, "? { app: 'yes' } : {}", '? {} : {}', ['phone_home_screen_app_pastes_picks']),
+ ('P28 fields small enough to zoom', PREV, 'font:inherit;font-size:16px;color:var(--ink)}', 'font:inherit;font-size:14px;color:var(--ink)}', [G]),
+ ('P29 the map unfolded', PREV, "  new MutationObserver(mapFold).observe($('dk-paper'), { childList: true, subtree: true });\n", '', [G]),
+ ('P30 a friend\'s picks not counted on a phone', PREV, '/*PHONE*/(true || /*/PHONE*/WIDE.matches/*PHONE*/)/*/PHONE*/', 'WIDE.matches', ['phone_friend_link_landing_then_inline']),
+ ('P31 print options reset on a phone', PREV, 'if (/*PHONE*/false && /*/PHONE*/!WIDE.matches', 'if (!WIDE.matches', [G]),
+ ('P32 no offline copy', PREV, "sw.register('sw.js').catch(() => {});", 'Promise.resolve();', ['phone_offline_copy_after_one_visit']),
+ ('P33 the offline copy is never used', SW, '.then(async (first) => first || (await caches.open(CACHE).then((c) => c.match(key))) || net)', '.then(async (first) => first || net)', ['phone_offline_copy_after_one_visit']),
+ ('P76 any cache on the site answers offline', SW, '(await caches.open(CACHE).then((c) => c.match(key)))', '(await caches.match(key))', ['phone_offline_copy_after_one_visit']),
+ ('P34 no manifest', PREV, '<link rel="manifest" href="manifest.webmanifest">\n', '', ['phone_offline_copy_after_one_visit']),
+ ('P35 phone code on laptops', TPL, '.ph-only,.ph-faq{display:none}', '.ph-faq{display:none}', ['laptop_unchanged_by_the_phone_code']),
+ ('P36 phone layout in the live build', BLD, '    if not phone:\n        html = strip_phone(html)\n', '', ['live_build_is_unchanged_until_promotion']),
+ ('P37 preview CSP blocks the manifest', BLD, 'PHONE_CSP = "; manifest-src \'self\'; worker-src \'self\'"', 'PHONE_CSP = ""', ['live_build_is_unchanged_until_promotion']),
+ ('P38 the paper sits below the band', PREV, 'body:not(.dk-app-on) .wrap{margin-top:-64px', 'body:not(.dk-app-on) .wrap{margin-top:0', ['phone_landing_band_form_and_faq']),
+ ('P39 header buttons too small to tap', PREV, '.dk-btn{width:44px;height:44px', '.dk-btn{width:32px;height:32px', ['phone_landing_band_form_and_faq']),
+ ('P40 a wide window keeps the list open', PREV, "      closeList(); document.querySelectorAll('dialog[id^=", "      document.querySelectorAll('dialog[id^=", ['phone_resize_keeps_things_in_step']),
+ ('P41 a move from At a glance lands mid-page', PREV, '    if (key && key !== lastKey && NARROW.matches && !booting) moved();\n', '', ['phone_glance_vote_and_crib_fit_the_screen']),
+ ('P42 the search field zooms', PREV, 'background:transparent;color:#fff;font:inherit;font-size:16px;padding:0}', 'background:transparent;color:#fff;font:inherit;font-size:13px;padding:0}', [G]),
+ ('P43 the friend landing keeps today\'s two buttons', PREV, 'body.dk-friend #f-cmp{display:none}\n  .dk-fcta,.dk-fchip', 'body.dk-friend #f-cmp{display:block}\n  .dk-fcta,.dk-fchip', ['phone_friend_link_landing_then_inline']),
+ ('P44 Print… leaves the list over the crib sheet', PREV, "$('dk-print').addEventListener('click', () => { if (NARROW.matches) closeList('print'); });", '', [L]),
+ ('P45 a saved ballot grabs focus on opening', PREV, "    if (key && key !== lastKey && NARROW.matches && !booting) moved();", "    if (key && key !== lastKey && NARROW.matches) moved();", ['phone_next_undecided_then_the_crib_sheet']),
+ ('P46 laptops get the offline copy', PREV, "if (NARROW.matches && matchMedia('(pointer: coarse)').matches) sw.register", "sw.register", ['laptops_get_no_offline_copy_or_install_prompt']),
+ ('P47 laptops lose Chrome\'s install offer', PREV, "(e) => { if (!NARROW.matches) return; e.preventDefault(); bip = e; }", "(e) => { e.preventDefault(); bip = e; }", ['laptops_get_no_offline_copy_or_install_prompt']),
+ ('P48 Android\'s Home Screen app asks for a paste', PREV, "standalone() && iOS() && !ballot.length);", "standalone() && !ballot.length);", ['phone_home_screen_app_pastes_picks']),
+ ('P49 any clipboard text shown', PREV, "$('ph-p-in').value = m ? baseURL() + '#' + m[1] : '';", "$('ph-p-in').value = t;", ['phone_home_screen_app_pastes_picks']),
+ ('P50 the phone FAQ never counted', PREV, "seen = true; track('faq_seen'); io.disconnect();", "seen = true; io.disconnect();", ['phone_landing_band_form_and_faq']),
+ ('P51 the offline copy keeps only the page', SW, "if (res.ok && res.type === 'basic')", "if (res.ok && res.type === 'basic' && r.mode === 'navigate')", ['phone_offline_copy_after_one_visit']),
+ ('P52 the offline copy wins while online', SW, "  e.respondWith(Promise.race([net.catch(() => null), new Promise((ok) => setTimeout(ok, 4000, null))])", "  e.respondWith(caches.match(key).then((hit) => hit || net).then((first) => first)", ['phone_offline_copy_after_one_visit']),
+ ('P53 Clear my picks missing from the phone menu', PREV, "    else $('dk-menu').querySelector('[data-help=\"' + b.dataset.ph + '\"]').click();", "    else if (b.dataset.ph !== 'clear') $('dk-menu').querySelector('[data-help=\"' + b.dataset.ph + '\"]').click();", ['phone_whole_visit_counts_only_listed_events']),
+ ('P54 a landscape list has no room', PREV, '    .dk-out{flex:none;overflow:visible}\n', '', ['phone_list_sheet_on_a_landscape_phone']),
+ ('P55 a long friend name pushes the page sideways', PREV, 'cursor:pointer;overflow-wrap:anywhere}  /* a 30-letter', 'cursor:pointer}  /* a 30-letter', ['phone_long_friend_name_stays_on_screen']),
+ ('P56 Tab lands under the bars', PREV, "    if (r.top < top) window.scrollBy(0, r.top - top - 8); else if (r.bottom > bottom) window.scrollBy(0, r.bottom - bottom + 8);", '', ['phone_focus_never_hides_under_the_bars']),
+ ('P77 a click under the card scrolls away from the finger', PREV, " || !kb) return;", ') return;', ['phone_taps_land_where_they_were_aimed']),
+ ('P78 the card drops focus when it moves', PREV, '    if (held) { held.focus({ preventScroll: true });', '    if (false) {', ['phone_taps_land_where_they_were_aimed']),
+ ('P81 a hiccup removes the copy', BLD, 'SW_REMOVE = "sw.getRegistration(\'./\').then((g) => g && g.update())', 'SW_REMOVE = "sw.getRegistration(\'./\').then((g) => g && g.update().catch(() => g.unregister()))', ['phone_offline_kill_switch_and_promotion']),
+ ('P57 the card fills a landscape screen', PREV, '    .dk-nudge{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:8px 14px;font-size:14px}\n', '', ['phone_focus_never_hides_under_the_bars']),
+ ('P58 the card skipped in Tab order', PREV, "    if (NARROW.matches) $('dk-desk').append(card); else $('dk-paper').before(card);", '', ['phone_focus_never_hides_under_the_bars']),
+ ('P59 Escape in a search closes the sheet at once', PREV, " || (e.target.id === 'dk-q' && e.target.value)) return;", ') return;', ['phone_list_sheet_on_a_landscape_phone']),
+ ('P60 Escape only works inside the sheet', PREV, "    e.preventDefault(); closeList();\n  }, true);", "    if (!e.target.closest('.dk-rail')) return; e.preventDefault(); closeList();\n  }, true);", ['phone_list_sheet_on_a_landscape_phone']),
+ ('P61 widening drops focus', PREV, "      if (back) setTimeout(", "      if (false) setTimeout(", ['phone_list_sheet_on_a_landscape_phone']),
+ ('P62 the sheet has no name', PREV, " rail.setAttribute('role', 'dialog'); rail.setAttribute('aria-modal', 'true'); rail.setAttribute('aria-label', 'Your ballot');", '', ['phone_list_sheet_on_a_landscape_phone']),
+ ('P64 the laptop menu left open on a phone', PREV, "    if (NARROW.matches) { $('dk-menu').classList.add('hidden'); h.setAttribute", "    if (NARROW.matches) { h.setAttribute", ['phone_targets_and_resize_leftovers']),
+ ('P65 a phone sheet left open on a laptop', PREV, " document.querySelectorAll('dialog[id^=\"ph-\"][open]').forEach(d => d.close());", '', ['phone_targets_and_resize_leftovers']),
+ ('P66 short contest names in At a glance', PREV, 'font-size:16px;display:inline-flex;align-items:center;min-height:44px}', 'font-size:16px}', ['phone_targets_and_resize_leftovers']),
+ ('P67 the clipboard note shown', PREV, "$('ph-p-in').value = m ? baseURL() + '#' + m[1] : '';", "$('ph-p-in').value = m ? t : '';", ['phone_paste_shows_only_the_link']),
+ ('P68 a damaged link counted as pasted', PREV, "    if (!o || typeof o !== 'object' || o.v !== 1) return say(", "    if (false) return say(", ['phone_paste_shows_only_the_link']),
+ ('P69 the paste box keeps its text', PREV, "  $('ph-paste-d').addEventListener('close', () => { $('ph-p-in').value = ''; });", '', ['phone_paste_shows_only_the_link']),
+ ('P70 a narrow laptop window gets the offline copy', PREV, "if (NARROW.matches && matchMedia('(pointer: coarse)').matches) sw.register", "if (NARROW.matches) sw.register", ['laptops_stay_laptops_after_a_narrow_start']),
+ ('P71 a laptop Home Screen window marked app', PREV, "/*PHONE*/, !matchMedia('(min-width: 1024px)').matches && (", "/*PHONE*/, (", ['laptops_stay_laptops_after_a_narrow_start']),
+ ('P72 promotion leaves the preview copy running', BLD, '                    "next/sw.js": sw_off_js(True)})', '                    })', ['phone_offline_kill_switch_and_promotion']),
+ ('P73 the kill switch only unregisters', BLD, 'SW_REMOVE = "sw.getRegistration(\'./\').then((g) => g && g.update())', 'SW_REMOVE = "sw.getRegistration(\'./\').then((g) => g && g.unregister())', ['phone_offline_kill_switch_and_promotion']),
+ ('P74 mismatched markers accepted', BLD, "        assert a.startswith('/*') == z.startswith('/*') and", "        assert True or a.startswith('/*') == z.startswith('/*') and", ['live_build_is_unchanged_until_promotion']),
+ ('P75 the preview and the live page share a cache', BLD, "    return 'ballotta-next-' if preview else 'ballotta-'", "    return 'ballotta-'", ['phone_offline_kill_switch_and_promotion']),
+ ('P85 a Tab out of the page leaves the flag set', PREV, " setTimeout(() => { tabbed = false; }); }", " }", ['phone_taps_land_where_they_were_aimed']),
+]
+if __name__ == '__main__':
+    R.main(M)
