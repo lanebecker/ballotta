@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-DHcMMj21N+3ThX1klROGBlWWbg4s0YPUnjyxng3aQss='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-35fHJhC9UpLOM1E+a+leLqCXnW57LzI+k6Xamf4K4BU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'">
 <script>
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
@@ -136,6 +136,9 @@ details[open] .chev{transform:rotate(90deg)}
 .who{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:12px;background:var(--lilac)}
 #friend h2,#friend .note,#friend .fp,#compare h2,#compare .note,#compare .cmp,#compare .lead{overflow-wrap:anywhere}  /* a 30-letter name with no spaces (#23) */
 .limit:not(:empty){display:block;margin-top:4px;font-weight:600;color:var(--plum)}  /* "You can pick up to 2…" (#33) */
+.nudge{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:40;max-width:496px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:12px;background:var(--lilac);color:var(--ink);box-shadow:0 12px 32px rgba(36,26,46,.28)}  /* backup nudge (#48): floats, never pushes the page (Lane) */
+@media screen{html.nudging{scroll-padding-bottom:calc(190px + env(safe-area-inset-bottom))}html.nudging body{padding-bottom:calc(180px + env(safe-area-inset-bottom))}}  /* nothing ends up under the floating card (Pass 2, 3) */
+.nudge p{margin:0;font-size:15px;font-weight:600}.nudge .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .av{width:40px;height:40px;border-radius:50%;background:var(--plum);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .fp{display:flex;flex-direction:column;gap:3px;padding:11px 16px;border-top:1px solid var(--divider)}
 .fp:first-child{border-top:none}
@@ -258,6 +261,9 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-desk.wide .dk-notes{display:none}
   .dk-paper{background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:36px 44px;display:flex;flex-direction:column;gap:18px;min-width:0;outline:none}
   .dk-paper:focus-visible{outline:3px solid var(--plum);outline-offset:4px}  /* after J/K/N (audit #31) */
+  .dk-nudge{position:fixed;right:24px;bottom:24px;z-index:40;width:380px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:16px 18px;border-radius:10px;background:#fff;color:var(--plum);font-size:14px;font-weight:600;box-shadow:0 12px 32px rgba(36,26,46,.22)}  /* #48: floats, never pushes the paper (Lane) */
+  .dk-nudge .row{display:flex;gap:12px;align-items:center}
+  html.nudging{scroll-padding-bottom:190px}html.nudging body{padding-bottom:0}html.nudging .dk-desk{padding-bottom:200px}
   .dk-say{grid-column:1/-1;display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;background:var(--warnsoft);color:var(--warn);font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(36,26,46,.18)}
   .dk-paper h1{font-size:40px}
   .dk-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
@@ -448,6 +454,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <p class="dk-vh" id="dk-live" aria-live="polite"></p>
   <div class="dk-desk" id="dk-desk" role="main">
     <div class="dk-say hidden" id="dk-say" role="status"><span></span><button type="button" class="dk-link" aria-label="Dismiss this message">Dismiss</button></div>
+    <div class="dk-nudge hidden" id="dk-nudge" data-nudge-box><span role="status"></span><span class="row"><button class="btn small" type="button" data-nudge="keep">Send myself a link</button><button class="dk-link" type="button" data-nudge="dismiss">Not now</button></span></div>
     <article class="dk-paper" id="dk-paper" tabindex="-1" aria-label="Ballot paper"></article>
     <aside class="dk-notes" id="dk-notes" aria-label="Notes"></aside>
   </div>
@@ -511,6 +518,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
         <div><b id="k-check">0</b><span>to double-check</span></div>
       </div>
       <div class="meter" role="img" id="meterlabel" aria-label="Progress"><div id="meter"></div></div>
+      <div class="nudge hidden" id="nudge" data-nudge-box><p role="status"></p><div class="row"><button class="btn small" type="button" data-nudge="keep">Send myself a link</button><button class="btn text small" type="button" data-nudge="dismiss">Not now</button></div></div>
       <div id="confbox"></div>
       <div class="acts">
         <a class="btn secondary" href="#vote" id="a-vote"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#241A2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Where to vote</a>
@@ -615,7 +623,8 @@ const SS = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { retu
 // Saved state is checked when read: an old format or tampering (a reason that isn't text, picks that aren't an
 // object) can't make the page, Keep or Share throw (#20).
 const plain = (o) => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
-let picks = plain(LS.get('ballotta.picks', {})), whys = Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string'));
+const cleanPicks = (o) => Object.fromEntries(Object.entries(plain(o)).map(([k, v]) => [k, (Array.isArray(v) ? v : [v]).filter(x => typeof x === 'string')]).filter(([, v]) => v.length));  // option names only (#44)
+let picks = cleanPicks(LS.get('ballotta.picks', {})), whys = Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string'));
 let ballot = [];  // [{c, conf, note}]
 let here = null;  // [lon, lat] of the looked-up address, kept on this device only
 let lastLookup = { mode: '', precinct: '', total: 0 };
@@ -655,6 +664,7 @@ const EVENTS = {
   crib_printed: { two_col: YN, hide_unopposed: YN },
   keep_created: { via: ONE_OF('share', 'copy', 'shown', 'email') },
   keep_restored: {},
+  backup_nudge: { at: ONE_OF('5', '25'), action: ONE_OF('shown', 'keep', 'dismiss') },
   share_sheet_open: {},
   share_created: { sections: (v) => v === '' || v.split(',').every(k => SECTION_KEYS.includes(k)), reasons: YN, picks: ONE_OF('1-5', '6-15', '16+'), via: ONE_OF('share', 'copy', 'shown'), generation: GEN, link: CODE },
   share_opened: { generation: GEN, has_picks: YN, link: CODE },
@@ -945,6 +955,8 @@ function pick(cid, val) {
   document.querySelectorAll('[data-c="' + cid + '"][data-pick]').forEach(b => { const on = current(cid).includes(b.dataset.pick); b.setAttribute('aria-pressed', on ? 'true' : 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.toggle('on', on); });
   $('s' + cid).innerHTML = summaryHTML(cid);
   refresh();
+  if (val !== '__skip' && current(cid).includes(val)) nudgeCheck();  // only when a pick was added, not a skip or an unpick (Pass 1)
+  askPersist();
   return true;
 }
 // Under the race's "Vote for up to N" line, on both layouts; a status region, so screen readers say it too. 0 clears it.
@@ -1017,7 +1029,6 @@ function siteHead(n) { return here ? (showAll ? 'All ' + n + ', closest first' :
 function waitsURL() { return 'https://updates.electionlink.net/widgets/travistx/2026-11-03/' + (period === 'early' ? 'Early%20Voting%20Dashboard.html' : 'Election%20Day%20Voting%20Dashboard.html'); }
 function renderVote() {
   $('t-early').setAttribute('aria-pressed', period === 'early'); $('t-eday').setAttribute('aria-pressed', period === 'eday');
-  const started = today() >= new Date(2026, 9, 19);
   $('hours').innerHTML = hoursHTML();
   const all = DATA.sites[period].map(s => ({ name: s[0], room: s[1], street: s[2], city: s[3], f: s[4], pt: [s[5], s[6]], d: here ? miles(here, [s[5], s[6]]) : null }));
   if (here) all.sort((a, b) => a.d - b.d); else all.sort((a, b) => a.name.localeCompare(b.name));
@@ -1031,8 +1042,9 @@ function renderVote() {
     return '<div class="site"><div class="top"><b>' + esc(s.name) + '</b>' + (s.d != null ? '<span class="note" style="white-space:nowrap">' + s.d.toFixed(1) + ' mi</span>' : '') + '</div><span class="addr">' + esc(s.street + ', ' + s.city) + ' · ' + esc(s.room) + '</span><div class="chips">' + tags + '<a href="' + dir + '" target="_blank" rel="noopener">Directions</a></div></div>';
   }).join('');
   $('waits').href = waitsURL();
-  $('waitsnote').textContent = 'Travis County map' + (started ? '' : ' · fills in once voting starts Oct 19');
+  waitsNote();
 }
+function waitsNote() { $('waitsnote').textContent = 'Travis County map' + (today() >= new Date(2026, 9, 19) ? '' : ' · fills in once voting starts Oct 19'); }
 // Outbound links: count the kind of link and the race's level, never which race or which candidate.
 const KIND_BY_HOST = [[/(^|\.)austinvotersguide\.org$/, 'league_guide'], [/\.gov$/, 'official'],
   [/(^|\.)(texastribune\.org|kut\.org|statesman\.com|apnews\.com|votebeat\.org)$/, 'news'], [/(^|\.)(ballotpedia\.org|wikipedia\.org)$/, 'reference']];
@@ -1064,7 +1076,8 @@ function dayCheck() {  // a new day since the page was drawn: redraw what depend
   shownDay = d;
   const was = period;
   if (!periodChosen) period = defaultPeriod();
-  renderVote();/*DESK*/ if (window.desk) try { desk.today(period !== was); } catch (e) {}/*/DESK*/  // only what shows the date: a full redraw would take focus from a reason being typed (Pass 1)
+  if (period !== was) renderVote(); else waitsNote();  // a new list only when the period changed, so a focused link keeps its place (#47)
+  /*DESK*/if (window.desk) try { desk.today(period !== was); } catch (e) {}/*/DESK*/  // only what shows the date: a full redraw would take focus from a reason being typed (Pass 1)
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') dayCheck(); });
 setInterval(dayCheck, 60000);
@@ -1180,9 +1193,52 @@ $('keep-send').addEventListener('click', async () => {
     if (navigator.share) via = await handOff(url, { title: 'My Ballotta picks' }, $('keep-out'));
     else { location.href = 'mailto:?' + new URLSearchParams({ subject: 'My Ballotta picks', body: 'My saved ballot picks (private link, just for me):\n' + url }).toString().replace(/\+/g, '%20'); via = 'email'; }
   } finally { keeping = false; }
-  if (via) track('keep_created', { via });
+  if (via) { track('keep_created', { via }); nudgeKept(); }
 });
-$('keep-copy').addEventListener('click', async () => { const k = keepPrep || prepKeep(); const via = await copyLink(k.url || await k.p, $('keep-out'), $('keep-copy')); if (via) track('keep_created', { via }); });
+$('keep-copy').addEventListener('click', async () => { const k = keepPrep || prepKeep(); const via = await copyLink(k.url || await k.p, $('keep-out'), $('keep-copy')); if (via) { track('keep_created', { via }); nudgeKept(); } });
+
+/* ---------- backup nudge (#48) and persistent storage (#49) ---------- */
+// After the 5th pick, and once more at 25 if no link was ever kept, a card suggests a backup link: picks live only in
+// this browser, and phones can clear them. "Send myself a link" opens Keep my picks; either button puts the card away for
+// good. Remembered in ballotta.nudge when shown (d5, d25), so each card shows once per browser; kept: a link was made
+// or loaded. Putting a card away at 25+ picks also retires the 25 card (Pass 1).
+const NUDGE_MSG = 'Your picks live only in this browser, and phones can clear them. Send yourself a backup link.';
+let nudgeAt = 0, nudgeFrom = null;  // the card showing: 5, 25, or 0 for none; where focus was when it appeared
+const nudgeState = () => plain(LS.get('ballotta.nudge', {}));
+const nudgeBoxes = (show) => { document.querySelectorAll('[data-nudge-box]').forEach(box => box.classList.toggle('hidden', !show)); document.documentElement.classList.toggle('nudging', show); };  // room under it (Pass 2)
+function nudgeCheck() {
+  const st = nudgeState(); if (st.kept || nudgeAt) return;
+  const n = countPicks(ballot.map(b => b.c.id)), at = n >= 25 && !st.d25 ? 25 : n >= 5 && !st.d5 ? 5 : 0;
+  if (!at) return;
+  nudgeAt = at; nudgeFrom = document.activeElement; nudgeBoxes(true);
+  st['d' + at] = 1; if (at === 25) st.d5 = 1; LS.set('ballotta.nudge', st);
+  document.querySelectorAll('[data-nudge-box] [role="status"]').forEach(t => { t.textContent = ''; setTimeout(() => { t.textContent = NUDGE_MSG; }, 50); });
+  track('backup_nudge', { at: String(at), action: 'shown' });
+}
+function nudgeDone(action) {
+  if (!nudgeAt) return;
+  if (countPicks(ballot.map(b => b.c.id)) >= 25) { const st = nudgeState(); st.d25 = 1; LS.set('ballotta.nudge', st); }
+  track('backup_nudge', { at: String(nudgeAt), action });
+  // Focus goes back where the visitor was working (usually the pick just made; the Keep window returns it there too),
+  // else a Keep button or, after Not now on a laptop, the ballot paper; never a hidden button (Pass 1, Pass 2).
+  const wide = /*DESK*/ !!window.desk && matchMedia('(min-width: 1024px)').matches || /*/DESK*/ false;
+  const was = nudgeFrom && nudgeFrom.isConnected && nudgeFrom !== document.body && nudgeFrom.getClientRects().length ? nudgeFrom : null;
+  const home = was || (action === 'keep' || !wide ? $(wide ? 'dk-keep' : 'a-keep') : $('dk-paper'));
+  if (home) home.focus({ preventScroll: true });
+  if (document.activeElement !== home) { const f = $(wide ? 'dk-paper' : 'a-keep'); if (f) f.focus({ preventScroll: true }); }  // it didn't take: e.g. a closed race (Pass 3)
+  nudgeAt = 0; nudgeBoxes(false);
+  if (action === 'keep') openKeep();
+}
+function nudgeKept() { const st = nudgeState(); if (!st.kept) { st.kept = 1; LS.set('ballotta.nudge', st); } nudgeAt = 0; nudgeBoxes(false); }
+document.querySelectorAll('[data-nudge]').forEach(b => b.addEventListener('click', () => nudgeDone(b.dataset.nudge)));
+// At the first pick of a visit, ask the browser to keep Ballotta's data under storage pressure (#49): a hint, not a
+// promise. Chrome and Safari decide silently; Firefox asks the visitor once. Skipped if it's already kept.
+let persistAsked = false;
+function askPersist() {
+  if (persistAsked) return;
+  persistAsked = true;
+  try { const s = navigator.storage; if (s && s.persist && s.persisted) s.persisted().then(p => p || s.persist()).catch(() => {}); } catch (e) {}
+}
 
 /* ---------- restore a keep link ---------- */
 let incomingKeep = null;
@@ -1209,7 +1265,7 @@ $('restore-go').addEventListener('click', () => {
   LS.set('ballotta.ballot', st); renderStored(st, 'loaded from your saved link');
   $('d-restore').close();
   incomingKeep = null;
-  track('keep_restored', {});
+  track('keep_restored', {}); nudgeKept();
   $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
@@ -1241,7 +1297,7 @@ function updateShareSum() {
 let sharePrep = null;  // the link for the sheet's current choices, packed ahead of the tap
 function prepShare() {
   const ids = chosenIds(), name = $('sharename').value.trim().slice(0, 30), withWhy = $('sharewhy').checked;
-  const pk = packPicks(ids, false, withWhy), gen = Math.max(1, Math.min(99, LS.get('ballotta.gen', 1) || 1)), code = rand8();
+  const pk = packPicks(ids, false, withWhy), g0 = LS.get('ballotta.gen', 1), gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1, code = rand8();  // a whole number or 1 (#44)
   const st = { ids, name, withWhy, pk, gen, code, url: null };
   $('share-out').classList.add('hidden');  // never leave an older link on screen next to new choices
   st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = baseURL() + '#' + f));
@@ -1250,7 +1306,7 @@ function prepShare() {
 $('sharename').addEventListener('input', prepShare);
 function openShare() {  // Share my picks, from either layout (#38)
   const secs = shareSections();
-  $('sharename').value = LS.get('ballotta.name', '') || '';
+  const nm = LS.get('ballotta.name', ''); $('sharename').value = typeof nm === 'string' ? nm.slice(0, 30) : '';  // text only (#44)
   $('sharesecs').innerHTML = secs.length ? secs.map((s, i) => '<div class="sw"><label for="ss' + i + '">' + esc(s.label) + ' <span>· ' + s.ids.length + ' pick' + (s.ids.length === 1 ? '' : 's') + '</span></label><input type="checkbox" role="switch" id="ss' + i + '" data-k="' + s.k + '" data-label="' + esc(s.label) + '" data-ids="' + s.ids.join(',') + '" checked></div>').join('') : '<p class="note">Make a pick or two first; skipped and undecided races aren’t shared.</p>';
   $('sharesecs').querySelectorAll('input').forEach(i => i.addEventListener('change', updateShareSum));
   $('share-out').classList.add('hidden');
@@ -1296,15 +1352,26 @@ const LOOKALIKE = { 'а': 'a', 'в': 'b', 'с': 'c', 'ԁ': 'd', 'е': 'e', 'ё':
   'α': 'a', 'β': 'b', 'ε': 'e', 'η': 'n', 'ι': 'i', 'κ': 'k', 'ν': 'v', 'ο': 'o', 'ρ': 'p', 'τ': 't', 'υ': 'u', 'χ': 'x', 'γ': 'y',
   'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ɢ': 'g', 'ʜ': 'h', 'ɪ': 'i', 'ᴊ': 'j', 'ᴋ': 'k', 'ʟ': 'l', 'ᴍ': 'm', 'ɴ': 'n',
   'ᴏ': 'o', 'ᴘ': 'p', 'ʀ': 'r', 'ꜱ': 's', 'ᴛ': 't', 'ᴜ': 'u', 'ᴠ': 'v', 'ᴡ': 'w', 'ʏ': 'y', 'ᴢ': 'z', 'ɡ': 'g', 'ɑ': 'a', 'ı': 'i' };
-const FOLD = { '1': 'l', 'i': 'l', '|': 'l', '!': 'l', '0': 'o', '3': 'e', '4': 'a', '@': 'a', '5': 's', '$': 's', '6': 'g', '7': 't', '8': 'b', '9': 'g' };
-const fold = (t) => t.replace(/[1i|!0345@$6789]/g, ch => FOLD[ch]);
+// Unicode's look-alike table (confusables.txt, via confusable_homoglyphs 3.3.1): every character that imitates a Latin
+// letter or digit, grouped by the one it imitates (#43). It fills in after the hand-made entries above, then their
+// lower-case forms (Cherokee and Greek capitals lower-case to other code points); flag letters 🇦–🇿 read as a–z.
+const LOOKALIKE_TABLE = {2: "ƧϨᒿꙄꛯꝚ𝟐𝟚𝟤𝟮𝟸🯲", 3: "ƷȜЗӠⳌꝪꞫ𑣊𖼻𝈆𝟑𝟛𝟥𝟯𝟹🯳", 4: "Ꮞ𑢯𝟒𝟜𝟦𝟰𝟺🯴", 5: "Ƽ𑢻𝟓𝟝𝟧𝟱𝟻🯵", 6: "бᏮⳒ𑣕𝟔𝟞𝟨𝟲𝟼🯶", 7: "𐓒𑣆𝈒𝟕𝟟𝟩𝟳𝟽🯷", 8: "Ȣȣ৪੪𐌚𝟖𝟠𝟪𝟴𝟾🯸", 9: "৭੧୨൭ⳊꝮ𑢬𑣌𑣖𝟗𝟡𝟫𝟵𝟿🯹", a: "ɑΑαАаᎪᗅ⍺ꓮＡａ𐊠𖽀𝐀𝐚𝐴𝑎𝑨𝒂𝒜𝒶𝓐𝓪𝔄𝔞𝔸𝕒𝕬𝖆𝖠𝖺𝗔𝗮𝘈𝘢𝘼𝙖𝙰𝚊𝚨𝛂𝛢𝛼𝜜𝜶𝝖𝝰𝞐𝞪", b: "ƄΒВЬᏏᏴᑲᖯᗷℬꓐꞴＢ𐊂𐊡𐌁𝐁𝐛𝐵𝑏𝑩𝒃𝒷𝓑𝓫𝔅𝔟𝔹𝕓𝕭𝖇𝖡𝖻𝗕𝗯𝘉𝘣𝘽𝙗𝙱𝚋𝚩𝛣𝜝𝝗𝞑", c: "ϲϹСсᏟᴄℂℭⅭⅽⲤⲥꓚꮯＣｃ𐊢𐌂𐐕𐐽𐔜𑣩𑣲𝐂𝐜𝐶𝑐𝑪𝒄𝒞𝒸𝓒𝓬𝔠𝕔𝕮𝖈𝖢𝖼𝗖𝗰𝘊𝘤𝘾𝙘𝙲𝚌🝌", d: "ԁᎠᏧᑯᗞᗪⅅⅆⅮⅾꓒꓓ𝐃𝐝𝐷𝑑𝑫𝒅𝒟𝒹𝓓𝓭𝔇𝔡𝔻𝕕𝕯𝖉𝖣𝖽𝗗𝗱𝘋𝘥𝘿𝙙𝙳𝚍", e: "ΕЕеҽᎬ℮ℯℰⅇ⋿ⴹꓰꬲＥｅ𐊆𑢦𑢮𝐄𝐞𝐸𝑒𝑬𝒆𝓔𝓮𝔈𝔢𝔼𝕖𝕰𝖊𝖤𝖾𝗘𝗲𝘌𝘦𝙀𝙚𝙴𝚎𝚬𝛦𝜠𝝚𝞔", f: "ſϜքᖴẝℱꓝꞘꞙꬵ𐊇𐊥𐔥𑢢𑣂𝈓𝐅𝐟𝐹𝑓𝑭𝒇𝒻𝓕𝓯𝔉𝔣𝔽𝕗𝕱𝖋𝖥𝖿𝗙𝗳𝘍𝘧𝙁𝙛𝙵𝚏𝟊", g: "ƍɡԌցᏀᏳᶃℊꓖｇ𝐆𝐠𝐺𝑔𝑮𝒈𝒢𝓖𝓰𝔊𝔤𝔾𝕘𝕲𝖌𝖦𝗀𝗚𝗴𝘎𝘨𝙂𝙜𝙶𝚐", h: "ΗНһհᎻᏂᕼℋℌℍℎⲎꓧＨｈ𐋏𝐇𝐡𝐻𝑯𝒉𝒽𝓗𝓱𝔥𝕙𝕳𝖍𝖧𝗁𝗛𝗵𝘏𝘩𝙃𝙝𝙷𝚑𝚮𝛨𝜢𝝜𝞖", i: "ıɩɪ˛ͺιіӏᎥιℹⅈⅰ⍳ꙇꭵｉ𑣃𝐢𝑖𝒊𝒾𝓲𝔦𝕚𝖎𝗂𝗶𝘪𝙞𝚒𝚤𝛊𝜄𝜾𝝸𝞲", j: "ͿϳЈјᎫᒍⅉꓙꞲＪｊ𝐉𝐣𝐽𝑗𝑱𝒋𝒥𝒿𝓙𝓳𝔍𝔧𝕁𝕛𝕵𝖏𝖩𝗃𝗝𝗷𝘑𝘫𝙅𝙟𝙹𝚓", k: "ΚКᏦᛕKⲔꓗＫ𐔘𝐊𝐤𝐾𝑘𝑲𝒌𝒦𝓀𝓚𝓴𝔎𝔨𝕂𝕜𝕶𝖐𝖪𝗄𝗞𝗸𝘒𝘬𝙆𝙠𝙺𝚔𝚱𝛫𝜥𝝟𝞙", l: "ƖǀΙІӀ۱ᏞᒪᛁℐℑℒℓⅠⅬⅼ∣⏽ⲒⳐⵏꓡꓲＩｌ￨𐊊𐌉𐌠𐐛𐔦𑢣𑢲𖼖𖼨𝈪𝐈𝐋𝐥𝐼𝐿𝑙𝑰𝑳𝒍𝓁𝓘𝓛𝓵𝔏𝔩𝕀𝕃𝕝𝕴𝕷𝖑𝖨𝖫𝗅𝗜𝗟𝗹𝘐𝘓𝘭𝙄𝙇𝙡𝙸𝙻𝚕𝚰𝛪𝜤𝝞𝞘𝟏𝟙𝟣𝟭𝟷🯱", m: "ΜϺМᎷᗰᛖℳⅯⲘꓟＭ𐊰𐌑𝐌𝑀𝑴𝓜𝔐𝕄𝕸𝖬𝗠𝘔𝙈𝙼𝚳𝛭𝜧𝝡𝞛", n: "ΝոռℕⲚꓠＮ𐔓𝐍𝐧𝑁𝑛𝑵𝒏𝒩𝓃𝓝𝓷𝔑𝔫𝕟𝕹𝖓𝖭𝗇𝗡𝗻𝘕𝘯𝙉𝙣𝙽𝚗𝚴𝛮𝜨𝝢𝞜", o: "ΟοσОоՕօ۵०০੦૦ଠ୦௦౦೦ഠ൦๐໐ဝ၀ჿዐᴏᴑℴⲞⲟⵔ〇ꓳꬽＯｏ𐊒𐊫𐐄𐐬𐓂𐓪𐔖𑓐𑢵𑣈𑣗𑣠𝐎𝐨𝑂𝑜𝑶𝒐𝒪𝓞𝓸𝔒𝔬𝕆𝕠𝕺𝖔𝖮𝗈𝗢𝗼𝘖𝘰𝙊𝙤𝙾𝚘𝚶𝛐𝛔𝛰𝜊𝜎𝜪𝝄𝝈𝝤𝝾𝞂𝞞𝞸𝞼𝟎𝟘𝟢𝟬𝟶🯰", p: "ΡρϱРрᏢᑭℙ⍴ⲢⲣꓑＰｐ𐊕𝐏𝐩𝑃𝑝𝑷𝒑𝒫𝓅𝓟𝓹𝔓𝔭𝕡𝕻𝖕𝖯𝗉𝗣𝗽𝘗𝘱𝙋𝙥𝙿𝚙𝚸𝛒𝛠𝛲𝜌𝜚𝜬𝝆𝝔𝝦𝞀𝞎𝞠𝞺𝟈", q: "ԛգզℚⵕ𝐐𝐪𝑄𝑞𝑸𝒒𝒬𝓆𝓠𝓺𝔔𝔮𝕢𝕼𝖖𝖰𝗊𝗤𝗾𝘘𝘲𝙌𝙦𝚀𝚚", r: "ƦгᎡᏒᖇᴦℛℜℝⲅꓣꭇꭈꮁ𐒴𖼵𝈖𝐑𝐫𝑅𝑟𝑹𝒓𝓇𝓡𝓻𝔯𝕣𝕽𝖗𝖱𝗋𝗥𝗿𝘙𝘳𝙍𝙧𝚁𝚛", s: "ƽЅѕՏᏕᏚꓢꜱꮪＳｓ𐊖𐐠𐑈𑣁𖼺𝐒𝐬𝑆𝑠𝑺𝒔𝒮𝓈𝓢𝓼𝔖𝔰𝕊𝕤𝕾𝖘𝖲𝗌𝗦𝘀𝘚𝘴𝙎𝙨𝚂𝚜", t: "ΤТᎢ⊤⟙ⲦꓔＴ𐊗𐊱𐌕𑢼𖼊𝐓𝐭𝑇𝑡𝑻𝒕𝒯𝓉𝓣𝓽𝔗𝔱𝕋𝕥𝕿𝖙𝖳𝗍𝗧𝘁𝘛𝘵𝙏𝙩𝚃𝚝𝚻𝛵𝜯𝝩𝞣🝨", u: "ʋυՍսሀᑌᴜ∪⋃ꓴꞟꭎꭒ𐓎𐓶𑢸𑣘𖽂𝐔𝐮𝑈𝑢𝑼𝒖𝒰𝓊𝓤𝓾𝔘𝔲𝕌𝕦𝖀𝖚𝖴𝗎𝗨𝘂𝘜𝘶𝙐𝙪𝚄𝚞𝛖𝜐𝝊𝞄𝞾", v: "νѴѵ۷ᏙᐯᴠⅤⅴ∨⋁ⴸꓦꛟꮩｖ𐔝𑜆𑢠𑣀𖼈𝈍𝐕𝐯𝑉𝑣𝑽𝒗𝒱𝓋𝓥𝓿𝔙𝔳𝕍𝕧𝖁𝖛𝖵𝗏𝗩𝘃𝘝𝘷𝙑𝙫𝚅𝚟𝛎𝜈𝝂𝝼𝞶", w: "ɯѡԜԝաᎳᏔᴡꓪꮃ𑜊𑜎𑜏𑣦𑣯𝐖𝐰𝑊𝑤𝑾𝒘𝒲𝓌𝓦𝔀𝔚𝔴𝕎𝕨𝖂𝖜𝖶𝗐𝗪𝘄𝘞𝘸𝙒𝙬𝚆𝚠", x: "×ΧХхᕁᕽ᙭᙮ᚷⅩⅹ╳⤫⤬⨯ⲬⵝꓫꞳＸｘ𐊐𐊴𐌗𐌢𐔧𑣬𝐗𝐱𝑋𝑥𝑿𝒙𝒳𝓍𝓧𝔁𝔛𝔵𝕏𝕩𝖃𝖝𝖷𝗑𝗫𝘅𝘟𝘹𝙓𝙭𝚇𝚡𝚾𝛸𝜲𝝬𝞦", y: "ɣʏΥγϒУуҮүყᎩᎽᶌỿℽⲨꓬꭚＹｙ𐊲𑢤𑣜𖽃𝐘𝐲𝑌𝑦𝒀𝒚𝒴𝓎𝓨𝔂𝔜𝔶𝕐𝕪𝖄𝖞𝖸𝗒𝗬𝘆𝘠𝘺𝙔𝙮𝚈𝚢𝚼𝛄𝛶𝛾𝜰𝜸𝝪𝝲𝞤𝞬", z: "ΖᏃᴢℤℨꓜꮓＺ𐋵𑢩𑣄𑣥𝐙𝐳𝑍𝑧𝒁𝒛𝒵𝓏𝓩𝔃𝔷𝕫𝖅𝖟𝖹𝗓𝗭𝘇𝘡𝘻𝙕𝙯𝚉𝚣𝚭𝛧𝜡𝝛𝞕"};
+for (const [k, chars] of Object.entries(LOOKALIKE_TABLE)) for (const ch of chars) if (!LOOKALIKE[ch]) LOOKALIKE[ch] = k;
+for (const [k, chars] of Object.entries(LOOKALIKE_TABLE)) for (const ch of chars) { const lc = ch.toLowerCase(); if (lc !== ch && !LOOKALIKE[lc] && !/[a-z0-9]/.test(lc)) LOOKALIKE[lc] = k; }
+for (let i = 0; i < 26; i++) LOOKALIKE[String.fromCodePoint(0x1F1E6 + i)] = String.fromCharCode(97 + i);
+LOOKALIKE['б'] = LOOKALIKE['Б'] = 'b'; LOOKALIKE['ᴩ'] = 'p';  // Unicode lists б as a look-alike of 6 (read as g): "Бор" is "bop", not "gop" (Pass 1, 2)
+const FOLD = { '1': 'l', 'i': 'l', '|': 'l', '!': 'l', '0': 'o', '3': 'e', '4': 'a', '@': 'a', '5': 's', '$': 's', '6': 'g', '7': 't', '8': 'b', '9': 'g',
+  '€': 'e', '©': 'c', '¢': 'c' };  // symbols Unicode's table doesn't list as letters (#43)
+const fold = (t) => t.replace(/[1i|!0345@$6789€©¢]/g, ch => FOLD[ch]);
 const RESERVED = new RegExp(['league', 'lwv', 'vote411', 'county', 'official', 'ballotta', 'election', 'government', 'democrat', 'republican',
   'libertarian', 'greenparty', 'campaign', 'secretaryofstate', 'taxoffice', 'villageof'].map(fold).join('|'));
 // voter, clerk and city-of also count at the start or end of one word with 4+ more letters ("voterguide", "travisclerk"),
-// never across a space, so "Clerkson" and "Gustavo Terrazas" are fine (Pass 4).
-const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')\\S{4,}|\\S{4,}(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')(\\s|$)');
-const RESERVED_WORDS = new RegExp('\\b(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
-  'tax ?office'].map(fold).join('|') + ')\\b');
+// never across a space, so "Clerkson" and "Gustavo Terrazas" are fine (Pass 4); voter(s) and city-of also at the end
+// after just 2 ("TXVOTERS"): no real name ends that way (#43).
+const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')\\S{4,}|\\S{4,}(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')(\\s|$)'
+  + '|\\S{2,}(' + ['voters?', 'cityof'].map(fold).join('|') + ')(\\s|$)');
+const RESERVED_WORDS = new RegExp('(?<![\\p{L}\\p{N}])(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
+  'tax ?office'].map(fold).join('|') + ')(?![\\p{L}\\p{N}])', 'u');
 function safeName(n) {
   if (typeof n !== 'string') return '';
   n = n.normalize('NFKC').replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 30);
@@ -1315,7 +1382,12 @@ function safeName(n) {
     const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
     return [t.replace(/[\p{P}\p{S}]/gu, ''), w, w.replace(/(?<=(^|\s)\S)\s(?=\S(\s|$))/gu, '')];
   };
-  const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split)];
+  // Uneven splits ("G OP", "V oter"): from the name as typed, a single letter joins its neighbour, except a
+  // capitalised word ("S Tate" stays a person) (#43, Pass 1).
+  // Small capitals (ᴘ, ᴛ…) look like capitals, so they count as capitals here; a capitalised word needs 3+ letters (Pass 2).
+  const caps = n.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (LOOKALIKE[ch] || LOOKALIKE[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
+  const uneven = caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim().replace(/(?<=(^|\s)\S)\s(?!\p{Lu}\p{Ll}{2,})|(?<!(^|\s)\p{Lu}\p{Ll}{2,})\s(?=\S(\s|$))/gu, '');
+  const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split), fold(latin(uneven))];
   return forms.some(t => RESERVED.test(run(t)) || words(t).some(x => RESERVED_WORDS.test(x) || RESERVED_GLUED.test(x))) ? '' : n;
 }
 function hideFriend() {  // Hide these picks, from either layout (#38)
@@ -1428,7 +1500,7 @@ function footClear() {
 window.addEventListener('storage', () => footClear());  // another tab saved something: the footer button follows (Pass 1)
 // Clear everything in another tab: this tab's copy is stale, so start fresh instead of writing it back.
 window.addEventListener('storage', (e) => { if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null) location.replace(location.pathname); });
-function clearPicks() { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
+function clearPicks() { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
 $('reset').addEventListener('click', clearPicks);
 
 /*DESK*/
@@ -1547,16 +1619,27 @@ const desk = (() => {
     if (focus) { P().focus({ preventScroll: true }); where(curB()); }
     const r = $('dk-out').querySelector('[aria-current="true"]'); if (r) r.scrollIntoView({ block: 'nearest' });
   }
-  function announce(c) {  // what a key just did, for screen readers (audit #30)
-    const v = current(c.id), l = $('dk-live');
-    l.textContent = '';
-    setTimeout(() => { l.textContent = cleanTitle(c) + ': ' + (!v.length ? 'no pick' : v[0] === '__skip' ? 'skipped' : 'picked ' + v.map(x => optLabel(c, x)).join(', ')); }, 50);
+  // One polite region and one timer for what the keys did (#45). What happened is queued in order and worded only when it
+  // is said, so it describes the picks as they are then: each contest's newest pick (except the contest moved to, whose
+  // move says its pick), then the last move or message. A pick waits 300 ms, so a move at typing speed joins it; a
+  // message is never repeated (Pass 1, 2, 3).
+  let liveT = 0, liveQ = [];
+  const pickWords = (c) => { const v = current(c.id); return cleanTitle(c) + ': ' + (!v.length ? 'no pick' : v[0] === '__skip' ? 'skipped' : 'picked ' + v.map(x => optLabel(c, x)).join(', ')); };
+  const moveWords = (c) => { const v = current(c.id); return 'Contest ' + (idx(c.id) + 1) + ' of ' + ballot.length + ': ' + cleanTitle(c) + '. ' + (!v.length ? 'No pick yet.' : v[0] === '__skip' ? 'Skipped.' : 'Picked ' + v.map(x => optLabel(c, x)).join(', ') + '.'); };
+  function say(item) {  // { pick: contest } | { move: contest } | { text }
+    liveQ.push(item);
+    clearTimeout(liveT); $('dk-live').textContent = '';
+    liveT = setTimeout(sayNow, liveQ.some(x => x.pick) ? 300 : 50);
   }
-  function where(b) {  // a move to another contest, for screen readers: the paper's own label never changes (#39)
-    const v = current(b.c.id), l = $('dk-live');
-    l.textContent = '';
-    setTimeout(() => { l.textContent = 'Contest ' + (idx(b.c.id) + 1) + ' of ' + ballot.length + ': ' + cleanTitle(b.c) + '. ' + (!v.length ? 'No pick yet.' : v[0] === '__skip' ? 'Skipped.' : 'Picked ' + v.map(x => optLabel(b.c, x)).join(', ') + '.'); }, 50);
+  function sayNow() {
+    const q = liveQ; liveQ = [];
+    const last = [...q].reverse().find(x => !x.pick), to = last && last.move ? last.move.id : '', parts = [], done = new Set();
+    [...q].reverse().forEach(x => { if (x.pick && x.pick.id !== to && !done.has(x.pick.id)) { done.add(x.pick.id); parts.unshift(pickWords(x.pick)); } });
+    if (last) parts.push(last.move ? moveWords(last.move) : last.text);
+    $('dk-live').textContent = parts.join('. ');
   }
+  function announce(c) { say({ pick: c }); }  // what a key just did, for screen readers (audit #30)
+  function where(b) { say({ move: b.c }); }  // a move to another contest: the paper's own label never changes (#39)
   // Decide by mouse puts you back on the paper, where the keys work; by keyboard you stay on the tabs (Pass 2).
   function setView(v, toPaper) { ui.view = v; save(); render(); if (WIDE.matches) { window.scrollTo(0, 0); if (v === 'decide' && toPaper) P().focus({ preventScroll: true }); } }
   function nextLabel() {
@@ -1762,10 +1845,12 @@ const desk = (() => {
   $('dk-print').addEventListener('click', (e) => {  // opens the crib view, where the print options are (Lane, Oct 15)
     if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }
     const pr = N().querySelector('[data-act="print"]');
-    // A keyboard press lands on the real Print button, scrolled on screen (below the paper at 1024–1279px); a mouse click
-    // leaves focus on Print… (a later Space or Enter just moves it to the real button). A held key's repeats are ignored
-    // there, so holding Enter on Print… never prints (Pass 2, 3, 4).
-    if (pr && e.detail === 0) { pr.focus({ preventScroll: true }); pr.scrollIntoView({ block: 'nearest' }); }
+    // A keyboard press or a touch (a screen reader's double-tap on a tablet is a touch) lands on the real Print button,
+    // scrolled on screen (below the paper at 1024–1279px); a mouse click leaves focus on Print… (a later Space or Enter
+    // just moves it to the real button). A held key's repeats are ignored there, so holding Enter on Print… never prints
+    // (Pass 2, 3, 4). Every activation says where it went (#46).
+    say({ text: 'Crib sheet: print options, then the Print button.' });
+    if (pr && (e.detail === 0 || e.pointerType === 'touch' || e.pointerType === 'pen')) { pr.focus({ preventScroll: true }); pr.scrollIntoView({ block: 'nearest' }); }
   });
   $('dk-back').addEventListener('click', () => { ui.landing = false; render(); });
   $('dk-say').querySelector('button').addEventListener('click', () => $('dk-say').classList.add('hidden'));

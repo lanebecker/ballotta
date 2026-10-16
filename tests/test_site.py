@@ -27,10 +27,10 @@ def serve():
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s
 
-def new_page(browser, sent=None, wide=False, csp=False):
+def new_page(browser, sent=None, wide=False, csp=False, touch=False):
     # The page's Content-Security-Policy (#36) forbids eval, which Playwright's wait_for_function polls with: tests run
     # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()).
-    ctx = browser.new_context(viewport={'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'], bypass_csp=not csp)
+    ctx = browser.new_context(viewport={'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'], bypass_csp=not csp, has_touch=touch)
     ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
@@ -1378,7 +1378,7 @@ def desk_moves_are_announced(b):
     pg.locator('#dk-out .dk-row').first.click(); said(f'Contest 1 of {n}: {t(0)}. No pick yet.')
     pg.keyboard.press('j'); said(f'Contest 2 of {n}: {t(1)}. No pick yet.')
     first = pg.evaluate('optionsOf(ballot[1].c)[0]')
-    pg.keyboard.press('1'); pg.keyboard.press('k'); said(f'Contest 1 of {n}: {t(0)}. No pick yet.')
+    pg.keyboard.press('1'); pg.wait_for_timeout(1200); pg.keyboard.press('k'); said(f'Contest 1 of {n}: {t(0)}. No pick yet.')   # apart: see #45
     pg.keyboard.press('j'); said(f'Contest 2 of {n}: {t(1)}. Picked {first}.')
     pg.keyboard.press('n'); said(f'Contest 3 of {n}: {t(2)}. No pick yet.')
     ctx.close()
@@ -1590,6 +1590,208 @@ def desk_works_without_phone_buttons(b):
     pg.wait_for_function("!Object.keys(localStorage).some(k => k.startsWith('ballotta.'))", timeout=5000)
     assert errs == [], errs
     ctx.close()
+
+# ---------------------------------------------------------------- issues round C (Oct 15): #43–#49
+def saved_ballot(pg, nums, pt=None):
+    pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', json.dumps({'pr': '999', 'b': nums, 'mode': 'saved', 'at': 0, 'pt': pt})); pg.reload()
+
+@test
+def share_names_close_remaining_gaps(b):
+    # #43: Unicode's look-alike table (not a hand-made map), flag letters, a stray space next to a single letter,
+    # short glued forms and symbol stand-ins. Real names in many scripts still show.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    sn = lambda n: pg.evaluate('n => safeName(n)', n)
+    for bad in ['V oter Guide', 'C ity of Austin', 'G OP', 'GO P', 'RN C', 'TXVOTERS', 'Gօp', 'Ballօtta', 'ᏀOP', 'ᎠNC',
+                '🇬🇴🇵', '🇩🇳🇨', '€lection Office', 'Travis ©ounty', 'Travis ¢ounty', 'ᏞWV', 'Ꮩoter guide', 'ℒeague',
+                'G O P Texas', 'Travis G O P', 'D N C Team', 'R N C Chair', 'D E M S Austin', 'A D M I N Team', 'g op', 'v oter guide',
+                'ꓖꓳꓑ', 'ꓓꓠꓚ Texas',   # Pass 1 (Lisu letters: caseless, so only the table itself maps them)
+                'G Oᴘ', 'G Oᴘ Texas', 'V Oᴛᴇʀ Guide', 'R Nᴄ', 'D Nᴄ Team', 'Dn C', 'Go P Texas', 'G Op Texas', 'Бallotta', 'БALLOTTA Team',   # Pass 2
+                'V Oꭲꭼꮢ Guide', 'D Eꮇꮪ', 'D Eꮇꮪ Texas', 'D Eмѕ', 'V Oтer Guide', 'G Oᴩ']:   # Pass 3
+        assert sn(bad) == '', bad
+    assert sn('ϹOUNTY') == 'ΣOUNTY', 'display normalization turns a lunate sigma into Σ: no longer a look-alike'
+    for good in ['Mary J Blige', 'J Smith', 'Νίκος', 'Ηλέκτρα', 'Γιώργος', 'Георгий', 'Борис', 'Ольга Петрова', 'Արամ', 'Անի', 'ᏣᎳᎩ',
+                 'ანა', 'Ελένη', 'Đặng Thu', 'Nguyễn Văn An', 'محمد', 'דוד', 'Priya', 'Gustavo Terrazas', 'Clerkson', 'DeClerck', 'Le Clerc',
+                 'José', 'Dempsey', 'Gopinath', 'Statham', 'Partridge', 'Ivo Terzić', 'A J', 'J R R Tolkien',
+                 'S Tate', 'S. Tate', 'P Arty', 'Нильс Бор', 'Ольга Бор', 'Борис Бор']:   # Pass 1, 2
+        assert sn(good) == good, good
+    ctx.close()
+
+@test
+def stored_junk_in_share_fields(b):
+    # #44: a stored share generation that isn't a whole number, a share name that isn't text, and pick values that
+    # aren't option names are ignored, never sent in a link or counted as decided.
+    ctx, pg = new_page(b); errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.goto(BASE)
+    pg.evaluate("""() => { localStorage.setItem('ballotta.gen', JSON.stringify('x')); localStorage.setItem('ballotta.name', JSON.stringify({ a: 1 }));
+                          localStorage.setItem('ballotta.picks', JSON.stringify({ c070: [null], c071: 5, c001: { x: 1 } })); }""")
+    pg.reload(); lookup(pg)
+    assert pg.text_content('#k-done') == '0', pg.text_content('#k-done')
+    pick(pg, 'c070', 'Qadri'); pg.click('#a-share'); pg.wait_for_selector('#d-share[open]')
+    assert pg.input_value('#sharename') == '' and pg.evaluate('sharePrep.gen') == 1, (pg.input_value('#sharename'), pg.evaluate('sharePrep.gen'))
+    assert errs == [], errs
+    ctx.close()
+
+@desk_test
+def desk_quick_pick_then_move_keeps_both_announcements(b):
+    # #45: a key pick followed quickly by a move is announced together ("…: picked X. Contest 2 of n: …"), not cut off;
+    # quick moves alone don't pile up.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    pg.locator('#dk-out .dk-row').first.click(); pg.wait_for_timeout(1200)
+    pg.keyboard.press('1'); pg.keyboard.press('n'); pg.wait_for_timeout(400)
+    live = pg.text_content('#dk-live')
+    assert ': picked ' in live and 'Contest 2 of ' in live and live.index(': picked ') < live.index('Contest 2 of '), live
+    pg.wait_for_timeout(1200); pg.keyboard.press('j'); pg.keyboard.press('j'); pg.wait_for_timeout(400)
+    live = pg.text_content('#dk-live')
+    assert live.startswith('Contest 4 of ') and live.count('Contest ') == 1, live
+    pg.keyboard.press('1'); pg.wait_for_timeout(700); pg.keyboard.press('j'); pg.wait_for_timeout(400)   # the pick was already said: not again (Pass 1)
+    live = pg.text_content('#dk-live')
+    assert live.startswith('Contest 5 of ') and 'picked' not in live, live
+    pg.wait_for_timeout(700); pg.keyboard.press('1'); pg.wait_for_timeout(150); pg.keyboard.press('j'); pg.wait_for_timeout(500)   # at typing speed (Pass 2)
+    live = pg.text_content('#dk-live'); assert ': picked ' in live and 'Contest 6 of ' in live, live
+    pg.wait_for_timeout(700); pg.keyboard.press('1'); pg.keyboard.press('j'); pg.keyboard.press('j'); pg.wait_for_timeout(500)   # two quick moves keep the pick (Pass 2)
+    live = pg.text_content('#dk-live'); assert ': picked ' in live and live.count('Contest ') == 1 and 'Contest 8 of ' in live, live
+    # Pick, move, pick at typing speed: the first pick is said, and the move describes the contest as it is by then (Pass 3)
+    t = lambda i: pg.evaluate(f'cleanTitle(ballot[{i}].c)')
+    pg.wait_for_timeout(700); here = pg.evaluate("ballot.findIndex(x => x.c.id === document.getElementById('dk-paper').dataset.c)")
+    pg.keyboard.press('1'); pg.wait_for_timeout(120); pg.keyboard.press('j'); pg.wait_for_timeout(120); pg.keyboard.press('1'); pg.wait_for_timeout(600)
+    live = pg.text_content('#dk-live')
+    assert live.startswith(t(here) + ': picked ') and f'Contest {here + 2} of ' in live and 'No pick yet' not in live, live
+    assert live.count(t(here + 1)) == 1, ('the contest moved to is described once', live)   # Pass 4
+    ctx.close()
+
+@desk_test
+def desk_print_by_touch_and_announced(b):
+    # #46: Print… on a touch screen (where a screen reader's double-tap is a touch) also moves focus to the real Print
+    # button, and every activation says where it went.
+    ctx, pg = new_page(b, wide=True, touch=True); pg.goto(BASE); lookup_wide(pg)
+    pg.tap('#dk-print')
+    assert pg.evaluate('document.activeElement.dataset.act') == 'print', pg.evaluate('document.activeElement.outerHTML.slice(0, 80)')
+    pg.wait_for_timeout(300); assert 'Crib sheet' in pg.text_content('#dk-live'), pg.text_content('#dk-live')
+    ctx.close()
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    pg.click('#dk-print'); pg.wait_for_timeout(300)
+    assert 'Crib sheet' in pg.text_content('#dk-live') and pg.evaluate('document.activeElement.dataset.act') != 'print'
+    ctx.close()
+
+@test
+def phone_new_day_keeps_focus_on_a_directions_link(b):
+    # #47: on a phone, a new day that doesn't change the voting period updates only the dated note; the vote-center
+    # list (and a focused Directions link in it) stays as it was.
+    import datetime as dt
+    ctx, pg = new_page(b); pg.clock.install(time=dt.datetime(2026, 10, 18, 23, 58)); pg.goto(BASE)
+    saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('#result:not(.hidden)')
+    assert 'fills in once voting starts' in pg.text_content('#waitsnote')
+    link3 = pg.locator('#sites a', has_text='Directions').nth(2); link3.focus(); href = link3.get_attribute('href')
+    pg.clock.run_for(5 * 60 * 1000)
+    assert pg.text_content('#waitsnote') == 'Travis County map', pg.text_content('#waitsnote')
+    assert pg.evaluate('document.activeElement.getAttribute("href")') == href, pg.evaluate('document.activeElement.tagName')
+    ctx.close()
+
+def backup_card(pg, wide): return pg.locator('#dk-nudge' if wide else '#nudge')
+
+@test
+def backup_nudge_after_fifth_pick(b):
+    # #48: after the 5th pick, a one-time card suggests a backup link ("Send myself a link" opens Keep my picks; "Not
+    # now" puts it away); it comes back once at 25 picks if no link was ever kept; never after a link is kept. Counted.
+    msg = 'Your picks live only in this browser, and phones can clear them. Send yourself a backup link.'
+    nums = list(range(1, 41))
+    for wide in ((False, True) if HAS_DESK else (False,)):
+        ctx, pg = new_page(b, wide=wide); pg.goto(BASE); saved_ballot(pg, nums)
+        pg.wait_for_selector('body.dk-app-on' if wide else '#result:not(.hidden)')
+        ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+        card = backup_card(pg, wide)
+        decide = lambda a, z: pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[a:z])
+        decide(0, 4); expect(card).to_be_hidden()
+        pg.evaluate('id => pick(id, "__skip")', ids[4]); expect(card).to_be_hidden()            # a skip isn't a pick (Pass 1)
+        pg.evaluate('id => pick(id, "__skip")', ids[4])
+        below = '#dk-paper' if wide else '#groups'; top = pg.evaluate(f'document.querySelector("{below}").getBoundingClientRect().top')
+        decide(4, 5); expect(card).to_be_visible(); expect(card.locator('[role="status"]')).to_have_text(msg)
+        assert pg.evaluate(f'document.querySelector("{below}").getBoundingClientRect().top') == top, 'the card pushed the page (Lane: it floats)'
+        assert card.evaluate('e => getComputedStyle(e).position') == 'fixed'
+        assert ['backup_nudge', {'at': '5', 'action': 'shown', 'layout': 'laptop' if wide else 'phone'}] in events(pg), events(pg)
+        card.locator('[data-nudge="dismiss"]').click(); expect(card).to_be_hidden()
+        if wide: assert pg.evaluate('document.activeElement.id') == 'dk-paper', 'focus back on the paper (Pass 1)'
+        decide(5, 24); expect(card).to_be_hidden()
+        decide(24, 25); expect(card).to_be_visible()
+        card.locator('[data-nudge="keep"]').click(); pg.wait_for_selector('#d-keep[open]'); expect(card).to_be_hidden()
+        assert [e[1]['action'] for e in events(pg) if e[0] == 'backup_nudge'] == ['shown', 'dismiss', 'shown', 'keep'], events(pg)
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
+        assert pg.evaluate('document.activeElement.id') == ('dk-paper' if wide else 'a-keep'), 'Keep returns focus where the visitor was (Pass 1, 2)'
+        pg.reload(); pg.wait_for_selector('body.dk-app-on' if wide else '#result:not(.hidden)')
+        decide(25, 30); expect(backup_card(pg, wide)).to_be_hidden()                      # each card once per browser
+        ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:2])
+    pg.click('#a-keep'); pg.click('#keep-copy'); pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'keep_created')"); pg.click('#d-keep [data-close]')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[2:30]); expect(backup_card(pg, False)).to_be_hidden()   # already kept a link
+    ctx.close()
+    # Pass 1: a card shown is remembered (an ignored card doesn't come back next visit); Not now at 25+ picks retires the
+    # 25 card too; Clear my picks puts the card away.
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)'); card = backup_card(pg, False)
+    many = lambda a, z: pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[a:z])
+    many(0, 5); expect(card).to_be_visible()
+    pg.reload(); pg.wait_for_selector('#result:not(.hidden)'); many(5, 6); expect(card).to_be_hidden()
+    many(6, 30); expect(card).to_be_visible(); card.locator('[data-nudge="dismiss"]').click(); many(30, 31); expect(card).to_be_hidden()
+    ctx.close()
+    # Pass 2: with the card up, nothing at the bottom of the page is stuck under it (phone footer; laptop Print button at
+    # 1024x640); after Not now, focus returns to the pick just made, not to the top of the page.
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)'); card = backup_card(pg, False)
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:4])
+    open_race(pg, ids[4]); fifth = pg.locator(f'#r{ids[4]} .opt').first; fifth.focus(); pg.keyboard.press('Enter'); expect(card).to_be_visible()
+    card.locator('[data-nudge="dismiss"]').focus(); pg.keyboard.press('Enter'); expect(card).to_be_hidden()
+    assert pg.evaluate('document.activeElement.dataset.c') == ids[4], pg.evaluate('document.activeElement.outerHTML.slice(0, 80)')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[5:6])   # (not a card moment: 6 picks, the 5 card was seen)
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[6:24])
+    open_race(pg, ids[24]); last = pg.locator(f'#r{ids[24]} .opt').first; last.focus(); pg.keyboard.press('Enter'); expect(card).to_be_visible()
+    pg.evaluate(f"document.getElementById('r{ids[24]}').open = false")                     # the race closed since: focus can't go back there (Pass 3)
+    card.locator('[data-nudge="dismiss"]').focus(); pg.keyboard.press('Enter'); expect(card).to_be_hidden()
+    assert pg.evaluate('document.activeElement.id') == 'a-keep', pg.evaluate('document.activeElement.tagName')
+    pg.evaluate("localStorage.removeItem('ballotta.nudge')"); pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[25]); expect(card).to_be_visible()
+    pg.evaluate('window.scrollTo(0, document.body.scrollHeight)'); pg.wait_for_timeout(200)
+    hit = pg.evaluate("() => { const r = document.getElementById('reset-all-foot').getBoundingClientRect(); const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return e && e.id; }")
+    assert hit == 'reset-all-foot', ('the footer button is under the card', hit)
+    pg.emulate_media(media='print'); assert pg.evaluate('getComputedStyle(document.body).paddingBottom') == '0px', 'no room reserved on paper (Pass 3)'
+    ctx.close()
+    # Pass 2: a returning voter with 5+ picks who makes a skip sees no card (a real pick does); a 5 card left up to 30
+    # picks and then put away doesn't bring the 25 card.
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
+    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)'); card = backup_card(pg, False)
+    pg.evaluate("ids => localStorage.setItem('ballotta.picks', JSON.stringify(Object.fromEntries(ids.map(id => [id, [optionsOf(BYID[id])[0]]]))))", ids[:6])
+    pg.reload(); pg.wait_for_selector('#result:not(.hidden)')
+    pg.evaluate('id => pick(id, "__skip")', ids[6]); expect(card).to_be_hidden()
+    pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[7]); expect(card).to_be_visible()
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[8:31]); expect(card).to_be_visible()
+    card.locator('[data-nudge="dismiss"]').click(); pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[31]); expect(card).to_be_hidden()
+    ctx.close()
+    if HAS_DESK:
+        ctx, pg = new_page(b, wide=True); pg.set_viewport_size({'width': 1024, 'height': 640}); pg.goto(BASE); saved_ballot(pg, nums)
+        pg.wait_for_selector('body.dk-app-on'); ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
+        pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5]); expect(backup_card(pg, True)).to_be_visible()
+        pg.focus('#dk-print'); pg.keyboard.press('Enter'); pg.wait_for_timeout(300)
+        hit = pg.evaluate("() => { const a = document.activeElement, r = a.getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return [a.dataset.act, e === a || a.contains(e)]; }")
+        assert hit == ['print', True], ('the focused Print button is under the card', hit)
+        ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
+    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5]); card = backup_card(pg, False); expect(card).to_be_visible()
+    pg.once('dialog', lambda d: d.accept()); pg.click('#reset'); expect(card).to_be_hidden()
+    ctx.close()
+
+@test
+def persistent_storage_asked_at_first_pick(b):
+    # #49: at the first pick, the page asks the browser to keep its data (navigator.storage.persist), once, and not if
+    # it's already kept; nothing is asked before a pick.
+    stub = ("window.__persist = 0; window.__persisted = %s; Object.defineProperty(navigator, 'storage', { configurable: true, value: {"
+            " persisted: () => { window.__checked = (window.__checked || 0) + 1; return Promise.resolve(window.__persisted); },"
+            " persist: () => { window.__persist++; return Promise.resolve(true); } } });")
+    for already, want in ((False, 1), (True, 0)):
+        ctx, pg = new_page(b); pg.add_init_script(stub % ('true' if already else 'false')); pg.goto(BASE)
+        saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('#result:not(.hidden)'); pg.wait_for_timeout(200)
+        assert pg.evaluate('window.__persist') == 0 and not pg.evaluate('window.__checked'), 'asked before any pick'
+        pick(pg, 'c070', 'Qadri'); pick(pg, 'c071', 'For'); pg.wait_for_timeout(200)
+        assert pg.evaluate('window.__persist') == want and pg.evaluate('window.__checked') == 1, (already, pg.evaluate('[window.__persist, window.__checked]'))
+        ctx.close()
 
 def main():
     srv = serve()
