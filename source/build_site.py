@@ -140,9 +140,18 @@ SW_JS = (
     "    return res;\n"
     "  });\n"
     "  e.waitUntil(net.catch(() => {}));  // a late answer still refreshes the kept copy\n"
-    "  e.respondWith(Promise.race([net.catch(() => null), new Promise((ok) => setTimeout(ok, 4000, null))])\n"
-    "    .then(async (first) => first || (await caches.open(CACHE).then((c) => c.match(key))) || net));  // only its own copies; nothing kept: wait for the network\n"
-    "});\n")
+    "  e.respondWith(Promise.race([net.catch(() => 'offline'), new Promise((ok) => setTimeout(ok, 4000, 'slow'))])\n"
+    "    .then(async (first) => {\n"
+    "      if (typeof first !== 'string') return first;  // the network's own answer\n"
+    "      const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies\n"
+    "      if (!kept) return net;  // nothing kept: wait for the network\n"
+    "      const page = r.mode === 'navigate' && (kept.headers.get('content-type') || '').startsWith('text/html');  // never an image or the manifest, even opened directly\n"
+    "      return page ? said(kept.clone(), first).catch(() => kept) : kept;\n"
+    "    }));\n"
+    "});\n"
+    "// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy=\"offline\"> or \"slow\".\n"
+    "const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');\n"
+    "  return new Response(t.replace('<html lang=\"en\">', '<html lang=\"en\" data-copy=\"' + why + '\">'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
 SW_OFF_JS = (
     "// Built by source/build_site.py: removes Ballotta's offline copy from this browser. It takes the open pages over first,\n"
     "// so the old copy can't keep filling its cache, then deletes its caches (only Ballotta's), then itself.\n"

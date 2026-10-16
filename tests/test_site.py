@@ -1829,7 +1829,7 @@ def persistent_storage_asked_at_first_pick(b):
         ctx.close()
 
 # ---------------------------------------------------------------- phone layout (preview build only until promotion)
-import urllib.request
+import urllib.request, time
 PHONE = {'width': 390, 'height': 844}                      # an iPhone 13/14/15's screen in CSS pixels
 
 def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None):
@@ -2041,6 +2041,13 @@ def phone_backup_card_sits_above_the_bar(b):
     ctx.close()
 
 IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+CHROME_IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/129.0.6668.69 Mobile/15E148 Safari/604.1'
+FIREFOX_IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/131.0 Mobile/15E148 Safari/605.1.15'
+IPAD_UA = 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+INSTAGRAM_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.32.104 (iPhone14,5; iOS 18_0; en_US; en; scale=3.00; 1170x2532; 640245296)'
+FACEBOOK_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/480.0.0.40.104;FBBV/650000000;FBDV/iPhone14,5;FBMD/iPhone;FBSN/iOS;FBSV/18.0;FBSS/3;FBLC/en_US;FBOP/5]'
+OPERA_IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 OPX/2.1.0'
+GOOGLE_APP_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/340.0.689177329 Mobile/15E148 Safari/604.1'
 FAKE_BIP = ("() => { const e = new Event('beforeinstallprompt', { cancelable: true }); e.prompt = () => { window.__prompted = (window.__prompted || 0) + 1; return Promise.resolve(); };"
             " e.userChoice = Promise.resolve({ outcome: 'accepted' }); window.dispatchEvent(e); }")
 
@@ -2083,12 +2090,13 @@ def phone_home_screen_app_pastes_picks(b):
     assert 'Paste my picks link' not in t and 'Add to your Home Screen' not in t, t
     ctx.close()
     ctx, pg = phone_page(b, init=STANDALONE, ua=IPHONE_UA); pg.goto(BASE)
-    expect(pg.locator('#ph-paste')).to_be_visible()
+    expect(pg.locator('#ph-paste')).to_be_visible(); assert 'Copy my picks link' in pg.inner_text('#ph-paste'), pg.inner_text('#ph-paste')
     pg.click('#dk-help'); t = pg.inner_text('#ph-mitems')
     assert 'Paste my picks link' in t and 'Add to your Home Screen' not in t, t
     pg.click('#ph-menu [data-close]'); pg.click('#ph-paste-open'); pg.wait_for_selector('#ph-paste-d[open]')
     pg.fill('#ph-p-in', 'hello'); pg.click('#ph-p-go'); assert 'doesn’t look like a Ballotta link' in pg.inner_text('#ph-p-msg')
-    pg.fill('#ph-p-in', BASE + '#' + share); pg.click('#ph-p-go'); assert 'a friend shared' in pg.inner_text('#ph-p-msg')
+    assert 'not the Share my picks link' in pg.inner_text('#ph-paste-d .lead'), pg.inner_text('#ph-paste-d .lead')
+    pg.fill('#ph-p-in', BASE + '#' + share); pg.click('#ph-p-go'); assert 'Share my picks link, for friends' in pg.inner_text('#ph-p-msg'), pg.inner_text('#ph-p-msg')
     pg.fill('#ph-p-in', 'My picks: ' + keep + '.'); pg.click('#ph-p-go')               # extra words around it, as in a note
     pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
     assert cur(pg, 'c070') == ['Zohaib “Zo” Qadri'] and pg.evaluate('whys.c070') == 'Knows the district'
@@ -2106,15 +2114,20 @@ def phone_home_screen_app_pastes_picks(b):
     ctx.close()
 
 class Flip(http.server.SimpleHTTPRequestHandler):           # the repo's files, except any path in swap (served as given) or gone (404)
-    swap, gone, fail, hits = {}, set(), {}, []             # fail: path -> a status to answer instead (503, say); hits: paths asked for
+    swap, gone, fail, hits, slow, gzip = {}, set(), {}, [], {}, False   # fail: path -> a status to answer instead (503, say); hits: paths asked for; slow: path -> seconds; gzip: pages sent gzipped, as GitHub Pages does
     def log_message(self, *a): pass
     def do_GET(self):
         Flip.hits.append(self.path.split('?')[0])
+        if self.path.split('?')[0] in Flip.slow: time.sleep(Flip.slow[self.path.split('?')[0]])
         if self.path.split('?')[0] in Flip.gone: return self.send_error(404)
         if self.path.split('?')[0] in Flip.fail: return self.send_error(Flip.fail[self.path.split('?')[0]])
         body = Flip.swap.get(self.path.split('?')[0])
+        if body is None and Flip.gzip and self.path.split('?')[0].endswith('.html'):
+            import gzip as gz; body = gz.compress((ROOT / self.path.split('?')[0].lstrip('/')).read_bytes())
+            self.send_response(200); self.send_header('Content-Type', 'text/html; charset=utf-8'); self.send_header('Content-Encoding', 'gzip'); self.send_header('Content-Length', str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if body is None: return super().do_GET()
-        self.send_response(200); self.send_header('Content-Type', 'application/javascript' if self.path.endswith('.js') else 'text/html; charset=utf-8'); self.send_header('Content-Length', str(len(body)))
+        self.send_response(200); self.send_header('Content-Type', 'application/javascript' if self.path.endswith('.js') else 'image/png' if self.path.endswith('.png') else 'text/html; charset=utf-8'); self.send_header('Content-Length', str(len(body)))
         self.end_headers(); self.wfile.write(body)
 
 def own_server():                                           # a spare port of the system's choosing, never 8765
@@ -2157,6 +2170,97 @@ def phone_offline_copy_after_one_visit(b):
     finally:
         ctx.close()
         if up: srv.shutdown(); srv.server_close()
+
+@phone_test
+def phone_home_screen_steps_name_the_right_buttons(b):
+    # Lane, Oct 16: "Share" read as Ballotta's own Share my picks; on iOS 26 Safari's Share sits behind its ••• button;
+    # some iPhones need View More. The steps name the browser's own buttons, draw them, and mark the step to do now.
+    def open_steps(pg):
+        pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click(); pg.wait_for_selector('#ph-install[open]')
+    def now(pg): return pg.evaluate("[...document.querySelectorAll('#ph-i-ios li')].filter(l => l.classList.contains('ph-now') && l.getClientRects().length).map(l => l.id)")
+    ctx, pg = phone_page(b, ua=IPHONE_UA); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+    open_steps(pg); t = pg.inner_text('#ph-i-ios')
+    assert 'Safari’s buttons, not Ballotta’s' in t and 'View More' in t and 'bottom right' in t, t
+    assert 'If another app opened this page' in t, ('an app\'s Safari view looks like Safari: say how out (Pass 2)', t)
+    assert 'Paste my picks link' not in t, ('no picks yet: nothing to paste', t)
+    assert now(pg) == ['ph-i-icon'], now(pg)
+    icons = pg.evaluate("[...document.querySelectorAll('#ph-i-icon .ph-ico')].map(i => [i.getAttribute('role'), i.getAttribute('aria-label') || '', !!i.querySelector('svg')])")
+    assert len(icons) >= 2 and all(i[0] == 'img' and i[1] and i[2] for i in icons) and any('three dots' in i[1] for i in icons), icons
+    pg.click('#ph-install [data-close]'); pg.locator('.dk-line').first.click()
+    open_steps(pg); t = pg.inner_text('#ph-i-ios')
+    assert now(pg) == ['ph-i-carry'] and pg.locator('#ph-i-ok').is_hidden(), now(pg)
+    assert 'not the Share my picks link' in t and 'Paste my picks link' in t and 'Paste bubble' in t and 'iPhone' in t, t
+    pg.click('#ph-i-copy'); pg.wait_for_function("(window.__events || []).some(e => e[0] === 'home_screen' && e[1].action === 'copied')")
+    assert now(pg) == ['ph-i-icon'] and pg.locator('#ph-i-ok').is_visible(), ('after the copy, step 2 is the one to do', now(pg))
+    pg.click('#ph-install [data-close]'); open_steps(pg)
+    assert now(pg) == ['ph-i-carry'] and pg.locator('#ph-i-ok').is_hidden(), ('picks may have changed: a new look starts at step 1', now(pg))
+    assert pg.evaluate("(() => { const d = document.getElementById('ph-install'); return d.scrollWidth - d.clientWidth; })()") == 0, 'the steps run off the sheet'
+    ctx.close()
+    for ua, want, gone in ((CHROME_IOS_UA, 'Chrome’s buttons', 'Safari'), (FIREFOX_IOS_UA, 'your browser’s buttons', 'Safari'), (OPERA_IOS_UA, 'your browser’s buttons', 'Safari'), (IPAD_UA, 'Safari’s buttons', 'bottom right')):
+        ctx, pg = phone_page(b, ua=ua); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+        pg.locator('.dk-line').first.click(); open_steps(pg); t = pg.inner_text('#ph-i-ios')
+        assert want in t and gone not in t and 'View More' in t, (ua, t)
+        if ua == IPAD_UA: assert 'iPad' in t and 'iPhone' not in t, t
+        ctx.close()
+    for ua in (INSTAGRAM_UA, FACEBOOK_UA, GOOGLE_APP_UA):                                  # an app's own browser can't add to the Home Screen (Pass 1)
+        ctx, pg = phone_page(b, ua=ua); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+        pg.locator('.dk-line').first.click(); open_steps(pg); t = pg.inner_text('#ph-i-ios')
+        assert 'Open this page in Safari first' in t and 'Open in Safari' in t and 'View More' not in t and 'Safari’s buttons' not in t, (ua, t)
+        assert 'Paste my picks link' in t, ('the copied link still carries the picks to the Home Screen app', t)
+        ctx.close()
+
+@phone_test
+def phone_saved_copy_says_so(b):
+    # Lane (B4, Oct 16): when a dead network or the 4-second rule opens the copy kept on the phone, a bar says which,
+    # with Try again; a fresh page never shows it; it goes when the network comes back. The page's CSP stays on.
+    Flip.swap, Flip.gone, Flip.fail, Flip.slow, Flip.gzip = {}, set(), {}, {}, True; srv, url = own_server(); up = True
+    ctx, pg = phone_page(b, csp=True, sw=True); pg.add_init_script(CSP_WATCH)
+    try:
+        pg.goto(url); poll(pg, '!!navigator.serviceWorker.controller', 15)
+        pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
+        bar = pg.locator('#ph-saved')
+        assert bar.is_hidden() and pg.get_attribute('html', 'data-copy') is None, 'a fresh page says it is the saved copy'
+        Flip.slow = {'/' + PAGE: 7}; pg.reload(timeout=20000); Flip.slow = {}                 # no answer within 4 seconds
+        assert bar.is_visible(), 'the 4-second rule opened the kept copy without saying so'
+        t = bar.inner_text(); assert 'Slow connection' in t and 'copy saved on your phone' in t and 'Looking up an address needs a connection' in t, t
+        go = pg.locator('#ph-saved-go'); assert go.bounding_box()['height'] >= 44, go.bounding_box()
+        assert sideways(pg) == 0
+        with pg.expect_navigation(timeout=20000): go.click()
+        poll(pg, "document.readyState === 'complete'"); assert bar.is_hidden(), 'Try again got a fresh page but the bar stayed'
+        png = url.rsplit('/', 1)[0] + '/x.png'; Flip.swap['/' + png.split('/', 3)[3]] = (ROOT / 'icon-192.png').read_bytes()
+        pg.goto(png); pg.goto(url); poll(pg, "document.readyState === 'complete'")             # a non-page file in the copy's reach, kept
+        pg.evaluate('localStorage.setItem("ballotta.ballot", JSON.stringify({ pr: "999", b: [99999], mode: "saved", at: 0 }))')   # a ballot this page can't show
+        srv.shutdown(); srv.server_close(); up = False                                   # no network at all
+        pg.goto(png); assert pg.evaluate("document.images.length === 1 && document.images[0].naturalWidth === 192"), 'the kept copy of an image no longer opens'
+        pg.goto(url); poll(pg, "document.readyState === 'complete'")
+        t = bar.inner_text(); assert bar.is_visible() and 'Looking up an address needs a connection' in t, ('the form is showing, not picks', t)
+        pg.evaluate("renderStored({ pr: '999', b: [70, 71, 1], mode: 'saved' }, 'test')"); poll(pg, "document.body.classList.contains('dk-app-on')")   # picks arrive with no reload (a pasted link)
+        assert 'Your picks are all here' in bar.inner_text(), ('the bar still says to look up an address (Pass 2)', bar.inner_text())
+        pg.emulate_media(media='print'); assert bar.is_hidden(), 'the bar prints on the crib sheet (Pass 2)'; pg.emulate_media(media='screen')
+        pg.add_init_script("window.__firstSay = null; new MutationObserver((m, o) => { const e = document.querySelector('#ph-saved b + span'); if (e && e.textContent) { window.__firstSay = e.textContent; o.disconnect(); } }).observe(document, { subtree: true, childList: true, characterData: true });")
+        saved_ballot(pg, [70, 71, 1]); poll(pg, "document.body.classList.contains('dk-app-on')")
+        t = bar.inner_text(); assert bar.is_visible() and 'No connection' in t and 'Your picks are all here' in t, t
+        assert pg.evaluate('window.__firstSay') == 'Your picks are all here.', ('before start() draws it, a saved ballot must still count (Pass 3)', pg.evaluate('window.__firstSay'))
+        assert pg.evaluate("document.querySelector('#ph-bar').getBoundingClientRect().bottom") <= 844 and sideways(pg) == 0
+        pg.click('#ph-list'); assert pg.evaluate("document.getElementById('ph-saved').inert"), 'Try again stays reachable behind the open sheet'
+        pg.click('#ph-done')
+        pg.set_viewport_size({'width': 1180, 'height': 820}); pg.wait_for_timeout(200)     # a tablet turned sideways: the laptop layout (Pass 1)
+        assert pg.evaluate("document.querySelector('.dk-rail').getBoundingClientRect().bottom <= innerHeight && document.getElementById('dk-print').getBoundingClientRect().bottom <= innerHeight"), 'the bar pushed the rail off the screen'
+        assert bar.is_visible() and 'copy saved on your phone' in bar.inner_text(), ('sideways, the kept copy must still say so (Pass 2)', bar.inner_text() if bar.is_visible() else 'hidden')
+        assert pg.evaluate("document.getElementById('ph-saved').getBoundingClientRect().top >= document.getElementById('dk-hdr').getBoundingClientRect().bottom - 1"), 'the bar covers the top bar'
+        assert pg.evaluate("(() => { const r = document.getElementById('ph-saved').getBoundingClientRect(), g = document.getElementById('ph-saved-go').getBoundingClientRect(); return g.top >= r.top && g.bottom <= r.bottom && getComputedStyle(document.getElementById('ph-saved')).overflow === 'visible'; })()"), 'Try again or its focus ring is clipped by the bar (Pass 3)'
+        pg.evaluate('window.scrollTo(0, 400)'); assert pg.evaluate("(() => { const r = document.getElementById('ph-saved').getBoundingClientRect(), a = document.querySelector('.dk-rail').getBoundingClientRect(); return r.top >= document.getElementById('dk-hdr').getBoundingClientRect().bottom - 1 && r.bottom <= a.top + 1; })()"), 'scrolled, the bar hides under the top bar or over the rail'
+        pg.evaluate('window.scrollTo(0, 0)')
+        pg.set_viewport_size(PHONE); pg.wait_for_timeout(200); assert bar.is_visible(), 'back on the phone layout, the bar must show again'
+        pg.evaluate("window.dispatchEvent(new Event('online'))"); assert bar.is_hidden(), 'the network came back but the bar stayed'
+        pg.set_viewport_size({'width': 1180, 'height': 820}); pg.wait_for_timeout(200)
+        assert pg.evaluate("getComputedStyle(document.querySelector('.dk-rail')).top") == '56px', 'the rail kept room for a bar that is gone'
+        pg.set_viewport_size(PHONE); pg.wait_for_timeout(200)
+        assert pg.evaluate('window.__csp') == [] and pg.errs == [], (pg.evaluate('window.__csp'), pg.errs)
+    finally:
+        ctx.close()
+        if up: srv.shutdown(); srv.server_close()
+        Flip.gzip, Flip.swap = False, {}
 
 @phone_test
 def laptops_get_no_offline_copy_or_install_prompt(b):

@@ -425,6 +425,17 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 /*PHONE*/
 /* ---------- phone layout (narrower than 1024px): the laptop app folded up for a small screen ---------- */
 .ph-only,.ph-faq{display:none}
+.ph-saved{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;margin:0;padding:2px max(16px,env(safe-area-inset-right)) 2px max(16px,env(safe-area-inset-left));background:var(--warnsoft);color:var(--ink);border-bottom:1px solid var(--line2);font-size:14px;line-height:1.4}
+.ph-saved>span{padding:8px 0}
+.ph-saved button{min-height:44px;border:none;background:none;padding:0 4px;font:inherit;font-weight:700;color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+@media screen and (min-width:1024px){  /* a tablet held sideways gets the laptop layout: one line, sticky under its 56px top bar; the rail makes room (Pass 1, 2) */
+  .ph-saved{position:sticky;top:56px;z-index:19;flex-wrap:nowrap;height:44px;padding:0 24px;white-space:nowrap}
+  .ph-saved>span{overflow:hidden;text-overflow:ellipsis}
+  .ph-saved button{min-height:42px;flex:none}
+  html.ph-saved-on{scroll-padding-top:108px}
+  html.ph-saved-on .dk-rail{top:100px;height:calc(100vh - 100px)}
+}
+@media print{.ph-saved{display:none !important}}
 @media screen and (max-width:1023.98px){  /* .98: no gap below 1024px at odd zoom levels */
   body{background:var(--lilac)}
   .kbd,.dk-keysec{display:none}
@@ -653,6 +664,10 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .ph-steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:14px;font-size:15px}
   .ph-steps li{padding-left:4px}
   .ph-steps .btn{margin-top:8px}
+  .ph-steps li.ph-now{background:var(--lilac);border-radius:10px;padding:10px 12px 12px;margin-left:-8px}
+  .ph-ico{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;vertical-align:-6px;border-radius:50%;background:var(--lilac);color:var(--plum)}
+  .ph-steps li.ph-now .ph-ico{background:#fff}
+  .ph-ok{color:var(--ok);font-weight:700;white-space:nowrap}
   .dk-info{display:flex;flex-direction:column;gap:22px}
   .dk-info section{display:flex;flex-direction:column;gap:10px}
 }
@@ -680,6 +695,9 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   </div>
   <button type="button" class="dk-btn pri hidden" id="dk-share">Share my picks</button>
 </header>
+<!--PHONE-->
+<p class="ph-saved hidden" id="ph-saved" role="status"><span><b></b> <span></span></span><button type="button" id="ph-saved-go">Try again</button></p>
+<!--/PHONE-->
 <div class="dk-app" id="dk-app">
   <nav class="dk-rail" aria-label="Your ballot">
     <div class="dk-rhd"><h2>Your ballot</h2><span id="dk-count"></span><span class="dk-rbar"><i id="dk-bar"></i></span><!--PHONE--><button type="button" class="ph-done ph-only" id="ph-done">Done</button><!--/PHONE--></div>
@@ -732,7 +750,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   </div>
 
 <!--PHONE-->
-  <div class="ph-paste ph-only" id="ph-paste"><p><b>Made picks in Safari?</b> This Home Screen app keeps its own copy, so bring them over with the link from Keep my picks.</p><button class="btn secondary" type="button" id="ph-paste-open">Paste my picks link</button></div>
+  <div class="ph-paste ph-only" id="ph-paste"><p><b>Made picks in Safari?</b> This Home Screen app keeps its own copy, so bring them over with the private link you copied (from <b>Copy my picks link</b> or <b>Keep my picks</b>).</p><button class="btn secondary" type="button" id="ph-paste-open">Paste my picks link</button></div>
 <!--/PHONE-->
   <section class="card" id="lookup" aria-labelledby="lk">
     <h2 id="lk" class="hidden">Your address</h2>
@@ -886,9 +904,9 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <p class="lead">It opens like an app, and your phone is less likely to clear your picks.</p>
   <button class="btn" type="button" id="ph-i-add">Add to Home Screen</button>
   <ol class="ph-steps" id="ph-i-ios">
-    <li id="ph-i-carry"><b>Take your picks along.</b> On an iPhone, the Home Screen app keeps its own copy, and it starts empty. Copy a private link to your picks first.<br><button class="btn secondary small" type="button" id="ph-i-copy">Copy my picks link</button><span class="linkout hidden" id="ph-i-out" style="display:block"></span><span class="note" style="display:block;margin-top:6px">Anyone with this link can see your picks and reasons. Paste it only into your own Ballotta.</span></li>
-    <li>Tap the <b>Share</b> button (a square with an arrow), scroll down, and tap <b>Add to Home Screen</b>.</li>
-    <li>Open Ballotta from your Home Screen. If you copied your picks, tap <b>Paste my picks link</b>.</li>
+    <li id="ph-i-carry"><b>Copy your picks.</b> <span class="ph-ok hidden" id="ph-i-ok">✓ Copied</span> The Home Screen app starts empty, so bring a private link to your picks.<br><button class="btn secondary small" type="button" id="ph-i-copy">Copy my picks link</button><span class="linkout hidden" id="ph-i-out" style="display:block"></span><span class="note" style="display:block;margin-top:6px">This is the same private link as Keep my picks, not the Share my picks link for friends. Anyone with it can see your picks and reasons, so paste it only into your own Ballotta.</span></li>
+    <li id="ph-i-icon"><b id="ph-i-how">Add the icon with Safari’s buttons, not Ballotta’s.</b> <span id="ph-i-where"></span><span id="ph-i-tail"> Scroll down and tap <b>Add to Home Screen</b>. Don’t see it? Tap <b>View More</b> first, and it’s in that list. Then tap <b>Add</b>. You can leave this window open.</span><span id="ph-i-else"> Don’t see Add to Home Screen at all? If another app opened this page, tap its compass or <b>Open in Safari</b> first.</span></li>
+    <li id="ph-i-open"><b>Open Ballotta from your Home Screen</b><span id="ph-i-paste"> and tap <b>Paste my picks link</b> at the top. Your <span class="ph-dev">iPhone</span> shows a small <b>Paste</b> bubble; tap it</span>.</li>
   </ol>
   <p id="ph-i-other">Open your browser’s menu and look for <b>Add to Home Screen</b> or <b>Install</b>.</p>
 </dialog>
@@ -896,7 +914,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 <dialog class="sheet" id="ph-paste-d" aria-labelledby="ph-ph">
   <div class="handle" aria-hidden="true"></div>
   <div class="sheethead"><h2 id="ph-ph" style="font-size:26px">Paste my picks link</h2><button type="button" class="x" data-close>Close</button></div>
-  <p class="lead">The link from <b>Keep my picks</b> holds your picks and reasons. It stays on this phone.</p>
+  <p class="lead">Use your private link, from <b>Copy my picks link</b> or <b>Keep my picks</b>, not the <b>Share my picks</b> link for friends. Your picks and reasons stay on this phone.</p>
   <button class="btn" type="button" id="ph-p-clip">Paste from clipboard</button>
   <div class="field"><label for="ph-p-in">Or paste it here</label><input id="ph-p-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://ballotta.org/#k2…"></div>
   <button class="btn secondary" type="button" id="ph-p-go">Load my picks</button>
@@ -2257,7 +2275,13 @@ const phone = (() => {
     $('ph-next').textContent = nx ? 'Next undecided →' : 'Crib sheet →';
     $('ph-next').classList.toggle('hidden', !nx && D.ui.view === 'crib');
   }
+  // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
+  function savedSay() {
+    if ($('ph-saved').classList.contains('hidden')) return;
+    $('ph-saved').querySelector('b + span').textContent = ballot.length || cleanBallot((LS.get('ballotta.ballot', null) || {}).b).length ? 'Your picks are all here.' : 'Looking up an address needs a connection.';
+  }
   function after() {
+    savedSay();
     const app = cls.contains('dk-app-on'), dec = app && D.ui.view === 'decide';
     cls.toggle('ph-decide', dec);
     bar();
@@ -2288,7 +2312,7 @@ const phone = (() => {
   }
 
   /* ----- "Your ballot": the rail as a full-screen sheet ----- */
-  const behind = () => ['dk-hdr', 'dk-desk', 'ph-bar'].map($);
+  const behind = () => ['dk-hdr', 'ph-saved', 'dk-desk', 'ph-bar'].map($);
   function openList() {
     listFrom = document.activeElement;
     cls.add('ph-list'); $('ph-list').setAttribute('aria-expanded', 'true');
@@ -2411,8 +2435,31 @@ const phone = (() => {
     $('ph-i-carry').classList.toggle('hidden', !ios || !picked);
     $('ph-i-other').classList.toggle('hidden', !!bip || ios);
     $('ph-i-out').classList.add('hidden');
+    if (ios) steps(picked);
     if (ios && picked) prepKeep();  // packed now: Safari only lets the copy happen right after the tap
     $('ph-install').showModal();
+  }
+  // Name the browser's own buttons, and draw them (Lane, Oct 16: "Share" read as Ballotta's own Share my picks, and on
+  // iOS 26 Safari's Share sits behind its ••• button). Then mark the step to do now: a new look starts at the top.
+  const MORE = '<span class="ph-ico" role="img" aria-label="More button, three dots"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="17.5" cy="12" r="1.8" fill="currentColor"/></svg></span>';
+  const SHARE = '<span class="ph-ico" role="img" aria-label="Share button, a square with an arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 9.5H6.5a1 1 0 0 0-1 1V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9.5a1 1 0 0 0-1-1h-2"/><path d="M12 14V2.5M8.5 6L12 2.5 15.5 6"/></svg></span>';
+  function steps(picked) {
+    const ua = navigator.userAgent, ipad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const chrome = /CriOS/.test(ua), other = /FxiOS|EdgiOS|OPiOS|OPT\/|OPX\/|DuckDuckGo|YaBrowser/.test(ua);
+    const safari = !chrome && !other && /Version\/[\d.]+.*Safari\//.test(ua), inapp = !safari && !chrome && !other;  // an app's own browser (Pass 1)
+    $('ph-i-how').textContent = inapp ? 'Open this page in Safari first.' : 'Add the icon with ' + (safari ? 'Safari’s' : chrome ? 'Chrome’s' : 'your browser’s') + ' buttons, not Ballotta’s.';
+    $('ph-i-tail').classList.toggle('hidden', inapp);
+    $('ph-i-else').classList.toggle('hidden', !safari);  // an app's Safari view sends Safari's own UA (Pass 2)
+    $('ph-i-where').innerHTML = inapp ? 'This app’s own browser can’t add Ballotta to your Home Screen. Look for <b>Open in Safari</b> (or a compass) in its ' + MORE + ' menu, then add Ballotta from Safari.'
+      : safari
+      ? (ipad ? 'Next to Safari’s address bar, tap ' : 'At the bottom right of your screen, tap Safari’s ') + MORE + ', then ' + SHARE + ' <b>Share</b>. If you already see Safari’s ' + SHARE + ' in its bar, tap that instead.'
+      : chrome ? 'In Chrome’s address bar, tap ' + SHARE + ' <b>Share</b>. It’s also in Chrome’s ' + MORE + ' menu.'
+      : 'Tap your browser’s ' + SHARE + ' <b>Share</b> button. It may be in a ' + MORE + ' menu.';
+    $('ph-i-ios').querySelectorAll('.ph-dev').forEach(e => { e.textContent = ipad ? 'iPad' : 'iPhone'; });
+    $('ph-i-paste').classList.toggle('hidden', !picked);
+    $('ph-i-ok').classList.add('hidden');
+    $('ph-i-ios').querySelectorAll('li').forEach(li => li.classList.remove('ph-now'));
+    $(picked ? 'ph-i-carry' : 'ph-i-icon').classList.add('ph-now');
   }
   $('ph-i-add').addEventListener('click', async () => {
     const ev = bip; if (!ev) return;
@@ -2423,6 +2470,7 @@ const phone = (() => {
   $('ph-i-copy').addEventListener('click', async () => {
     const k = keepPrep || prepKeep(), via = await copyLink(k.url || await k.p, $('ph-i-out'), $('ph-i-copy'));
     if (via) { track('home_screen', { action: 'copied' }); track('keep_created', { via }); nudgeKept(); }
+    if (via === 'copy') { $('ph-i-carry').classList.remove('ph-now'); $('ph-i-ok').classList.remove('hidden'); $('ph-i-icon').classList.add('ph-now'); }  // shown, not copied: step 1 isn't done yet
   });
   $('ph-home-nudge').addEventListener('click', () => { nudgeDone('home'); install('card'); });
 
@@ -2433,7 +2481,7 @@ const phone = (() => {
   async function load(text) {
     const m = linkIn(text), say = (t) => { $('ph-p-msg').textContent = t; $('ph-p-msg').classList.remove('hidden'); };
     if (!m) return say('That doesn’t look like a Ballotta link. Copy the whole link, starting with https.');
-    if (m[1][0] !== 'k') return say('That’s a link a friend shared. To bring your own picks, use the link from Keep my picks.');
+    if (m[1][0] !== 'k') return say('That’s a Share my picks link, for friends. To bring your own picks, use the private link from Copy my picks link or Keep my picks.');
     const o = await unpackFrag(m[1]);
     if (o === TOO_OLD) return say('This phone is too old to open that link. Update its software, then try again.');
     if (!o || typeof o !== 'object' || o.v !== 1) return say('That link looks incomplete or damaged, so we couldn’t read any picks from it.');
@@ -2466,6 +2514,16 @@ const phone = (() => {
   }
   NARROW.addEventListener('change', width);
   width();
+  // The kept copy says so (Lane, B4): sw.js marks a page it answered from this phone's copy, offline or after 4 seconds
+  // with no answer. Try again reloads; the bar goes when the network comes back.
+  const copy = document.documentElement.dataset.copy;
+  if (copy === 'offline' || copy === 'slow') {
+    $('ph-saved').querySelector('b').textContent = (copy === 'slow' ? 'Slow connection' : 'No connection') + ', so this is the copy saved on your phone.';
+    $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
+    savedSay();
+  }
+  $('ph-saved-go').addEventListener('click', () => location.reload());
+  window.addEventListener('online', () => { $('ph-saved').classList.add('hidden'); document.documentElement.classList.remove('ph-saved-on'); });
   try {  // the offline copy: phones and tablets only (C1)
     if ('serviceWorker' in navigator) {
       const sw = navigator.serviceWorker;

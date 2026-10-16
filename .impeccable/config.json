@@ -2,6 +2,15 @@
   "detector": {
     "ignoreRules": [],
     "ignoreFiles": [],
-    "ignoreValues": []
+    "ignoreValues": [
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "source/template-travis.html"
+        ],
+        "createdAt": "2026-10-16T15:02:57.787Z"
+      }
+    ]
   }
 }

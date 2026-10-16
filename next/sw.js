@@ -13,6 +13,15 @@ self.addEventListener('fetch', (e) => {
     return res;
   });
   e.waitUntil(net.catch(() => {}));  // a late answer still refreshes the kept copy
-  e.respondWith(Promise.race([net.catch(() => null), new Promise((ok) => setTimeout(ok, 4000, null))])
-    .then(async (first) => first || (await caches.open(CACHE).then((c) => c.match(key))) || net));  // only its own copies; nothing kept: wait for the network
+  e.respondWith(Promise.race([net.catch(() => 'offline'), new Promise((ok) => setTimeout(ok, 4000, 'slow'))])
+    .then(async (first) => {
+      if (typeof first !== 'string') return first;  // the network's own answer
+      const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies
+      if (!kept) return net;  // nothing kept: wait for the network
+      const page = r.mode === 'navigate' && (kept.headers.get('content-type') || '').startsWith('text/html');  // never an image or the manifest, even opened directly
+      return page ? said(kept.clone(), first).catch(() => kept) : kept;
+    }));
 });
+// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy="offline"> or "slow".
+const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');
+  return new Response(t.replace('<html lang="en">', '<html lang="en" data-copy="' + why + '">'), { status: res.status, statusText: res.statusText, headers: h }); });
