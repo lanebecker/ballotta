@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ctXddP2xhTvGHX5o5QsoOerU8cUar0qHhkPwHd0SmUI=' https://geocoding.geo.census.gov; base-uri 'none'; form-action 'none'">
+<title>Census address lookup</title></head><body>
+<script>// Built by source/build_site.py; don't edit census.html. Ballotta's page sends one address;
+// this frame (sandboxed: no access to the page or its storage) loads the JSONP reply and passes back only a point.
+window.addEventListener('message', function on(e) {
+  // Only inside Ballotta's sandbox (an opaque origin), only for its own page, only an address (Pass 1).
+  if (self.origin !== 'null' || e.source !== parent || typeof e.data !== 'string' || e.data.length > 200) return;
+  window.removeEventListener('message', on);
+  window.cb = function (d) {
+    var m = d && d.result && d.result.addressMatches && d.result.addressMatches[0];
+    parent.postMessage(m && m.coordinates ? { x: Number(m.coordinates.x), y: Number(m.coordinates.y), label: String(m.matchedAddress || '') } : null, '*');
+  };
+  var s = document.createElement('script');
+  s.src = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?' + new URLSearchParams({ address: e.data, benchmark: 'Public_AR_Current', format: 'jsonp', callback: 'cb' });
+  s.onerror = function () { parent.postMessage(null, '*'); };
+  document.head.appendChild(s);
+});
+</script>
+</body></html>

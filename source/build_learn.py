@@ -22,6 +22,9 @@ AUS_CLERK = ('Official candidate list', 'Austin City Clerk', 'https://www.austin
 AUS_FORUM = ('Candidate forum videos', 'City of Austin voter information page', 'https://www.austintexas.gov/voterinfo')
 AUS_BP = ('Ballotpedia', 'The races and candidates, with survey answers', 'https://ballotpedia.org/City_elections_in_Austin,_Texas_(2026)')
 AISD = ('Board election page', 'Austin ISD', 'https://www.austinisd.org/board/elections')
+# Campaign sites the link check reached only over http:// that load over https:// in a browser (checked Oct 15, 2026):
+# linked over https:// (#36). The other http:// sites answered only on http://, so an https:// link would fail there.
+HTTPS_OK = {'cuero4rrisd.com', 'juliefortexassenate.com', 'www.farrahabraham.com'}
 
 # What each office does (duties only; no claims about any candidate).
 OFFICES = [
@@ -126,7 +129,10 @@ for c in key['contests']:
                 # on hosts whose DNS resolves (checked Oct 14), and those pages load in a normal browser.
                 ok = str(v.get('http', '')) not in ('404', '410')
                 assert 'http' in v, ('site has no link check yet; run: python3 source/check_sites.py', ch, v['site'])
-                e['s'] = v['url'] if ok else None
+                url = v['url']
+                if url.startswith('http://') and url[7:].split('/')[0].lower() in HTTPS_OK:
+                    url = 'https://' + url[7:]
+                e['s'] = url if ok else None
                 if not ok: e['sx'] = 1  # listed, but didn't load when checked
             cands[name] = e
         d['cands'] = cands

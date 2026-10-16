@@ -27,8 +27,10 @@ def serve():
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s
 
-def new_page(browser, sent=None, wide=False):
-    ctx = browser.new_context(viewport={'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'])
+def new_page(browser, sent=None, wide=False, csp=False):
+    # The page's Content-Security-Policy (#36) forbids eval, which Playwright's wait_for_function polls with: tests run
+    # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()).
+    ctx = browser.new_context(viewport={'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'], bypass_csp=not csp)
     ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
@@ -1452,6 +1454,141 @@ def desk_print_button_opens_the_crib_sheet(b):
     pg.keyboard.up('Enter'); assert pg.evaluate('window.__printed') == before, 'holding Enter on Print… printed'
     pg.click('#dk-notes [data-act="print"]')
     assert pg.evaluate('window.__printed') == 1 and events(pg)[-1][0] == 'crib_printed'
+    ctx.close()
+
+# ---------------------------------------------------------------- issues round B (Oct 15): #36 hardening, #38 untangling
+def poll(pg, js, timeout=30):                                   # a wait that works under the page's CSP (no eval in the page)
+    import time
+    end = time.time() + timeout
+    while not pg.evaluate(js):
+        if time.time() > end: raise AssertionError('timed out waiting for ' + js)
+        pg.wait_for_timeout(100)
+
+def lookup_strict(pg, wide=False):
+    pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
+    poll(pg, "document.body.classList.contains('dk-app-on') && / of \\d+ decided$/.test(document.getElementById('dk-count').textContent)" if wide
+         else "!document.getElementById('result').classList.contains('hidden') && document.getElementById('k-total').textContent !== '0'")
+
+CSP_WATCH = "window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.effectiveDirective + ' ' + e.blockedURI));"
+
+@test
+def page_is_locked_down(b):
+    # #36: a Content-Security-Policy before any script: only the page's own scripts (by hash) and files from this site
+    # run, data goes only to the county map server and the counting service, frames only from this site; no
+    # referrer is sent anywhere. A whole visit (phone and laptop) trips nothing; an injected script doesn't run.
+    html = build_module().build()                                  # what the build writes (index.html on disk equals it: live_build test)
+    m = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', html)
+    assert m and html.index(m.group(0)) < html.index('<script'), 'a CSP meta tag before the first script'
+    pol = dict((d.split(' ', 1) + [''])[:2] for d in m.group(1).split('; '))
+    assert pol['default-src'] == "'none'" and pol['frame-src'] == "'self'" and pol['base-uri'] == "'none'" and pol['form-action'] == "'none'", pol
+    assert pol['connect-src'] == 'https://taxmaps.traviscountytx.gov https://gateway.umami.is', pol['connect-src']
+    srcs = pol['script-src'].split()
+    assert srcs[0] == "'self'" and all(x.startswith("'sha256-") for x in srcs[1:]) and len(srcs) == 1 + html.count('<script>'), srcs
+    assert '<meta name="referrer" content="no-referrer">' in html and html.index('name="referrer"') < html.index('<script')
+    for wide in ((False, True) if HAS_DESK else (False,)):
+        ctx, pg = new_page(b, wide=wide, csp=True); pg.add_init_script(CSP_WATCH); refs = []
+        pg.on('request', lambda r: refs.append((r.url, r.headers.get('referer'))) if 'traviscountytx.gov' in r.url else None)
+        pg.goto(BASE)
+        if wide:
+            lookup_strict(pg, True)
+            for v in ('glance', 'vote', 'crib', 'decide'): pg.click(f'#dk-views [data-view="{v}"]')
+            pg.click('#dk-share'); pg.wait_for_selector('#d-share[open]'); pg.keyboard.press('Escape')
+        else:
+            fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2349', 'g': 1, 'p': {'70': 0}})); pg.wait_for_selector('#friend:not(.hidden)')
+            lookup_strict(pg); pick(pg, 'c070', 'Qadri')
+            pg.click('#a-keep'); pg.wait_for_selector('#d-keep[open]'); pg.click('#d-keep [data-close]')
+            pg.click('#a-share'); pg.wait_for_selector('#d-share[open]'); pg.click('#d-share [data-close]')
+        pg.wait_for_timeout(500)
+        assert pg.evaluate('window.__csp') == [], (wide, pg.evaluate('window.__csp'))
+        assert refs and all(r is None for _, r in refs), ('no referrer to the county', refs[:2])
+        pg.evaluate("() => { const s = document.createElement('script'); s.textContent = 'window.__pwned = 1'; document.body.appendChild(s); }")
+        pg.wait_for_timeout(200)
+        assert pg.evaluate('window.__pwned') is None and any(v.startswith('script-src') for v in pg.evaluate('window.__csp')), 'an injected script ran'
+        ctx.close()
+
+@test
+def census_runs_in_a_sandbox(b):
+    # #36: the Census geocoder only answers as JSONP (a script), so it runs in a sandboxed frame (census.html) that
+    # can't reach this page or its storage and can hand back only a point, which the page checks.
+    m = build_module()
+    assert (ROOT / 'census.html').read_text(encoding='utf-8') == m.census_page(), 'census.html on disk is not what the build writes'
+    assert "f.src = '../census.html'" in m.build(preview=True), 'the preview (one folder down) finds census.html at the root (Pass 1)'
+    # Embedded by another page without a sandbox, census.html does nothing (it would run as this site) (Pass 1).
+    ctx, pg = new_page(b, csp=True); hits = []
+    ctx.route(re.compile(r'https://geocoding\.geo\.census\.gov/.*'), lambda r: (hits.append(r.request.url), r.abort()))
+    pg.goto(BASE)
+    pg.evaluate("() => new Promise(ok => { const f = document.createElement('iframe'); f.src = 'census.html'; f.onload = () => { f.contentWindow.postMessage('1 Main St, TX 78701', '*'); setTimeout(ok, 800); }; document.body.appendChild(f); })")
+    assert hits == [], ('census.html ran outside its sandbox', hits)
+    ctx.close()
+    def census(route, body):
+        route.fulfill(status=200, content_type='application/javascript', body=body)
+    match = '{"coordinates":{"x":-97.74,"y":30.27},"matchedAddress":"1 NOWHERE ST, AUSTIN, TX, 78701"}'
+    hostile = ("cb({\"result\":{\"addressMatches\":[" + match + "]}});"
+               "try { parent.document.body.dataset.pwned = '1'; } catch (e) {}"
+               "try { parent.localStorage.setItem('ballotta.pwned', '1'); } catch (e) {}"
+               "try { localStorage.setItem('ballotta.pwned', '1'); } catch (e) {}"
+               "try { top.location.hash = '#pwned'; } catch (e) {}")
+    looper = "location.href = 'census.html?again';"                                                       # reloads the frame (Pass 1)
+    for body, reason in ((hostile, 'no_voters_nearby'),                                                  # a point came back
+                         (looper, 'not_found'),
+                         ('cb({"result":{"addressMatches":[{"coordinates":{"x":"-97.7; alert(1)","y":30.27},"matchedAddress":"x"}]}})', 'not_found'),
+                         ('cb({"result":{"addressMatches":[{"coordinates":{"x":2.35,"y":48.85},"matchedAddress":"PARIS"}]}})', 'not_found')):
+        ctx, pg = new_page(b, csp=True); refs = []
+        ctx.route(re.compile(r'.*GeocodeServer/findAddressCandidates.*'), lambda r: r.fulfill(status=200, content_type='application/json', body='{"candidates":[]}'))
+        ctx.route(re.compile(r'.*VotingAddresses/VA/MapServer/0/query.*'), lambda r: r.fulfill(status=200, content_type='application/json', body='{"features":[]}'))
+        ctx.route(re.compile(r'https://geocoding\.geo\.census\.gov/.*'), (lambda bd: lambda r: (refs.append(r.request.headers.get('referer')), census(r, bd)))(body))
+        pg.goto(BASE); pg.evaluate("() => { window.__spam = setInterval(() => postMessage({ x: -97.74, y: 30.27, label: 'FAKE' }, '*'), 5); }")   # only the frame's answer counts
+        pg.fill('#street', '1 Nowhere St'); pg.fill('#zip', '78701'); pg.click('#go')
+        poll(pg, "(window.__events||[]).some(e => e[0] === 'lookup_failed')", 15)
+        assert events(pg)[-1] == ['lookup_failed', {'reason': reason, 'layout': 'phone'}], (body[:40], events(pg))
+        assert pg.evaluate("document.body.dataset.pwned") is None and pg.evaluate("localStorage.getItem('ballotta.pwned')") is None and pg.evaluate('location.hash') == ''
+        assert refs == [None], ('one Census request, with no referrer: a reloading frame does not loop', len(refs), refs[:2])
+        assert pg.locator('iframe').count() == 0, 'the frame is removed after use'
+        ctx.close()
+
+@test
+def campaign_links_use_https_where_they_work(b):
+    # #36: the three campaign sites that load over https:// in a browser are linked that way; the four that answered
+    # only on http:// stay so (an https:// link to them would show a certificate error). A new http:// site fails here
+    # until someone checks it.
+    learn = json.loads((ROOT / 'source/learn.json').read_text(encoding='utf-8'))
+    sites = {c['s'] for L in learn.values() for c in (L.get('cands') or {}).values() if c.get('s')}
+    plain = {u for u in sites if u.startswith('http://')}
+    assert plain == {'http://Kirk4AISD.com', 'http://SavingManor.org', 'http://votedibianca.com', 'http://voteneillsnider.com'}, plain
+    for u in ('https://cuero4rrisd.com', 'https://juliefortexassenate.com', 'https://www.FarrahAbraham.com'):
+        assert u in sites, u
+
+@desk_test
+def desk_works_without_phone_buttons(b):
+    # #38: the laptop layout calls shared, named functions instead of clicking the phone layout's hidden buttons or
+    # copying its markup: with those buttons gone, every laptop action still works.
+    src = (ROOT / 'source/template-travis.html').read_text(encoding='utf-8')
+    page = (ROOT / PAGE).read_text(encoding='utf-8')                     # the page under test (mutants change it)
+    deskjs = page[page.index('const desk = (() => {'):page.index('window.desk = desk;')]
+    assert not re.findall(r"\$\('[\w-]+'\)\.click\(\)", deskjs), re.findall(r"\$\('[\w-]+'\)\.click\(\)", deskjs)
+    for read in ("$('hours')", "$('sitehead')", "$('waits')", "$('crib').innerHTML"):
+        assert read not in deskjs, read
+    ctx, pg = new_page(b, wide=True); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+    fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2348', 'g': 1, 'p': {'70': 0}}))
+    pg.wait_for_selector('#friend:not(.hidden)'); lookup_wide(pg)
+    pg.evaluate("() => { ['a-share', 'a-keep', 'print', 'reset', 'reset-all', 'feedback', 'f-hide'].forEach(id => { const e = document.getElementById(id); if (e) e.id = id + '-gone'; }); }")
+    pg.click('#dk-share'); pg.wait_for_selector('#d-share[open]'); pg.keyboard.press('Escape')
+    pg.click('#dk-keep'); pg.wait_for_selector('#d-keep[open]'); pg.keyboard.press('Escape')
+    pg.click('#dk-paper [data-act="hidefriend"]'); pg.wait_for_function('!friend')
+    assert pg.locator('.dk-fchip').count() == 0 and pg.evaluate("document.getElementById('friend').classList.contains('hidden')")
+    pg.click('#dk-views [data-view="vote"]')
+    assert '7am–7pm' in pg.inner_text('#dk-paper') and 'electionlink.net' in pg.get_attribute('#dk-paper a.btn', 'href')
+    pg.evaluate('() => { window.__printed = 0; window.print = () => { window.__printed++; }; }')
+    pg.click('#dk-views [data-view="crib"]'); pg.click('#dk-notes [data-act="print"]')
+    assert pg.evaluate('window.__printed') == 1 and events(pg)[-1][0] == 'crib_printed'
+    assert 'My ballot notes' in pg.inner_text('#dk-page')
+    pg.click('#dk-views [data-view="decide"]'); pg.locator('#dk-paper .dk-line').first.click()
+    assert pg.evaluate('Object.keys(picks).length') == 1
+    pg.click('#dk-help'); pg.once('dialog', lambda d: d.accept()); pg.click('#dk-menu [data-help="clear"]')
+    assert pg.evaluate('Object.keys(picks).filter(k => current(k).length).length') == 0
+    pg.click('#dk-help'); pg.once('dialog', lambda d: d.accept()); pg.click('#dk-menu [data-help="clearall"]')
+    pg.wait_for_function("!Object.keys(localStorage).some(k => k.startsWith('ballotta.'))", timeout=5000)
+    assert errs == [], errs
     ctx.close()
 
 def main():

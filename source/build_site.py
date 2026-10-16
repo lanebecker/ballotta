@@ -5,7 +5,7 @@
 
 Rebuild rules first if the answer key or district data change:  python3 source/build_rules.py
 """
-import json, re, pathlib, sys
+import base64, hashlib, json, re, pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -50,6 +50,48 @@ def strip_desk(html):
     return html
 
 
+# ---- Content-Security-Policy (#36). Only the page's own inline scripts (by hash) and files from this site run; data
+# goes only to the county map server and the counting service; frames only from this site (the Census sandbox).
+PAGE_CSP = ("default-src 'none'; script-src 'self' {hashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
+            "connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'")
+
+
+def sha(js):
+    return "'sha256-" + base64.b64encode(hashlib.sha256(js.encode("utf-8")).digest()).decode() + "'"
+
+
+def csp_meta(html):
+    hashes = " ".join(sha(s) for s in re.findall(r"<script>(.*?)</script>", html, re.S))
+    return '<meta http-equiv="Content-Security-Policy" content="' + PAGE_CSP.format(hashes=hashes) + '">'
+
+
+# ---- census.html (#36): the Census geocoder answers only as JSONP, so the page loads it in this sandboxed frame,
+# which can't reach the page or its storage and passes back only a point.
+CENSUS_JS = (
+    "// Built by source/build_site.py; don't edit census.html. Ballotta's page sends one address;\n"
+    "// this frame (sandboxed: no access to the page or its storage) loads the JSONP reply and passes back only a point.\n"
+    "window.addEventListener('message', function on(e) {\n"
+    "  // Only inside Ballotta's sandbox (an opaque origin), only for its own page, only an address (Pass 1).\n"
+    "  if (self.origin !== 'null' || e.source !== parent || typeof e.data !== 'string' || e.data.length > 200) return;\n"
+    "  window.removeEventListener('message', on);\n"
+    "  window.cb = function (d) {\n"
+    "    var m = d && d.result && d.result.addressMatches && d.result.addressMatches[0];\n"
+    "    parent.postMessage(m && m.coordinates ? { x: Number(m.coordinates.x), y: Number(m.coordinates.y), label: String(m.matchedAddress || '') } : null, '*');\n"
+    "  };\n"
+    "  var s = document.createElement('script');\n"
+    "  s.src = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?' + new URLSearchParams({ address: e.data, benchmark: 'Public_AR_Current', format: 'jsonp', callback: 'cb' });\n"
+    "  s.onerror = function () { parent.postMessage(null, '*'); };\n"
+    "  document.head.appendChild(s);\n"
+    "});\n")
+
+
+def census_page():
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer">\n'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src ' + sha(CENSUS_JS)
+            + ' https://geocoding.geo.census.gov; base-uri \'none\'; form-action \'none\'">\n'
+            '<title>Census address lookup</title></head><body>\n<script>' + CENSUS_JS + '</script>\n</body></html>\n')
+
+
 def build(preview=False, desk=None):
     """desk: include the laptop layout (default: on for the preview, or once DESK_LIVE). The phone-parity test builds both."""
     key = json.load(open(HERE / "answer_key.json", encoding="utf-8"))
@@ -88,13 +130,14 @@ def build(preview=False, desk=None):
             analytics = analytics.replace('src="umami.js"', 'src="../umami.js"').replace(f'data-domains="{UMAMI_DOMAINS}"', 'data-domains="preview.invalid"')
             assert 'preview.invalid' in analytics and '../umami.js' in analytics
         html = html.replace("<title>Ballotta ·", "<title>[Preview] Ballotta ·", 1)
-        for a, b in [("url('fonts/", "url('../fonts/"), ('href="favicon.svg"', 'href="../favicon.svg"'),
+        for a, b in [("url('fonts/", "url('../fonts/"), ('href="favicon.svg"', 'href="../favicon.svg"'), ("f.src = 'census.html'", "f.src = '../census.html'"),
                      ('href="apple-touch-icon.png"', 'href="../apple-touch-icon.png"')]:
             assert a in html, a
             html = html.replace(a, b)
     html = html.replace("<!--ANALYTICS-->", analytics)
     # The data goes in last, so nothing in it can be mistaken for one of the placeholders above (#37).
-    return html.replace("__DATA__", data, 1)
+    html = html.replace("__DATA__", data, 1)
+    return html.replace("<!--CSP-->", csp_meta(html), 1)  # last of all: it hashes the finished scripts (#36)
 
 
 if __name__ == "__main__":
@@ -107,3 +150,6 @@ if __name__ == "__main__":
     out.parent.mkdir(exist_ok=True)
     out.write_text(html, encoding="utf-8")
     print(out.relative_to(ROOT).as_posix(), len(html) // 1024, "KB")
+    if not preview:
+        (ROOT / "census.html").write_text(census_page(), encoding="utf-8")  # the Census lookup's sandbox (#36)
+        print("census.html")

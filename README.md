@@ -8,7 +8,7 @@ Live test: https://ballotta.org (the old lanebecker.github.io/ballotta address r
 
 It's one static page with no server.
 
-1. Your browser looks up your address on the Travis County Tax Office's public voter-district map server. If the county can't match it, the browser places it with the U.S. Census geocoder and uses the nearest registered addresses.
+1. Your browser looks up your address on the Travis County Tax Office's public voter-district map server. If the county can't match it, the browser places it with the U.S. Census geocoder and uses the nearest registered addresses. The Census answers only as a script, so it runs in a sandboxed frame (`census.html`) that can't read the page or its storage and can pass back only a map point.
 2. The page routes the 214 contests on the county's consolidated ballot to your address using district codes (precinct, city, council district, school district, MUD, ESD and more).
 3. Picks and reasons are saved only in your browser (`localStorage`), along with your ballot's contest list and a rounded location for sorting vote centers. Everything Ballotta keeps is under `ballotta.*` keys: `ballotta.ballot` (precinct, contest list, rounded location), `ballotta.picks`, `ballotta.whys`, `ballotta.name` (your share name), `ballotta.gen` (your place in a share chain), `ballotta.opened` and `ballotta.compared` (codes of friend links already counted), `ballotta.desk` (laptop view), and in `sessionStorage` a link being opened (`ballotta.incoming`) and which friend links already counted an own-ballot lookup (`ballotta.ownTracked`). **Clear everything on this device** (under the crib sheet and, on a phone, at the bottom of the page whenever anything is stored; Feedback & Info on a laptop) removes them all.
 
@@ -52,6 +52,8 @@ Contests marked **Double-check** aren't confirmed for your address yet. Always c
 
 Ballotta isn't affiliated with Travis County, the League of Women Voters or any campaign, and it doesn't tell anyone how to vote.
 
+The page is locked down: a Content-Security-Policy (built by `build_site.py` from the hashes of the page's own scripts) lets only its own scripts and files from this site run, lets it talk only to the county map server and the counting service, and allows frames only from this site. It sends no referrer to any site it asks or links to.
+
 ## Rebuilding
 
 Everything that makes the page lives in `source/`:
@@ -68,9 +70,9 @@ python3 source/build_rules.py                       # only when the contests or 
 python3 source/parse_lwv.py LWVAA-VG-EN.pdf source/answer_key.json source/data/lwv_candidates.json
 python3 source/check_sites.py                       # after any parse: records which listed sites load
 python3 source/build_learn.py
-python3 source/build_site.py                        # writes index.html
+python3 source/build_site.py                        # writes index.html and census.html
 python3 tests/test_site.py                          # end-to-end checks (Playwright, live county services), phones and laptops
-python3 tests/mutate_desk.py 0 89                   # mutation check of the laptop tests (slow; restores every file it touches)
+python3 tests/mutate_desk.py                        # mutation check of the tests (slow; restores every file it touches, even when stopped)
 ```
 
 `parse_lwv.py` stops the build if a listed site can't be credited, if a contested race shows an "unopposed" candidate, or if a sole candidate is shown as answering without a hand check.

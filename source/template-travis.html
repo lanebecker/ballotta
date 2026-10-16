@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<!--CSP-->
 <script>
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
@@ -776,14 +778,24 @@ async function lookup() {
   }
 }
 function censusPoint(street, zip) {
+  // The Census geocoder answers only as JSONP (a script), so it runs in a sandboxed frame (census.html, written by
+  // build_site.py) that can't reach this page or its storage. It hands back only a point, checked here: numbers, in
+  // Texas, from that frame (#36).
   return new Promise(resolve => {
-    const cb = 'cg' + Date.now(), sc = document.createElement('script');
-    const done = (v) => { try { delete window[cb]; } catch (e) {} sc.remove(); resolve(v); };
-    const t = setTimeout(() => done(null), 8000);
-    window[cb] = (d) => { clearTimeout(t); const m = d && d.result && d.result.addressMatches && d.result.addressMatches[0]; done(m ? { x: m.coordinates.x, y: m.coordinates.y, label: m.matchedAddress } : null); };
-    sc.onerror = () => { clearTimeout(t); done(null); };
-    sc.src = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?' + new URLSearchParams({ address: street + ', TX ' + zip, benchmark: 'Public_AR_Current', format: 'jsonp', callback: cb });
-    document.head.appendChild(sc);
+    const f = document.createElement('iframe');
+    let t = 0;
+    const done = (v) => { clearTimeout(t); window.removeEventListener('message', on); f.remove(); resolve(v); };
+    function on(e) {
+      if (e.source !== f.contentWindow) return;
+      const d = e.data, ok = d && typeof d === 'object' && Number.isFinite(d.x) && Number.isFinite(d.y) && d.x > -107 && d.x < -93 && d.y > 25 && d.y < 37 && typeof d.label === 'string';
+      done(ok ? { x: d.x, y: d.y, label: d.label.slice(0, 200) } : null);
+    }
+    window.addEventListener('message', on);
+    t = setTimeout(() => done(null), 8000);
+    f.setAttribute('sandbox', 'allow-scripts'); f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.hidden = true; f.title = 'Census address lookup';
+    f.addEventListener('load', () => f.contentWindow.postMessage((street + ', TX ' + zip).slice(0, 200), '*'), { once: true });  // once: a reloading frame can't loop (Pass 1)
+    f.src = 'census.html';
+    document.body.appendChild(f);
   });
 }
 async function nearby(p, label) {
@@ -967,7 +979,7 @@ function milestones() {
   const skipped = few(ids.filter(id => current(id)[0] === '__skip').length);
   now.forEach(p => track('progress', { at: String(p), reasons, skipped }));
 }
-function renderCrib() {
+function cribHTML() {  // the crib sheet, for the phone page and the laptop's crib view alike (#38)
   const withWhy = $('withwhy').checked;
   let html = '<div class="ch"><b style="font-size:15px">My ballot notes</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
   ballot.forEach(b => {/*DESK*/ try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}/*/DESK*/
@@ -977,8 +989,9 @@ function renderCrib() {
     if (withWhy && whys[b.c.id]) html += '<div class="why">' + esc(whys[b.c.id]) + '</div>';
   });
   html += '<p style="font-size:10px;margin-top:10px">Blank = no vote planned. * = check your official sample ballot. Contests are in ballot order.</p>';
-  $('crib').innerHTML = html;
+  return html;
 }
+function renderCrib() { $('crib').innerHTML = cribHTML(); }
 $('withwhy').addEventListener('change', renderCrib);
 
 /* ---------- where and when to vote ---------- */
@@ -993,16 +1006,23 @@ function miles(a, b) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * toR) * Math.cos(b[1] * toR) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
+// Hours, the list heading and the wait-times link for the voting period showing: the phone section and the laptop's
+// vote view both draw from these (#38).
+function hoursHTML() {
+  return period === 'early'
+    ? '<span class="ov">Mon Oct 19 – Fri Oct 30</span><p><b>7am–7pm every day</b>, weekends included.</p><p class="note">Some sites stay open until 10pm on Thu Oct 29 and Fri Oct 30.</p>'
+    : '<span class="ov">Tuesday, Nov 3</span><p><b>7am–7pm</b> at ' + DATA.sites.eday.length + ' vote centers.</p><p class="note">If you’re in line by 7pm, you can vote.</p>';
+}
+function siteHead(n) { return here ? (showAll ? 'All ' + n + ', closest first' : 'Closest to your address') : 'All ' + n + ' sites (look up your address to sort by distance)'; }
+function waitsURL() { return 'https://updates.electionlink.net/widgets/travistx/2026-11-03/' + (period === 'early' ? 'Early%20Voting%20Dashboard.html' : 'Election%20Day%20Voting%20Dashboard.html'); }
 function renderVote() {
   $('t-early').setAttribute('aria-pressed', period === 'early'); $('t-eday').setAttribute('aria-pressed', period === 'eday');
   const started = today() >= new Date(2026, 9, 19);
-  $('hours').innerHTML = period === 'early'
-    ? '<span class="ov">Mon Oct 19 – Fri Oct 30</span><p><b>7am–7pm every day</b>, weekends included.</p><p class="note">Some sites stay open until 10pm on Thu Oct 29 and Fri Oct 30.</p>'
-    : '<span class="ov">Tuesday, Nov 3</span><p><b>7am–7pm</b> at ' + DATA.sites.eday.length + ' vote centers.</p><p class="note">If you’re in line by 7pm, you can vote.</p>';
+  $('hours').innerHTML = hoursHTML();
   const all = DATA.sites[period].map(s => ({ name: s[0], room: s[1], street: s[2], city: s[3], f: s[4], pt: [s[5], s[6]], d: here ? miles(here, [s[5], s[6]]) : null }));
   if (here) all.sort((a, b) => a.d - b.d); else all.sort((a, b) => a.name.localeCompare(b.name));
   const list = (showAll || !here) ? all : all.slice(0, 5);
-  $('sitehead').textContent = here ? (showAll ? 'All ' + all.length + ', closest first' : 'Closest to your address') : 'All ' + all.length + ' sites (look up your address to sort by distance)';
+  $('sitehead').textContent = siteHead(all.length);
   $('allsites').textContent = here ? (showAll ? 'Show closest 5' : 'See all ' + all.length) : '';
   $('allsites').classList.toggle('hidden', !here);
   $('sites').innerHTML = list.map(s => {
@@ -1010,7 +1030,7 @@ function renderVote() {
     const dir = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.street + ', ' + s.city + ', TX');
     return '<div class="site"><div class="top"><b>' + esc(s.name) + '</b>' + (s.d != null ? '<span class="note" style="white-space:nowrap">' + s.d.toFixed(1) + ' mi</span>' : '') + '</div><span class="addr">' + esc(s.street + ', ' + s.city) + ' · ' + esc(s.room) + '</span><div class="chips">' + tags + '<a href="' + dir + '" target="_blank" rel="noopener">Directions</a></div></div>';
   }).join('');
-  $('waits').href = 'https://updates.electionlink.net/widgets/travistx/2026-11-03/' + (period === 'early' ? 'Early%20Voting%20Dashboard.html' : 'Election%20Day%20Voting%20Dashboard.html');
+  $('waits').href = waitsURL();
   $('waitsnote').textContent = 'Travis County map' + (started ? '' : ' · fills in once voting starts Oct 19');
 }
 // Outbound links: count the kind of link and the race's level, never which race or which candidate.
@@ -1143,13 +1163,14 @@ async function keepURL() {
 }
 let keepPrep = null, keeping = false;  // { p: Promise<url>, url }; keeping ignores a second tap mid-share
 function prepKeep() { const k = { url: null }; k.p = keepURL().then(u => (k.url = u)); keepPrep = k; return k; }
-$('a-keep').addEventListener('click', () => {
+function openKeep() {  // Keep my picks, from either layout (#38)
   prepKeep();
   const ids = ballot.map(b => b.c.id), n = countPicks(ids), r = countWhys(ids);
   $('keepcount').textContent = 'Your ' + n + ' pick' + (n === 1 ? '' : 's') + ' and ' + r + ' reason' + (r === 1 ? '' : 's') + ' live only in this browser. Send yourself a private link to pick up on your phone or laptop. No account needed.';
   $('keep-out').classList.add('hidden');
   $('d-keep').showModal();
-});
+}
+$('a-keep').addEventListener('click', openKeep);
 $('keep-send').addEventListener('click', async () => {
   if (keeping) return;
   const k = keepPrep || prepKeep(), url = k.url || await k.p;
@@ -1227,7 +1248,7 @@ function prepShare() {
   sharePrep = st; return st;
 }
 $('sharename').addEventListener('input', prepShare);
-$('a-share').addEventListener('click', () => {
+function openShare() {  // Share my picks, from either layout (#38)
   const secs = shareSections();
   $('sharename').value = LS.get('ballotta.name', '') || '';
   $('sharesecs').innerHTML = secs.length ? secs.map((s, i) => '<div class="sw"><label for="ss' + i + '">' + esc(s.label) + ' <span>· ' + s.ids.length + ' pick' + (s.ids.length === 1 ? '' : 's') + '</span></label><input type="checkbox" role="switch" id="ss' + i + '" data-k="' + s.k + '" data-label="' + esc(s.label) + '" data-ids="' + s.ids.join(',') + '" checked></div>').join('') : '<p class="note">Make a pick or two first; skipped and undecided races aren’t shared.</p>';
@@ -1236,7 +1257,8 @@ $('a-share').addEventListener('click', () => {
   updateShareSum();
   $('d-share').showModal();
   track('share_sheet_open', {});
-});
+}
+$('a-share').addEventListener('click', openShare);
 $('sharewhy').addEventListener('change', updateShareSum);
 function rand8() { const a = 'abcdefghijkmnpqrstuvwxyz23456789', r = new Uint8Array(8); crypto.getRandomValues(r); return [...r].map(x => a[x % a.length]).join(''); }
 let sharing = false;  // ignore a second tap while the share sheet is still open
@@ -1296,6 +1318,9 @@ function safeName(n) {
   const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split)];
   return forms.some(t => RESERVED.test(run(t)) || words(t).some(x => RESERVED_WORDS.test(x) || RESERVED_GLUED.test(x))) ? '' : n;
 }
+function hideFriend() {  // Hide these picks, from either layout (#38)
+  $('friend').classList.add('hidden'); $('compare').classList.add('hidden'); SS.del('ballotta.incoming'); friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
+}
 function friendName() { return friend && friend.name ? friend.name : 'Your friend'; }
 function openFriend(o, fresh) {
   const { P, W } = unpackPicks(o);
@@ -1313,7 +1338,7 @@ function openFriend(o, fresh) {
   f.classList.remove('hidden');
   $('f-own').addEventListener('click', seeOwn);
   $('f-cmp').addEventListener('click', () => { wantCompare = true; if (ballot.length) showCompare(); else seeOwn(); });
-  $('f-hide').addEventListener('click', () => { f.classList.add('hidden'); $('compare').classList.add('hidden'); SS.del('ballotta.incoming'); friend = null; });
+  $('f-hide').addEventListener('click', hideFriend);
   if (fresh) {
     // Count each link once per browser, even if it's opened again in a new tab.
     const seen = LS.get('ballotta.opened', []);
@@ -1374,16 +1399,17 @@ function renderCompare() {
 }
 
 /* ---------- feedback (address assembled at runtime to keep it away from scrapers) ---------- */
-$('feedback').addEventListener('click', (e) => {
-  e.preventDefault();
+function sendFeedback() {  // from either layout (#38)
   const to = ['lanebecker', 'gmail.com'].join('@');
   const ctx = lastLookup.precinct
     ? 'Precinct ' + lastLookup.precinct + ' · ' + lastLookup.total + ' contests · ' + ({ exact: 'exact match', nearby: 'nearby match', 'nearby-mixed': 'near a district line', saved: 'saved ballot' }[lastLookup.mode] || lastLookup.mode)
     : 'No ballot looked up yet';
   const body = 'What I tried:\n\n\nWhat happened (or what looked wrong):\n\n\nPhone or computer, and browser:\n\n\n---\n' + ctx + '\nPage: ' + baseURL();
   location.href = 'mailto:' + to + '?' + new URLSearchParams({ subject: 'Ballotta test feedback', body }).toString().replace(/\+/g, '%20');
-});
-$('print').addEventListener('click', () => { track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print(); });
+}
+$('feedback').addEventListener('click', (e) => { e.preventDefault(); sendFeedback(); });
+function printCrib() { track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print(); }  // from either layout (#38)
+$('print').addEventListener('click', printCrib);
 // Clear everything on this device (#29): every ballotta.* key in this browser, then a fresh page. Asks first.
 function clearEverything() {
   if (!confirm('Clear everything Ballotta saved in this browser: your ballot, picks, reasons, map location and share name?')) return;
@@ -1402,7 +1428,8 @@ function footClear() {
 window.addEventListener('storage', () => footClear());  // another tab saved something: the footer button follows (Pass 1)
 // Clear everything in another tab: this tab's copy is stale, so start fresh instead of writing it back.
 window.addEventListener('storage', (e) => { if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null) location.replace(location.pathname); });
-$('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
+function clearPicks() { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
+$('reset').addEventListener('click', clearPicks);
 
 /*DESK*/
 /* ---------- laptop layout (1024px and wider) ----------
@@ -1654,16 +1681,16 @@ const desk = (() => {
     const extra = [...$('vote').querySelectorAll(':scope > .sub:not(#hours), :scope > p.note')].map(e => e.outerHTML).join('');
     P().innerHTML = '<span class="ov">Where to vote</span><h1>Where and when to vote</h1>' +
       '<div class="dk-vote"><div><div class="seg" role="group" aria-label="Voting period"><button type="button" data-period="early" aria-pressed="' + (period === 'early') + '">Early voting · Oct 19–30</button><button type="button" data-period="eday" aria-pressed="' + (period === 'eday') + '">Election Day · Nov 3</button></div>' +
-      '<p>You can vote at <b>any</b> vote center in Travis County.</p><div class="sub">' + $('hours').innerHTML + '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="ov">' + esc($('sitehead').textContent) + '</span>' + (here ? '<button type="button" class="dk-link" id="dk-all">' + (showAll ? 'Show closest 5' : 'See all ' + all.length) + '</button>' : '') + '</div>' +
-      '<ul class="dk-sites" id="dk-sites">' + items + '</ul><a class="btn secondary small" href="' + esc($('waits').href) + '" target="_blank" rel="noopener">Check live wait times</a>' + extra + '</div>' +
+      '<p>You can vote at <b>any</b> vote center in Travis County.</p><div class="sub">' + hoursHTML() + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="ov">' + esc(siteHead(all.length)) + '</span>' + (here ? '<button type="button" class="dk-link" id="dk-all">' + (showAll ? 'Show closest 5' : 'See all ' + all.length) + '</button>' : '') + '</div>' +
+      '<ul class="dk-sites" id="dk-sites">' + items + '</ul><a class="btn secondary small" href="' + esc(waitsURL()) + '" target="_blank" rel="noopener">Check live wait times</a>' + extra + '</div>' +
       '<div>' + dotMap(all) + '</div></div>';
     P().querySelectorAll('[data-period]').forEach(btn => btn.addEventListener('click', () => { period = btn.dataset.period; periodChosen = true; renderVote(); viewVote(); }));
     if ($('dk-all')) $('dk-all').addEventListener('click', () => { showAll = !showAll; renderVote(); viewVote(); });
     N().innerHTML = '';
   }
   function cribPaper() {
-    P().innerHTML = '<span class="ov">Crib sheet</span><h1>Print your notes</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p><div class="dk-page' + (ui.two ? ' two' : '') + '" id="dk-page">' + $('crib').innerHTML + '</div>';
+    P().innerHTML = '<span class="ov">Crib sheet</span><h1>Print your notes</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p><div class="dk-page' + (ui.two ? ' two' : '') + '" id="dk-page">' + cribHTML() + '</div>';
   }
   function viewCrib() {
     cribPaper();
@@ -1682,14 +1709,15 @@ const desk = (() => {
   function act(a, focus) {
     if (a === 'prev') { const i = idx(ui.cur); if (i > 0) go(ballot[i - 1].c.id, focus); }
     else if (a === 'next') { const nx = nextUndecided(ui.cur); if (nx) go(nx.c.id, focus); else setView('glance'); }
-    else if (a === 'hidefriend') { if ($('f-hide')) $('f-hide').click(); render(); if (WIDE.matches) P().focus({ preventScroll: true }); }
-    else if (a === 'print') $('print').click();
+    else if (a === 'hidefriend') { hideFriend(); if (WIDE.matches) P().focus({ preventScroll: true }); }
+    else if (a === 'print') printCrib();
   }
   function toLanding() { ui.landing = true; $('dk-say').classList.add('hidden'); render(); window.scrollTo(0, 0); setTimeout(() => $('street').focus(), 50); }
   function info(which) {
     const box = $('dk-info');
     if (!box.dataset.built) {
-      // Same words as the phone layout, copied from the page so the two never drift apart.
+      // Same words as the phone layout, copied from the page so the two never drift apart: static text, the one
+      // deliberate copy left after #38 (behaviour goes through shared functions).
       const priv = document.createElement('section'), about = document.createElement('section');
       priv.id = 'dk-i-privacy'; about.id = 'dk-i-about';
       priv.innerHTML = '<h3>How your privacy works</h3>'; about.innerHTML = '<h3>About Ballotta &amp; sources</h3>';
@@ -1723,15 +1751,14 @@ const desk = (() => {
     menu(false); $('dk-help').focus();  // the item is about to be hidden: give focus somewhere a closing window can return it
     const a = btn.dataset.help;
     track('help_opened', { item: a });
-    if (a === 'feedback') $('feedback').click();
+    if (a === 'feedback') sendFeedback();
     else if (a === 'privacy' || a === 'about') info(a);
     else if (a === 'address') toLanding();
-    else if (a === 'clear') { $('reset').click(); render(); }
-    else if (a === 'clearall') $('reset-all').click();
+    else if (a === 'clear') { clearPicks(); render(); }
+    else if (a === 'clearall') clearEverything();
   }));
-  $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });  // runs after the button's own handler (it's on the container)
-  $('dk-share').addEventListener('click', () => $('a-share').click());
-  $('dk-keep').addEventListener('click', () => $('a-keep').click());
+  $('dk-share').addEventListener('click', openShare);
+  $('dk-keep').addEventListener('click', openKeep);
   $('dk-print').addEventListener('click', (e) => {  // opens the crib view, where the print options are (Lane, Oct 15)
     if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }
     const pr = N().querySelector('[data-act="print"]');
@@ -1834,13 +1861,18 @@ desk.render();
   const inc = window.__incoming || SS.get('ballotta.incoming');
   if (inc) handleIncoming(inc, !!window.__incoming);
 })();
+// A message about an incoming link, on both layouts (the phone's lookup form, the laptop's notice); '' clears it (#38).
+function notify(t) {
+  const m = $('lookupmsg'); m.textContent = t; m.classList.toggle('hidden', !t);
+  if (t) SS.del('ballotta.incoming');/*DESK*/ if (window.desk) try { desk.say(t); } catch (e) {}/*/DESK*/
+}
 async function handleIncoming(inc, fresh) {
   const my = ++incSeq;  // if another link arrives while this one decodes, only the newest one is handled
-  const say = (t) => { const m = $('lookupmsg'); m.textContent = t; m.classList.remove('hidden'); SS.del('ballotta.incoming');/*DESK*/ if (window.desk) try { desk.say(t); } catch (e) {}/*/DESK*/ };
+  const say = notify;
   const damaged = () => say('That link looks incomplete or damaged, so we couldn’t read any picks from it.');
   const o = await unpackFrag(inc);
   if (my !== incSeq) return;
-  $('lookupmsg').classList.add('hidden');/*DESK*/ if (window.desk) try { desk.say(''); } catch (e) {}/*/DESK*/
+  notify('');
   if (o === TOO_OLD) { track('link_damaged', { kind: 'too_old' }); return say('This browser is too old to open that link. Update your phone’s software, or open the link in a current browser such as Chrome, Firefox or Safari.'); }
   if (!o || typeof o !== 'object' || o.v !== 1) { track('link_damaged', { kind: 'damaged' }); return damaged(); }
   try {

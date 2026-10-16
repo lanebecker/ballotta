@@ -24,6 +24,7 @@ from playwright.sync_api import sync_playwright
 
 PREV, TPL, BLD = ROOT / os.environ['BALLOTTA_PAGE'], ROOT / 'source/template-travis.html', ROOT / 'source/build_site.py'
 README = ROOT / 'README.md'
+LEARN = ROOT / 'source/learn.json'
 MD_SELF = ROOT / 'tests/mutate_desk.py'                    # the runner's own signal handling (#41), tested in a child process
 M = [
  ('M1 live page changes', TPL, '<title>Ballotta ·', '<title>Ballotta  ·', ['live_build_is_unchanged_until_promotion']),
@@ -52,7 +53,6 @@ M = [
  ('M25 compare counted before open', PREV, "  f.classList.remove('hidden');\n", "  f.classList.remove('hidden'); if (window.desk) desk.render();\n", ['desk_friend_link_with_saved_ballot_counts_in_order']),
  ('M26 focus lost after Help window', PREV, "menu(false); $('dk-help').focus();  //", "menu(false);  //", ['desk_help_menu_info_address_and_clear']),
  ('M27 menu stays open after Tab', PREV, "    if (a && a !== document.body && !a.closest('.dk-menuwrap')) menu(false);", "", ['desk_help_menu_info_address_and_clear']),
- ('M29 hiding a friend leaves the landing broken', PREV, "  $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });", "", ['desk_friend_hide_on_landing']),
  ('M30 Escape only inside the list', PREV, "    if (e.key === 'Escape' && !$('dk-menu').classList.contains('hidden')) { e.preventDefault(); menu(false); $('dk-help').focus(); }", "", ['desk_help_menu_info_address_and_clear']),
  ('M22 phone takes laptop shortcuts', PREV, "if (!WIDE.matches || !ballot.length || ui.landing", "if (!ballot.length || ui.landing", ['desk_stays_quiet_on_phones']),
  ('M24 phone spacing lost', TPL, "#start{display:flex;flex-direction:column;gap:18px}", '', ['desk_phone_layout_matches_live_page']),
@@ -105,7 +105,6 @@ M = [
  ('F7 paper focus invisible', PREV, '  .dk-paper:focus-visible{outline:3px solid var(--plum);outline-offset:4px}', '', ['desk_launch_audit_fixes']),
  ('F8 key hints on touch screens', PREV, '  .kbd,.dk-keysec{display:none}', '  .dk-keysec{display:none}', ['desk_launch_audit_fixes']),
  ('F9 notice cannot be dismissed', PREV, "\n  $('dk-say').querySelector('button').addEventListener('click', () => $('dk-say').classList.add('hidden'));", '', ['desk_launch_audit_fixes']),
- ('F11 old warning survives a good link', PREV, "$('lookupmsg').classList.add('hidden');/*DESK*/ if (window.desk) try { desk.say(''); } catch (e) {}/*/DESK*/", "$('lookupmsg').classList.add('hidden');", ['desk_launch_audit_fixes']),
  ('F12 keys dead after switching views', PREV, "if (v === 'decide' && toPaper) P().focus({ preventScroll: true });", "", ['desk_launch_audit_fixes']),
  ('F13 slash fires off the paper', PREV, "    if (t && t !== document.body && !t.closest('#dk-paper')) return;  // single-key shortcuts only on the ballot paper (WCAG 2.1.4, audit #30)\n    const used = (kind) => countOnce('k:' + kind, 'shortcut_used', { kind });\n    if (k === '/') { e.preventDefault(); $('dk-q').focus(); used('search'); return; }", "    const used = (kind) => countOnce('k:' + kind, 'shortcut_used', { kind });\n    if (k === '/') { e.preventDefault(); $('dk-q').focus(); used('search'); return; }\n    if (t && t !== document.body && !t.closest('#dk-paper')) return;  // single-key shortcuts only on the ballot paper (WCAG 2.1.4, audit #30)", ['desk_launch_audit_fixes']),
  ('F17 warning kept through Change address', PREV, "ui.landing = true; $('dk-say').classList.add('hidden'); render();", "ui.landing = true; render();", ['desk_launch_audit_fixes']),
@@ -152,7 +151,6 @@ M = [
  ('V37 views not counted', PREV, " track('view_opened', { view: btn.dataset.view });", '', ['desk_counts_laptop_features']),
  ('V38 busy keyboards counted every time', PREV, 'const countOnce = (key, name, data) => { if (!once.has(key)) { once.add(key); track(name, data); } };', 'const countOnce = (key, name, data) => track(name, data);', ['desk_counts_laptop_features']),
  ('V39 FAQ never counted', PREV, "countOnce('faq', 'faq_seen');", '', ['desk_counts_laptop_features']),
- ('V40 clear everything missing from the menu', PREV, "    else if (a === 'clearall') $('reset-all').click();\n", '', ['desk_counts_laptop_features']),
  ('V41 README misses an event', README, '`faq_seen` (after the visitor scrolls); ', '', ['readme_lists_every_counted_event']),
  ('V42 other payload types pass', PREV, "(type !== 'event' && type !== 'performance')", 'false', ['privacy_firewall_drops_anything_unlisted']),
  ('V43 page views keep details', PREV, '  if (out.name !== undefined) { const d = clean(out.name, p.data); if (!d) return null; out.data = d; }', '  out.data = p.data;\n  if (out.name !== undefined) { const d = clean(out.name, p.data); if (!d) return null; out.data = d; }', ['privacy_firewall_drops_anything_unlisted', 'real_tracker_sends_only_listed_events']),
@@ -243,6 +241,27 @@ M = [
  ('R21 leading acronyms not split', PREV, "n.replace(/(\\p{Lu})(?=\\p{Lu}\\p{Ll})/gu, '$1 ').replace(", 'n.replace(', ['share_names_block_lookalikes_and_nicknames']),
  ('R22 glued words need fewer letters', PREV, "')\\\\S{4,}|\\\\S{4,}('", "')\\\\S{1,}|\\\\S{1,}('", ['share_names_block_lookalikes_and_nicknames']),
  ('R23 holding Enter prints', PREV, '    N().querySelectorAll(\'[data-act="print"]\').forEach(btn => btn.addEventListener(\'keydown\', (e) => { if (e.repeat) e.preventDefault(); }));  // Pass 4\n', '', ['desk_print_button_opens_the_crib_sheet']),
+ ('M29 hiding a friend leaves the landing broken', PREV, 'friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/\n}\nfunction friendName', 'friend = null;\n}\nfunction friendName', ['desk_friend_hide_on_landing']),
+ ('V40 clear everything missing from the menu', PREV, "    else if (a === 'clearall') clearEverything();\n", '', ['desk_counts_laptop_features']),
+ ('F11 old warning survives a good link', PREV, "  notify('');\n", '', ['desk_launch_audit_fixes']),
+ ('B1 no Content-Security-Policy', BLD, 'return html.replace("<!--CSP-->", csp_meta(html), 1)', 'return html', ['page_is_locked_down']),
+ ('B2 inline scripts allowed', BLD, "script-src 'self' {hashes};", "script-src 'self' 'unsafe-inline';", ['page_is_locked_down']),
+ ('B3 referrer sent', TPL, '<meta name="referrer" content="no-referrer">\n', '', ['page_is_locked_down']),
+ ('B4 data may go anywhere', BLD, 'connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is;', 'connect-src *;', ['page_is_locked_down']),
+ ('B5 Census frame not sandboxed', PREV, "f.setAttribute('sandbox', 'allow-scripts');", "f.setAttribute('sandbox', 'allow-scripts allow-same-origin');", ['census_runs_in_a_sandbox']),
+ ('B6 any point accepted', PREV, ' && d.x > -107 && d.x < -93 && d.y > 25 && d.y < 37', '', ['census_runs_in_a_sandbox']),
+ ('B7 any window may answer', PREV, '      if (e.source !== f.contentWindow) return;\n', '', ['census_runs_in_a_sandbox']),
+ ('B8 frame left behind', PREV, "window.removeEventListener('message', on); f.remove(); resolve(v);", "window.removeEventListener('message', on); resolve(v);", ['census_runs_in_a_sandbox']),
+ ('B10 a campaign site back on http', LEARN, '"https://cuero4rrisd.com"', '"http://cuero4rrisd.com"', ['campaign_links_use_https_where_they_work']),
+ ('C1 laptop Share clicks the phone button', PREV, "  $('dk-share').addEventListener('click', openShare);", "  $('dk-share').addEventListener('click', () => $('a-share').click());", ['desk_works_without_phone_buttons']),
+ ('C2 laptop hours copied from the phone page', PREV, '<div class="sub">\' + hoursHTML() + \'</div>\'', '<div class="sub">\' + $(\'hours\').innerHTML + \'</div>\'', ['desk_works_without_phone_buttons']),
+ ('C3 laptop crib copied from the phone page', PREV, '\'" id="dk-page">\' + cribHTML() + \'</div>\';', '\'" id="dk-page">\' + $(\'crib\').innerHTML + \'</div>\';', ['desk_works_without_phone_buttons']),
+ ('C4 laptop print clicks the phone button', PREV, "    else if (a === 'print') printCrib();", "    else if (a === 'print') $('print').click();", ['desk_works_without_phone_buttons']),
+ ('C5 laptop clear clicks the phone button', PREV, "    else if (a === 'clear') { clearPicks(); render(); }", "    else if (a === 'clear') { $('reset').click(); render(); }", ['desk_works_without_phone_buttons']),
+ ('B9 census.html out of date', BLD, ' || e.source !== parent || ', ' || ', ['census_runs_in_a_sandbox']),
+ ('B11 census.html runs unsandboxed', BLD, "if (self.origin !== 'null' || ", 'if (', ['census_runs_in_a_sandbox']),
+ ('B12 a reloading frame loops', PREV, ", '*'), { once: true });  // once", ", '*'));  // once", ['census_runs_in_a_sandbox']),
+ ('B13 preview looks for census.html in its own folder', BLD, ', ("f.src = \'census.html\'", "f.src = \'../census.html\'")', '', ['census_runs_in_a_sandbox']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
