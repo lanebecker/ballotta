@@ -1841,7 +1841,7 @@ def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None)
 def lookup_phone(pg):
     pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
     pg.wait_for_selector('body.dk-app-on', timeout=30000)
-    pg.wait_for_function("/ of \\d+ decided$/.test(document.getElementById('ph-count').textContent)", timeout=30000)
+    pg.wait_for_function("/ \\d+ decided$/.test(document.getElementById('ph-count').textContent)", timeout=30000)
 
 def h1(pg): return pg.inner_text('#dk-paper h1')
 def focused(pg): return pg.evaluate("(() => { const a = document.activeElement; return a ? (a.id || a.tagName) : null; })()")
@@ -1855,7 +1855,7 @@ def phone_landing_band_form_and_faq(b):
     ctx, pg = phone_page(b); pg.goto(BASE)
     for sel in ('#dk-hdr', '#dk-hero', '#start', '#lookup', '.dk-steps', '#ph-faq', '#dk-help'):
         expect(pg.locator(sel)).to_be_visible()
-    for sel in ('.wrap > .brand', '#dk-faq', '#ph-bar', '#dk-share', '.dk-logo', '#dk-loc', '#ph-paste'):
+    for sel in ('.wrap > .brand', '#dk-faq', '#ph-bar', '#dk-share', '.dk-logo', '#dk-loc', '#ph-paste', '#ph-list'):
         expect(pg.locator(sel).first).to_be_hidden()
     assert pg.locator('.wrap > section.card:visible, .wrap > footer:visible').count() == 0, 'About and Feedback live in the menu'
     assert pg.text_content('.dk-tagline') == 'Don’t wait to meet your ballot in the booth.'
@@ -1882,12 +1882,35 @@ def phone_lookup_opens_the_app_at_its_top(b):
     expect(pg.locator('#ph-bar')).to_be_visible(); expect(pg.locator('.wrap')).to_be_hidden(); expect(pg.locator('.dk-rail')).to_be_hidden()
     assert pg.text_content('#ph-count') == '0 of 63 decided' and pg.text_content('#ph-next') == 'Next undecided →'
     assert h1(pg) == 'United States Senator' and focused(pg) == 'H1' and pg.evaluate('scrollY') == 0
-    assert 'Precinct 300' in pg.inner_text('#dk-loc') and pg.is_visible('#dk-share')
+    assert 'Precinct 300 · Saved on this device' in pg.inner_text('#dk-paper .dk-top') and pg.is_hidden('#dk-loc') and pg.is_visible('#dk-share')
+    hdr, title, info = box(pg, '#dk-hdr'), box(pg, '#ph-list'), box(pg, '#dk-help')                 # option B (Lane, Oct 16)
+    assert title['y'] >= hdr['y'] and title['y'] + title['height'] <= hdr['y'] + hdr['height'] and title['height'] >= 44 and title['x'] < info['x'], (hdr, title, info)
+    assert pg.is_hidden('#dk-hdr .dk-brand b') and pg.is_visible('#dk-hdr .dk-brand svg'), 'the mark, not the wordmark, beside the title'
+    assert pg.get_by_role('button', name='Your ballot').count() == 1 and pg.get_attribute('#ph-list', 'aria-expanded') == 'false'
+    assert 'circle' in css(pg, '#dk-help', 'backgroundImage') and pg.get_by_role('button', name='Feedback & Info').count() == 1, 'Feedback & Info is an (i), not a second menu icon'
+    assert pg.text_content('#ph-back') == '← Previous' and pg.is_disabled('#ph-back'), 'nothing before the first contest'
+    assert pg.locator('#ph-step, #ph-prev, #ph-step-next').count() == 0 and not pg.locator('#ph-bar svg').count(), 'one Previous, in the bar'
+    pg.set_viewport_size({'width': 320, 'height': 640}); pg.wait_for_timeout(100)
+    pg.evaluate("document.getElementById('ph-count').textContent = '10 of 63 decided'")   # the widest it gets
+    assert pg.evaluate("(() => { const e = document.getElementById('ph-count'); return e.scrollWidth <= e.clientWidth; })()"), 'the title is cut off on a 320px phone'
+    for w in (320, 280):                                                                      # 280: a 390px phone at 140% zoom (Pass 1)
+        pg.set_viewport_size({'width': w, 'height': 640}); pg.wait_for_timeout(100)
+        fit = pg.evaluate("""(() => { const r = (s) => document.querySelector(s).getBoundingClientRect(), fits = (s) => { const e = document.querySelector(s); return e.scrollWidth <= e.clientWidth; };
+            return { next: r('#ph-next').right <= innerWidth && fits('#ph-next'), back: fits('#ph-back'), title: r('#ph-list b').height <= 24,
+                     inside: r('#ph-list').bottom <= r('#dk-hdr').bottom && r('#ph-list').right <= r('#dk-help').left }; })()""")
+        assert all(fit.values()), (w, fit)                                                   # the words, not just the boxes (Pass 2)
+    pg.set_viewport_size(PHONE); pg.wait_for_timeout(100)
     sb = box(pg, '#dk-share'); assert sb['width'] >= 44 and pg.get_by_role('button', name='Share my picks').count() == 1
     assert ['ballot_found', {'match': 'exact', 'layout': 'phone'}] in events(pg)
     paper, bar = box(pg, '#dk-paper'), box(pg, '#ph-bar')
     assert abs(bar['y'] + bar['height'] - PHONE['height']) < 1 and paper['x'] >= 8, (paper, bar)
     assert sideways(pg) <= 0 and pg.errs == [], pg.errs
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)                # Pass 1: the laptop's paper line
+    assert pg.inner_text('#dk-paper .dk-top .note') == 'Saved on this device', ('the laptop shows the precinct in its own header', pg.inner_text('#dk-paper .dk-top .note'))
+    pg.set_viewport_size(PHONE); pg.wait_for_timeout(100)
+    assert 'Precinct 300 · Saved on this device' in pg.inner_text('#dk-paper .dk-top')
+    pg.evaluate('localStorage.setItem("ballotta.ballot", JSON.stringify({ pr: "", b: [70, 71, 1], mode: "saved", at: 0 }))'); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    assert pg.inner_text('#dk-paper .dk-top .note') == 'Saved on this device', ('no precinct, no "Precinct ·" (Pass 1)', pg.inner_text('#dk-paper .dk-top .note'))
     ctx.close()
 
 PERSIST = ("window.__persist = 0; Object.defineProperty(navigator, 'storage', { configurable: true, value: {"
@@ -1910,13 +1933,13 @@ def phone_pick_reason_fold_and_steps(b):
     fold.click()
     expect(pg.locator('#dk-notes')).to_be_visible(); assert 'One of 10 district council members' in pg.inner_text('#dk-notes')
     assert fold.get_attribute('aria-expanded') == 'true' and not pg.is_visible('.dk-keysec'), 'no keyboard shortcuts on a phone'
-    pg.click('#ph-step-next')
+    pg.click('#ph-next')                                                                  # the next undecided contest is the next one here
     assert h1(pg) == 'Austin Proposition A' or h1(pg).endswith('Proposition A'), h1(pg)
     assert fold.inner_text() == 'Sources' and fold.get_attribute('aria-expanded') == 'true', 'the fold stays open from contest to contest'
     assert focused(pg) == 'H1'
-    pg.click('#ph-prev'); assert h1(pg) == 'City Council Member, District 9'
+    pg.click('#ph-back'); assert h1(pg) == 'City Council Member, District 9' and focused(pg) == 'H1'
     to_contest(pg, 'United States Senator')
-    assert pg.is_disabled('#ph-prev') and not pg.is_disabled('#ph-step-next')
+    assert pg.is_disabled('#ph-back') and pg.get_by_role('button', name='Previous contest').count() == 1
     expect(pg.locator('.dk-nav')).to_be_hidden()
     assert pg.errs == [], pg.errs
     ctx.close()
@@ -1931,8 +1954,23 @@ def phone_next_undecided_then_the_crib_sheet(b):
     pg.click('.skip'); pg.click('#ph-next'); assert h1(pg).endswith('Proposition A'), h1(pg)
     pg.locator('.dk-line', has_text='For').first.click()
     pg.wait_for_function("document.getElementById('ph-next').textContent === 'Crib sheet →'")
+    pg.click('#ph-back'); assert h1(pg) == 'City Council Member, District 9'
+    assert pg.text_content('#ph-next') == 'Next →', ('all decided: step through them in order', pg.text_content('#ph-next'))
+    pg.click('#ph-next'); assert h1(pg).endswith('Proposition A') and pg.text_content('#ph-next') == 'Crib sheet →'
     pg.click('#ph-next')
     assert h1(pg) == 'Print your notes' and pg.is_hidden('#ph-next') and ['view_opened', {'view': 'crib', 'layout': 'phone'}] in events(pg)
+    assert pg.text_content('#ph-count') == '3 of 3 decided' and pg.text_content('#ph-back') == '← Contest 3' and not pg.is_disabled('#ph-back')
+    assert pg.get_by_role('button', name='Contest 3, go back').count() == 1, 'say where it goes, starting with what it shows (Pass 1, 2)'
+    pg.click('#ph-back'); assert h1(pg).endswith('Proposition A') and ['view_opened', {'view': 'decide', 'layout': 'phone'}] in events(pg)
+    ctx.close()
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')   # Pass 1
+    pg.locator('.dk-line', has_text='Ted Brown').click(); pg.click('#ph-next'); pg.click('#ph-next')                  # 1st decided; on to the 3rd
+    pg.locator('.dk-line', has_text='For').first.click(); pg.click('#ph-back'); assert h1(pg) == 'City Council Member, District 9'
+    assert pg.text_content('#ph-next') == 'Next →', ('the only undecided contest is this one: Next must still move', pg.text_content('#ph-next'))
+    pg.click('#ph-next'); assert h1(pg).endswith('Proposition A'), h1(pg)
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]'); pg.click('#ph-back')                         # Pass 2: from another view
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]'); assert pg.text_content('#ph-next') == 'Next undecided →'
+    pg.click('#ph-next'); assert h1(pg) == 'City Council Member, District 9', ('from At a glance, Next goes to the open contest when it is the one left', h1(pg))
     ctx.close()
 
 @phone_test
@@ -1952,6 +1990,7 @@ def phone_ballot_list_sheet(b):
     pg.click('#dk-keep'); pg.wait_for_selector('#d-keep[open]'); pg.click('#d-keep [data-close]'); expect(pg.locator('.dk-rail')).to_be_visible()
     pg.click('#dk-views [data-view="glance"]'); expect(pg.locator('.dk-rail')).to_be_hidden()
     assert h1(pg) == 'Your whole ballot' and focused(pg) == 'H1' and ['view_opened', {'view': 'glance', 'layout': 'phone'}] in events(pg)
+    assert pg.text_content('#ph-count') == '0 of 63 decided' and pg.text_content('#ph-back').startswith('← Contest '), pg.text_content('#ph-count')
     pg.click('#ph-list'); pg.click('#dk-print'); expect(pg.locator('.dk-rail')).to_be_hidden()
     assert h1(pg) == 'Print your notes' and pg.evaluate('document.activeElement.dataset.act') == 'print'
     ctx.close()
@@ -2428,7 +2467,11 @@ def phone_focus_never_hides_under_the_bars(b):
     ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, list(range(1, 41))); pg.wait_for_selector('body.dk-app-on')
     ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
     pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5])
-    pg.focus('#ph-step-next'); pg.keyboard.press('Tab')
+    pg.evaluate("""() => { const f = document.getElementById('ph-fold'), all = [...document.querySelectorAll('#dk-desk a[href], #dk-desk button, #dk-desk textarea, #dk-desk input')].filter(e => e.getClientRects().length && !e.closest('#dk-nudge'));
+        const prev = all[all.indexOf(f) - 1], bar = document.getElementById('ph-bar').getBoundingClientRect().top;
+        window.scrollBy(0, f.getBoundingClientRect().top - bar + 20); prev.focus({ preventScroll: true }); }""")   # the fold straddles the bottom bar's edge
+    pg.keyboard.press('Tab'); assert focused(pg) == 'ph-fold' and obscured(pg) is None, ('Tab left the fold under the bottom bar', obscured(pg))
+    pg.focus('#ph-fold'); pg.keyboard.press('Tab')                                         # the fold is the paper's last stop (its notes closed)
     assert pg.evaluate('document.activeElement.dataset.nudge') == 'keep', ('the card is skipped in Tab order', focused(pg))
     pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
     assert pg.evaluate("document.getElementById('dk-nudge').nextElementSibling.id") == 'dk-paper', 'the laptop order changed'

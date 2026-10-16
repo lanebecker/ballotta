@@ -450,9 +450,21 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-loc b{font-size:13px;font-weight:600}
   .dk-loc .dk-link,body:not(.dk-app-on) .dk-loc{display:none}
   .dk-sp{flex:1}
-  .dk-when,.dk-menu{display:none !important}  /* the phone's menu is a sheet (#ph-menu) */
+  .dk-when,.dk-menu{display:none !important}
+  /* in the app: the mark, then "Your ballot" as the title (it opens the list), Feedback & Info, Share (Lane, Oct 16: option B);
+     the precinct moves to the paper's top line */
+  body.dk-app-on .dk-brand b,body.dk-app-on .dk-loc,body.dk-app-on .dk-sp{display:none}
+  body.dk-app-on #ph-list{display:flex}
+  #ph-list{flex:1;min-width:0;height:44px;align-items:center;gap:8px;padding:0 10px;border:none;border-radius:12px;background:rgba(255,249,241,.12);color:var(--ground);text-align:left;font:inherit;cursor:pointer}
+  #ph-list > span{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+  #ph-list b,#ph-list small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}  /* zoomed pages: one line each (Pass 1) */
+  #ph-list b{font-size:16px;font-weight:700}
+  #ph-list small{font-size:13px;color:rgba(255,249,241,.85)}
+  #ph-list svg{flex-shrink:0;margin-left:auto}
+  #ph-list:focus-visible{box-shadow:0 0 0 2px var(--plum),0 0 0 4px var(--ground);outline:none}
+  /* the phone's menu is a sheet (#ph-menu) */
   .dk-btn{width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,249,241,.45);background:transparent no-repeat center/22px;font-size:0;color:transparent;cursor:pointer;flex-shrink:0;padding:0}
-  #dk-help{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF9F1' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E%3C/svg%3E")}
+  #dk-help{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF9F1' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v6'/%3E%3Ccircle cx='12' cy='7.6' r='1.2' fill='%23FFF9F1' stroke='none'/%3E%3C/svg%3E")}  /* an (i): the only menu icon is gone from the page (Lane, Oct 16) */
   #dk-share{background-color:var(--ground);border-color:var(--ground);background-size:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234B2A6B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V3'/%3E%3Cpath d='M7 8l5-5 5 5'/%3E%3Cpath d='M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6'/%3E%3C/svg%3E")}
   .dk-btn:focus-visible{box-shadow:0 0 0 2px var(--plum),0 0 0 4px var(--ground);outline:none}
   /* landing: the laptop's plum band, compact; the form's paper overlaps its foot */
@@ -540,10 +552,6 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-kv{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:6px}
   .dk-kv b{display:block;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:26px;line-height:1.1}
   .dk-kv span{font-size:12px;color:var(--muted)}
-  body.ph-decide .ph-step{display:flex}
-  .ph-step{justify-content:space-between;background:#fff;border-top:1px solid var(--divider);border-radius:0 0 4px 4px;box-shadow:0 12px 32px rgba(36,26,46,.08);padding:2px 8px}
-  .ph-step button{min-height:48px;padding:0 10px;border:none;background:none;font:inherit;font-size:15px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-  .ph-step button:disabled{color:var(--lc);text-decoration:none;cursor:default}
   /* At a glance: one contest per row, the pick under its name */
   .dk-gh{display:flex;flex-direction:column;gap:10px}
   .dk-gh h1{font-size:30px}
@@ -601,15 +609,14 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   html.nudging .dk-desk{padding-bottom:calc(290px + env(safe-area-inset-bottom))}
   html.nudging{scroll-padding-bottom:calc(290px + env(safe-area-inset-bottom))}
   html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom));scroll-padding-top:calc(64px + env(safe-area-inset-top))}  /* Tab never lands under the bars (A3) */
-  /* the bottom bar: your ballot (the list) and the next undecided contest */
+  /* the bottom bar: back one contest (or back to the contest, from another view) and on to the next undecided one */
   body.dk-app-on:not(.ph-list) .ph-bar{display:flex}
   .ph-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;align-items:center;gap:10px;min-height:72px;padding:10px max(12px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:var(--plum)}
   .ph-bar button{font:inherit;cursor:pointer;border:none}
-  #ph-list{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:48px;padding:0 4px;background:transparent;color:#fff;text-align:left;border-radius:10px}
-  #ph-list b{display:block;font-size:15px;font-weight:600}
-  #ph-list small{display:block;font-size:13px;color:rgba(255,249,241,.8)}
-  #ph-list svg{flex-shrink:0}
-  #ph-next{min-height:48px;padding:0 16px;border-radius:12px;background:var(--ground);color:var(--plum);font-weight:700;font-size:15px;white-space:nowrap}
+  #ph-back{flex:0 1 auto;min-width:0;min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid rgba(255,249,241,.45);background:transparent;color:var(--ground);font-weight:600;font-size:15px}
+  #ph-back:disabled{color:rgba(255,249,241,.5);border-color:rgba(255,249,241,.22);cursor:default}
+  #ph-back,#ph-next{white-space:normal;line-height:1.2}  /* a zoomed page wraps them rather than spill Next's words (Pass 1, 2) */
+  #ph-next{flex:1;min-width:0;min-height:48px;padding:0 16px;border-radius:12px;background:var(--ground);color:var(--plum);font-weight:700;font-size:15px}
   .ph-bar button:focus-visible{box-shadow:0 0 0 2px var(--plum),0 0 0 4px var(--ground);outline:none}
   /* "Your ballot": the laptop's plum rail, full screen */
   body.ph-list{overflow:hidden}
@@ -679,6 +686,9 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 <header class="dk-hdr" id="dk-hdr">
   <span class="dk-brand"><svg width="21" height="26" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path></svg><b>Ballotta</b></span>
   <span class="dk-loc" id="dk-loc">Travis County · Nov 3, 2026 election</span>
+<!--PHONE-->
+  <button type="button" class="ph-only" id="ph-list" aria-expanded="false"><span><b>Your ballot</b><small id="ph-count"></small></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+<!--/PHONE-->
   <span class="dk-sp"></span>
   <span class="dk-when" id="dk-when"></span>
   <div class="dk-menuwrap">
@@ -721,9 +731,6 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <button type="button" class="ph-fold ph-only" id="ph-fold" aria-expanded="false" aria-controls="dk-notes"></button>
 <!--/PHONE-->
     <aside class="dk-notes" id="dk-notes" aria-label="Notes"></aside>
-<!--PHONE-->
-    <div class="ph-step ph-only" id="ph-step"><button type="button" id="ph-prev">← Previous</button><button type="button" id="ph-step-next">Next →</button></div>
-<!--/PHONE-->
   </div>
 </div>
 <section class="dk-hero" id="dk-hero" aria-label="About Ballotta">
@@ -733,8 +740,8 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <p class="dk-sub">See exactly what’s on your Travis County ballot for Nov 3, learn about the races from neutral sources, make your picks at your own pace, and share them with friends.</p>
 </section>
 <!--PHONE-->
-<nav class="ph-bar ph-only" id="ph-bar" aria-label="Your ballot">
-  <button type="button" id="ph-list" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span><b>Your ballot</b><small id="ph-count"></small></span></button>
+<nav class="ph-bar ph-only" id="ph-bar" aria-label="Move through your ballot">
+  <button type="button" id="ph-back">← Previous</button>
   <button type="button" id="ph-next"></button>
 </nav>
 <!--/PHONE-->
@@ -2267,12 +2274,17 @@ const phone = (() => {
   let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null;
   setTimeout(() => { booting = false; });  // a ballot already saved on this phone opens where the browser left the page
 
-  /* ----- after every laptop render: the bar, the fold, the Previous / Next row, the map fold ----- */
+  /* ----- after every laptop render: the title, the bottom bar, the fold, the map fold ----- */
   function bar() {
     if (!ballot.length) return;
-    const n = ballot.length, done = ballot.filter(b => D.decided(b.c.id)).length, nx = D.nextUndecided(D.ui.cur);
-    $('ph-count').textContent = done + ' of ' + n + ' decided';
-    $('ph-next').textContent = nx ? 'Next undecided →' : 'Crib sheet →';
+    const n = ballot.length, done = ballot.filter(b => D.decided(b.c.id)).length, nx = upcoming();
+    const dec = D.ui.view === 'decide', i = D.idx(D.ui.cur);
+    $('ph-count').textContent = done + ' of ' + n + ' decided';  // the paper's top line says which contest; this fits a 320px phone
+    $('ph-back').textContent = dec ? '← Previous' : '← Contest ' + (i + 1);
+    $('ph-back').setAttribute('aria-label', dec ? 'Previous contest' : 'Contest ' + (i + 1) + ', go back');
+    $('ph-back').disabled = dec && i <= 0;
+    // Everything decided: step through in order, then on to the crib sheet (the row under the paper is gone).
+    $('ph-next').textContent = nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : 'Crib sheet →';
     $('ph-next').classList.toggle('hidden', !nx && D.ui.view === 'crib');
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
@@ -2286,13 +2298,14 @@ const phone = (() => {
     cls.toggle('ph-decide', dec);
     bar();
     if (dec) {
-      const c = D.curB().c, L = DATA.learn[c.id] || {}, i = D.idx(c.id);
+      const c = D.curB().c, L = DATA.learn[c.id] || {};
       const what = c.type === 'measure' ? 'Sources' : L.office ? 'About this office · Learn more' : 'Learn more';
       $('ph-fold').textContent = (friend ? 'You and ' + friendName() + ' · ' : '') + what;
       $('ph-fold').setAttribute('aria-expanded', foldOpen ? 'true' : 'false');
       $('dk-notes').classList.toggle('ph-open', foldOpen);
-      $('ph-prev').disabled = i <= 0; $('ph-step-next').disabled = i >= ballot.length - 1;
     }
+    const top = $('dk-paper').querySelector('.dk-top .note'), pr = $('dk-loc').querySelector('b');  // the precinct left the top bar
+    if (top) top.textContent = (NARROW.matches && app && pr && /\d/.test(pr.textContent) ? pr.textContent + ' · ' : '') + 'Saved on this device';
     // A new contest or view, however it came (the bar, the list, a name in At a glance, a new ballot): start at its top.
     const key = app ? D.ui.view + ':' + D.ui.cur : '';
     if (key && key !== lastKey && NARROW.matches && !booting) moved();
@@ -2305,10 +2318,20 @@ const phone = (() => {
     const h = $('dk-paper').querySelector('h1');
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   }
-  function next() {
+  // The next undecided contest, never the one already open (it would go nowhere: Pass 1).
+  function upcoming() {
     const nx = D.nextUndecided(D.ui.cur);
+    return nx && !(D.ui.view === 'decide' && nx.c.id === D.ui.cur) ? nx : null;
+  }
+  function next() {
+    const nx = upcoming(), i = D.idx(D.ui.cur);
     if (nx) D.go(nx.c.id);
+    else if (D.ui.view === 'decide' && i < ballot.length - 1) D.go(ballot[i + 1].c.id);
     else { D.setView('crib'); track('view_opened', { view: 'crib' }); }
+  }
+  function back() {
+    if (D.ui.view === 'decide') D.act('prev');
+    else { D.setView('decide'); track('view_opened', { view: 'decide' }); }
   }
 
   /* ----- "Your ballot": the rail as a full-screen sheet ----- */
@@ -2334,6 +2357,7 @@ const phone = (() => {
   $('ph-list').addEventListener('click', openList);
   $('ph-done').addEventListener('click', () => closeList());
   $('ph-next').addEventListener('click', next);
+  $('ph-back').addEventListener('click', back);
   // The laptop's own listeners run first (they move, or change the view); then the sheet gets out of the way.
   $('dk-out').addEventListener('click', (e) => { if (NARROW.matches && e.target.closest('.dk-row')) closeList('paper'); });
   $('dk-views').addEventListener('click', (e) => { if (NARROW.matches && e.target.closest('button')) closeList('paper'); });
@@ -2360,8 +2384,6 @@ const phone = (() => {
     e.preventDefault(); closeList();
   }, true);
   $('ph-fold').addEventListener('click', () => { foldOpen = !foldOpen; after(); });
-  $('ph-prev').addEventListener('click', () => D.act('prev'));
-  $('ph-step-next').addEventListener('click', () => { const i = D.idx(D.ui.cur); if (i < ballot.length - 1) D.go(ballot[i + 1].c.id); });
   new MutationObserver(bar).observe($('dk-count'), { childList: true });  // a pick changes the count: the bar follows
   // The map waits behind a fold on a phone, however the vote view was drawn (a view change, the period, "See all", a new day).
   function mapFold() {

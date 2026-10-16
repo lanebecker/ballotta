@@ -413,6 +413,16 @@ Audits: Pass 1 (4 findings, all fixed test-first: the bar pushed the laptop rail
 
 Numbers: `71/71 passed, 27 skipped (index.html)`; `67/67 passed, 31 skipped (next/index.html)`; phone mutants: all 112 killed (P86–P118 new, P22/P33/P52/P76/P89/P91/P99/P109 re-anchored and re-run); laptop mutant anchors all present. `index.html` still 8e6eaf36…5a2e. One laptop test (`desk_launch_audit_fixes`) timed out once while both suites ran side by side on the 2-core sandbox; it passed alone and in a full rerun of the live suite (71/71), on a page byte-identical to the one it has always passed on.
 
+**Oct 16, round I (Lane: "There are two hamburger menus … the one at the bottom (the ballot) really feels like it should be on top").** Three options mocked on a design canvas ("Ballotta phone: top and bottom bars"); Lane picked B ("B is terrific. Let's do that."). Built test-first:
+
+- Top bar in the app: the logo mark, then **Your ballot** as a title button (it opens the list sheet; its second line is "N of M decided"), Feedback & Info as an (i), Share. The wordmark and precinct leave the top bar; the precinct moves to the paper's top line ("Precinct 300 · Saved on this device", phone width only, and only when there is a precinct number).
+- Bottom bar: "← Previous" (disabled on the first contest; from At a glance, Where to vote or the crib sheet it reads "← Contest N" and returns there, counting `view_opened` decide) and "Next undecided →", which never points at the contest already open; once everything is decided it reads "Next →" (in order), then "Crib sheet →". The "← Previous · Next →" row under the paper is gone.
+- One change from the mock, measured: the title's second line is just the progress. "Contest 12 of 63 · 10 decided" was cut off on 360–375px phones; the paper's top line already says which contest.
+
+Audits: Pass 1 (Next undecided went nowhere on the only undecided contest, now `upcoming()`; the bar and title spilled on zoomed pages; "Precinct ·" with no number; test gaps; the back button's name). Pass 2 on that rework (the wrap rule lost to a later `nowrap`, and the width check measured the box, not the words; the back button's name now starts with what it shows: "Contest 3, go back"). Mutant P56 (removing the Tab-scroll code) survived once the row under the paper was gone, and stays alive with the fold put under, or straddling, the bottom bar: measured with the code removed, Chromium scrolls every such case clear by itself through `scroll-padding`. The code stays for Safari; P56 is retired as equivalent in the test browser (128 phone mutants), and the test keeps the straddling check. Filed as pre-existing: #52 (laptop header "Precinct  · change" with no precinct), #53 (the laptop's Next undecided goes nowhere on the only undecided contest). Not fixed: at 160px (a 320px phone at 200% zoom) the title shrinks to its chevron.
+
+Numbers: `71/71 passed, 27 skipped (index.html)`; `67/67 passed, 31 skipped (next/index.html)`; every mutant on the changed tests re-run and killed (P119–P135 new, P11/P12/P134 re-anchored), 128 phone mutants in all. `index.html` still 8e6eaf36…5a2e.
+
 ## Appendix: the scripts
 
 Each block is one file; Task 0 unpacks them by the `file=` name after the language.
