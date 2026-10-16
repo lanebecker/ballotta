@@ -65,7 +65,6 @@ def build(preview=False, desk=None):
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
     if not (desk if desk is not None else (preview or DESK_LIVE)):
         html = strip_desk(html)
-    html = html.replace("__DATA__", data)
 
     # Self-hosted fonts: the only third-party requests are the county and Census lookups.
     fonts = ("<style>@font-face{font-family:'Zilla Slab';src:url('fonts/ZillaSlab-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}"
@@ -93,7 +92,9 @@ def build(preview=False, desk=None):
                      ('href="apple-touch-icon.png"', 'href="../apple-touch-icon.png"')]:
             assert a in html, a
             html = html.replace(a, b)
-    return html.replace("<!--ANALYTICS-->", analytics)
+    html = html.replace("<!--ANALYTICS-->", analytics)
+    # The data goes in last, so nothing in it can be mistaken for one of the placeholders above (#37).
+    return html.replace("__DATA__", data, 1)
 
 
 if __name__ == "__main__":

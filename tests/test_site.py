@@ -9,7 +9,7 @@ import http.server, threading, functools, json, pathlib, re, sys, traceback, url
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-PORT = 8765
+PORT = int(os.environ.get('BALLOTTA_PORT', '8765'))
 PAGE = os.environ.get('BALLOTTA_PAGE', 'index.html')
 BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
@@ -1168,7 +1168,7 @@ def desk_counts_laptop_features(b):
     pg.locator('tr[data-tr="c001"] a', has_text='League').first.click()
     assert events(pg)[-1] == ['source_opened', {'kind': 'league_guide', 'level': 'federal', 'layout': 'laptop'}], events(pg)[-1]
     pg.click('#dk-views [data-view="crib"]')
-    pg.click('#dk-c2'); pg.evaluate('window.print = () => {}'); pg.click('#dk-print')
+    pg.click('#dk-c2'); pg.evaluate('window.print = () => {}'); pg.click('#dk-notes [data-act="print"]')
     assert events(pg)[-1] == ['crib_printed', {'two_col': 'yes', 'hide_unopposed': 'no', 'layout': 'laptop'}], events(pg)[-1]
     pg.click('#dk-views [data-view="decide"]'); pg.click('.dk-row[data-row="c001"]')
     pg.locator('#dk-paper a', has_text='League guide answers').first.click()
@@ -1193,6 +1193,266 @@ def readme_lists_every_counted_event(b):
     missing = [n for n in event_names_in_page() if f'`{n}`' not in readme]
     assert not missing, ('README must list every counted event', missing)
     assert 'Global Privacy Control' in readme and 'ballotta.ownTracked' in readme and 'ballotta.progress' not in readme
+
+# ---------------------------------------------------------------- issues round A (Oct 15): #20–#24, #32–#34, #37, #39–#42
+@test
+def stored_junk_never_breaks_keep_or_share(b):
+    # #20: an old format or tampering in storage (reasons that aren't text, picks that aren't an object) can't make
+    # the page, Keep or Share throw.
+    ctx, pg = new_page(b); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.goto(BASE)
+    pg.evaluate("localStorage.setItem('ballotta.picks', 'null'); localStorage.setItem('ballotta.whys', JSON.stringify({c070: 5, c071: {x: 1}, c001: ['a']}))")
+    pg.reload(); lookup(pg); pick(pg, 'c070', 'Qadri'); pick(pg, 'c071', 'For')
+    pg.click('#a-keep'); pg.wait_for_selector('#d-keep[open]')
+    assert pg.text_content('#keepcount').startswith('Your 2 picks and 0 reasons'), pg.text_content('#keepcount')
+    pg.click('#d-keep [data-close]'); pg.click('#a-share'); pg.wait_for_selector('#d-share[open]')
+    assert '0 of these picks have reasons' in pg.text_content('#sharewhycount'), pg.text_content('#sharewhycount')
+    assert errs == [], errs
+    ctx.close()
+
+@test
+def share_names_block_lookalikes_and_nicknames(b):
+    # #21: look-alike letters from other alphabets, digits standing in for letters, and party nicknames don't get a
+    # share name past the reserved-name block. Real names in any alphabet still show.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    sn = lambda n: pg.evaluate('n => safeName(n)', n)
+    for bad in ['Lеague of Women Vоters', 'Travis Cоunty', 'ʟwv austin', 'Austin Dems', 'TX Dems', 'Dem', 'G.O.P.', 'Repubs of Austin',
+                'RNC', 'DNC Texas', 'L3ague', 'C0unty Clerk', 'ΟFFICIAL', 'Тravis Сounty Еlections', 'ᴠᴏᴛᴇʀ ɪɴꜰᴏ', 'Ballοtta',
+                'Travis-GOP', 'Tea-Party', 'Site-Admin', 'TX.State', 'Austin/Dems', 'G O P', 'D N C', 'V0te411', 'VOTE 4ll',   # Pass 1
+                'Off1cial', 'C1ty of Austin', 'L1bertarian', 'ɡop', '6OP',
+                'E1ect1on Info', 'Off1c1a1', 'Vote41I', 'VOTE4II', 'G. O. P.', 'D. N. C.', 'G+O+P', 'G~O~P', 'D^E^M^S', 'Off!cial', 'Ad|min',   # Pass 2
+                'TravisGOP', 'AustinDems', 'GOP2026', 'Dems4Travis', 'TeaParty', 'SiteAdmin', '9OP', '8allotta', 'VoterGuide',
+                'Cityof Austin', 'Travis Co. Tax Office', 'Travis County Clerk',   # Pass 3
+                'voterguide', 'VOTERGUIDE', 'cityofaustin', 'travisclerk', 'texasvoters', 'travistaxoffice', 'villageofx',
+                'GOPTravis', 'DNCTexas', 'VOTERInfo', 'STATEParty']:   # Pass 4
+        assert sn(bad) == '', bad
+    for good in ['Maya', 'Ana', 'José', "O'Brien", 'Dempsey', 'Ελένη', 'Ольга', '李明', 'Demetria', 'Gopal', 'Mary-Jane', 'Jean-Paul', 'A J', 'Liz 2',
+                 'J R R Tolkien', 'A.J.', 'D J', 'R2-D2', "D'Angelo", 'Estate Jones', 'G O Pal', 'Işıl Yılmaz', 'Partyka', 'Admina',
+                 'Gustavo Terrazas', 'Ivo Terzić', 'Felicity Ofori', 'Clerkin', 'DeMarco', 'DeShawn', 'McDonald', 'LaToya',   # Pass 3
+                 'Clerkson', 'DeClerck', 'JRRTolkien', 'DJ Khaled', 'MacArthur', 'Gopinath', 'Rajagopal', 'Staten']:   # Pass 4
+        assert sn(good) == good, good
+    ctx.close()
+
+@desk_test
+def desk_change_link_focus_ring_is_whole(b):
+    # #22: the header box that cuts a long address short with "…" must not also cut off the 4px focus ring around
+    # "change", in the app and on the landing page it returns to.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    for where in ('app', 'landing'):
+        c, l = box(pg, '#dk-change'), box(pg, '#dk-loc')
+        assert l['x'] <= c['x'] - 4 and l['y'] <= c['y'] - 4 and l['x'] + l['width'] >= c['x'] + c['width'] + 4 and l['y'] + l['height'] >= c['y'] + c['height'] + 4, (where, c, l)
+        if where == 'app': pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)')
+    ctx.close()
+
+@test
+def friend_card_long_names_and_honest_copy(b):
+    # #23: a 30-letter name with no spaces wraps instead of pushing the page sideways (friend card, compare, laptop
+    # chip and notes). #24: the card says most races link to neutral sources: 17 small districts have none.
+    name = 'Bartholomew' + 'w' * 19
+    url = link('s', {'v': 1, 'n': name, 'c': 'abcd2345', 'g': 1, 'p': {'70': 0}, 'w': {'70': 'x'}})
+    for wide in ((False, True) if HAS_DESK else (False,)):
+        ctx, pg = new_page(b, wide=wide); fresh_goto(pg, url); pg.wait_for_selector('#friend:not(.hidden)')
+        txt = pg.text_content('#friend')
+        assert 'Most races on your ballot link to neutral sources.' in txt and 'Each race' not in txt, txt
+        fits_width = lambda: pg.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+        assert fits_width(), ('friend landing scrolls sideways', wide)
+        if wide:
+            lookup_wide(pg); assert fits_width(), 'laptop app with the friend chip and notes scrolls sideways'
+        else:
+            lookup(pg); pg.click('#f-cmp'); pg.wait_for_selector('#compare:not(.hidden)')
+            assert fits_width(), 'compare scrolls sideways'
+        ctx.close()
+
+@desk_test
+def desk_friend_pick_in_rail_has_a_name(b):
+    # #32: a friend's pick in a rail row is read out ("Maya picked …"), not just the letter on the chip.
+    ctx, pg = new_page(b, wide=True); fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2346', 'g': 1, 'p': {'70': 0}}))
+    pg.wait_for_selector('#friend:not(.hidden)'); lookup_wide(pg)
+    first = pg.evaluate('optionsOf(BYID.c070)[0]')
+    row = pg.locator('#dk-out [data-row="c070"]')
+    expect(row).to_have_accessible_name(re.compile('Maya picked ' + re.escape(first)))
+    assert row.locator('.dk-fa').get_attribute('aria-hidden') == 'true'
+    ctx.close()
+
+@test
+def extra_pick_is_explained(b):
+    # #33: on a "vote for up to 2" race, a third pick changes nothing and says why, under the race's "Vote for up
+    # to 2" line, on both layouts; the note clears on the next pick. A refused key pick isn't announced as a pick.
+    st = json.dumps({'pr': '999', 'b': [113], 'mode': 'saved', 'at': 0, 'pt': None})
+    msg = 'You can pick up to 2. Unpick one first.'
+    for wide in ((False, True) if HAS_DESK else (False,)):
+        ctx, pg = new_page(b, wide=wide); pg.goto(BASE)
+        pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload()
+        opts = pg.evaluate('optionsOf(BYID.c113)')
+        if wide:
+            pg.wait_for_selector('body.dk-app-on')
+            line = lambda i: pg.locator('#dk-paper .dk-line').nth(i)
+            note = pg.locator('#dk-paper [data-limit="c113"]')
+        else:
+            pg.wait_for_selector('#result:not(.hidden)'); open_race(pg, 'c113')
+            line = lambda i: pg.locator('#rc113 .opt').nth(i)
+            note = pg.locator('#rc113 [data-limit="c113"]')
+        line(0).click(); line(1).click(); expect(note).to_have_text('')
+        line(2).click()
+        assert pg.evaluate("current('c113')") == opts[:2], pg.evaluate("current('c113')")
+        expect(note).to_have_text(msg); assert note.get_attribute('role') == 'status'
+        assert line(2).get_attribute('aria-pressed') == 'false'
+        if wide:
+            pg.focus('#dk-paper'); pg.keyboard.press('3'); pg.wait_for_timeout(300)
+            assert pg.evaluate("current('c113')") == opts[:2] and pg.text_content('#dk-live') == '', pg.text_content('#dk-live')
+        line(0).click(); expect(note).to_have_text('')
+        line(2).click(); assert pg.evaluate("current('c113')") == [opts[1], opts[2]]
+        if not wide:                                                               # Clear my picks clears the note too (Pass 1)
+            line(0).click(); expect(note).to_have_text(msg)
+            pg.once('dialog', lambda d: d.accept()); pg.click('#reset')
+            assert pg.evaluate("current('c113')") == []; expect(note).to_have_text('')
+        ctx.close()
+
+@test
+def dates_move_on_in_a_tab_left_open(b):
+    # #34: today's date is read when drawing, so a tab left open past midnight moves on: Election Day after Oct 30,
+    # and the laptop header's line. A period the visitor chose stays chosen.
+    import datetime as dt
+    for wide, choose in ((False, False), (False, True)) + (((True, False),) if HAS_DESK else ()):
+        ctx, pg = new_page(b, wide=wide); pg.clock.install(time=dt.datetime(2026, 10, 30, 23, 58)); pg.goto(BASE)
+        eday = lambda: pg.get_attribute('#t-eday', 'aria-pressed')
+        assert eday() == 'false', (wide, choose)
+        if wide: assert pg.text_content('#dk-when') == 'Early voting through Fri Oct 30 · 7am–7pm', pg.text_content('#dk-when')
+        if choose: pg.evaluate("document.getElementById('t-early').click()")
+        pg.clock.run_for(5 * 60 * 1000)
+        assert eday() == ('false' if choose else 'true'), (wide, choose)
+        if wide: assert pg.text_content('#dk-when') == 'Election Day is Tue Nov 3 · 7am–7pm', pg.text_content('#dk-when')
+        ctx.close()
+    if HAS_DESK:
+        # Typing a reason on the laptop across midnight: the new day must not take focus away, or the rest of the
+        # sentence would run as shortcuts (picks, skips, moves) (Pass 1).
+        st = json.dumps({'pr': '999', 'b': [70, 71, 113], 'mode': 'saved', 'at': 0, 'pt': None})
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=dt.datetime(2026, 10, 30, 23, 58)); pg.goto(BASE)
+        pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+        cid = pg.evaluate('ballot[0].c.id')
+        pg.focus('#dk-w'); pg.keyboard.type('Because she ')
+        pg.clock.run_for(5 * 60 * 1000)
+        assert pg.text_content('#dk-when') == 'Election Day is Tue Nov 3 · 7am–7pm', 'the header still moves on'
+        pg.keyboard.type('knows 1 thing, and so on')
+        assert pg.evaluate('document.activeElement.id') == 'dk-w', pg.evaluate('document.activeElement.tagName')
+        assert pg.evaluate(f"whys['{cid}']") == 'Because she knows 1 thing, and so on', pg.evaluate('whys')
+        assert pg.evaluate('JSON.stringify(picks)') == '{}', pg.evaluate('JSON.stringify(picks)')
+        ctx.close()
+        # In the vote view, the new day re-draws the hours but keeps the visitor's place (Pass 2).
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=dt.datetime(2026, 10, 30, 23, 58)); pg.goto(BASE)
+        pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+        pg.click('#dk-views [data-view="vote"]'); pg.focus('#dk-paper [data-period="early"]')
+        pg.clock.run_for(5 * 60 * 1000)
+        assert pg.get_attribute('#dk-paper [data-period="eday"]', 'aria-pressed') == 'true', 'the vote view moved on to Election Day'
+        assert pg.evaluate('document.activeElement.id') == 'dk-paper', 'a new list: focus on the paper, not on another center (Pass 4)'
+        ctx.close()
+        # ...and on a Directions link, by its position in the list (Pass 3)
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=dt.datetime(2026, 10, 18, 23, 58)); pg.goto(BASE)
+        pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+        pg.click('#dk-views [data-view="vote"]'); link3 = pg.locator('#dk-paper a', has_text='Directions').nth(2); link3.focus()
+        href = link3.get_attribute('href'); pg.clock.run_for(5 * 60 * 1000)
+        assert pg.text_content('#dk-when') == 'Early voting through Fri Oct 30 · 7am–7pm', pg.text_content('#dk-when')
+        assert pg.evaluate('document.activeElement.getAttribute("href")') == href, pg.evaluate('document.activeElement.outerHTML.slice(0, 120)')
+        ctx.close()
+
+@test
+def build_inserts_data_last(b):
+    # #37: the ballot data goes in after every other placeholder, so text in the data that looks like one is never
+    # changed by the build.
+    import types
+    m = build_module()
+    odd = '{"x": "__OG_IMAGE__ <!--ANALYTICS--> <!--FONTS-->f<!--/FONTS--> url(\'fonts/ href=\\"favicon.svg\\" __DATA__"}'
+    m.json = types.SimpleNamespace(load=json.load, dumps=lambda *a, **k: odd)
+    for preview in (False, True):
+        html = m.build(preview=preview)
+        assert 'const DATA = ' + odd + ';' in html, preview
+
+@desk_test
+def desk_moves_are_announced(b):
+    # #39: J, K and N say where they landed ("Contest 2 of 63: …"), since the paper's own label never changes.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    n = pg.evaluate('ballot.length'); t = lambda i: pg.evaluate(f'cleanTitle(ballot[{i}].c)')
+    said = lambda text: pg.wait_for_function('t => document.getElementById("dk-live").textContent === t', arg=text, timeout=3000)
+    pg.locator('#dk-out .dk-row').first.click(); said(f'Contest 1 of {n}: {t(0)}. No pick yet.')
+    pg.keyboard.press('j'); said(f'Contest 2 of {n}: {t(1)}. No pick yet.')
+    first = pg.evaluate('optionsOf(ballot[1].c)[0]')
+    pg.keyboard.press('1'); pg.keyboard.press('k'); said(f'Contest 1 of {n}: {t(0)}. No pick yet.')
+    pg.keyboard.press('j'); said(f'Contest 2 of {n}: {t(1)}. Picked {first}.')
+    pg.keyboard.press('n'); said(f'Contest 3 of {n}: {t(2)}. No pick yet.')
+    ctx.close()
+
+@desk_test
+def desk_old_link_warning_gone_after_new_lookup(b):
+    # #40: a damaged-link warning from phone width doesn't reappear after a new lookup and a widen past 1024px.
+    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)
+    pg.evaluate("location.hash = '#s2' + 'A'.repeat(40)")
+    pg.wait_for_function("!document.getElementById('lookupmsg').classList.contains('hidden')", timeout=5000)
+    assert not pg.evaluate("document.getElementById('dk-say').classList.contains('hidden')"), 'precondition: the laptop copy holds the warning'
+    pg.evaluate("document.getElementById('go').click()")
+    pg.wait_for_function("(window.__events||[]).filter(e => e[0] === 'ballot_found').length === 2", timeout=30000)
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(300)
+    assert pg.evaluate("document.getElementById('dk-say').classList.contains('hidden')"), 'stale warning came back on the laptop layout'
+    ctx.close()
+
+@test
+def mutation_runner_restores_on_any_signal(b):
+    # #41: Ctrl-C, a kill or a hang-up while a mutant is on disk always puts the original back before exiting.
+    import subprocess, tempfile, signal as S
+    assert "\nif __name__ == '__main__':" in (ROOT / 'tests/mutate_desk.py').read_text(encoding='utf-8'), 'importing the runner must not start a run'
+    for sig in (S.SIGINT, S.SIGTERM, S.SIGHUP):
+        f = pathlib.Path(tempfile.mkdtemp()) / 'page.html'; f.write_text('original', encoding='utf-8')
+        code = ('import sys, time, pathlib; sys.argv = ["mutate_desk.py"]; sys.path.insert(0, %r); import mutate_desk as R\n'
+                'f = pathlib.Path(%r); R.PENDING.append((f, "original")); R.put(f, "MUTANT"); print("ready", flush=True); time.sleep(60)') % (str(ROOT / 'tests'), str(f))
+        p = subprocess.Popen([sys.executable, '-c', code], cwd=ROOT, stdout=subprocess.PIPE, text=True)
+        assert p.stdout.readline().strip() == 'ready', sig
+        assert f.read_text(encoding='utf-8') == 'MUTANT', 'precondition: the mutant is on disk'
+        p.send_signal(sig); p.wait(20)
+        assert f.read_text(encoding='utf-8') == 'original', (sig, f.read_text(encoding='utf-8'))
+
+@test
+def phone_can_clear_everything_from_the_footer(b):
+    # #42: someone who only opened a friend's link (no ballot of their own) can still clear what Ballotta stored:
+    # a "Clear everything on this device" button in the footer, shown only while this browser holds something.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    foot = pg.locator('#reset-all-foot')
+    expect(foot).to_be_hidden()
+    fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2347', 'g': 1, 'p': {'70': 0}}))
+    pg.wait_for_selector('#friend:not(.hidden)'); expect(foot).to_be_visible()
+    pg.once('dialog', lambda d: d.accept()); foot.click()
+    pg.wait_for_function("!Object.keys(localStorage).some(k => k.startsWith('ballotta.')) && !Object.keys(sessionStorage).some(k => k.startsWith('ballotta.'))", timeout=5000)
+    pg.wait_for_load_state(); expect(foot).to_be_hidden()
+    other = ctx.new_page(); other.goto(BASE); other.evaluate("localStorage.setItem('ballotta.name', JSON.stringify('Maya'))")
+    expect(foot).to_be_visible(); other.close()                                # another tab saved something (Pass 1)
+    pg.evaluate("localStorage.removeItem('ballotta.name'); document.getElementById('reset-all-foot').classList.add('hidden')")
+    lookup(pg); expect(foot).to_be_visible()                                   # shown as soon as a lookup saves the ballot
+    pg.reload(); pg.wait_for_selector('#result:not(.hidden)'); expect(foot).to_be_visible()   # and on a later visit
+    ctx.close()
+
+@desk_test
+def desk_print_button_opens_the_crib_sheet(b):
+    # Lane (Oct 15): the left column's Print opens the Crib sheet view (with its print options); it doesn't print.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
+    pg.evaluate('() => { window.__printed = 0; window.print = () => { window.__printed++; }; }')   # a function: a bare assignment string would be called once by evaluate
+    assert pg.text_content('#dk-print') == 'Print…'                                # it opens options: an ellipsis (Pass 2)
+    pg.focus('#dk-print'); pg.keyboard.press('Enter')
+    assert pg.get_attribute('#dk-views [data-view="crib"]', 'aria-current') == 'page'
+    assert pg.locator('#dk-notes #dk-c2').count() == 1 and pg.evaluate('window.__printed') == 0
+    assert pg.evaluate('document.activeElement.dataset.act') == 'print', 'keyboard users land on the real Print button (Pass 2)'
+    assert 'crib_printed' not in names(pg) and events(pg)[-1] == ['view_opened', {'view': 'crib', 'layout': 'laptop'}], events(pg)[-1]
+    pg.focus('#dk-print'); pg.keyboard.press('Enter')                              # already there: not counted again (Pass 2)
+    assert [e[1].get('view') for e in events(pg) if e[0] == 'view_opened'] == ['crib'], events(pg)
+    pg.click('#dk-views [data-view="decide"]'); pg.click('#dk-print')               # a mouse click doesn't move focus: Space won't print (Pass 3)
+    assert pg.evaluate('document.activeElement.dataset.act') != 'print'
+    pg.set_viewport_size({'width': 1100, 'height': 800})                            # the notes sit below the paper at 1024–1279px (Pass 3)
+    pg.click('#dk-views [data-view="decide"]'); pg.focus('#dk-print'); pg.keyboard.press('Enter')
+    r = pg.evaluate('(() => { const r = document.activeElement.getBoundingClientRect(); return [document.activeElement.dataset.act, r.top, r.bottom, innerHeight]; })()')
+    assert r[0] == 'print' and r[1] >= 0 and r[2] <= r[3], ('the focused Print button is off screen', r)
+    pg.click('#dk-views [data-view="decide"]'); pg.focus('#dk-print'); before = pg.evaluate('window.__printed')
+    for _ in range(3): pg.keyboard.down('Enter')                                    # a held Enter: its repeats don't print (Pass 4)
+    pg.keyboard.up('Enter'); assert pg.evaluate('window.__printed') == before, 'holding Enter on Print… printed'
+    pg.click('#dk-notes [data-act="print"]')
+    assert pg.evaluate('window.__printed') == 1 and events(pg)[-1][0] == 'crib_printed'
+    ctx.close()
 
 def main():
     srv = serve()

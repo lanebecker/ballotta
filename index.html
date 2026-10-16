@@ -132,6 +132,8 @@ details[open] .chev{transform:rotate(90deg)}
 .chip.lilac{background:var(--lilac);color:var(--plum)}
 .chips a{font-size:12px}
 .who{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:12px;background:var(--lilac)}
+#friend h2,#friend .note,#friend .fp,#compare h2,#compare .note,#compare .cmp,#compare .lead{overflow-wrap:anywhere}  /* a 30-letter name with no spaces (#23) */
+.limit:not(:empty){display:block;margin-top:4px;font-weight:600;color:var(--plum)}  /* "You can pick up to 2…" (#33) */
 .av{width:40px;height:40px;border-radius:50%;background:var(--plum);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .fp{display:flex;flex-direction:column;gap:3px;padding:11px 16px;border-top:1px solid var(--divider)}
 .fp:first-child{border-top:none}
@@ -197,7 +199,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:288px;background:var(--plum)}
   .dk-brand{position:absolute;left:18px;top:0;bottom:0;display:flex;align-items:center;gap:9px;z-index:1;background:var(--plum)}  /* sits on the plum block; says so itself */
   .dk-brand b{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:23px;font-weight:600;color:var(--ground)}
-  .dk-loc{font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .dk-loc{font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;padding:4px;margin:-4px}  /* room for the focus ring on "change" (#22) */
   .dk-loc b{font-weight:600;color:var(--ink)}
   .dk-sp{flex:1}
   .dk-when{font-size:13px;color:var(--muted);white-space:nowrap}
@@ -281,6 +283,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-nav{display:flex;justify-content:space-between;align-items:center;gap:12px}
   .dk-nav .btn{max-width:72%;min-width:0}
   .dk-nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .dk-fcta,.dk-fchip,.dk-fbox,.dk-fp{overflow-wrap:anywhere;min-width:0}  /* #23 */
   .dk-fchip{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;padding:4px 12px 4px 4px;border-radius:999px;background:var(--lilac);color:var(--plum);font-size:13px;font-weight:600}
   .dk-notes{display:flex;flex-direction:column;gap:22px;padding:8px 0;min-width:0}
   .dk-notes h3{margin-bottom:6px;font-size:11px;letter-spacing:.09em}
@@ -438,7 +441,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <div class="dk-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="dk-q" type="search" placeholder="Find a race or a name" aria-label="Find a race or a name" autocomplete="off"><span class="kbd" aria-hidden="true">/</span></div>
     <div class="dk-filt" id="dk-filt" role="group" aria-label="Show"><button type="button" data-f="all"></button><button type="button" data-f="und"></button><button type="button" data-f="why"></button></div>
     <div class="dk-out" id="dk-out"></div>
-    <div class="dk-foot"><button type="button" id="dk-keep">Keep my picks</button><button type="button" id="dk-print">Print</button></div>
+    <div class="dk-foot"><button type="button" id="dk-keep">Keep my picks</button><button type="button" id="dk-print">Print…</button></div>
   </nav>
   <p class="dk-vh" id="dk-live" aria-live="polite"></p>
   <div class="dk-desk" id="dk-desk" role="main">
@@ -556,6 +559,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
     <p class="note" style="color:var(--ink2)">Did your ballot look right? Anything confusing, broken, or missing? Your feedback shapes what Ballotta becomes.</p>
     <a class="btn secondary" id="feedback" href="#">Send feedback by email</a>
     <p class="note">Opens your email app with a few details filled in (your precinct and how the lookup went, never your address).</p>
+    <button type="button" class="x hidden" id="reset-all-foot" style="align-self:flex-start">Clear everything on this device</button>
   </footer>
 </main>
 
@@ -604,9 +608,12 @@ const SVC = 'https://taxmaps.traviscountytx.gov/arcgis/rest/services/';
 const FIELDS = 'Address,Unit,ZIP,Precinct,Commissioner,Congressional,JPConstable,Legislative,Senate,Muni,MuniSMD,ISD,ISDSMD,College,MUD,ESD,ESD2,Library,WCID,Temp,CodeCat';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
-const SS = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }, del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
-let picks = LS.get('ballotta.picks', {}), whys = LS.get('ballotta.whys', {});
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} footClear(); } };
+const SS = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} footClear(); }, del(k) { try { sessionStorage.removeItem(k); } catch (e) {} footClear(); } };
+// Saved state is checked when read: an old format or tampering (a reason that isn't text, picks that aren't an
+// object) can't make the page, Keep or Share throw (#20).
+const plain = (o) => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+let picks = plain(LS.get('ballotta.picks', {})), whys = Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string'));
 let ballot = [];  // [{c, conf, note}]
 let here = null;  // [lon, lat] of the looked-up address, kept on this device only
 let lastLookup = { mode: '', precinct: '', total: 0 };
@@ -886,7 +893,7 @@ function raceHTML(b) {
     body += '<span style="font-size:15px;font-weight:600">How will you vote?</span><div class="mopts">' + opts.map(o => optHTML(c, o, cur, '')).join('') + '</div>';
   } else {
     if (L.office) body += '<div class="sub"><span class="ov">What this office does</span><p>' + esc(L.office) + '</p></div>';
-    body += '<p class="note">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</p>';
+    body += '<p class="note">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + (n > 1 ? '<span class="limit" data-limit="' + c.id + '" role="status"></span>' : '') + '</p>';
     const raw = c.choices.filter(x => x !== 'Write-in');
     body += raw.map((o, i) => {
       const m = o.match(/\((REP|DEM|LIB|GRN)\)$/), name = opts[i];
@@ -916,12 +923,21 @@ function pick(cid, val) {
   const c = BYID[cid], n = seats(c);
   let cur = current(cid).filter(x => x !== '__skip');
   if (val === '__skip') cur = current(cid)[0] === '__skip' ? [] : ['__skip'];
-  else if (n > 1) { cur = cur.includes(val) ? cur.filter(x => x !== val) : (cur.length < n ? cur.concat(val) : cur); }
+  else if (n > 1) {
+    if (!cur.includes(val) && cur.length >= n) { limitNote(cid, n); return false; }  // already N picks: say why nothing changed (#33)
+    cur = cur.includes(val) ? cur.filter(x => x !== val) : cur.concat(val);
+  }
   else cur = current(cid)[0] === val ? [] : [val];
+  limitNote(cid, 0);
   picks[cid] = cur; LS.set('ballotta.picks', picks);
   document.querySelectorAll('[data-c="' + cid + '"][data-pick]').forEach(b => { const on = current(cid).includes(b.dataset.pick); b.setAttribute('aria-pressed', on ? 'true' : 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.toggle('on', on); });
   $('s' + cid).innerHTML = summaryHTML(cid);
   refresh();
+  return true;
+}
+// Under the race's "Vote for up to N" line, on both layouts; a status region, so screen readers say it too. 0 clears it.
+function limitNote(cid, n) {
+  document.querySelectorAll('[data-limit="' + cid + '"]').forEach(s => { s.textContent = n ? 'You can pick up to ' + n + '. Unpick one first.' : ''; });
 }
 function refresh() {
   const total = ballot.length, done = ballot.filter(b => current(b.c.id).length).length, chk = ballot.filter(b => b.conf === 'medium').length;
@@ -966,8 +982,11 @@ function renderCrib() {
 $('withwhy').addEventListener('change', renderCrib);
 
 /* ---------- where and when to vote ---------- */
-const NOW = new Date();
-let period = (NOW.getFullYear() > 2026 || (NOW.getMonth() === 9 && NOW.getDate() > 30) || NOW.getMonth() > 9) ? 'eday' : 'early';
+// Today's date is read whenever something is drawn, never once at load: a tab left open past midnight moves on to
+// the new day (#34). A voting period the visitor picked stays picked.
+const today = () => new Date();
+const defaultPeriod = () => { const d = today(); return (d.getFullYear() > 2026 || (d.getMonth() === 9 && d.getDate() > 30) || d.getMonth() > 9) ? 'eday' : 'early'; };
+let period = defaultPeriod(), periodChosen = false;
 let showAll = false;
 function miles(a, b) {
   const R = 3958.8, toR = Math.PI / 180, dLat = (b[1] - a[1]) * toR, dLon = (b[0] - a[0]) * toR;
@@ -976,7 +995,7 @@ function miles(a, b) {
 }
 function renderVote() {
   $('t-early').setAttribute('aria-pressed', period === 'early'); $('t-eday').setAttribute('aria-pressed', period === 'eday');
-  const started = NOW >= new Date(2026, 9, 19);
+  const started = today() >= new Date(2026, 9, 19);
   $('hours').innerHTML = period === 'early'
     ? '<span class="ov">Mon Oct 19 – Fri Oct 30</span><p><b>7am–7pm every day</b>, weekends included.</p><p class="note">Some sites stay open until 10pm on Thu Oct 29 and Fri Oct 30.</p>'
     : '<span class="ov">Tuesday, Nov 3</span><p><b>7am–7pm</b> at ' + DATA.sites.eday.length + ' vote centers.</p><p class="note">If you’re in line by 7pm, you can vote.</p>';
@@ -1017,8 +1036,18 @@ function outbound(e) {
 }
 document.addEventListener('click', outbound, true);
 document.addEventListener('auxclick', outbound, true);
-$('t-early').addEventListener('click', () => { period = 'early'; renderVote(); });
-$('t-eday').addEventListener('click', () => { period = 'eday'; renderVote(); });
+$('t-early').addEventListener('click', () => { period = 'early'; periodChosen = true; renderVote(); });
+$('t-eday').addEventListener('click', () => { period = 'eday'; periodChosen = true; renderVote(); });
+let shownDay = today().toDateString();
+function dayCheck() {  // a new day since the page was drawn: redraw what depends on the date
+  const d = today().toDateString(); if (d === shownDay) return;
+  shownDay = d;
+  const was = period;
+  if (!periodChosen) period = defaultPeriod();
+  renderVote();/*DESK*/ if (window.desk) try { desk.today(period !== was); } catch (e) {}/*/DESK*/  // only what shows the date: a full redraw would take focus from a reason being typed (Pass 1)
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') dayCheck(); });
+setInterval(dayCheck, 60000);
 $('allsites').addEventListener('click', () => { showAll = !showAll; renderVote(); });
 
 /* ---------- links: picks packed into the #fragment ---------- */
@@ -1230,17 +1259,42 @@ $('share-go').addEventListener('click', async () => {
 
 /* ---------- a friend's shared picks ---------- */
 let friend = null;  // {name, code, gen, P, W}
-// A share link is made by anyone, so a name can't claim to be an organization or Ballotta itself.
-// Best effort only (look-alike letters from other alphabets can still slip through); the "Ballotta doesn't endorse
-// anyone" copy is the real guard. Tested on a skeleton with spaces, punctuation, marks and invisible characters removed.
-const RESERVED = /league|lwv|voter|vote411|county|clerk|official|ballotta|cityof|villageof|election|government|democrat|republican|libertarian|greenparty|taxoffice|campaign|secretaryofstate/;
-const RESERVED_WORDS = /\b(state|party|admin|gop)\b/;
+// A share link is made by anyone, so a name can't claim to be an organization, a party or Ballotta itself.
+// Best effort only; the "Ballotta doesn't endorse anyone" copy is the real guard. The name shown is never changed:
+// only a folded copy is checked (#21). Look-alike letters from other alphabets (Cyrillic а, Greek ο, small-capital ʟ…)
+// become the Latin letters they imitate; then each group of characters that stand in for one another (1 l i | !,
+// 0 o, 3 e, 4 @ a, 5 $ s, 6 g, 7 t) becomes one letter, in the name and in the reserved words alike, so any mix
+// matches ("E1ect1on", "Vote41I"). Long, distinctive words are found anywhere, even across spaces (RESERVED); short
+// ones only as whole words (RESERVED_WORDS), so a real name like "Gustavo Terrazas" ("voter") isn't blocked (Pass 3).
+// Words are read with punctuation and symbols as spaces, spaced-out single letters joined ("G. O. P."), and in a copy
+// split where case or letters/digits change ("TravisGOP", "GOP2026"); | ! $ @ are read both as letters and as nothing.
+// A hyphenated part that is a reserved word ("Mo-Dem") is blocked too: rare, accepted (Pass 2).
+const LOOKALIKE = { 'а': 'a', 'в': 'b', 'с': 'c', 'ԁ': 'd', 'е': 'e', 'ё': 'e', 'һ': 'h', 'н': 'h', 'і': 'i', 'ї': 'i', 'ј': 'j', 'к': 'k', 'ӏ': 'l',
+  'м': 'm', 'о': 'o', 'р': 'p', 'ԛ': 'q', 'г': 'r', 'ѕ': 's', 'т': 't', 'у': 'y', 'ү': 'y', 'х': 'x', 'ԝ': 'w',
+  'α': 'a', 'β': 'b', 'ε': 'e', 'η': 'n', 'ι': 'i', 'κ': 'k', 'ν': 'v', 'ο': 'o', 'ρ': 'p', 'τ': 't', 'υ': 'u', 'χ': 'x', 'γ': 'y',
+  'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ɢ': 'g', 'ʜ': 'h', 'ɪ': 'i', 'ᴊ': 'j', 'ᴋ': 'k', 'ʟ': 'l', 'ᴍ': 'm', 'ɴ': 'n',
+  'ᴏ': 'o', 'ᴘ': 'p', 'ʀ': 'r', 'ꜱ': 's', 'ᴛ': 't', 'ᴜ': 'u', 'ᴠ': 'v', 'ᴡ': 'w', 'ʏ': 'y', 'ᴢ': 'z', 'ɡ': 'g', 'ɑ': 'a', 'ı': 'i' };
+const FOLD = { '1': 'l', 'i': 'l', '|': 'l', '!': 'l', '0': 'o', '3': 'e', '4': 'a', '@': 'a', '5': 's', '$': 's', '6': 'g', '7': 't', '8': 'b', '9': 'g' };
+const fold = (t) => t.replace(/[1i|!0345@$6789]/g, ch => FOLD[ch]);
+const RESERVED = new RegExp(['league', 'lwv', 'vote411', 'county', 'official', 'ballotta', 'election', 'government', 'democrat', 'republican',
+  'libertarian', 'greenparty', 'campaign', 'secretaryofstate', 'taxoffice', 'villageof'].map(fold).join('|'));
+// voter, clerk and city-of also count at the start or end of one word with 4+ more letters ("voterguide", "travisclerk"),
+// never across a space, so "Clerkson" and "Gustavo Terrazas" are fine (Pass 4).
+const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')\\S{4,}|\\S{4,}(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')(\\s|$)');
+const RESERVED_WORDS = new RegExp('\\b(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
+  'tax ?office'].map(fold).join('|') + ')\\b');
 function safeName(n) {
   if (typeof n !== 'string') return '';
   n = n.normalize('NFKC').replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 30);
-  const low = n.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
-  const skel = low.replace(/[\s\p{P}\p{S}]/gu, '');
-  return RESERVED.test(skel) || RESERVED_WORDS.test(low) ? '' : n;
+  const latin = (t) => [...t.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()].map(ch => LOOKALIKE[ch] || ch).join('');
+  const low = latin(n), split = latin(n.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
+  const run = (t) => t.replace(/[\s\p{P}\p{S}]/gu, '');
+  const words = (t) => {
+    const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
+    return [t.replace(/[\p{P}\p{S}]/gu, ''), w, w.replace(/(?<=(^|\s)\S)\s(?=\S(\s|$))/gu, '')];
+  };
+  const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split)];
+  return forms.some(t => RESERVED.test(run(t)) || words(t).some(x => RESERVED_WORDS.test(x) || RESERVED_GLUED.test(x))) ? '' : n;
 }
 function friendName() { return friend && friend.name ? friend.name : 'Your friend'; }
 function openFriend(o, fresh) {
@@ -1255,7 +1309,7 @@ function openFriend(o, fresh) {
     '<p class="note" style="padding:0 4px">These are ' + esc(friend.name ? friend.name + '’s' : 'your friend’s') + ' choices for their ballot. Yours may have different races, depending on where you’re registered.</p>' +
     (n ? groups : '<p class="note">This link didn’t contain any picks we could read.</p>') +
     '<button class="btn" type="button" id="f-own">See my own ballot</button><button class="btn secondary" type="button" id="f-cmp">Compare with my picks</button>' +
-    '<p class="note" style="padding:0 4px">Picks are ' + esc(friend.name ? friend.name + '’s' : 'your friend’s') + ' own. Ballotta doesn’t endorse anyone. Each race on your ballot links to neutral sources. <button type="button" class="x" id="f-hide" style="min-height:0;font-size:13px;padding:0">Hide these picks</button></p>';
+    '<p class="note" style="padding:0 4px">Picks are ' + esc(friend.name ? friend.name + '’s' : 'your friend’s') + ' own. Ballotta doesn’t endorse anyone. Most races on your ballot link to neutral sources. <button type="button" class="x" id="f-hide" style="min-height:0;font-size:13px;padding:0">Hide these picks</button></p>';
   f.classList.remove('hidden');
   $('f-own').addEventListener('click', seeOwn);
   $('f-cmp').addEventListener('click', () => { wantCompare = true; if (ballot.length) showCompare(); else seeOwn(); });
@@ -1331,15 +1385,24 @@ $('feedback').addEventListener('click', (e) => {
 });
 $('print').addEventListener('click', () => { track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print(); });
 // Clear everything on this device (#29): every ballotta.* key in this browser, then a fresh page. Asks first.
-$('reset-all').addEventListener('click', () => {
+function clearEverything() {
   if (!confirm('Clear everything Ballotta saved in this browser: your ballot, picks, reasons, map location and share name?')) return;
   track('cleared', { what: 'everything' });
   ['localStorage', 'sessionStorage'].forEach(n => { try { const s = window[n]; Object.keys(s).filter(k => k.startsWith('ballotta.')).forEach(k => s.removeItem(k)); } catch (e) {} });  // blocked storage can't stop the reload
   location.replace(location.pathname);
-});
+}
+$('reset-all').addEventListener('click', clearEverything);
+$('reset-all-foot').addEventListener('click', clearEverything);  // reachable without a ballot of your own, e.g. after only a friend's link (#42)
+// The footer's button shows only while this browser holds something from Ballotta (storage writes call this).
+function footClear() {
+  let has = false;
+  ['localStorage', 'sessionStorage'].forEach(n => { try { if (Object.keys(window[n]).some(k => k.startsWith('ballotta.'))) has = true; } catch (e) {} });
+  const f = $('reset-all-foot'); if (f) f.classList.toggle('hidden', !has);
+}
+window.addEventListener('storage', () => footClear());  // another tab saved something: the footer button follows (Pass 1)
 // Clear everything in another tab: this tab's copy is stale, so start fresh instead of writing it back.
 window.addEventListener('storage', (e) => { if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null) location.replace(location.pathname); });
-$('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
+$('reset').addEventListener('click', () => { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } });
 
 /*DESK*/
 /* ---------- laptop layout (1024px and wider) ----------
@@ -1377,7 +1440,7 @@ const desk = (() => {
   }
   function samePick(id) { const f = friend.P[id], m = current(id); return m.length > 0 && m[0] !== '__skip' && m.length === f.length && m.every(x => f.includes(x)); }
   function whenLine() {
-    const d = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()).getTime(), t = (m, day) => new Date(2026, m, day).getTime();
+    const now = today(), d = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), t = (m, day) => new Date(2026, m, day).getTime();
     if (d < t(9, 19)) return 'Early voting starts Mon Oct 19';
     if (d <= t(9, 30)) return 'Early voting through Fri Oct 30 · 7am–7pm';
     if (d < t(10, 3)) return 'Election Day is Tue Nov 3 · 7am–7pm';
@@ -1421,7 +1484,8 @@ const desk = (() => {
       html += '<div class="dk-g"><span>' + esc(LEVEL_LABEL[L] || L) + '</span><span>' + all.filter(b => decided(b.c.id)).length + '/' + all.length + '</span></div>';
       html += shown.map(b => {
         const id = b.c.id, v = current(id), sub = !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : v.map(x => optLabel(b.c, x)).join(', ');
-        const fa = friend && friend.P[id] ? '<span class="dk-fa' + (samePick(id) ? '' : ' diff') + '" title="' + possessive() + ' pick: ' + esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) + '">' + initial() + '</span>' : '';
+        const fp = friend && friend.P[id] ? esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) : '';  // read out as "Maya picked …" (#32)
+        const fa = fp ? '<span class="dk-fa' + (samePick(id) ? '' : ' diff') + '" aria-hidden="true" title="' + possessive() + ' pick: ' + fp + '">' + initial() + '</span><span class="dk-vh">' + esc(friendName()) + ' picked ' + fp + '</span>' : '';
         return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + '</small></span>' + fa + '</button>';
       }).join('');
     });
@@ -1453,13 +1517,18 @@ const desk = (() => {
     ui.cur = cid; ui.view = 'decide'; save(); render();
     if (!WIDE.matches) return;
     window.scrollTo(0, 0);
-    if (focus) P().focus({ preventScroll: true });
+    if (focus) { P().focus({ preventScroll: true }); where(curB()); }
     const r = $('dk-out').querySelector('[aria-current="true"]'); if (r) r.scrollIntoView({ block: 'nearest' });
   }
   function announce(c) {  // what a key just did, for screen readers (audit #30)
     const v = current(c.id), l = $('dk-live');
     l.textContent = '';
     setTimeout(() => { l.textContent = cleanTitle(c) + ': ' + (!v.length ? 'no pick' : v[0] === '__skip' ? 'skipped' : 'picked ' + v.map(x => optLabel(c, x)).join(', ')); }, 50);
+  }
+  function where(b) {  // a move to another contest, for screen readers: the paper's own label never changes (#39)
+    const v = current(b.c.id), l = $('dk-live');
+    l.textContent = '';
+    setTimeout(() => { l.textContent = 'Contest ' + (idx(b.c.id) + 1) + ' of ' + ballot.length + ': ' + cleanTitle(b.c) + '. ' + (!v.length ? 'No pick yet.' : v[0] === '__skip' ? 'Skipped.' : 'Picked ' + v.map(x => optLabel(b.c, x)).join(', ') + '.'); }, 50);
   }
   // Decide by mouse puts you back on the paper, where the keys work; by keyboard you stay on the tabs (Pass 2).
   function setView(v, toPaper) { ui.view = v; save(); render(); if (WIDE.matches) { window.scrollTo(0, 0); if (v === 'decide' && toPaper) P().focus({ preventScroll: true }); } }
@@ -1479,7 +1548,7 @@ const desk = (() => {
     h += '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span><span class="note">Saved on this device</span></div>';
     const t = cleanTitle(c);  // the entity is already on the line above, so the heading drops it
     h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
-    if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</div>';
+    if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + (n > 1 ? '<span class="limit" data-limit="' + c.id + '" role="status"></span>' : '') + '</div>';
     if (b.conf === 'medium') h += '<span class="flag">Double-check</span><p class="note">' + esc(b.note || 'Not yet confirmed for your address.') + '</p>';
     if (isM) {
       if (c.text) h += '<div class="sub"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
@@ -1589,7 +1658,7 @@ const desk = (() => {
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="ov">' + esc($('sitehead').textContent) + '</span>' + (here ? '<button type="button" class="dk-link" id="dk-all">' + (showAll ? 'Show closest 5' : 'See all ' + all.length) + '</button>' : '') + '</div>' +
       '<ul class="dk-sites" id="dk-sites">' + items + '</ul><a class="btn secondary small" href="' + esc($('waits').href) + '" target="_blank" rel="noopener">Check live wait times</a>' + extra + '</div>' +
       '<div>' + dotMap(all) + '</div></div>';
-    P().querySelectorAll('[data-period]').forEach(btn => btn.addEventListener('click', () => { period = btn.dataset.period; renderVote(); viewVote(); }));
+    P().querySelectorAll('[data-period]').forEach(btn => btn.addEventListener('click', () => { period = btn.dataset.period; periodChosen = true; renderVote(); viewVote(); }));
     if ($('dk-all')) $('dk-all').addEventListener('click', () => { showAll = !showAll; renderVote(); viewVote(); });
     N().innerHTML = '';
   }
@@ -1606,6 +1675,7 @@ const desk = (() => {
     $('dk-c2').addEventListener('change', () => { ui.two = $('dk-c2').checked; $('crib').classList.toggle('two', ui.two); cribPaper(); });
     $('dk-cu').addEventListener('change', () => { ui.hideCrib = $('dk-cu').checked; renderCrib(); cribPaper(); });
     N().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
+    N().querySelectorAll('[data-act="print"]').forEach(btn => btn.addEventListener('keydown', (e) => { if (e.repeat) e.preventDefault(); }));  // Pass 4
   }
 
   /* ----- actions ----- */
@@ -1662,7 +1732,14 @@ const desk = (() => {
   $('friend').addEventListener('click', (e) => { if (e.target.closest('#f-hide')) render(); });  // runs after the button's own handler (it's on the container)
   $('dk-share').addEventListener('click', () => $('a-share').click());
   $('dk-keep').addEventListener('click', () => $('a-keep').click());
-  $('dk-print').addEventListener('click', () => $('print').click());
+  $('dk-print').addEventListener('click', (e) => {  // opens the crib view, where the print options are (Lane, Oct 15)
+    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }
+    const pr = N().querySelector('[data-act="print"]');
+    // A keyboard press lands on the real Print button, scrolled on screen (below the paper at 1024–1279px); a mouse click
+    // leaves focus on Print… (a later Space or Enter just moves it to the real button). A held key's repeats are ignored
+    // there, so holding Enter on Print… never prints (Pass 2, 3, 4).
+    if (pr && e.detail === 0) { pr.focus({ preventScroll: true }); pr.scrollIntoView({ block: 'nearest' }); }
+  });
   $('dk-back').addEventListener('click', () => { ui.landing = false; render(); });
   $('dk-say').querySelector('button').addEventListener('click', () => $('dk-say').classList.add('hidden'));
   const once = new Set();  // counted once per visit (page load), so a busy keyboard doesn't count 63 times
@@ -1692,7 +1769,7 @@ const desk = (() => {
     if (ui.view !== 'decide') return;
     if (e.repeat && (/^[1-9]$/.test(k) || k === 's')) return;  // a held key picks once (pick() toggles)
     const b = curB();
-    if (/^[1-9]$/.test(k)) { const o = optionsOf(b.c)[+k - 1]; if (o !== undefined) { e.preventDefault(); pick(b.c.id, o); announce(b.c); used('pick'); } }
+    if (/^[1-9]$/.test(k)) { const o = optionsOf(b.c)[+k - 1]; if (o !== undefined) { e.preventDefault(); if (pick(b.c.id, o) !== false) announce(b.c); used('pick'); } }
     else if (k === 's') { e.preventDefault(); pick(b.c.id, '__skip'); announce(b.c); used('skip'); }
     else if (k === 'n') { e.preventDefault(); act('next', true); used('move'); }
     else if (k === 'j') { e.preventDefault(); const i = idx(b.c.id); if (i < ballot.length - 1) go(ballot[i + 1].c.id, true); used('move'); }
@@ -1713,6 +1790,7 @@ const desk = (() => {
     render,
     ballot(meta) {
       ui.landing = false;
+      $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)
       if (!ballot.length) return render();
       const first = String(meta.where || '').split(' · ')[0];
       // The street is shown for this visit only; it is never saved (the saved ballot keeps just the precinct).
@@ -1728,6 +1806,13 @@ const desk = (() => {
     },
     cribSkip: (c) => ui.hideCrib && isUnopp(c),
     cribOpts: () => ({ two_col: ui.two ? 'yes' : 'no', hide_unopposed: ui.hideCrib ? 'yes' : 'no' }),
+    today(periodChanged) {  // a new day (#34): the header's line; the vote view only if the voting period changed
+      $('dk-when').textContent = whenLine();
+      if (!periodChanged || ui.view !== 'vote' || !document.body.classList.contains('dk-app-on')) return;
+      const inside = P().contains(document.activeElement);
+      viewVote();  // a new list of vote centers: the old place in it is gone, so focus goes to the paper, never to another center's link (Pass 4)
+      if (inside) P().focus({ preventScroll: true });
+    },
     // A message about an incoming link: the landing page shows it in the form; in the app that form is hidden, so say it here (audit #26).
     say(t) {  // '' clears it: every new link does (Pass 1)
       const box = $('dk-say'); box.classList.add('hidden');
@@ -1742,6 +1827,7 @@ desk.render();
 /*/DESK*/
 /* ---------- start ---------- */
 (function start() {
+  footClear();  // a link opened before this script ran is already in sessionStorage
   const st = LS.get('ballotta.ballot', null);
   if (st && cleanBallot(st.b).length) renderStored(st, 'saved on this device');
   else renderVote();

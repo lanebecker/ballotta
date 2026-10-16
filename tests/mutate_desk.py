@@ -2,12 +2,19 @@
 Files are restored from an in-memory copy in a finally block (never git).
 Run from the repo root after both builds:  python3 <this file> [first last]   (a slice of the list, e.g. 0 10)"""
 import os, sys, pathlib, signal
-def _stop(sig, _frame):                                    # a timeout's kill still runs the restore in `finally` (Pass 1);
-    for s_ in (signal.SIGTERM, signal.SIGHUP): signal.signal(s_, signal.SIG_IGN)   # a second signal can't interrupt it (Pass 2)
+SIGS = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
+PENDING = []                                               # (file, original text) while a mutant may be on disk
+def _stop(sig, _frame):                                    # Ctrl-C, a kill or a hang-up: put the original back, then exit (#41);
+    for s_ in SIGS: signal.signal(s_, signal.SIG_IGN)     # a second signal can't interrupt the restore
+    for f_, t_ in PENDING: put(f_, t_)
     sys.exit(128 + sig)
-signal.signal(signal.SIGTERM, _stop); signal.signal(signal.SIGHUP, _stop)
-def put(f, text):                                          # write whole or not at all: never a half-written page
-    tmp = f.with_name(f.name + '.mutate-tmp'); tmp.write_text(text, encoding='utf-8'); os.replace(tmp, f)
+for s_ in SIGS: signal.signal(s_, _stop)
+def put(f, text):                                          # write whole or not at all: never a half-written page; a signal
+    old = signal.pthread_sigmask(signal.SIG_BLOCK, SIGS)  # arriving meanwhile waits until the file is whole (#41)
+    try:
+        tmp = f.with_name(f.name + '.mutate-tmp'); tmp.write_text(text, encoding='utf-8'); os.replace(tmp, f)
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, old)
 ROOT = pathlib.Path.cwd()
 LIVE = '\nDESK_LIVE = True\n' in (ROOT / 'source/build_site.py').read_text(encoding='utf-8')     # the setting's own line, not the comment
 os.environ['BALLOTTA_PAGE'] = 'index.html' if LIVE else 'next/index.html'   # after promotion the laptop layout is the live page
@@ -17,6 +24,7 @@ from playwright.sync_api import sync_playwright
 
 PREV, TPL, BLD = ROOT / os.environ['BALLOTTA_PAGE'], ROOT / 'source/template-travis.html', ROOT / 'source/build_site.py'
 README = ROOT / 'README.md'
+MD_SELF = ROOT / 'tests/mutate_desk.py'                    # the runner's own signal handling (#41), tested in a child process
 M = [
  ('M1 live page changes', TPL, '<title>Ballotta ·', '<title>Ballotta  ·', ['live_build_is_unchanged_until_promotion']),
  ('M2 block stripping gone', BLD, "        elif not in_block:\n            out.append(line)", "        else:\n            out.append(line)", ['live_build_is_unchanged_until_promotion']),
@@ -92,7 +100,7 @@ M = [
  ('F1 rail titles cut off', PREV, '.dk-rt b{font-size:13px;font-weight:600;line-height:1.3;color:#fff;overflow-wrap:anywhere}', '.dk-rt b{font-size:13px;font-weight:600;line-height:1.3;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}', ['desk_launch_audit_fixes']),
  ('F3 damaged-link notice not wired', PREV, '/*DESK*/ if (window.desk) try { desk.say(t); } catch (e) {}/*/DESK*/', '', ['desk_launch_audit_fixes']),
  ('F4 shortcuts fire on any button', PREV, "    if (t && t !== document.body && !t.closest('#dk-paper')) return;", '', ['desk_launch_audit_fixes']),
- ('F5 picks by key not announced', PREV, 'pick(b.c.id, o); announce(b.c);', 'pick(b.c.id, o);', ['desk_launch_audit_fixes']),
+ ('F5 picks by key not announced', PREV, 'if (pick(b.c.id, o) !== false) announce(b.c);', 'pick(b.c.id, o);', ['desk_launch_audit_fixes']),
  ('F6 no main landmark', PREV, 'id="dk-desk" role="main"', 'id="dk-desk"', ['desk_launch_audit_fixes']),
  ('F7 paper focus invisible', PREV, '  .dk-paper:focus-visible{outline:3px solid var(--plum);outline-offset:4px}', '', ['desk_launch_audit_fixes']),
  ('F8 key hints on touch screens', PREV, '  .kbd,.dk-keysec{display:none}', '  .dk-keysec{display:none}', ['desk_launch_audit_fixes']),
@@ -179,36 +187,97 @@ M = [
  ('V73 shown ballot not noted', PREV, '  progressSeen.at.push(...now);\n  if (quietProgress) return;', '  if (quietProgress) return;\n  progressSeen.at.push(...now);', ['counts_progress_sources_and_clearing']),
  ('V74 any ballot write reloads other tabs', PREV, "if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null)", "if (e.key === 'ballotta.ballot')", ['counts_progress_sources_and_clearing']),
  ('V75 app scrolls arm the FAQ count', PREV, "      if (document.body.classList.contains('dk-app-on')) return;  // a scroll in the app doesn't count: only one on the landing page\n", '', ['desk_counts_laptop_features']),
+ ('A1 non-text reasons kept', PREV, "Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string')", "Object.entries(plain(LS.get('ballotta.whys', {})))", ['stored_junk_never_breaks_keep_or_share']),
+ ('A2 stored picks not checked', PREV, "let picks = plain(LS.get('ballotta.picks', {}))", "let picks = LS.get('ballotta.picks', {})", ['stored_junk_never_breaks_keep_or_share']),
+ ('A3 look-alike letters ignored', PREV, '.map(ch => LOOKALIKE[ch] || ch)', '.map(ch => ch)', ['share_names_block_lookalikes_and_nicknames']),
+ ('A7 focus ring clipped again', PREV, 'text-overflow:ellipsis;min-width:0;padding:4px;margin:-4px}', 'text-overflow:ellipsis;min-width:0}', ['desk_change_link_focus_ring_is_whole']),
+ ('A8 long names push the phone page sideways', PREV, '#friend h2,#friend .note,#friend .fp,#compare h2,#compare .note,#compare .cmp,#compare .lead{overflow-wrap:anywhere}', '', ['friend_card_long_names_and_honest_copy']),
+ ('A9 long names push the laptop page sideways', PREV, '  .dk-fcta,.dk-fchip,.dk-fbox,.dk-fp{overflow-wrap:anywhere;min-width:0}  /* #23 */\n', '', ['friend_card_long_names_and_honest_copy']),
+ ('A10 friend card overclaims', PREV, 'Most races on your ballot link to neutral sources.', 'Each race on your ballot links to neutral sources.', ['friend_card_long_names_and_honest_copy']),
+ ('A11 friend pick unnamed in the rail', PREV, '<span class="dk-vh">\' + esc(friendName()) + \' picked \' + fp + \'</span>', '', ['desk_friend_pick_in_rail_has_a_name']),
+ ('A12 rail initial read out', PREV, ' aria-hidden="true" title="\' + possessive() + \' pick: \' + fp', ' title="\' + possessive() + \' pick: \' + fp', ['desk_friend_pick_in_rail_has_a_name']),
+ ('A13 extra pick accepted', PREV, '    if (!cur.includes(val) && cur.length >= n) { limitNote(cid, n); return false; }  // already N picks: say why nothing changed (#33)\n', '', ['extra_pick_is_explained']),
+ ('A14 extra pick refused silently', PREV, '{ limitNote(cid, n); return false; }', '{ return false; }', ['extra_pick_is_explained']),
+ ('A15 limit note never clears', PREV, '  limitNote(cid, 0);\n  picks[cid] = cur;', '  picks[cid] = cur;', ['extra_pick_is_explained']),
+ ('A16 refused key pick announced', PREV, 'if (pick(b.c.id, o) !== false) announce(b.c);', 'pick(b.c.id, o); announce(b.c);', ['extra_pick_is_explained']),
+ ('A17 limit note not a status', PREV, 'data-limit="\' + c.id + \'" role="status"></span>\' : \'\') + \'</p>\';', 'data-limit="\' + c.id + \'"></span>\' : \'\') + \'</p>\';', ['extra_pick_is_explained']),
+ ('A18 no check for a new day', PREV, 'setInterval(dayCheck, 60000);\n', '', ['dates_move_on_in_a_tab_left_open']),
+ ('A19 chosen period overridden', PREV, '  if (!periodChosen) period = defaultPeriod();\n', '  period = defaultPeriod();\n', ['dates_move_on_in_a_tab_left_open']),
+ ('A20 tab choice forgotten', PREV, "period = 'early'; periodChosen = true; renderVote();", "period = 'early'; renderVote();", ['dates_move_on_in_a_tab_left_open']),
+ ('A22 date frozen at load', PREV, 'const today = () => new Date();', 'const FROZEN = new Date(), today = () => FROZEN;', ['dates_move_on_in_a_tab_left_open']),
+ ('A23 data inserted first', BLD, '        html = strip_desk(html)\n', '        html = strip_desk(html)\n    html = html.replace("__DATA__", data)\n', ['build_inserts_data_last']),
+ ('A24 moves not announced', PREV, 'where(curB()); }', '}', ['desk_moves_are_announced']),
+ ('A25 contest number off by one', PREV, "'Contest ' + (idx(b.c.id) + 1)", "'Contest ' + idx(b.c.id)", ['desk_moves_are_announced']),
+ ('A26 old link notice survives a new ballot', PREV, "      $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)\n", '', ['desk_old_link_warning_gone_after_new_lookup']),
+ ('A27 a stop signal leaves the mutant', MD_SELF, '    for f_, t_ in PENDING: put(f_, t_)\n', '', ['mutation_runner_restores_on_any_signal']),
+ ('A28 Ctrl-C not handled', MD_SELF, 'SIGS = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)\nPENDING', 'SIGS = (signal.SIGTERM, signal.SIGHUP)\nPENDING', ['mutation_runner_restores_on_any_signal']),
+ ('A29 importing the runner starts a run', MD_SELF, "\nif __name__ == '__main__':", '\nif True:', ['mutation_runner_restores_on_any_signal']),
+ ('A30 footer button never shown', PREV, "  const f = $('reset-all-foot'); if (f) f.classList.toggle('hidden', !has);\n", '', ['phone_can_clear_everything_from_the_footer']),
+ ('A31 footer button not wired', PREV, "$('reset-all-foot').addEventListener('click', clearEverything);", '', ['phone_can_clear_everything_from_the_footer']),
+ ('A32 a lookup does not show the footer button', PREV, 'localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} footClear(); }', 'localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }', ['phone_can_clear_everything_from_the_footer']),
+ ('A33 a later visit hides the footer button', PREV, '  footClear();  // a link opened before this script ran is already in sessionStorage\n', '', ['phone_can_clear_everything_from_the_footer']),
+ ('R5 Clear my picks leaves the limit note', PREV, " document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {};", ' picks = {};', ['extra_pick_is_explained']),
+ ('R6 another tab leaves the footer button stale', PREV, "window.addEventListener('storage', () => footClear());", '', ['phone_can_clear_everything_from_the_footer']),
+ ('R2 hyphen-joined words get through', PREV, "const w = t.replace(/[\\p{P}\\p{S}]/gu, ' ')", "const w = t.replace(/[\\p{P}\\p{S}]/gu, '')", ['share_names_block_lookalikes_and_nicknames']),
+ ('R3b spaced-out initials not joined', PREV, ", w.replace(/(?<=(^|\\s)\\S)\\s(?=\\S(\\s|$))/gu, '')]", ']', ['share_names_block_lookalikes_and_nicknames']),
+ ('R8 runs of spaces not collapsed', PREV, " ' ').replace(/\\s+/g, ' ').trim();", " ' ');", ['share_names_block_lookalikes_and_nicknames']),
+ ('R11 Print… counted twice', PREV, "    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }", "    setView('crib'); track('view_opened', { view: 'crib' });", ['desk_print_button_opens_the_crib_sheet']),
+ ('P1 laptop Print… prints straight away', PREV, "    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }\n    const pr", "    $('print').click(); return;\n    const pr", ['desk_print_button_opens_the_crib_sheet']),
+ ('P2 laptop Print… not counted as a view', PREV, "{ setView('crib'); track('view_opened', { view: 'crib' }); }", "{ setView('crib'); }", ['desk_print_button_opens_the_crib_sheet']),
+ ('R10 Print… leaves keyboard focus behind', PREV, "    if (pr && e.detail === 0) { pr.focus({ preventScroll: true }); pr.scrollIntoView({ block: 'nearest' }); }\n", '', ['desk_print_button_opens_the_crib_sheet']),
+ ('R13 Print… moves focus on a mouse click', PREV, 'if (pr && e.detail === 0) {', 'if (pr) {', ['desk_print_button_opens_the_crib_sheet']),
+ ('R14 focused Print button left off screen', PREV, " pr.scrollIntoView({ block: 'nearest' }); }", ' }', ['desk_print_button_opens_the_crib_sheet']),
+ ('R16 short words matched across spaces', PREV, "['league', 'lwv', 'vote411', 'county',", "['league', 'lwv', 'voter', 'cityof', 'vote411', 'county',", ['share_names_block_lookalikes_and_nicknames']),
+ ('R17 glued words not split', PREV, ", fold(low.replace(/[|!$@]/g, '')), fold(split)];", ", fold(low.replace(/[|!$@]/g, ''))];", ['share_names_block_lookalikes_and_nicknames']),
+ ('R18 voter not a reserved word', PREV, "'dnc', 'voters?', 'clerks?',", "'dnc', 'clerks?',", ['share_names_block_lookalikes_and_nicknames']),
+ ('R19 9 not read as g', PREV, ", '8': 'b', '9': 'g' };", ' };', ['share_names_block_lookalikes_and_nicknames']),
+ ('R1 a new day redraws the whole laptop page', PREV, 'desk.today(period !== was); } catch (e) {}/*/DESK*/', 'desk.render(); } catch (e) {}/*/DESK*/', ['dates_move_on_in_a_tab_left_open']),
+ ('A5 party nicknames allowed', PREV, "'gop', 'dems?', 'repubs?', 'rnc', 'dnc', ", "'gop', ", ['share_names_block_lookalikes_and_nicknames']),
+ ('A6 symbols read only as letters', PREV, "[fold(low), fold(low.replace(/[|!$@]/g, '')), ", '[fold(low), ', ['share_names_block_lookalikes_and_nicknames']),
+ ('R7 reserved words not folded', PREV, "'villageof'].map(fold).join('|'));", "'villageof'].join('|'));", ['share_names_block_lookalikes_and_nicknames', 'audit_a5_a8_a12_hostile_share']),
+ ('A21 laptop header keeps the old day', PREV, "      $('dk-when').textContent = whenLine();\n      if (!periodChanged", '      if (!periodChanged', ['dates_move_on_in_a_tab_left_open']),
+ ('A4 stand-ins not folded', PREV, 'const fold = (t) => t.replace(/[1i|!0345@$6789]/g, ch => FOLD[ch]);', 'const fold = (t) => t;', ['share_names_block_lookalikes_and_nicknames']),
+ ('R12 new list leaves focus nowhere', PREV, '      if (inside) P().focus({ preventScroll: true });\n', '', ['dates_move_on_in_a_tab_left_open']),
+ ('R15 every new day re-draws the vote view', PREV, "      if (!periodChanged || ui.view !== 'vote'", "      if (ui.view !== 'vote'", ['dates_move_on_in_a_tab_left_open']),
+ ('R20 glued handles get through', PREV, ' || RESERVED_GLUED.test(x)', '', ['share_names_block_lookalikes_and_nicknames']),
+ ('R21 leading acronyms not split', PREV, "n.replace(/(\\p{Lu})(?=\\p{Lu}\\p{Ll})/gu, '$1 ').replace(", 'n.replace(', ['share_names_block_lookalikes_and_nicknames']),
+ ('R22 glued words need fewer letters', PREV, "')\\\\S{4,}|\\\\S{4,}('", "')\\\\S{1,}|\\\\S{1,}('", ['share_names_block_lookalikes_and_nicknames']),
+ ('R23 holding Enter prints', PREV, '    N().querySelectorAll(\'[data-act="print"]\').forEach(btn => btn.addEventListener(\'keydown\', (e) => { if (e.repeat) e.preventDefault(); }));  // Pass 4\n', '', ['desk_print_button_opens_the_crib_sheet']),
 ]
-if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
-for name, f, a, z, tests in M:                                   # a stale anchor fails in a second, not after the baseline (audit #27)
-    assert f.read_text(encoding='utf-8').count(a) == 1, (name, 'anchor found', f.read_text(encoding='utf-8').count(a), 'times in', f.name)
-srv = T.serve(); res = []
-try:
-    with sync_playwright() as p:
-        b = p.chromium.launch()
-        # A kill only means something if the same tests pass without the mutant (a county outage fails them all).
-        for tn in sorted({t for m in M for t in m[4]}):
-            getattr(T, tn)(b)
-        print('baseline: every target test passes unmutated', flush=True)
-        for name, f, a, z, tests in M:
-            orig = f.read_text(encoding='utf-8')
-            assert orig.count(a) == 1, (name, 'anchor found', orig.count(a), 'times')
-            try:
-                put(f, orig.replace(a, z))
-                killed = []
-                for tn in tests:
+def main(M):
+    if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
+    for name, f, a, z, tests in M:                                   # a stale anchor fails in a second, not after the baseline (audit #27)
+        assert f.read_text(encoding='utf-8').count(a) == 1, (name, 'anchor found', f.read_text(encoding='utf-8').count(a), 'times in', f.name)
+    srv = T.serve(); res = []
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch()
+            # A kill only means something if the same tests pass without the mutant (a county outage fails them all).
+            for tn in sorted({t for m in M for t in m[4]}):
+                getattr(T, tn)(b)
+            print('baseline: every target test passes unmutated', flush=True)
+            for name, f, a, z, tests in M:
+                orig = f.read_text(encoding='utf-8')
+                assert orig.count(a) == 1, (name, 'anchor found', orig.count(a), 'times')
+                PENDING.append((f, orig))                            # from here until the restore, a stop signal restores first (#41)
+                try:
+                    put(f, orig.replace(a, z))
+                    killed = []
+                    for tn in tests:
+                        try: getattr(T, tn)(b)
+                        except Exception as e: killed.append(tn + ':' + type(e).__name__)   # AssertionError, or a Playwright timeout
+                    res.append((name, 'KILLED' if killed else 'SURVIVED', ','.join(killed)))
+                finally:
+                    put(f, orig); PENDING.clear()
+                # A kill counts only if the same tests pass again on the restored file (a service hiccup fails both).
+                for tn in [k.split(':')[0] for k in killed]:
                     try: getattr(T, tn)(b)
-                    except Exception as e: killed.append(tn + ':' + type(e).__name__)   # AssertionError, or a Playwright timeout
-                res.append((name, 'KILLED' if killed else 'SURVIVED', ','.join(killed)))
-            finally:
-                put(f, orig)
-            # A kill counts only if the same tests pass again on the restored file (a service hiccup fails both).
-            for tn in [k.split(':')[0] for k in killed]:
-                try: getattr(T, tn)(b)
-                except Exception as e: raise SystemExit(f'INCONCLUSIVE {name}: {tn} also fails unmutated ({type(e).__name__}); rerun later')
-            print(*res[-1], flush=True)
-        b.close()
-finally:
-    srv.shutdown()
-print(sum(r[1] == 'KILLED' for r in res), 'of', len(res), 'mutants killed')
+                    except Exception as e: raise SystemExit(f'INCONCLUSIVE {name}: {tn} also fails unmutated ({type(e).__name__}); rerun later')
+                print(*res[-1], flush=True)
+            b.close()
+    finally:
+        srv.shutdown()
+    print(sum(r[1] == 'KILLED' for r in res), 'of', len(res), 'mutants killed')
+
+if __name__ == '__main__':                                       # importing the runner (its own test does) starts nothing (#41)
+    main(M)
