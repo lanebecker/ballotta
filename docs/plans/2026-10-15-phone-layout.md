@@ -423,6 +423,10 @@ Audits: Pass 1 (Next undecided went nowhere on the only undecided contest, now `
 
 Numbers: `71/71 passed, 27 skipped (index.html)`; `67/67 passed, 31 skipped (next/index.html)`; every mutant on the changed tests re-run and killed (P119–P135 new, P11/P12/P134 re-anchored), 128 phone mutants in all. `index.html` still 8e6eaf36…5a2e.
 
+**Oct 17, round J (Lane, from a second session; laptop and preview copy).** Four commits, each test-first with `LIVE_SHA` re-pinned: d732a65 (At a glance: the pick column fits every name), 0c27525 ("Print your choices" tab; its page titled "Crib sheet"; laptop mutants D46–D47), 9d176fc (the printout's heading "My ballot choices", one shared function for both layouts), 7a45db0 (every view's title sits as far below its small line as Decide's). The live page is now bf8395f3…; the preview 110fda4a….
+
+**Oct 17, cold audit (Task 12, first pass).** Four independent auditors read the whole repo (shared page code; laptop + phone layers and the offline copy; the Python pipeline and data; tests, mutation runners and security posture). Findings were argued down and written up as `docs/audits/2026-10-17-cold-audit.md`, grouped into waves, to be filed as issues. The two findings that matter most for voters are in the data, not the layouts: ten "vote for up to N" contests list candidates in a different order from the printed ballot, and 37 measures end their "exactly as printed" text with a stray Spanish caption. Task 13 (promotion) waits on the wave that fixes those and on the test ports.
+
 ## Appendix: the scripts
 
 Each block is one file; Task 0 unpacks them by the `file=` name after the language.
