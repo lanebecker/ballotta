@@ -303,6 +303,9 @@ M = [
  ('D40 Cyrillic small capitals missed', PREV, 'тмнквп]/gu, ch =>', ']/gu, ch =>', ['share_names_close_remaining_gaps']),
  ('D41 focus lost in a closed race', PREV, "  if (document.activeElement !== home) { const f = $(wide ? 'dk-paper' : 'a-keep'); if (f) f.focus({ preventScroll: true }); }", '', ['backup_nudge_after_fifth_pick']),
  ('D42 room under the card on paper', PREV, '@media screen{html.nudging{', '@media all{html.nudging{', ['backup_nudge_after_fifth_pick']),
+ ('D43 the pick column takes what is left', PREV, '  .dk-tbl td:nth-child(2){width:240px}', '  .dk-tbl td:nth-child(2){width:auto}', ['desk_glance_picks_fit_their_names']),
+ ('D44 the contest column keeps a third', PREV, '  .dk-tbl tbody th{width:24%}\n', '  .dk-tbl tbody th{width:34%}\n', ['desk_glance_picks_fit_their_names']),
+ ('D45 Learn more wraps on a wide laptop', PREV, '@media (max-width:1199.98px){.dk-tbl td a{white-space:normal}}', '@media all{.dk-tbl td a{white-space:normal}}', ['desk_glance_picks_fit_their_names']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

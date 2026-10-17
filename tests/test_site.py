@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '8e6eaf368729c6b9f9fb5e43c2285d477bb77397e82ee080dfddf2e7b2de5a2e'
+LIVE_SHA = '3ed608011191f175491a1b5467bcda51c205d1a430d6226f846a18dd70fcf191'  # round J (Oct 17): At a glance's pick column
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -594,6 +594,28 @@ def desk_glance_selects_and_filters(b):
     pg.click('tr[data-tr="c071"] [data-why]')
     assert pg.evaluate('document.activeElement.id') == 'dk-w' and 'Proposition A' in pg.inner_text('#dk-paper h1')
     ctx.close()
+
+@desk_test
+def desk_glance_picks_fit_their_names(b):
+    # Lane, Oct 17: with reasons written, the reason column took the room and every pick read "Jame", "Greg". Every
+    # dropdown is now wide enough for its longest name (the widest on the ballot is 176px of text), at 1024px and up,
+    # with the contest and reason columns wrapping instead; "Learn more" stays on one line from 1200px.
+    WHYS = ('() => { const w = {}; ballot.forEach(b => { w[b.c.id] = "First democratic senator from Texas in 3 decades? Yes, please. Has done a solid job so far."; });'
+            ' localStorage.setItem("ballotta.whys", JSON.stringify(w)); }')
+    for w in (1024, 1288, 1440):
+        ctx, pg = new_page(b, wide=True); pg.set_viewport_size({'width': w, 'height': 900}); pg.goto(BASE)
+        saved_ballot(pg, list(range(1, 64))); pg.wait_for_selector('body.dk-app-on'); pg.evaluate(WHYS); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+        pg.click('#dk-views [data-view="glance"]'); pg.wait_for_selector('.dk-tbl .dk-wt')
+        r = pg.evaluate("""() => { const c = document.createElement('canvas').getContext('2d'); c.font = '14px "Public Sans"';
+          const sels = [...document.querySelectorAll('.dk-tbl select')];
+          const short = sels.filter(s => s.offsetWidth < Math.max(...[...s.options].map(o => c.measureText(o.text).width)) + 40).map(s => s.dataset.sel);
+          const links = [...document.querySelectorAll('.dk-tbl td a')].filter(a => a.getClientRects().length > 1).length;
+          return { sels: sels.length, short, links, head: (() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.dk-tbl thead th:nth-child(2)')); return r.getClientRects().length; })(),
+                   sideways: document.scrollingElement.scrollWidth - innerWidth }; }""")
+        assert r['sels'] > 40 and not r['short'], (w, 'a pick is cut off', r['short'][:5])
+        assert r['head'] == 1, (w, '"Your pick" wraps', r['head'])   # its text's lines (the header row is as tall as its tallest cell)
+        assert r['sideways'] <= 0 and (w < 1200 or r['links'] == 0), (w, r)
+        ctx.close()
 
 @desk_test
 def desk_where_to_vote_list_and_private_map(b):
