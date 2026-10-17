@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '3ed608011191f175491a1b5467bcda51c205d1a430d6226f846a18dd70fcf191'  # round J (Oct 17): At a glance's pick column
+LIVE_SHA = 'f0b438043fb389e52e5f1e64d149ea9272e1772758dff95c3547a6be57ca447d'  # round J (Oct 17): At a glance's pick column; "Print your choices"
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -638,7 +638,9 @@ def desk_crib_options_and_print(b):
     ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
     pg.click('.dk-row[data-row="c001"]'); pg.locator('.dk-line', has_text='Ted Brown').click()
     pg.fill('#dk-w', 'Wanted a third option.')
+    assert pg.inner_text('#dk-views [data-view="crib"]') == 'Print your choices', pg.inner_text('#dk-views [data-view="crib"]')   # Lane, Oct 17
     pg.click('#dk-views [data-view="crib"]')
+    assert pg.inner_text('#dk-paper h1') == 'Crib sheet' and pg.inner_text('#dk-paper > .ov') == 'PRINT YOUR CHOICES', (pg.inner_text('#dk-paper h1'), pg.inner_text('#dk-paper > .ov'))
     t034 = pg.evaluate("cleanTitle(BYID['c034'])")
     import io, pypdf
     norm = lambda s: ' '.join(s.split())                                                           # PDF text wraps long lines
@@ -1980,7 +1982,7 @@ def phone_next_undecided_then_the_crib_sheet(b):
     assert pg.text_content('#ph-next') == 'Next →', ('all decided: step through them in order', pg.text_content('#ph-next'))
     pg.click('#ph-next'); assert h1(pg).endswith('Proposition A') and pg.text_content('#ph-next') == 'Crib sheet →'
     pg.click('#ph-next')
-    assert h1(pg) == 'Print your notes' and pg.is_hidden('#ph-next') and ['view_opened', {'view': 'crib', 'layout': 'phone'}] in events(pg)
+    assert h1(pg) == 'Crib sheet' and pg.is_hidden('#ph-next') and ['view_opened', {'view': 'crib', 'layout': 'phone'}] in events(pg)
     assert pg.text_content('#ph-count') == '3 of 3 decided' and pg.text_content('#ph-back') == '← Contest 3' and not pg.is_disabled('#ph-back')
     assert pg.get_by_role('button', name='Contest 3, go back').count() == 1, 'say where it goes, starting with what it shows (Pass 1, 2)'
     pg.click('#ph-back'); assert h1(pg).endswith('Proposition A') and ['view_opened', {'view': 'decide', 'layout': 'phone'}] in events(pg)
@@ -2014,7 +2016,7 @@ def phone_ballot_list_sheet(b):
     assert h1(pg) == 'Your whole ballot' and focused(pg) == 'H1' and ['view_opened', {'view': 'glance', 'layout': 'phone'}] in events(pg)
     assert pg.text_content('#ph-count') == '0 of 63 decided' and pg.text_content('#ph-back').startswith('← Contest '), pg.text_content('#ph-count')
     pg.click('#ph-list'); pg.click('#dk-print'); expect(pg.locator('.dk-rail')).to_be_hidden()
-    assert h1(pg) == 'Print your notes' and pg.evaluate('document.activeElement.dataset.act') == 'print'
+    assert h1(pg) == 'Crib sheet' and pg.evaluate('document.activeElement.dataset.act') == 'print'
     ctx.close()
 
 @phone_test
