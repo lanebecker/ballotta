@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '7cd89b09536377dff2fe869fd9855f95d262aaee2125aed13e9bea971a54b521'  # Oct 17: the ballot data in ballot order with the ballot's English (cold audit wave 1)
+LIVE_SHA = '706e38062e367baee9c5a090cd2000e4860495077aad9d0f938abaaa648bdb1e'  # Oct 17: the ballot data in ballot order with the ballot's English; links keep the old order (cold audit wave 1)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -617,18 +617,44 @@ def desk_glance_picks_fit_their_names(b):
         assert r['sideways'] <= 0 and (w < 1200 or r['links'] == 0), (w, r)
         ctx.close()
 
+# The ten "vote for up to N" lists in the order every page before Oct 17 had them (git show b0e514f:source/answer_key.json).
+PRE_FIX_ORDER = {
+    154: ['Carrington Saathoff', 'Ryan Sullivan', 'Grant Ballew', 'John Berry', 'William Waller'],
+    168: ['Nicodemus Abowd', 'Denis Fletcher', 'Jeff Markey', 'Mariano Ravelo', 'Barry Marotz'],
+    176: ['Daniel McElrath', 'Chase Nixon', 'Jacob Clark', 'Ross Hamilton', 'Dane Rymer'],
+    179: ['Scott Moser', 'Brenda Vrabel', 'R. Lee Hill', 'Chris Capers'],
+    192: ['Felicity Maxwell', 'Casey Paulson', 'Mickey Jamail', 'Daniel Kavelman', 'Ryan Puzycki'],
+    199: ['Jason Nobbe', 'Kelly Schill', 'Ashtyn Bogue', 'Lyndsey Mylius', 'Jared Williams'],
+    202: ['Beth Jones', 'Stephen Bodnarchuk Jr.', 'Hanoi Avila', 'David Flores', 'Kimberly Massaro', 'Linda Fabre', 'Thomas Vacek'],
+    203: ['Richard Kenyon', 'Travis Wright', 'Rick Shute', 'Jason Blair'],
+    204: ['Elicia Michaud', 'Larry Harlan', 'Phil Han', 'Sonja DeLaFuente', 'Ryan Carretta'],
+    214: ['Rudolf J. Valenti', 'Paul Wadehra', 'Philip Waters', 'Abigail Joffrain', 'Elizabeth Martin']}
+
 @test
-def links_from_before_the_ballot_order_fix_keep_their_picks(b):
+def links_keep_the_old_order_for_the_ten_reordered_lists(b):
     # Cold audit, Oct 17, #1: ten "vote for up to N" lists now follow the ballot's order. Keep and Share links count
-    # picks by position, so a link made before the fix still means the candidate it meant; links made since say so (r: 2).
+    # picks by position, so every link, old or new, counts them in the order pages had before the fix: an old link still
+    # means what it meant, and a new link means the same thing to a copy of the page from before the fix (a phone's
+    # offline copy, a tab left open), which would otherwise show and save the wrong candidates (wave 1 audit).
     ctx, pg = new_page(b); pg.goto(BASE)
-    old, new, first = pg.evaluate("""() => [unpackPicks({ v: 1, p: { 154: 0, 202: [0, 2], 1: 0 } }).P, unpackPicks({ v: 1, r: 2, p: { 154: 0 } }).P, optionsOf(BYID.c001)[0]]""")
-    assert old['c154'] == ['Carrington Saathoff'] and old['c202'] == ['Beth Jones', 'Hanoi Avila'] and old['c001'] == [first], old
-    assert new['c154'] == ['Grant Ballew'], new
     assert pg.evaluate("optionsOf(BYID.c154)") == ['Grant Ballew', 'John Berry', 'Carrington Saathoff', 'Ryan Sullivan', 'William Waller']
-    kr = pg.evaluate("keepURL().then(u => unpackFrag(u.split('#')[1])).then(o => o.r)")
-    sr = pg.evaluate("prepShare().p.then(u => unpackFrag(u.split('#')[1])).then(o => o.r)")
-    assert kr == 2 and sr == 2, (kr, sr)
+    for n, names in PRE_FIX_ORDER.items():                                   # the lists hold the same people, reordered
+        assert sorted(pg.evaluate(f"optionsOf(BYID.c{n:03d}).filter(x => x !== 'Write-in')")) == sorted(names), n
+    old = pg.evaluate("unpackPicks({ v: 1, p: { 154: 0, 202: [0, 2], 1: 0 } }).P")
+    assert old['c154'] == ['Carrington Saathoff'] and old['c202'] == ['Beth Jones', 'Hanoi Avila'], old
+    mine = {'c154': ['Grant Ballew'], 'c214': ['Philip Waters', 'Abigail Joffrain', 'Paul Wadehra'], 'c202': ['Thomas Vacek', 'Beth Jones']}
+    pg.evaluate("([p, w]) => { localStorage.setItem('ballotta.picks', JSON.stringify(p)); localStorage.setItem('ballotta.whys', JSON.stringify(w)); }", [mine, {'c154': 'met him'}])
+    saved_ballot(pg, [154, 214, 202])
+    for how in ("keepURL()", "(openShare(), prepShare().p)"):
+        o = pg.evaluate(how + ".then(u => unpackFrag(u.split('#')[1]))")
+        assert o['v'] == 1 and 'r' not in o, o                               # nothing a page from before the fix would refuse
+        for n, names in PRE_FIX_ORDER.items():
+            if str(n) in o['p']:
+                got = [names[i] for i in (o['p'][str(n)] if isinstance(o['p'][str(n)], list) else [o['p'][str(n)]])]
+                assert sorted(got) == sorted(mine[f'c{n:03d}']), (how, n, o['p'][str(n)], got)
+        assert {'154', '214', '202'} <= set(o['p']), (how, o['p'])
+        back = pg.evaluate("o => unpackPicks(o).P", o)                       # and today's page reads its own link back
+        assert {k: sorted(v) for k, v in back.items()} == {k: sorted(v) for k, v in mine.items()}, (how, back)
     ctx.close()
 
 TITLE_GAP = """() => { const p = document.getElementById('dk-paper'), h = p.querySelector('h1');

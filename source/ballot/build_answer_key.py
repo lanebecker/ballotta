@@ -6,7 +6,7 @@ Every correction lives here, not in the JSON (cold audit, Oct 17, #3): the Oct 1
 choice order of the "vote for up to N" contests (#1), and the measure texts, which come straight from the ballot PDF's
 English text (#2: a parsed text could carry the start of the Spanish caption). parsed.json itself was made by
 parse_ballot.py from a column extraction of the earlier PDF that is not in the repo."""
-import json, pathlib, re, sys
+import hashlib, json, pathlib, re, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -200,7 +200,10 @@ for (ptitle, ptext), it in zip(pdf_measures, key_measures):
 
 key = {
     "election": "Travis County Joint General and Special Elections, November 3, 2026",
-    "source": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final.pdf",
+    # The county's corrected bedsheet ballot (Oct 14), as kept in this repo: the URL it was first noted under no longer
+    # answers (404, Oct 17), so the record is the file itself and its fingerprint (wave 1 audit).
+    "source": "source/ballot/bedsheet.pdf (Travis County Clerk, votetravis.gov: consolidated ballot, corrected Oct 14, 2026)",
+    "source_sha256": hashlib.sha256(pdf_lines.PDF.read_bytes()).hexdigest(),
     "source_corrected": "2026-10-14",
     "source_note": "Consolidated ('bedsheet') ballot listing every contest in the county. No single voter sees all of these; each ballot is a subset by precinct.",
     "unopposed_not_on_ballot": [

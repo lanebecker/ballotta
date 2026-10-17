@@ -8,6 +8,8 @@
 3. Every measure's text is exactly the ballot's English text (no Spanish caption carried along).
 4. Every party label on the ballot (104, legend aside) is on the same name in the key, and the key has no others.
 5. The ballot's FOR / AGAINST pairs number exactly the key's measures.
+6. Every English line on the ballot is in the key (a measure text or a choice) or is a page number, "Vote for" line or
+   notice; each measure's text is all the upright text between its title and its Spanish, whatever the font weight.
 """
 import json, pathlib, re, subprocess, sys, tempfile
 
@@ -63,6 +65,34 @@ def every_measure_text_is_the_ballots_english():
     assert not bad, ('measure text differs from the ballot', bad[:5], len(bad))
     spanish = re.compile(r'(Núm\.|Condado de|Distrito |Ciudad de|Propuesta|Proposición)')
     assert not [c['id'] for c in key if spanish.search(c['text'][-60:])], 'a measure text ends in Spanish'
+
+
+# English lines on the ballot that are neither a measure's text nor a choice: page numbers, "Vote for …" lines, and the
+# notices of the Coupland and Manor ISD trustees elected unopposed (pages 7 and 8).
+NOT_CONTENT = re.compile(r'^(Page \d+|of 18|Vote for .*|or five)$')
+UNOPPOSED = {'District School Board Trustee,', 'Special Election: Rhonda Suzanne', 'Dunlop Coupland Independent', 'School District School Board',
+             'Trustees, General Election: Crystal', 'Ward, Michael Roepke', 'Manor ISD Board of Trustees,', 'Place 1: Stephanie Rodriguez',
+             'Place 2: LaKesha Small', 'Place 3: Ana Cortez', 'Place 4: Fabian Martinez'}
+
+
+@test
+def every_english_line_on_the_ballot_is_in_the_key():
+    # Independent of pdf_lines.measures() (wave 1 audit: the test above compares the key with the function that made
+    # it): each upright, non-bold line of the ballot is in some measure's text, is a choice, or is listed above; and the
+    # line after each measure's text starts its Spanish translation (all italic), so no English was cut off or added.
+    texts = [pdf_lines.norm(c['text']) for c in KEY['contests'] if c['type'] == 'measure']
+    choices = {name(x) for c in KEY['contests'] for x in c.get('choices', [])}
+    left = [(l['page'], l['col'], l['text']) for l in L if pdf_lines.english(l) and not pdf_lines.bold(l)
+            and not (name(pdf_lines.norm(l['text'])) in choices or NOT_CONTENT.match(l['text']) or l['text'] in UNOPPOSED
+                     or any(pdf_lines.norm(l['text']) in t for t in texts))]
+    assert not left, ('English on the ballot that the key does not carry', left[:8], len(left))
+    titles = [i for i, l in enumerate(L) if pdf_lines.english(l) and pdf_lines.bold(l) and re.search(r'Proposition\s+[A-Z0-9]+$', l['text'])]
+    assert len(titles) == 93, len(titles)
+    for i, t in zip(titles, texts):
+        j, words = i + 1, []
+        while all(not it for _, it, _ in L[j]['words']): words.append(L[j]['text']); j += 1
+        assert all(it for _, it, _ in L[j]['words']), ('a measure text runs into a line that is partly Spanish', L[j]['text'])
+        assert pdf_lines.norm(' '.join(words)) == t, ('measure text differs from the English between its title and its Spanish', L[i]['text'], t[-60:])
 
 
 @test
