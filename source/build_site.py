@@ -166,6 +166,37 @@ SW_REGISTER = "if (NARROW.matches && matchMedia('(pointer: coarse)').matches) sw
 SW_REMOVE = "sw.getRegistration('./').then((g) => g && g.update()).catch(() => {});"
 
 
+# ---- After promotion (#21). ballotta.org/next/ then only sends people on to the main page. Its script first asks the
+# browser to fetch next/sw.js again (the self-removing worker), for the preview's own registration only (scope check:
+# a page one folder down must never update the main page's worker), then goes on with the #fragment, so a Keep or
+# Share link made on the preview still opens its picks. Without scripts, the link does it (the fragment is lost).
+MOVED_JS = (
+    "(() => { const go = () => location.replace(new URL('../', location.href).href + location.hash);\n"
+    "  try { const sw = navigator.serviceWorker; if (!sw) return go();\n"
+    "    Promise.race([sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href).href && g.update()),\n"
+    "                  new Promise((ok) => setTimeout(ok, 1500))]).catch(() => {}).then(go);\n"
+    "  } catch (e) { go(); } })();\n")
+# The main page does the same for a phone that installed the preview but only ever opens ballotta.org/ now: it asks for
+# next/sw.js again, and the self-removing worker takes the preview's copy away. A failed fetch removes nothing.
+SW_NEXT = ("sw.getRegistration('next/').then((g) => g && g.scope === new URL('next/', location.href).href && g.update()).catch(() => {});")
+
+
+def moved_page():
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n'
+            '<meta name="robots" content="noindex">\n'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src ' + sha(MOVED_JS)
+            + '; worker-src \'self\'; base-uri \'none\'; form-action \'none\'">\n'
+            '<title>Ballotta</title><link rel="canonical" href="' + BASE_URL + '"></head>\n'
+            '<body>\n'
+            '<p>The new Ballotta is now at <a href="../">ballotta.org</a>.</p>\n'
+            '<script>' + MOVED_JS + '</script>\n</body></html>\n')
+
+# next/manifest.webmanifest is left as it is: once no page links it, nothing can install from it, and a Home Screen
+# app installed from the preview opens next/, which sends it on. Rewriting its start_url or scope could merge the two
+# apps' identities on Android.
+
+
 def outputs(preview):
     """Every file one build writes, by path from the repo root. Once the phone layout is live, next/sw.js becomes the
     self-removing worker, so phones that installed the preview drop its copy (a missing sw.js would leave it running)."""
@@ -175,7 +206,7 @@ def outputs(preview):
     out = {"index.html": build(False), "census.html": census_page()}
     if PHONE_LIVE:
         out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False),
-                    "next/sw.js": sw_off_js(True)})
+                    "next/sw.js": sw_off_js(True), "next/index.html": moved_page()})
     return out
 
 
@@ -227,9 +258,12 @@ def build(preview=False, desk=None, phone=None):
         html = strip_desk(html)
     if not phone:
         html = strip_phone(html)
-    elif not OFFLINE:
+    else:
         assert html.count(SW_REGISTER) == 1, SW_REGISTER
-        html = html.replace(SW_REGISTER, SW_REMOVE)
+        if not OFFLINE:
+            html = html.replace(SW_REGISTER, SW_REMOVE)
+        if not preview:   # the main page with the phone layout: promoted, so the preview's copy goes too (#21)
+            html = html.replace(SW_REGISTER if OFFLINE else SW_REMOVE, (SW_REGISTER if OFFLINE else SW_REMOVE) + '\n      ' + SW_NEXT, 1)
 
     # Self-hosted fonts: the only third-party requests are the county and Census lookups.
     fonts = ("<style>@font-face{font-family:'Zilla Slab';src:url('fonts/ZillaSlab-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}"
@@ -266,7 +300,7 @@ def build(preview=False, desk=None, phone=None):
 if __name__ == "__main__":
     preview = "--preview" in sys.argv[1:]
     if preview and PHONE_LIVE:
-        print("The phone layout is live, and next/index.html is a redirect to the main page: not overwriting it.")
+        print("The phone layout is live: the main build writes next/ (a page that sends people on, and the self-removing next/sw.js).")
         sys.exit(0)  # not an error, so `--preview && build_site.py` still builds the live page (Pass 2)
     for path, text in outputs(preview).items():  # the page, then the files that sit next to it (#36: census.html)
         out = ROOT / path

@@ -851,7 +851,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <section class="card">
     <h3>About this test</h3>
     <p class="note">Ballotta is an early test for Travis County voters only. It isn't affiliated with Travis County, the League of Women Voters, or any campaign, and it doesn't tell you how to vote.</p>
-    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026 (corrected Oct 14). Candidate answers and the campaign websites we link: the <a href="https://austinvotersguide.org/LWVAA-VG-EN.pdf" target="_blank" rel="noopener">League of Women Voters of the Austin Area 2026 Voters Guide</a>, linked as published. Voting locations: Travis County Clerk; map positions from the U.S. Census geocoder, Travis County and © OpenStreetMap contributors. Contests marked "Double-check" aren't confirmed yet; one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet. Always compare with your official ballot using the county’s <a href="https://votetravis.gov/voter-lookup/" target="_blank" rel="noopener">Voter Lookup</a> (search by name and birth date).</p>
+    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026 (corrected Oct 14). Candidate answers and the campaign websites we link: the <a href="https://austinvotersguide.org/LWVAA-VG-EN.pdf" target="_blank" rel="noopener">League of Women Voters of the Austin Area 2026 Voters Guide</a>, linked as published. Voting locations: Travis County Clerk; map positions from the U.S. Census geocoder, Travis County and © OpenStreetMap contributors. Contests marked "Double-check" aren't confirmed yet. Always compare with your official ballot using the county’s <a href="https://votetravis.gov/voter-lookup/" target="_blank" rel="noopener">Voter Lookup</a> (search by name and birth date).</p>
   </section>
   <footer class="card" aria-label="Feedback">
     <h3>Tell us what you think</h3>
@@ -1368,7 +1368,11 @@ function renderVote() {
   $('waits').href = waitsURL();
   waitsNote();
 }
-function waitsNote() { $('waitsnote').textContent = 'Travis County map' + (today() >= new Date(2026, 9, 19) ? '' : ' · fills in once voting starts Oct 19'); }
+function waitsNote() {  // the county's wait-times map is empty until voting starts: say so on both layouts (#29 ports)
+  const before = today() < new Date(2026, 9, 19);
+  $('waitsnote').textContent = 'Travis County map' + (before ? ' · fills in once voting starts Oct 19' : '');
+  const n = document.getElementById('dk-waitsnote'); if (n) { n.textContent = before ? 'The county’s wait-times map fills in once voting starts Oct 19.' : ''; n.hidden = !before; }
+}
 // Outbound links: count the kind of link and the race's level, never which race or which candidate.
 const KIND_BY_HOST = [[/(^|\.)austinvotersguide\.org$/, 'league_guide'], [/\.gov$/, 'official'],
   [/(^|\.)(texastribune\.org|kut\.org|statesman\.com|apnews\.com|votebeat\.org)$/, 'news'], [/(^|\.)(ballotpedia\.org|wikipedia\.org)$/, 'reference']];
@@ -2100,10 +2104,11 @@ const desk = (() => {
       '<div class="dk-vote"><div><div class="seg" role="group" aria-label="Voting period"><button type="button" data-period="early" aria-pressed="' + (period === 'early') + '">Early voting · Oct 19–30</button><button type="button" data-period="eday" aria-pressed="' + (period === 'eday') + '">Election Day · Nov 3</button></div>' +
       '<p>You can vote at <b>any</b> vote center in Travis County.</p><div class="sub">' + hoursHTML() + '</div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="ov">' + esc(siteHead(all.length)) + '</span>' + (here ? '<button type="button" class="dk-link" id="dk-all">' + (showAll ? 'Show closest 5' : 'See all ' + all.length) + '</button>' : '') + '</div>' +
-      '<ul class="dk-sites" id="dk-sites">' + items + '</ul><a class="btn secondary small" href="' + esc(waitsURL()) + '" target="_blank" rel="noopener">Check live wait times</a>' + extra + '</div>' +
+      '<ul class="dk-sites" id="dk-sites">' + items + '</ul><a class="btn secondary small" href="' + esc(waitsURL()) + '" target="_blank" rel="noopener">Check live wait times</a><p class="note" id="dk-waitsnote" hidden></p>' + extra + '</div>' +
       '<div>' + dotMap(all) + '</div></div>';
     P().querySelectorAll('[data-period]').forEach(btn => btn.addEventListener('click', () => { period = btn.dataset.period; periodChosen = true; renderVote(); viewVote(); }));
     if ($('dk-all')) $('dk-all').addEventListener('click', () => { showAll = !showAll; renderVote(); viewVote(); });
+    waitsNote();
     N().innerHTML = '';
   }
   function cribPaper() {

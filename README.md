@@ -95,7 +95,7 @@ python3 tests/mutate_phone.py                       # the same for the phone lay
 
 Keep and Share links store picks by each choice's position in its list. The Oct 17 fix put ten lists in ballot order, but links keep counting those ten in the old order, through the page's `REORDERED` table, both when a link is made and when it is read: an old link still means what it meant, and a copy of the page from before the fix (a phone's offline copy, a tab left open) reads a new link right. Never reorder a list again without the same care.
 
-`build_rules.py` stops the build when a contest's district is reached by no address on file (unless it's explained in `UNREACHED_OK`: today only Travis County MUD No. 41, whose county code isn't confirmed), when an address would get anything but one member of Congress and one State Rep, or more than one State Senator, or when an address's precinct is missing from the Legislative Council table.
+`build_rules.py` stops the build when a contest's district is reached by no address on file (unless it's explained in `UNREACHED_OK`, empty today: Travis County MUD No. 41 is matched to the county's code M41 at medium confidence, marked Double-check, until the Tax Office confirms it), when an address would get anything but one member of Congress and one State Rep, or more than one State Senator, or when an address's precinct is missing from the Legislative Council table.
 
 ## Custom domain (ballotta.org)
 

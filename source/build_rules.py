@@ -75,8 +75,9 @@ def rule_for(c):
         return [{"MUD": [code]}, {"Temp": [code]}], "high", None
     if ent == "Travis County MMD No. 1":
         return [{"MUD": ["M125"]}, {"Temp": ["M125"]}], "medium", "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
-    if ent == "Travis County MUD No. 41":
-        return None, "unrouted", "No county code found for this district yet; asking the Tax Office."
+    if ent == "Travis County MUD No. 41":   # Lane, Oct 17: route it at medium confidence rather than to nobody
+        return [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "medium", \
+            "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
     if ent == "Cypress Ranch WCID No. 1": return [{"WCID": ["W02"]}], "high", None
     if ent == "Travis County WCID No. 17": return [{"WCID": ["W17"]}], "high", None
     if ent == "Wells Branch Community Library District": return [{"Library": ["L02"]}], "high", None
@@ -95,10 +96,7 @@ def rule_for(c):
 
 # Contests no address reaches, each with the reason (cold audit, Oct 17, #4). The build stops on any other: one wrong
 # or missing code hides a whole election from the voters who have it.
-UNREACHED_OK = {
-    "Travis County MUD No. 41": "No county code confirmed for this district; M41 (two address rows, 1,217 addresses in "
-                                "precinct 142) is the likely code and is with the Tax Office.",
-}
+UNREACHED_OK = {}   # Travis County MUD No. 41 was here until Lane chose medium confidence on M41 (Oct 17)
 
 rules = {}
 for c in contests:

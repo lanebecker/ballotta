@@ -316,6 +316,12 @@ M = [
  ('D53 Keep links marked for new pages only', PREV, "packFrag('k', { v: 1, at:", "packFrag('k', { v: 1, r: 2, at:", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
  ('D54 one list\'s table wrong (c179)', PREV, 'c179: [2, 3, 0, 1]', 'c179: [3, 2, 1, 0]', ['links_keep_the_old_order_for_the_ten_reordered_lists']),
  ('D55 links written through the table the wrong way round', PREV, "back && back.indexOf(i) >= 0 ? back.indexOf(i) : i", "back && back[i] !== undefined ? back[i] : i", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
+ ('D56 promotion leaves the preview page at next/', BLD, '"next/sw.js": sw_off_js(True), "next/index.html": moved_page()})', '"next/sw.js": sw_off_js(True)})', ['promotion_hands_the_preview_on']),
+ ('D57 next/ drops a link made on the preview', BLD, "location.replace(new URL('../', location.href).href + location.hash)", "location.replace(new URL('../', location.href).href)", ['promotion_hands_the_preview_on']),
+ ('D58 the promoted page leaves the preview copy', BLD, "        if not preview:   # the main page with the phone layout", "        if False:   # the main page with the phone layout", ['promotion_hands_the_preview_on']),
+ ('D59 the promoted page updates its own worker instead', BLD, "sw.getRegistration('next/').then((g) => g && g.scope === new URL('next/', location.href)", "sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href)", ['promotion_hands_the_preview_on']),
+ ('D60 MUD 41 routed to nobody', PREV, '"c193": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "medium"', '"c193": {"clauses": null, "conf": "unrouted"', ['mud_41_reaches_its_addresses_marked_double_check']),
+ ('D61 MUD 41 shown as certain', PREV, '"c194": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "medium"', '"c194": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "high"', ['mud_41_reaches_its_addresses_marked_double_check']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
