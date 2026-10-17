@@ -86,7 +86,7 @@ M = [
  ('P69 the paste box keeps its text', PREV, "  $('ph-paste-d').addEventListener('close', () => { $('ph-p-in').value = ''; });", '', ['phone_paste_shows_only_the_link']),
  ('P70 a narrow laptop window gets the offline copy', PREV, "if (NARROW.matches && matchMedia('(pointer: coarse)').matches) sw.register", "if (NARROW.matches) sw.register", ['laptops_stay_laptops_after_a_narrow_start']),
  ('P71 a laptop Home Screen window marked app', PREV, "/*PHONE*/, !matchMedia('(min-width: 1024px)').matches && (", "/*PHONE*/, (", ['laptops_stay_laptops_after_a_narrow_start']),
- ('P72 promotion leaves the preview copy running', BLD, '                    "next/sw.js": sw_off_js(True)})', '                    })', ['phone_offline_kill_switch_and_promotion']),
+ ('P72 promotion leaves the preview copy running', BLD, '"next/sw.js": sw_off_js(True), "next/index.html": moved_page()})', '"next/index.html": moved_page()})', ['phone_offline_kill_switch_and_promotion']),
  ('P73 the kill switch only unregisters', BLD, 'SW_REMOVE = "sw.getRegistration(\'./\').then((g) => g && g.update())', 'SW_REMOVE = "sw.getRegistration(\'./\').then((g) => g && g.unregister())', ['phone_offline_kill_switch_and_promotion']),
  ('P74 mismatched markers accepted', BLD, "        assert a.startswith('/*') == z.startswith('/*') and", "        assert True or a.startswith('/*') == z.startswith('/*') and", ['live_build_is_unchanged_until_promotion']),
  ('P75 the preview and the live page share a cache', BLD, "    return 'ballotta-next-' if preview else 'ballotta-'", "    return 'ballotta-'", ['phone_offline_kill_switch_and_promotion']),
