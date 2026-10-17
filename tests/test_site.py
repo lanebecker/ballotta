@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'bf8395f3cc0a41338000ec011da2ec3f85c79a42856cb5c8eba474fd131c6896'  # round J (Oct 17): At a glance's pick column; "Print your choices"; "My ballot choices"; title spacing
+LIVE_SHA = 'e9c4086f4dbfa41272f59b8a9e5fc7dd55913583c446e81c5c63332cc46fde7b'  # round J (Oct 17): pick column; "Print your choices"; "My ballot choices"; title spacing and size
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -630,12 +630,13 @@ def view_titles_sit_the_same_distance_below_their_line(b):
     if not HAS_DESK: return
     for wide, size in sizes:
         ctx, pg = new_page(b, wide=wide, size=size, touch=not wide); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
-        gaps = {}
+        gaps, sizes_ = {}, {}
         for v in ('decide', 'glance', 'vote', 'crib'):
             if not wide: pg.click('#ph-list')
             pg.click(f'#dk-views [data-view="{v}"]'); pg.wait_for_timeout(200)
-            gaps[v] = pg.evaluate(TITLE_GAP)
+            gaps[v] = pg.evaluate(TITLE_GAP); sizes_[v] = pg.evaluate("getComputedStyle(document.querySelector('#dk-paper h1')).fontSize")
         assert all(abs(g - gaps['decide']) <= 1 for g in gaps.values()), ('laptop' if wide else 'phone', gaps)
+        assert len(set(sizes_.values())) == 1, ('every view title the same size (Lane, Oct 17)', 'laptop' if wide else 'phone', sizes_)
         ctx.close()
 
 @desk_test
