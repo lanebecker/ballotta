@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'f0b438043fb389e52e5f1e64d149ea9272e1772758dff95c3547a6be57ca447d'  # round J (Oct 17): At a glance's pick column; "Print your choices"
+LIVE_SHA = 'c5723d61f8db1e0188d7c17668adc9166d027ac0d172dca79729cc1a6923120c'  # round J (Oct 17): At a glance's pick column; "Print your choices"; "My ballot choices"
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -1640,7 +1640,7 @@ def desk_works_without_phone_buttons(b):
     pg.evaluate('() => { window.__printed = 0; window.print = () => { window.__printed++; }; }')
     pg.click('#dk-views [data-view="crib"]'); pg.click('#dk-notes [data-act="print"]')
     assert pg.evaluate('window.__printed') == 1 and events(pg)[-1][0] == 'crib_printed'
-    assert 'My ballot notes' in pg.inner_text('#dk-page')
+    assert 'My ballot choices' in pg.inner_text('#dk-page') and 'My ballot notes' not in pg.inner_text('#dk-page')   # Lane, Oct 17
     pg.click('#dk-views [data-view="decide"]'); pg.locator('#dk-paper .dk-line').first.click()
     assert pg.evaluate('Object.keys(picks).length') == 1
     pg.click('#dk-help'); pg.once('dialog', lambda d: d.accept()); pg.click('#dk-menu [data-help="clear"]')

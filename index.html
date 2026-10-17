@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-EBdiUDEG+YZHciCmzpxCtA0Y90MF7jWUumFWbZZRjWo='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-vjdQzWiZYwoUfuXfAilaLp0LmcRNGABPM+01SuDRtXw='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'">
 <script>
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
@@ -995,7 +995,7 @@ function milestones() {
 }
 function cribHTML() {  // the crib sheet, for the phone page and the laptop's crib view alike (#38)
   const withWhy = $('withwhy').checked;
-  let html = '<div class="ch"><b style="font-size:15px">My ballot notes</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
+  let html = '<div class="ch"><b style="font-size:15px">My ballot choices</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
   ballot.forEach(b => {/*DESK*/ try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}/*/DESK*/
     if (b.c.level !== last) { last = b.c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
     const v = current(b.c.id), txt = !v.length || v[0] === '__skip' ? '______' : v.join(', ');
