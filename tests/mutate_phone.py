@@ -141,6 +141,7 @@ M = [
  ('P133 no precinct reads "Precinct ·"', PREV, 'pr && /\\d/.test(pr.textContent)', 'pr', ['phone_lookup_opens_the_app_at_its_top']),
  ("P134 the back button's name hides where it goes", PREV, "dec ? 'Previous contest' : 'Contest ' + (i + 1) + ', go back'", "dec ? 'Previous contest' : 'Previous contest'", ['phone_next_undecided_then_the_crib_sheet']),
  ("P135 the laptop's paper shows the precinct", PREV, 'NARROW.matches && app && pr', 'app && pr', ['phone_lookup_opens_the_app_at_its_top']),
+ ('P136 At a glance title hugs its line on a phone', PREV, '  .dk-gh > div{display:flex;flex-direction:column;gap:16px}', '  .dk-gh > div{}', ['view_titles_sit_the_same_distance_below_their_line']),
 ]
 if __name__ == '__main__':
     R.main(M)

@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'c5723d61f8db1e0188d7c17668adc9166d027ac0d172dca79729cc1a6923120c'  # round J (Oct 17): At a glance's pick column; "Print your choices"; "My ballot choices"
+LIVE_SHA = 'bf8395f3cc0a41338000ec011da2ec3f85c79a42856cb5c8eba474fd131c6896'  # round J (Oct 17): At a glance's pick column; "Print your choices"; "My ballot choices"; title spacing
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -615,6 +615,27 @@ def desk_glance_picks_fit_their_names(b):
         assert r['sels'] > 40 and not r['short'], (w, 'a pick is cut off', r['short'][:5])
         assert r['head'] == 1, (w, '"Your pick" wraps', r['head'])   # its text's lines (the header row is as tall as its tallest cell)
         assert r['sideways'] <= 0 and (w < 1200 or r['links'] == 0), (w, r)
+        ctx.close()
+
+TITLE_GAP = """() => { const p = document.getElementById('dk-paper'), h = p.querySelector('h1');
+  const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return [...r.getClientRects()].filter(x => x.width); };
+  const above = [...p.querySelectorAll('.ov, .note')].filter(e => e.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING && e.getClientRects().length);
+  const last = Math.max(...above.flatMap(lines).map(x => x.bottom)), top = Math.min(...lines(h).map(x => x.top));
+  return Math.round(top - last); }"""
+
+@test
+def view_titles_sit_the_same_distance_below_their_line(b):
+    # Lane, Oct 17: the gap between the line above a view's title and the title matches Decide's on every view.
+    sizes = [(True, None)] + ([(False, {'width': 390, 'height': 844})] if HAS_PHONE else [])
+    if not HAS_DESK: return
+    for wide, size in sizes:
+        ctx, pg = new_page(b, wide=wide, size=size, touch=not wide); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+        gaps = {}
+        for v in ('decide', 'glance', 'vote', 'crib'):
+            if not wide: pg.click('#ph-list')
+            pg.click(f'#dk-views [data-view="{v}"]'); pg.wait_for_timeout(200)
+            gaps[v] = pg.evaluate(TITLE_GAP)
+        assert all(abs(g - gaps['decide']) <= 1 for g in gaps.values()), ('laptop' if wide else 'phone', gaps)
         ctx.close()
 
 @desk_test

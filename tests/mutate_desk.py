@@ -308,6 +308,7 @@ M = [
  ('D45 Learn more wraps on a wide laptop', PREV, '@media (max-width:1199.98px){.dk-tbl td a{white-space:normal}}', '@media all{.dk-tbl td a{white-space:normal}}', ['desk_glance_picks_fit_their_names']),
  ('D46 the tab still says Crib sheet', PREV, 'Print your choices</button>', 'Crib sheet</button>', ['desk_crib_options_and_print']),
  ('D47 the old headings', PREV, '<span class="ov">Print your choices</span><h1>Crib sheet</h1>', '<span class="ov">Crib sheet</span><h1>Print your notes</h1>', ['desk_crib_options_and_print']),
+ ('D48 At a glance title hugs its line', PREV, '  .dk-gh > div{display:flex;flex-direction:column;gap:18px}', '  .dk-gh > div{}', ['view_titles_sit_the_same_distance_below_their_line']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
