@@ -1,7 +1,7 @@
 """End-to-end checks for the Ballotta test site (index.html), run against the live Travis County lookup services.
 
-    python3 tests/test_site.py                                    # builds nothing; checks the live page (index.html)
-    BALLOTTA_PAGE=next/index.html python3 tests/test_site.py      # checks the preview, phone layout included
+    python3 tests/test_site.py                                    # builds nothing; checks the live page (index.html),
+                                                                  # laptop and phone layouts (promoted Oct 17)
 
 Analytics: cloud.umami.is is stubbed so each test can see exactly which events (and which details) would be sent.
 """
@@ -16,9 +16,9 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(encoding='utf-8'):   # promotion audit #5
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
-# sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
+# sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '8c2f9aa3f2f0b2116d0a714b5e3a958ca1be96632f126bbd0fb405c91c4cacc1'  # Oct 17: MUD 41 routed to M41 at medium confidence (Lane); the wait-times note on the laptop's Where to vote
+LIVE_SHA = 'eb98e230c30e05a664e6c77a1afa583ee73259f893318fbbe6134ca494411bf4'  # Oct 17: promoted: the phone layout is the live page (Lane)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -63,58 +63,6 @@ def pick(pg, cid, label):
 TESTS = []
 def test(fn): TESTS.append(fn); return fn
 
-@test
-def lookup_courthouse_and_ballot_found(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)
-    assert pg.text_content('#k-total') == '63', pg.text_content('#k-total')
-    ev = events(pg)
-    assert ['ballot_found', {'match': 'exact', 'layout': 'phone'}] in ev and ['lookup_started', {'layout': 'phone'}] in ev, ev
-    ctx.close()
-
-@test
-def race_learn_more_is_symmetric_and_attributed(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); open_race(pg, 'c070')
-    body = pg.inner_text('#rc070')
-    assert 'One of 10 district council members' in body
-    kai = pg.locator('#rc070 .optw', has_text='Kai Huang').inner_text()
-    assert 'Didn’t answer the League guide' in kai and 'No campaign site listed' in kai, kai
-    zo = pg.locator('#rc070 .optw', has_text='Qadri')
-    assert zo.locator('a', has_text='Campaign site').get_attribute('href') == 'https://zoforaustin.com'
-    assert zo.locator('a', has_text='League guide answers, p. 33').get_attribute('href').endswith('LWVAA-VG-EN.pdf#page=33')
-    # every candidate row carries exactly two link slots (site + guide): symmetric
-    for row in pg.locator('#rc070 .optw').all():
-        assert row.locator('.links > *').count() == 2, row.inner_text()
-    assert 'League of Women Voters of the Austin Area 2026 Voters Guide' in body
-    srcs = [a.get_attribute('href') for a in pg.locator('#rc070 .srcs a').all()]
-    assert srcs[0].endswith('#page=32') and any('austintexas.gov/voterinfo' in s for s in srcs), srcs
-    ctx.close()
-
-@test
-def measure_card_prop_a(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); open_race(pg, 'c071')
-    body = pg.inner_text('#rc071')
-    assert 'principle of and interest in bonds' in body          # verbatim, typos included
-    assert '$65.5M' in body and '$14.34' in body and 'the City may sell these bonds' in body
-    assert 'Supporters' not in body and 'Opponents' not in body     # Lane: no argument boxes
-    pick(pg, 'c071', 'For')
-    assert pg.locator('#rc071 .opt[aria-pressed=true]').inner_text().strip() == 'For'
-    ctx.close()
-
-@test
-def where_to_vote_sorted_by_distance(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)
-    sites = pg.locator('#sites .site')
-    assert sites.count() == 5, sites.count()
-    d = [float(re.search(r'([\d.]+) mi', s.inner_text()).group(1)) for s in sites.all()]
-    assert d == sorted(d) and d[0] < 1, d
-    first5 = pg.inner_text('#sites')
-    for name in ['Austin Recreation Center', 'Travis County Civil and Family Courts Facility', 'UT Texas Union']:
-        assert name in first5, first5
-    assert 'Open till 10pm Oct 29–30' in first5
-    pg.click('#allsites'); assert pg.locator('#sites .site').count() == 45
-    pg.click('#t-eday'); assert pg.locator('#sites .site').count() == 201
-    assert 'Election%20Day' in pg.get_attribute('#waits', 'href')
-    ctx.close()
 
 def make_picks(pg):
     pick(pg, 'c070', 'Qadri'); pg.fill('#wc070', 'Knows the district')
@@ -122,85 +70,6 @@ def make_picks(pg):
     pick(pg, 'c001', 'Ted Brown')
     open_race(pg, 'c002'); pg.click('#rc002 .skip') if pg.locator('#rc002').count() else None
 
-@test
-def keep_link_round_trip(b):
-    sent = []
-    ctx, pg = new_page(b, sent); pg.goto(BASE); lookup(pg); make_picks(pg)
-    pg.click('#a-keep'); assert 'live only in this browser' in pg.inner_text('#keepcount')
-    pg.click('#keep-copy')
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'keep_created')")
-    url = pg.inner_text('#keep-out')
-    frag = url.split('#', 1)[1]
-    assert re.fullmatch(r'k2[A-Za-z0-9_-]{16,}', frag), url                 # v2: nothing after '#' that chat apps cut at
-    assert ['keep_created', {'via': 'copy', 'layout': 'phone'}] in events(pg)
-    ctx.close()
-    sent2 = []
-    ctx, pg = new_page(b, sent2); pg.goto(url)
-    assert pg.evaluate('location.hash') == '', 'fragment must be stripped from the address bar'
-    pg.wait_for_selector('#d-restore[open]')
-    s = pg.inner_text('#restoresum'); assert 'Precinct 300' in s and 'of 63' in s, s
-    pg.click('#restore-go')
-    pg.wait_for_selector('#result:not(.hidden)')
-    assert pg.text_content('#k-total') == '63'
-    assert 'Qadri' in pg.inner_text('#sc070') and pg.input_value('#wc071') == 'More shade and pools near us.'
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'keep_restored')")
-    for u in sent + sent2:
-        assert frag[2:40] not in u and 'shade' not in urllib.parse.unquote(u), u
-    ctx.close()
-
-@test
-def share_friend_compare_and_events(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); make_picks(pg)
-    pg.click('#a-share')
-    assert names(pg).count('share_sheet_open') == 1
-    toggles = pg.locator('#sharesecs input')
-    assert toggles.count() >= 2 and all(t.is_checked() for t in toggles.all()), 'every section starts on'
-    assert pg.is_checked('#sharewhy'), 'reasons start on'
-    pg.fill('#sharename', 'Maya')
-    fed = pg.locator('#sharesecs .sw', has_text='Federal').locator('input'); fed.click()   # leave Federal out
-    summ = pg.inner_text('#sharesum'); assert 'They’ll see 2 picks and 2 reasons' in summ, summ
-    pg.click('#share-go')
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'share_created')")
-    url = pg.inner_text('#share-out')
-    ev = [e for e in events(pg) if e[0] == 'share_created'][0][1]
-    assert ev['reasons'] == 'yes' and ev['picks'] == '1-5' and ev['via'] == 'copy' and ev['generation'] == 1 and re.fullmatch(r'[a-z2-9]{8}', ev['link']), ev
-    assert 'federal' not in ev['sections'] and 'city' in ev['sections'], ev
-    pg.click('#sharewhy')                                   # reasons off: the link must carry none
-    assert 'and 0 reasons' in pg.inner_text('#sharesum')
-    pg.click('#share-go')
-    pg.wait_for_function("(window.__events||[]).filter(e => e[0] === 'share_created').length === 2")
-    o = pg.evaluate("unpackFrag(document.getElementById('share-out').textContent.split('#')[1])")
-    assert not o.get('w') and len(o['p']) == 2, o
-    assert [e for e in events(pg) if e[0] == 'share_created'][1][1]['reasons'] == 'no'
-    ctx.close()
-    sent = []
-    ctx, pg = new_page(b, sent); pg.goto(url)
-    assert pg.evaluate('location.hash') == ''
-    pg.wait_for_selector('#friend:not(.hidden)')
-    f = pg.inner_text('#friend')
-    assert 'Maya shared 2 picks' in f and 'Qadri' in f and '“More shade and pools near us.”' in f and 'Ted Brown' not in f, f
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'share_opened')")
-    op = [e for e in events(pg) if e[0] == 'share_opened'][0][1]
-    assert op == {'generation': 1, 'has_picks': 'no', 'link': ev['link'], 'layout': 'phone'}, op
-    pg.reload(); pg.wait_for_selector('#friend:not(.hidden)')       # survives a refresh, and is not double-counted
-    pg.wait_for_timeout(1500)
-    assert names(pg).count('share_opened') == 0
-    pg2 = ctx.new_page(); pg2.goto(url)   # same link, new tab
-    pg2.wait_for_selector('#friend:not(.hidden)'); pg2.wait_for_timeout(1500)
-    assert names(pg2).count('share_opened') == 0, events(pg2)
-    pg2.close()
-    pg.click('#f-cmp'); assert 'Look up your ballot first' in pg.inner_text('#lookupmsg')
-    lookup(pg)
-    pg.wait_for_selector('#compare:not(.hidden)')
-    c = pg.inner_text('#compare'); assert 'You and Maya' in c and 'you haven’t picked' in c, c
-    pg.wait_for_function("['share_own_ballot','share_compare'].every(n => (window.__events||[]).some(e => e[0] === n))")
-    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.gen'))") == 2
-    for e in events(pg):            # nothing personal ever rides along
-        blob = json.dumps(e)
-        assert 'Qadri' not in blob and 'Maya' not in blob and '300' not in blob and 'Guadalupe' not in blob, blob
-    for u in sent:
-        assert url.split('#', 1)[1][2:40] not in u and 'Maya' not in u, u
-    ctx.close()
 
 @test
 def damaged_link_is_handled(b):
@@ -234,42 +103,6 @@ import base64
 def link(kind, o): return BASE + '#' + kind + '=' + base64.urlsafe_b64encode(json.dumps(o).encode()).decode().rstrip('=')
 def fresh_goto(pg, url): pg.goto('about:blank'); pg.goto(url)
 
-@test
-def audit_a1_a2_a3_guide_data(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)
-    open_race(pg, 'c006')
-    dx = pg.locator('#rc006 .optw', has_text='Pat Dixon')
-    assert dx.locator('a', has_text='Campaign site').get_attribute('href') == 'https://patdixon.org', dx.inner_text()   # A1
-    L = pg.evaluate('DATA.learn')
-    assert L['c017']['cands']['Thomas Smith']['s'] == 'https://www.smithfortexas.org'                                  # A1
-    assert L['c131']['cands']['Mike Randolph'] == {'g': 1, 'p': 50, 'a': 1}                                            # A2
-    assert L['c129']['cands']['Josh Castro']['a'] == 0 and L['c129']['cands']['Josh Castro']['g'] == 1                  # A2
-    assert L['c063']['lwvRace'] == 1                                                                                     # A2
-    assert L['c065']['cands']['Yvonne Muñoz'] == {'g': 1, 'p': 25, 'a': 1}                                             # B1 contested, answered
-    assert L['c055']['cands']['Brigid Shea'] == {'g': 1, 'p': 24, 'a': 0, 'u': 1}                                     # C1 side-by-side names
-    open_race(pg, 'c034')                                                                                                # A3
-    t = pg.inner_text('#rc034')
-    assert 'Unopposed · no questions in the League guide' in t and 'League guide answers' not in t and 'Lists this race as unopposed' in t, t
-    ctx.close()
-
-@test
-def audit_a4_a9_keep_link_limits(b):
-    ctx, pg = new_page(b)
-    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1] * 5000, 'p': {}}))
-    assert 'damaged' in pg.inner_text('#lookupmsg') and pg.locator('#d-restore[open]').count() == 0                   # A4 over cap
-    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [], 'p': {'1': 0}}))
-    assert 'damaged' in pg.inner_text('#lookupmsg') and pg.locator('#d-restore[open]').count() == 0                   # A9 empty ballot
-    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, -1, 1, 6], 'p': {'1': 1}}))
-    pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go')
-    assert pg.locator('#rc001').count() == 1 and pg.text_content('#k-total') == '2'                                   # A4 de-duplicated
-    ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); pick(pg, 'c001', 'Ted Brown')
-    fresh_goto(pg, link('k', {'v': 1, 'pr': '999', 'b': [1], 'p': {}}))
-    pg.wait_for_selector('#d-restore[open]')
-    w = pg.inner_text('#restorewarn')
-    assert 'Precinct 999' in w and 'Precinct 300' in w and 'picks and reasons' in w, w                                 # A9
-    assert pg.evaluate('document.activeElement.textContent.trim()') == 'Not now'                                         # A13
-    ctx.close()
 
 @test
 def audit_a5_a8_a12_hostile_share(b):
@@ -291,15 +124,6 @@ def audit_a5_a8_a12_hostile_share(b):
     t = pg.inner_text('#friend'); assert 'Sarah Ponder, Sarah Ponder' not in t and 'Sarah Ponder' in t, t               # A12
     ctx.close()
 
-@test
-def audit_a6_sheet_padding_tap_keeps_it_open(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); pick(pg, 'c001', 'Ted Brown')
-    pg.click('#a-share'); r = pg.locator('#d-share').bounding_box()
-    pg.mouse.click(r['x'] + 6, r['y'] + r['height'] / 2)                       # inside the sheet's left padding
-    assert pg.locator('#d-share[open]').count() == 1
-    pg.mouse.click(r['x'] + 20, max(5, r['y'] - 40))                           # the backdrop above it
-    assert pg.locator('#d-share[open]').count() == 0
-    ctx.close()
 
 @test
 def audit_a7_same_tab_link(b):
@@ -309,45 +133,6 @@ def audit_a7_same_tab_link(b):
     assert pg.evaluate('location.hash') == ''
     ctx.close()
 
-@test
-def audit_a10_a11_generation_and_own_ballot(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); pick(pg, 'c001', 'Ted Brown')
-    pg.click('#a-share'); pg.click('#share-go')
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'share_created')")
-    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.gen'))") == 1                                         # A10
-    fresh_goto(pg, link('s', {'v': 1, 'n': 'Bo', 'c': 'gen4link', 'g': 4, 'p': {'1': 0}}))
-    pg.wait_for_selector('#friend:not(.hidden)')
-    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.gen'))") == 1                                         # A10
-    pg.click('#f-own')                                                                                                   # saved ballot already on screen
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'share_own_ballot')")                                 # A11
-    ctx.close()
-
-@test
-def audit_a14_a15_tracker_and_targets(b):
-    src = (ROOT / PAGE).read_text()
-    assert re.search(r'<script defer src="(\.\./)?umami\.js"', src) and 'cloud.umami.is/script.js"' not in src            # A14
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); open_race(pg, 'c070')
-    h = pg.locator('#rc070 .links a').first.bounding_box()['height']
-    assert h >= 24, h                                                                                                    # A15
-    ctx.close()
-
-@test
-def audit_b3_b4_counts_and_dedupe(b):
-    ctx, pg = new_page(b)
-    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 1, 1, 99999], 'p': {'1': 0}}))
-    pg.wait_for_selector('#d-restore[open]')
-    assert '1 of 1 contests' in pg.inner_text('#restoresum'), pg.inner_text('#restoresum')                            # B3
-    fresh_goto(pg, 'about:blank'); fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1], 'p': {'1': 0, '6': 0, '70': 0}}))
-    pg.wait_for_selector('#d-restore[open]')
-    assert '1 of 1 contests' in pg.inner_text('#restoresum'), pg.inner_text('#restoresum')                            # C5
-    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 1, 1, 99999], 'p': {'1': 0}}))
-    pg.wait_for_selector('#d-restore[open]')
-    pg.click('#restore-go')
-    fresh_goto(pg, link('s', {'v': 1, 'n': 'Al', 'g': 1, 'p': {'1': 0}}))                                              # no link code
-    pg.wait_for_selector('#friend:not(.hidden)')
-    pg.click('#f-own'); pg.click('#f-own'); pg.wait_for_timeout(1500)
-    assert names(pg).count('share_own_ballot') == 1, events(pg)                                                       # B4
-    ctx.close()
 
 @test
 def links_are_short_and_safe_for_chat_apps(b):
@@ -388,37 +173,12 @@ def links_are_short_and_safe_for_chat_apps(b):
     src = (ROOT / PAGE).read_text()
     assert "handOff(url, {}, $('share-out')" in src                          # share sheet gets the link only, no long text
 
-@test
-def double_tap_share_counts_once(b):
-    ctx, pg = new_page(b)
-    pg.add_init_script("navigator.share = () => new Promise(r => setTimeout(r, 800));")   # a share sheet that stays open a moment
-    pg.goto(BASE); lookup(pg); pick(pg, 'c001', 'Ted Brown')
-    pg.click('#a-share'); pg.fill('#sharename', 'Dee'); pg.wait_for_timeout(200)
-    pg.click('#share-go'); pg.click('#share-go', force=True); pg.wait_for_timeout(1500)
-    made = [e for e in events(pg) if e[0] == 'share_created']
-    assert len(made) == 1 and made[0][1]['via'] == 'share', made
-    ctx.close()
 
 # ---------- laptop layout (preview build only; skipped when the page has no laptop layout) ----------
 DESK_TESTS = set()
 def desk_test(fn): TESTS.append(fn); DESK_TESTS.add(fn.__name__); return fn
 PHONE_TESTS = set()                                            # run only where the page has the phone layout (the preview)
 def phone_test(fn): TESTS.append(fn); PHONE_TESTS.add(fn.__name__); return fn
-# These drive the phone page as it is live today (the accordion list, its cards and buttons). On the preview a phone
-# gets the new layout instead, so they run on index.html only; promotion moves them to the new layout (plan, Task 13).
-OLD_PHONE_TESTS = {
-    'audit_a10_a11_generation_and_own_ballot', 'audit_a14_a15_tracker_and_targets', 'audit_a1_a2_a3_guide_data',
-    'audit_a4_a9_keep_link_limits', 'audit_a6_sheet_padding_tap_keeps_it_open', 'audit_b3_b4_counts_and_dedupe',
-    'backup_nudge_after_fifth_pick', 'counts_progress_sources_and_clearing', 'counts_where_people_drop_off',
-    'desk_crib_options_and_print', 'desk_failures_never_break_the_phone_flow', 'desk_landing_plum_band_and_faq',
-    'desk_old_link_warning_gone_after_new_lookup', 'desk_resize_keeps_layouts_in_step', 'desk_stays_quiet_on_phones',
-    'desk_why_box_grows_with_the_reason', 'double_tap_share_counts_once', 'extra_pick_is_explained',
-    'friend_card_long_names_and_honest_copy', 'keep_link_round_trip', 'lookup_courthouse_and_ballot_found',
-    'measure_card_prop_a', 'page_is_locked_down', 'persistent_storage_asked_at_first_pick',
-    'phone_can_clear_everything_from_the_footer', 'phone_new_day_keeps_focus_on_a_directions_link',
-    'race_learn_more_is_symmetric_and_attributed', 'share_friend_compare_and_events', 'stored_junk_in_share_fields',
-    'stored_junk_never_breaks_keep_or_share', 'where_to_vote_sorted_by_distance'
-}
 
 def build_module():
     spec = importlib.util.spec_from_file_location('build_site', ROOT / 'source' / 'build_site.py')
@@ -469,7 +229,7 @@ def live_build_is_unchanged_until_promotion(b):
     # it, next/index.html, next/sw.js, sw.js and manifest.webmanifest are the build's too, and a stale or missing one
     # would ship), and the live page is the one pinned.
     for path, text in m.outputs(False).items():
-        assert (ROOT / path).exists() and (ROOT / path).read_text(encoding='utf-8') == text, f'{path} on disk is not what build_site.py writes: rebuild, and commit it'
+        assert (ROOT / path).exists() and (ROOT / path).read_bytes() == text.encode('utf-8'), f'{path} on disk is not what build_site.py writes: rebuild, and commit it'
     got = hashlib.sha256(live.encode('utf-8')).hexdigest()
     assert got == LIVE_SHA, f'live index.html changed ({got}). Expected only with a deliberate change to the live page: re-pin LIVE_SHA in that commit.'
     if m.PHONE_LIVE:
@@ -478,7 +238,7 @@ def live_build_is_unchanged_until_promotion(b):
         assert 'id="ph-bar"' not in live and 'PHONE' not in live and 'rel="manifest"' not in live and "worker-src" not in live, 'phone layout leaked into the live build'
         assert (ROOT / 'next/index.html').read_bytes() == prev.encode('utf-8'), 'next/index.html on disk is not what the build writes'
         assert (ROOT / 'next/manifest.webmanifest').read_text(encoding='utf-8') == m.manifest(True) and (ROOT / 'next/sw.js').read_text(encoding='utf-8') == (m.sw_js(True) if m.OFFLINE else m.sw_off_js(True))
-        assert not (ROOT / 'sw.js').exists() and not (ROOT / 'manifest.webmanifest').exists(), 'no offline copy on the live site before promotion'
+        assert m.outputs(False)['sw.js'] == m.sw_off_js(False), 'rolled back: the main sw.js removes the offline copy phones kept since promotion'
     assert 'id="ph-bar"' in prev and "manifest-src 'self'; worker-src 'self'" in prev and '"name": "Ballotta (preview)"' in m.manifest(True)
     assert 'id="dk-app"' in prev and 'data-domains="preview.invalid"' in prev and 'src="../umami.js"' in prev
     assert (ROOT / 'index.html').read_bytes() == live.encode('utf-8'), 'index.html on disk is not what the build writes (stale, left mutated, or its line endings changed)'
@@ -541,29 +301,6 @@ LONG_WHY = ('I read both candidates’ League answers twice. ' * 4 + '\n') * 4  
 def fits(pg, sel):                                                                                # shows everything, no inner scrollbar
     return pg.evaluate(f"(() => {{ const t = document.querySelector('{sel}'); return t.scrollHeight <= t.clientHeight + 1 && t.clientHeight > 150; }})()")
 
-@desk_test
-def desk_why_box_grows_with_the_reason(b):
-    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
-    pg.click('.dk-row[data-row="c070"]'); h0 = pg.locator('#dk-w').bounding_box()['height']
-    card = pg.evaluate("""(() => { const w = document.querySelector('.dk-why'), s = getComputedStyle(w), r = w.getBoundingClientRect(),
-        k = document.querySelector('#dk-paper .skip').getBoundingClientRect();
-        return {bg: s.backgroundColor, border: s.borderTopStyle, pad: parseFloat(s.paddingLeft), holds: w.contains(document.getElementById('dk-w')) && !!w.querySelector('label'), gap: r.top - k.bottom}; })()""")
-    assert card['bg'] not in ('rgba(0, 0, 0, 0)', 'rgb(255, 255, 255)') and card['border'] == 'solid' and card['pad'] >= 12 and card['holds'], card
-    assert card['gap'] >= 24, ('the reason card sits apart from Skip', card)                      # Lane, Oct 15: "notes card" (option A)
-    pg.click('#dk-w'); pg.keyboard.type(LONG_WHY)
-    assert fits(pg, '#dk-w') and pg.locator('#dk-w').bounding_box()['height'] > h0 * 3, 'the laptop box grows as you type'
-    pg.click('.dk-row[data-row="c071"]'); pg.click('.dk-row[data-row="c070"]')
-    assert fits(pg, '#dk-w'), 'a long saved reason opens at full height'
-    pg.fill('#dk-w', LONG_WHY * 4)                                                                # long enough to fill the screen
-    pg.evaluate("() => { const t = document.getElementById('dk-w'); t.focus({preventScroll: true}); t.setSelectionRange(t.value.length, t.value.length); }")
-    pg.evaluate('window.scrollTo(0, document.documentElement.scrollHeight)'); y = pg.evaluate('scrollY')
-    pg.keyboard.type('x')
-    assert abs(pg.evaluate('scrollY') - y) <= 30, ('typing at the bottom does not jump the page', y, pg.evaluate('scrollY'))
-    pg.set_viewport_size({'width': 400, 'height': 900}); open_race(pg, 'c070'); pg.wait_for_timeout(100)
-    assert pg.evaluate("getComputedStyle(document.getElementById('wc070')).height") == '70px', 'phones unchanged until the phone round'
-    open_race(pg, 'c071'); pg.click('#wc071'); pg.keyboard.type(LONG_WHY)
-    assert pg.evaluate("(() => { const t = document.getElementById('wc071'); return getComputedStyle(t).height + '|' + t.style.height; })()") == '70px|', 'typing on a phone leaves the box as it is today'
-    ctx.close()
 
 @desk_test
 def desk_learn_more_symmetric_and_measure(b):
@@ -729,34 +466,6 @@ def desk_where_to_vote_list_and_private_map(b):
         assert not re.search(r'tile|maps\.googleapis|openstreetmap|mapbox|arcgisonline', u), u
     ctx.close()
 
-@desk_test
-def desk_crib_options_and_print(b):
-    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
-    pg.click('.dk-row[data-row="c001"]'); pg.locator('.dk-line', has_text='Ted Brown').click()
-    pg.fill('#dk-w', 'Wanted a third option.')
-    assert pg.inner_text('#dk-views [data-view="crib"]') == 'Print your choices', pg.inner_text('#dk-views [data-view="crib"]')   # Lane, Oct 17
-    pg.click('#dk-views [data-view="crib"]')
-    assert pg.inner_text('#dk-paper h1') == 'Crib sheet' and pg.inner_text('#dk-paper > .ov') == 'PRINT YOUR CHOICES', (pg.inner_text('#dk-paper h1'), pg.inner_text('#dk-paper > .ov'))
-    t034 = pg.evaluate("cleanTitle(BYID['c034'])")
-    import io, pypdf
-    norm = lambda s: ' '.join(s.split())                                                           # PDF text wraps long lines
-    printed = lambda: norm(''.join(x.extract_text() for x in pypdf.PdfReader(io.BytesIO(pg.pdf(format='Letter'))).pages))
-    assert norm(t034) in printed(), 'control: an unopposed race prints until it is hidden'
-    page = pg.inner_text('#dk-page'); assert 'Ted Brown' in page and t034 in page and 'Wanted a third option' not in page
-    pg.check('#dk-cu'); assert t034 not in pg.inner_text('#dk-page') and t034 not in pg.inner_text('#crib')
-    pg.check('#dk-cw'); assert 'Wanted a third option' in pg.inner_text('#dk-page') and pg.is_checked('#withwhy')
-    pg.check('#dk-c2'); assert 'two' in pg.get_attribute('#crib', 'class') and 'two' in pg.get_attribute('#dk-page', 'class')
-    pg.emulate_media(media='print')
-    assert pg.is_visible('#crib') and pg.is_hidden('#dk-app') and pg.is_hidden('#dk-hdr')
-    pg.emulate_media(media='null')                                                                # back to normal, so pdf() prints as a browser would
-    pdf = printed()                                                                                # a real print (narrower page)
-    assert 'Ted Brown' in pdf and norm(t034) not in pdf, 'the printout honours Hide unopposed races'
-    assert pg.is_checked('#dk-c2') and pg.is_checked('#dk-cu') and 'two' in pg.get_attribute('#crib', 'class'), 'printing keeps the options'
-    pg.evaluate("() => dispatchEvent(new Event('beforeprint'))"); pg.keyboard.press('Shift')   # a print that never reports back, then any key
-    pg.emulate_media(media='screen'); pg.set_viewport_size({'width': 400, 'height': 900})
-    pg.wait_for_function("!document.getElementById('crib').classList.contains('two')", timeout=3000)   # the resize event lands a frame later
-    assert t034 in pg.inner_text('#crib'), 'laptop print options stay on the laptop'
-    ctx.close()
 
 @desk_test
 def desk_help_menu_info_address_and_clear(b):
@@ -825,20 +534,6 @@ def desk_friend_link_with_saved_ballot_counts_in_order(b):
 JUNK_STORAGE = ("try { localStorage.setItem('ballotta.whys', JSON.stringify({c001: 5})); "
                 "localStorage.setItem('ballotta.ballot', JSON.stringify({pr: '300', b: [1, 70], mode: 'saved', at: 0, pt: null})) } catch (e) {}")
 
-@desk_test
-def desk_failures_never_break_the_phone_flow(b):
-    ctx, pg = new_page(b); pg.add_init_script(JUNK_STORAGE)
-    errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-    fresh_goto(pg, link('s', DESK_FRIEND)); pg.wait_for_selector('#friend:not(.hidden)', timeout=5000)   # a non-text reason in storage
-    pg.evaluate("() => { for (const k of ['ballot', 'refresh', 'cribSkip']) desk[k] = () => { throw new Error('boom'); }; }")   # even if laptop code throws
-    pg.click('#f-own'); lookup(pg)
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'ballot_found')", timeout=30000)
-    assert 'United States Senator' in pg.inner_text('#crib') and not errs, errs                          # the crib sheet still renders
-    assert 'lookup_failed' not in names(pg) and pg.locator('#status.bad').count() == 0, 'a laptop-code failure is not reported as a county outage'
-    ctx.close()
-    ctx, pg = new_page(b, wide=True); pg.add_init_script(JUNK_STORAGE); pg.goto(BASE)
-    pg.wait_for_selector('body.dk-app-on'); assert pg.locator('.dk-row').count() == 2
-    ctx.close()
 
 @desk_test
 def desk_compare_counted_once_per_link(b):
@@ -857,27 +552,6 @@ def desk_compare_counted_once_per_link(b):
     assert names(pg).count('share_compare') == 1, 'once per page for a link without a code'
     ctx.close()
 
-@desk_test
-def desk_stays_quiet_on_phones(b):
-    ctx, pg = new_page(b); fresh_goto(pg, link('s', DESK_FRIEND)); pg.wait_for_selector('#friend:not(.hidden)')
-    assert pg.is_hidden('#dk-hdr') and pg.is_hidden('#dk-app') and pg.is_visible('main.wrap') and pg.is_visible('#f-own')
-    pg.click('#f-own'); lookup(pg); pg.wait_for_timeout(1000)
-    assert names(pg).count('share_compare') == 0, 'the hidden laptop layout must not count a compare'
-    pg.evaluate('document.activeElement.blur()')                                                # not typing in the address box
-    pg.keyboard.press('1'); assert cur(pg, 'c001') == [], 'no laptop shortcuts on a phone'
-    ctx.close()
-
-@desk_test
-def desk_resize_keeps_layouts_in_step(b):
-    ctx, pg = new_page(b, wide=True); pg.goto(BASE); lookup_wide(pg)
-    pg.click('.dk-row[data-row="c001"]'); pg.locator('.dk-line', has_text='Ted Brown').click()
-    pg.set_viewport_size({'width': 400, 'height': 900})
-    assert pg.is_visible('#result') and 'Ted Brown' in pg.inner_text('#sc001')
-    pick(pg, 'c070', 'Qadri'); open_race(pg, 'c001'); pg.fill('#wc001', 'Typed on the phone')
-    pg.set_viewport_size({'width': 1440, 'height': 900})
-    assert 'Qadri' in pg.inner_text('.dk-row[data-row="c070"]') and pg.inner_text('#dk-count') == '2 of 63 decided'
-    pg.wait_for_function("document.getElementById('dk-w').value === 'Typed on the phone'", timeout=3000)   # redrawn on the resize event
-    ctx.close()
 
 @desk_test
 def desk_share_and_keep_open_as_centered_windows(b):
@@ -973,42 +647,6 @@ def faq_checks(pg, above_sel):
     f, above = box(pg, '#dk-faq'), box(pg, above_sel)
     assert f['y'] >= above['y'] + above['height'], 'the FAQ sits below the paper'
 
-@desk_test
-def desk_landing_plum_band_and_faq(b):
-    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
-    for width in (1024, 1280, 1440, 1920):
-        pg.set_viewport_size({'width': width, 'height': 900}); pg.wait_for_function(f'innerWidth === {width}')
-        landing_band_checks(pg, '#start', '.dk-steps', width)
-        faq_checks(pg, '#start')
-    for w, h in ((1440, 789), (1366, 657), (1280, 680), (1024, 768), (1024, 820), (1024, 880)):       # real browser windows, not screens (audit)
-        pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_function(f'innerHeight === {h}')
-        landing_band_checks(pg, '#start', '.dk-steps', w)
-        assert box(pg, '#go')['y'] + box(pg, '#go')['height'] <= h, ('Show my ballot is above the fold', w, h)
-    pg.set_viewport_size({'width': 1280, 'height': 600}); pg.wait_for_function('innerHeight === 600')
-    assert box(pg, '#street')['y'] + box(pg, '#street')['height'] <= 600, 'even on a 150%-scaled screen the address box shows'
-    pg.set_viewport_size({'width': 1440, 'height': 900})
-    lookup_wide(pg)                                                                                   # the app itself is unchanged
-    assert pg.is_hidden('#dk-hero') and pg.is_hidden('#dk-faq') and pg.is_visible('.dk-brand')
-    assert css(pg, '#dk-hdr', 'backgroundColor') != PLUM and css(pg, '#dk-hdr', 'content', "'::before'") != 'none'
-    pg.click('#dk-help'); pg.click('[data-help="address"]')                                         # "Change address" is the landing page too
-    landing_band_checks(pg, '#start', '.dk-steps', 1440); faq_checks(pg, '#start')
-    assert pg.is_visible('#dk-back') and pg.is_visible('#dk-share')
-    for w, h in ((1366, 657), (1024, 768), (1024, 821), (1024, 880), (1024, 881)):                    # the Back button adds ~46px (audit #2)
-        pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_function(f'innerHeight === {h}')
-        assert box(pg, '#go')['y'] + box(pg, '#go')['height'] <= h, ('Change address: Show my ballot above the fold', w, h)
-    pg.set_viewport_size({'width': 1440, 'height': 900})
-    bg = css(pg, '#dk-share', 'backgroundColor')
-    assert contrast(bg, PLUM) >= 3 and contrast(css(pg, '#dk-share', 'color'), bg) >= 4.5, 'Share my picks still reads as a button on the plum bar'
-    ctx.close()
-    ctx, pg = new_page(b, wide=True); fresh_goto(pg, link('s', DESK_FRIEND)); pg.wait_for_selector('#friend:not(.hidden)')
-    for width in (1024, 1440):
-        pg.set_viewport_size({'width': width, 'height': 900}); pg.wait_for_function(f'innerWidth === {width}')
-        landing_band_checks(pg, '#friend', '#start', width)                                         # a friend's picks on the paper, your form beside it
-        faq_checks(pg, '#friend')
-    ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE)                                                              # phones: the next round, not this one
-    assert pg.is_hidden('#dk-hero') and pg.is_hidden('#dk-faq')
-    ctx.close()
 
 @desk_test
 def desk_launch_audit_fixes(b):
@@ -1192,116 +830,6 @@ def real_tracker_sends_only_listed_events(b):
                 assert not re.search(r'Guadalupe|78701|Precinct|Qadri', blob), blob
         ctx.close()
 
-@test
-def counts_where_people_drop_off(b):
-    ctx, pg = new_page(b); pg.goto(BASE)
-    pg.click('#go'); pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '787'); pg.click('#go')
-    assert [e[1].get('reason') for e in events(pg) if e[0] == 'lookup_failed'] == ['no_street', 'bad_zip']
-    pg.evaluate("chooseUnit({ a: [{ Unit: '1' }], b: [{ Unit: '2' }] }, '1 Main St', null)")
-    assert names(pg).count('units_asked') == 1
-    lookup(pg)
-    assert names(pg).count('lookup_started') == 1 and names(pg).count('address_changed') == 0 and names(pg).count('ballot_found') == 1
-    found = lambda k: pg.wait_for_function(f"(window.__events||[]).filter(e => e[0] === 'ballot_found').length === {k}", timeout=30000)
-    lookup(pg); found(2)                                                                         # the same address again: not a change
-    assert names(pg).count('address_changed') == 0
-    pg.evaluate("renderStored({ pr: '9', b: [1, 2], mode: 'saved' }, 'test')"); lookup(pg); found(3)   # a different ballot was showing
-    assert names(pg).count('address_changed') == 1
-    journey_check(pg, 'phone'); ctx.close()
-    ctx, pg = new_page(b); ctx.route(re.compile(r'https://taxmaps\.traviscountytx\.gov/.*'), lambda r: r.abort()); pg.goto(BASE)
-    pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'lookup_failed')", timeout=15000)
-    assert events(pg)[-1] == ['lookup_failed', {'reason': 'county_unreachable', 'layout': 'phone'}]; ctx.close()
-    def census(route, match):
-        cb = re.search(r'callback=([A-Za-z0-9_]+)', route.request.url).group(1)
-        m = '[{"coordinates":{"x":-97.74,"y":30.27},"matchedAddress":"1 NOWHERE ST, AUSTIN, TX, 78701"}]' if match else '[]'
-        route.fulfill(status=200, content_type='application/javascript', body=cb + '({"result":{"addressMatches":' + m + '}})')
-    for match, reason, va in ((False, 'not_found', 'empty'), (True, 'no_voters_nearby', 'empty'), (True, 'county_unreachable', 'down')):
-        ctx, pg = new_page(b)
-        ctx.route(re.compile(r'.*GeocodeServer/findAddressCandidates.*'), lambda r: r.fulfill(status=200, content_type='application/json', body='{"candidates":[]}'))
-        ctx.route(re.compile(r'.*VotingAddresses/VA/MapServer/0/query.*'), (lambda v: lambda r: r.abort() if v == 'down' else r.fulfill(status=200, content_type='application/json', body='{"features":[]}'))(va))
-        ctx.route(re.compile(r'https://geocoding\.geo\.census\.gov/.*'), (lambda m: lambda r: census(r, m))(match))   # Playwright passes the request as a 2nd argument
-        pg.goto(BASE); pg.fill('#street', '1 Nowhere St'); pg.fill('#zip', '78701'); pg.click('#go')
-        pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'lookup_failed')", timeout=15000)
-        assert events(pg)[-1] == ['lookup_failed', {'reason': reason, 'layout': 'phone'}], events(pg)
-        if va == 'down': assert 'couldn’t reach Travis County’s map server' in pg.inner_text('#status'), 'no longer stuck on "Finding your address"'
-        ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE + '#s=not-a-real-payload')
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'link_damaged')")
-    assert events(pg)[-1] == ['link_damaged', {'kind': 'damaged', 'layout': 'phone'}]
-    frag = pg.evaluate("packFrag('s', { v: 1, n: 'Ana', c: 'abcd2345', g: 1, p: { 70: 0 } })"); ctx.close()
-    ctx, pg = new_page(b); pg.add_init_script('delete window.DecompressionStream'); pg.goto(BASE + '#' + frag)   # an old browser
-    pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'link_damaged')")
-    assert events(pg)[-1] == ['link_damaged', {'kind': 'too_old', 'layout': 'phone'}], events(pg); ctx.close()
-
-@test
-def counts_progress_sources_and_clearing(b):
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); no_link_opens(pg)
-    n = pg.evaluate('ballot.length')
-    pg.evaluate("ballot.slice(0, Math.ceil(ballot.length / 4)).forEach(x => pick(x.c.id, '__skip'))")
-    prog = lambda: [e[1] for e in events(pg) if e[0] == 'progress']
-    assert prog() == [{'at': '25', 'reasons': '0', 'skipped': '6+', 'layout': 'phone'}], prog()
-    pg.evaluate("ballot.forEach(x => { if (!current(x.c.id).length) pick(x.c.id, '__skip'); })")
-    assert [p['at'] for p in prog()] == ['25', '50', '75', '100'], (n, prog())
-    pg.evaluate("renderStored({ pr: '9', b: [1, 2, 3, 4], mode: 'saved' }, 'test')")                  # shown already decided: counts nothing
-    assert len(prog()) == 4, ('a ballot shown already decided is not progress', prog())
-    pg.evaluate("renderStored({ pr: '9', b: [210, 211, 212, 213], mode: 'saved' }, 'test'); pick('c210', '__skip')")
-    assert len(prog()) == 5 and prog()[-1]['at'] == '25', ('a pick that crosses a milestone counts', prog())
-    assert pg.evaluate("localStorage.getItem('ballotta.progress')") is None, 'nothing about progress is stored'
-    pg.evaluate("renderStored(JSON.parse(localStorage.getItem('ballotta.ballot')), 'test')")
-    pg.reload(); pg.wait_for_selector('#result:not(.hidden)'); pg.wait_for_timeout(500)
-    assert names(pg).count('progress') == 0, 'a returning voter is not counted again (audit #1)'
-    pg.evaluate("pick(ballot.find(x => current(x.c.id)[0] === '__skip').c.id, '__skip')")               # un-skip one: still over 75%
-    pg.evaluate("pick(ballot.find(x => !current(x.c.id).length).c.id, '__skip')")                      # and decide it again: back to 100%
-    assert names(pg).count('progress') == 0, 'milestones reached before the reload are noted when the ballot shows (Pass 2)'
-    no_link_opens(pg); open_race(pg, 'c001')
-    pg.locator('#rc001 a', has_text='League guide answers').first.click()
-    pg.locator('#rc001 a', has_text='Campaign site').first.click()
-    src = [e[1] for e in events(pg) if e[0] == 'source_opened']
-    assert src == [{'kind': 'league_guide', 'level': 'federal', 'layout': 'phone'}, {'kind': 'campaign_site', 'level': 'federal', 'layout': 'phone'}], src
-    for href, kind in (('https://www.texastribune.org/x', 'news'), ('https://ballotpedia.org/x', 'reference'), ('https://votetravis.gov/x', 'official'), ('https://example.com/x', 'other')):
-        pg.evaluate("h => { const a = document.createElement('a'); a.href = h; a.textContent = 'x'; a.id = 'tmp-a'; document.body.append(a); a.click(); a.remove(); }", href)
-        assert events(pg)[-1] == ['source_opened', {'kind': kind, 'layout': 'phone'}], (href, events(pg)[-1])   # outside a race: no level
-    pg.locator('#rc001 a', has_text='League guide answers').first.click(button='middle')            # a middle click opens a link too
-    assert events(pg)[-1] == ['source_opened', {'kind': 'league_guide', 'level': 'federal', 'layout': 'phone'}], events(pg)[-1]
-    pg.click('#t-early')                                                                         # from Oct 31 the page opens on Election Day
-    pg.locator('#sites a', has_text='Directions').first.click(); pg.click('#waits')
-    assert events(pg)[-2:] == [['directions_opened', {'period': 'early', 'layout': 'phone'}], ['wait_times_opened', {'period': 'early', 'layout': 'phone'}]], events(pg)[-2:]
-    pg.evaluate('window.print = () => {}'); pg.click('#print')
-    assert events(pg)[-1] == ['crib_printed', {'two_col': 'no', 'hide_unopposed': 'no', 'layout': 'phone'}]
-    pg.once('dialog', lambda d: d.accept()); pg.click('#reset')
-    assert events(pg)[-1] == ['cleared', {'what': 'picks', 'layout': 'phone'}]
-    journey_check(pg, 'phone')
-    LS_KEYS = "Object.keys(localStorage).filter(k => k.startsWith('ballotta.')).concat(Object.keys(sessionStorage).filter(k => k.startsWith('ballotta.')))"
-    assert pg.evaluate(LS_KEYS), 'something is saved before clearing'
-    pg.evaluate("localStorage.setItem('umami.disabled', '1'); localStorage.setItem('other.site', 'x')")   # not Ballotta's: must survive
-    pg.evaluate("umami.track = (n, d) => sessionStorage.setItem('__last', JSON.stringify([n, d]))")   # survives the reload
-    pg.once('dialog', lambda d: d.accept()); pg.click('#reset-all')
-    pg.wait_for_function("!document.getElementById('result') || document.getElementById('result').classList.contains('hidden')")
-    pg.wait_for_load_state()
-    assert pg.evaluate(LS_KEYS) == [], pg.evaluate(LS_KEYS)
-    assert pg.evaluate("JSON.parse(sessionStorage.getItem('__last'))") == ['cleared', {'what': 'everything', 'layout': 'phone'}]
-    assert pg.is_hidden('#result') and pg.evaluate('location.hash') == ''
-    assert pg.evaluate("[localStorage.getItem('umami.disabled'), localStorage.getItem('other.site')]") == ['1', 'x'], 'only ballotta.* keys are cleared'
-    ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg); pick(pg, 'c070', 'Qadri')                    # another open tab doesn't write it back (audit #5)
-    pg2 = ctx.new_page(); pg2.goto(BASE); pg2.wait_for_selector('#result:not(.hidden)')
-    pg2.evaluate('window.__mark = 1'); lookup(pg); pg.wait_for_timeout(500)                          # a lookup elsewhere doesn't reload this tab
-    assert pg2.evaluate('window.__mark') == 1, 'only Clear everything reloads other tabs (Pass 2)'
-    pg.once('dialog', lambda d: d.accept()); pg.click('#reset-all'); pg.wait_for_load_state()
-    pg2.wait_for_function("document.getElementById('result').classList.contains('hidden')", timeout=5000)
-    pg2.click('#go')
-    assert pg2.evaluate(LS_KEYS) == [], ('the other tab started fresh', pg2.evaluate(LS_KEYS))
-    ctx.close()
-    ctx, pg = new_page(b)                                                                         # storage blocked: Clear everything still clears (audit #4)
-    ctx.add_init_script("for (const n of ['localStorage', 'sessionStorage']) Object.defineProperty(window, n, { get() { throw new DOMException('blocked', 'SecurityError'); } })")
-    pg.goto(BASE); lookup(pg)
-    pg.once('dialog', lambda d: d.accept()); pg.click('#reset-all')
-    pg.wait_for_function("document.getElementById('result').classList.contains('hidden')", timeout=10000)
-    ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)                                             # asking first: Cancel keeps everything
-    pg.once('dialog', lambda d: d.dismiss()); pg.click('#reset-all')
-    assert pg.evaluate("localStorage.getItem('ballotta.ballot')") and pg.is_visible('#result')
-    ctx.close()
 
 @desk_test
 def desk_counts_laptop_features(b):
@@ -1354,20 +882,6 @@ def readme_lists_every_counted_event(b):
     assert 'Global Privacy Control' in readme and 'ballotta.ownTracked' in readme and 'ballotta.progress' not in readme
 
 # ---------------------------------------------------------------- issues round A (Oct 15): #20–#24, #32–#34, #37, #39–#42
-@test
-def stored_junk_never_breaks_keep_or_share(b):
-    # #20: an old format or tampering in storage (reasons that aren't text, picks that aren't an object) can't make
-    # the page, Keep or Share throw.
-    ctx, pg = new_page(b); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.goto(BASE)
-    pg.evaluate("localStorage.setItem('ballotta.picks', 'null'); localStorage.setItem('ballotta.whys', JSON.stringify({c070: 5, c071: {x: 1}, c001: ['a']}))")
-    pg.reload(); lookup(pg); pick(pg, 'c070', 'Qadri'); pick(pg, 'c071', 'For')
-    pg.click('#a-keep'); pg.wait_for_selector('#d-keep[open]')
-    assert pg.text_content('#keepcount').startswith('Your 2 picks and 0 reasons'), pg.text_content('#keepcount')
-    pg.click('#d-keep [data-close]'); pg.click('#a-share'); pg.wait_for_selector('#d-share[open]')
-    assert '0 of these picks have reasons' in pg.text_content('#sharewhycount'), pg.text_content('#sharewhycount')
-    assert errs == [], errs
-    ctx.close()
 
 @test
 def share_names_block_lookalikes_and_nicknames(b):
@@ -1403,24 +917,6 @@ def desk_change_link_focus_ring_is_whole(b):
         if where == 'app': pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)')
     ctx.close()
 
-@test
-def friend_card_long_names_and_honest_copy(b):
-    # #23: a 30-letter name with no spaces wraps instead of pushing the page sideways (friend card, compare, laptop
-    # chip and notes). #24: the card says most races link to neutral sources: 17 small districts have none.
-    name = 'Bartholomew' + 'w' * 19
-    url = link('s', {'v': 1, 'n': name, 'c': 'abcd2345', 'g': 1, 'p': {'70': 0}, 'w': {'70': 'x'}})
-    for wide in ((False, True) if HAS_DESK else (False,)):
-        ctx, pg = new_page(b, wide=wide); fresh_goto(pg, url); pg.wait_for_selector('#friend:not(.hidden)')
-        txt = pg.text_content('#friend')
-        assert 'Most races on your ballot link to neutral sources.' in txt and 'Each race' not in txt, txt
-        fits_width = lambda: pg.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
-        assert fits_width(), ('friend landing scrolls sideways', wide)
-        if wide:
-            lookup_wide(pg); assert fits_width(), 'laptop app with the friend chip and notes scrolls sideways'
-        else:
-            lookup(pg); pg.click('#f-cmp'); pg.wait_for_selector('#compare:not(.hidden)')
-            assert fits_width(), 'compare scrolls sideways'
-        ctx.close()
 
 @desk_test
 def desk_friend_pick_in_rail_has_a_name(b):
@@ -1433,39 +929,6 @@ def desk_friend_pick_in_rail_has_a_name(b):
     assert row.locator('.dk-fa').get_attribute('aria-hidden') == 'true'
     ctx.close()
 
-@test
-def extra_pick_is_explained(b):
-    # #33: on a "vote for up to 2" race, a third pick changes nothing and says why, under the race's "Vote for up
-    # to 2" line, on both layouts; the note clears on the next pick. A refused key pick isn't announced as a pick.
-    st = json.dumps({'pr': '999', 'b': [113], 'mode': 'saved', 'at': 0, 'pt': None})
-    msg = 'You can pick up to 2. Unpick one first.'
-    for wide in ((False, True) if HAS_DESK else (False,)):
-        ctx, pg = new_page(b, wide=wide); pg.goto(BASE)
-        pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload()
-        opts = pg.evaluate('optionsOf(BYID.c113)')
-        if wide:
-            pg.wait_for_selector('body.dk-app-on')
-            line = lambda i: pg.locator('#dk-paper .dk-line').nth(i)
-            note = pg.locator('#dk-paper [data-limit="c113"]')
-        else:
-            pg.wait_for_selector('#result:not(.hidden)'); open_race(pg, 'c113')
-            line = lambda i: pg.locator('#rc113 .opt').nth(i)
-            note = pg.locator('#rc113 [data-limit="c113"]')
-        line(0).click(); line(1).click(); expect(note).to_have_text('')
-        line(2).click()
-        assert pg.evaluate("current('c113')") == opts[:2], pg.evaluate("current('c113')")
-        expect(note).to_have_text(msg); assert note.get_attribute('role') == 'status'
-        assert line(2).get_attribute('aria-pressed') == 'false'
-        if wide:
-            pg.focus('#dk-paper'); pg.keyboard.press('3'); pg.wait_for_timeout(300)
-            assert pg.evaluate("current('c113')") == opts[:2] and pg.text_content('#dk-live') == '', pg.text_content('#dk-live')
-        line(0).click(); expect(note).to_have_text('')
-        line(2).click(); assert pg.evaluate("current('c113')") == [opts[1], opts[2]]
-        if not wide:                                                               # Clear my picks clears the note too (Pass 1)
-            line(0).click(); expect(note).to_have_text(msg)
-            pg.once('dialog', lambda d: d.accept()); pg.click('#reset')
-            assert pg.evaluate("current('c113')") == []; expect(note).to_have_text('')
-        ctx.close()
 
 @test
 def dates_move_on_in_a_tab_left_open(b):
@@ -1540,18 +1003,6 @@ def desk_moves_are_announced(b):
     pg.keyboard.press('n'); said(f'Contest 3 of {n}: {t(2)}. No pick yet.')
     ctx.close()
 
-@desk_test
-def desk_old_link_warning_gone_after_new_lookup(b):
-    # #40: a damaged-link warning from phone width doesn't reappear after a new lookup and a widen past 1024px.
-    ctx, pg = new_page(b); pg.goto(BASE); lookup(pg)
-    pg.evaluate("location.hash = '#s2' + 'A'.repeat(40)")
-    pg.wait_for_function("!document.getElementById('lookupmsg').classList.contains('hidden')", timeout=5000)
-    assert not pg.evaluate("document.getElementById('dk-say').classList.contains('hidden')"), 'precondition: the laptop copy holds the warning'
-    pg.evaluate("document.getElementById('go').click()")
-    pg.wait_for_function("(window.__events||[]).filter(e => e[0] === 'ballot_found').length === 2", timeout=30000)
-    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(300)
-    assert pg.evaluate("document.getElementById('dk-say').classList.contains('hidden')"), 'stale warning came back on the laptop layout'
-    ctx.close()
 
 @test
 def mutation_runner_restores_on_any_signal(b):
@@ -1568,24 +1019,6 @@ def mutation_runner_restores_on_any_signal(b):
         p.send_signal(sig); p.wait(20)
         assert f.read_text(encoding='utf-8') == 'original', (sig, f.read_text(encoding='utf-8'))
 
-@test
-def phone_can_clear_everything_from_the_footer(b):
-    # #42: someone who only opened a friend's link (no ballot of their own) can still clear what Ballotta stored:
-    # a "Clear everything on this device" button in the footer, shown only while this browser holds something.
-    ctx, pg = new_page(b); pg.goto(BASE)
-    foot = pg.locator('#reset-all-foot')
-    expect(foot).to_be_hidden()
-    fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2347', 'g': 1, 'p': {'70': 0}}))
-    pg.wait_for_selector('#friend:not(.hidden)'); expect(foot).to_be_visible()
-    pg.once('dialog', lambda d: d.accept()); foot.click()
-    pg.wait_for_function("!Object.keys(localStorage).some(k => k.startsWith('ballotta.')) && !Object.keys(sessionStorage).some(k => k.startsWith('ballotta.'))", timeout=5000)
-    pg.wait_for_load_state(); expect(foot).to_be_hidden()
-    other = ctx.new_page(); other.goto(BASE); other.evaluate("localStorage.setItem('ballotta.name', JSON.stringify('Maya'))")
-    expect(foot).to_be_visible(); other.close()                                # another tab saved something (Pass 1)
-    pg.evaluate("localStorage.removeItem('ballotta.name'); document.getElementById('reset-all-foot').classList.add('hidden')")
-    lookup(pg); expect(foot).to_be_visible()                                   # shown as soon as a lookup saves the ballot
-    pg.reload(); pg.wait_for_selector('#result:not(.hidden)'); expect(foot).to_be_visible()   # and on a later visit
-    ctx.close()
 
 @desk_test
 def desk_print_button_opens_the_crib_sheet(b):
@@ -1628,40 +1061,6 @@ def lookup_strict(pg, wide=False):
 
 CSP_WATCH = "window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.effectiveDirective + ' ' + e.blockedURI));"
 
-@test
-def page_is_locked_down(b):
-    # #36: a Content-Security-Policy before any script: only the page's own scripts (by hash) and files from this site
-    # run, data goes only to the county map server and the counting service, frames only from this site; no
-    # referrer is sent anywhere. A whole visit (phone and laptop) trips nothing; an injected script doesn't run.
-    html = build_module().build()                                  # what the build writes (index.html on disk equals it: live_build test)
-    m = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', html)
-    assert m and html.index(m.group(0)) < html.index('<script'), 'a CSP meta tag before the first script'
-    pol = dict((d.split(' ', 1) + [''])[:2] for d in m.group(1).split('; '))
-    assert pol['default-src'] == "'none'" and pol['frame-src'] == "'self'" and pol['base-uri'] == "'none'" and pol['form-action'] == "'none'", pol
-    assert pol['connect-src'] == 'https://taxmaps.traviscountytx.gov https://gateway.umami.is', pol['connect-src']
-    srcs = pol['script-src'].split()
-    assert srcs[0] == "'self'" and all(x.startswith("'sha256-") for x in srcs[1:]) and len(srcs) == 1 + html.count('<script>'), srcs
-    assert '<meta name="referrer" content="no-referrer">' in html and html.index('name="referrer"') < html.index('<script')
-    for wide in ((False, True) if HAS_DESK else (False,)):
-        ctx, pg = new_page(b, wide=wide, csp=True); pg.add_init_script(CSP_WATCH); refs = []
-        pg.on('request', lambda r: refs.append((r.url, r.headers.get('referer'))) if 'traviscountytx.gov' in r.url else None)
-        pg.goto(BASE)
-        if wide:
-            lookup_strict(pg, True)
-            for v in ('glance', 'vote', 'crib', 'decide'): pg.click(f'#dk-views [data-view="{v}"]')
-            pg.click('#dk-share'); pg.wait_for_selector('#d-share[open]'); pg.keyboard.press('Escape')
-        else:
-            fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2349', 'g': 1, 'p': {'70': 0}})); pg.wait_for_selector('#friend:not(.hidden)')
-            lookup_strict(pg); pick(pg, 'c070', 'Qadri')
-            pg.click('#a-keep'); pg.wait_for_selector('#d-keep[open]'); pg.click('#d-keep [data-close]')
-            pg.click('#a-share'); pg.wait_for_selector('#d-share[open]'); pg.click('#d-share [data-close]')
-        pg.wait_for_timeout(500)
-        assert pg.evaluate('window.__csp') == [], (wide, pg.evaluate('window.__csp'))
-        assert refs and all(r is None for _, r in refs), ('no referrer to the county', refs[:2])
-        pg.evaluate("() => { const s = document.createElement('script'); s.textContent = 'window.__pwned = 1'; document.body.appendChild(s); }")
-        pg.wait_for_timeout(200)
-        assert pg.evaluate('window.__pwned') is None and any(v.startswith('script-src') for v in pg.evaluate('window.__csp')), 'an injected script ran'
-        ctx.close()
 
 @test
 def census_runs_in_a_sandbox(b):
@@ -1773,19 +1172,6 @@ def share_names_close_remaining_gaps(b):
         assert sn(good) == good, good
     ctx.close()
 
-@test
-def stored_junk_in_share_fields(b):
-    # #44: a stored share generation that isn't a whole number, a share name that isn't text, and pick values that
-    # aren't option names are ignored, never sent in a link or counted as decided.
-    ctx, pg = new_page(b); errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.goto(BASE)
-    pg.evaluate("""() => { localStorage.setItem('ballotta.gen', JSON.stringify('x')); localStorage.setItem('ballotta.name', JSON.stringify({ a: 1 }));
-                          localStorage.setItem('ballotta.picks', JSON.stringify({ c070: [null], c071: 5, c001: { x: 1 } })); }""")
-    pg.reload(); lookup(pg)
-    assert pg.text_content('#k-done') == '0', pg.text_content('#k-done')
-    pick(pg, 'c070', 'Qadri'); pg.click('#a-share'); pg.wait_for_selector('#d-share[open]')
-    assert pg.input_value('#sharename') == '' and pg.evaluate('sharePrep.gen') == 1, (pg.input_value('#sharename'), pg.evaluate('sharePrep.gen'))
-    assert errs == [], errs
-    ctx.close()
 
 @desk_test
 def desk_quick_pick_then_move_keeps_both_announcements(b):
@@ -1829,126 +1215,9 @@ def desk_print_by_touch_and_announced(b):
     assert 'Crib sheet' in pg.text_content('#dk-live') and pg.evaluate('document.activeElement.dataset.act') != 'print'
     ctx.close()
 
-@test
-def phone_new_day_keeps_focus_on_a_directions_link(b):
-    # #47: on a phone, a new day that doesn't change the voting period updates only the dated note; the vote-center
-    # list (and a focused Directions link in it) stays as it was.
-    import datetime as dt
-    ctx, pg = new_page(b); pg.clock.install(time=dt.datetime(2026, 10, 18, 23, 58)); pg.goto(BASE)
-    saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('#result:not(.hidden)')
-    assert 'fills in once voting starts' in pg.text_content('#waitsnote')
-    link3 = pg.locator('#sites a', has_text='Directions').nth(2); link3.focus(); href = link3.get_attribute('href')
-    pg.clock.run_for(5 * 60 * 1000)
-    assert pg.text_content('#waitsnote') == 'Travis County map', pg.text_content('#waitsnote')
-    assert pg.evaluate('document.activeElement.getAttribute("href")') == href, pg.evaluate('document.activeElement.tagName')
-    ctx.close()
 
 def backup_card(pg, wide): return pg.locator('#dk-nudge' if wide else '#nudge')
 
-@test
-def backup_nudge_after_fifth_pick(b):
-    # #48: after the 5th pick, a one-time card suggests a backup link ("Send myself a link" opens Keep my picks; "Not
-    # now" puts it away); it comes back once at 25 picks if no link was ever kept; never after a link is kept. Counted.
-    msg = 'Your picks live only in this browser, and phones can clear them. Send yourself a backup link.'
-    nums = list(range(1, 41))
-    for wide in ((False, True) if HAS_DESK else (False,)):
-        ctx, pg = new_page(b, wide=wide); pg.goto(BASE); saved_ballot(pg, nums)
-        pg.wait_for_selector('body.dk-app-on' if wide else '#result:not(.hidden)')
-        ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
-        card = backup_card(pg, wide)
-        decide = lambda a, z: pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[a:z])
-        decide(0, 4); expect(card).to_be_hidden()
-        pg.evaluate('id => pick(id, "__skip")', ids[4]); expect(card).to_be_hidden()            # a skip isn't a pick (Pass 1)
-        pg.evaluate('id => pick(id, "__skip")', ids[4])
-        below = '#dk-paper' if wide else '#groups'; top = pg.evaluate(f'document.querySelector("{below}").getBoundingClientRect().top')
-        decide(4, 5); expect(card).to_be_visible(); expect(card.locator('[role="status"]')).to_have_text(msg)
-        assert pg.evaluate(f'document.querySelector("{below}").getBoundingClientRect().top') == top, 'the card pushed the page (Lane: it floats)'
-        assert card.evaluate('e => getComputedStyle(e).position') == 'fixed'
-        assert ['backup_nudge', {'at': '5', 'action': 'shown', 'layout': 'laptop' if wide else 'phone'}] in events(pg), events(pg)
-        card.locator('[data-nudge="dismiss"]').click(); expect(card).to_be_hidden()
-        if wide: assert pg.evaluate('document.activeElement.id') == 'dk-paper', 'focus back on the paper (Pass 1)'
-        decide(5, 24); expect(card).to_be_hidden()
-        decide(24, 25); expect(card).to_be_visible()
-        card.locator('[data-nudge="keep"]').click(); pg.wait_for_selector('#d-keep[open]'); expect(card).to_be_hidden()
-        assert [e[1]['action'] for e in events(pg) if e[0] == 'backup_nudge'] == ['shown', 'dismiss', 'shown', 'keep'], events(pg)
-        pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
-        assert pg.evaluate('document.activeElement.id') == ('dk-paper' if wide else 'a-keep'), 'Keep returns focus where the visitor was (Pass 1, 2)'
-        pg.reload(); pg.wait_for_selector('body.dk-app-on' if wide else '#result:not(.hidden)')
-        decide(25, 30); expect(backup_card(pg, wide)).to_be_hidden()                      # each card once per browser
-        ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
-    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:2])
-    pg.click('#a-keep'); pg.click('#keep-copy'); pg.wait_for_function("(window.__events||[]).some(e => e[0] === 'keep_created')"); pg.click('#d-keep [data-close]')
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[2:30]); expect(backup_card(pg, False)).to_be_hidden()   # already kept a link
-    ctx.close()
-    # Pass 1: a card shown is remembered (an ignored card doesn't come back next visit); Not now at 25+ picks retires the
-    # 25 card too; Clear my picks puts the card away.
-    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
-    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)'); card = backup_card(pg, False)
-    many = lambda a, z: pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[a:z])
-    many(0, 5); expect(card).to_be_visible()
-    pg.reload(); pg.wait_for_selector('#result:not(.hidden)'); many(5, 6); expect(card).to_be_hidden()
-    many(6, 30); expect(card).to_be_visible(); card.locator('[data-nudge="dismiss"]').click(); many(30, 31); expect(card).to_be_hidden()
-    ctx.close()
-    # Pass 2: with the card up, nothing at the bottom of the page is stuck under it (phone footer; laptop Print button at
-    # 1024x640); after Not now, focus returns to the pick just made, not to the top of the page.
-    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
-    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)'); card = backup_card(pg, False)
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:4])
-    open_race(pg, ids[4]); fifth = pg.locator(f'#r{ids[4]} .opt').first; fifth.focus(); pg.keyboard.press('Enter'); expect(card).to_be_visible()
-    card.locator('[data-nudge="dismiss"]').focus(); pg.keyboard.press('Enter'); expect(card).to_be_hidden()
-    assert pg.evaluate('document.activeElement.dataset.c') == ids[4], pg.evaluate('document.activeElement.outerHTML.slice(0, 80)')
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[5:6])   # (not a card moment: 6 picks, the 5 card was seen)
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[6:24])
-    open_race(pg, ids[24]); last = pg.locator(f'#r{ids[24]} .opt').first; last.focus(); pg.keyboard.press('Enter'); expect(card).to_be_visible()
-    pg.evaluate(f"document.getElementById('r{ids[24]}').open = false")                     # the race closed since: focus can't go back there (Pass 3)
-    card.locator('[data-nudge="dismiss"]').focus(); pg.keyboard.press('Enter'); expect(card).to_be_hidden()
-    assert pg.evaluate('document.activeElement.id') == 'a-keep', pg.evaluate('document.activeElement.tagName')
-    pg.evaluate("localStorage.removeItem('ballotta.nudge')"); pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[25]); expect(card).to_be_visible()
-    pg.evaluate('window.scrollTo(0, document.body.scrollHeight)'); pg.wait_for_timeout(200)
-    hit = pg.evaluate("() => { const r = document.getElementById('reset-all-foot').getBoundingClientRect(); const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return e && e.id; }")
-    assert hit == 'reset-all-foot', ('the footer button is under the card', hit)
-    pg.emulate_media(media='print'); assert pg.evaluate('getComputedStyle(document.body).paddingBottom') == '0px', 'no room reserved on paper (Pass 3)'
-    ctx.close()
-    # Pass 2: a returning voter with 5+ picks who makes a skip sees no card (a real pick does); a 5 card left up to 30
-    # picks and then put away doesn't bring the 25 card.
-    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
-    ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)'); card = backup_card(pg, False)
-    pg.evaluate("ids => localStorage.setItem('ballotta.picks', JSON.stringify(Object.fromEntries(ids.map(id => [id, [optionsOf(BYID[id])[0]]]))))", ids[:6])
-    pg.reload(); pg.wait_for_selector('#result:not(.hidden)')
-    pg.evaluate('id => pick(id, "__skip")', ids[6]); expect(card).to_be_hidden()
-    pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[7]); expect(card).to_be_visible()
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[8:31]); expect(card).to_be_visible()
-    card.locator('[data-nudge="dismiss"]').click(); pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[31]); expect(card).to_be_hidden()
-    ctx.close()
-    if HAS_DESK:
-        ctx, pg = new_page(b, wide=True); pg.set_viewport_size({'width': 1024, 'height': 640}); pg.goto(BASE); saved_ballot(pg, nums)
-        pg.wait_for_selector('body.dk-app-on'); ids = pg.evaluate('ballot.filter(x => optionsOf(x.c).length).map(x => x.c.id)')
-        pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5]); expect(backup_card(pg, True)).to_be_visible()
-        pg.focus('#dk-print'); pg.keyboard.press('Enter'); pg.wait_for_timeout(300)
-        hit = pg.evaluate("() => { const a = document.activeElement, r = a.getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return [a.dataset.act, e === a || a.contains(e)]; }")
-        assert hit == ['print', True], ('the focused Print button is under the card', hit)
-        ctx.close()
-    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('#result:not(.hidden)')
-    pg.evaluate('ids => ids.forEach(id => pick(id, optionsOf(BYID[id])[0]))', ids[:5]); card = backup_card(pg, False); expect(card).to_be_visible()
-    pg.once('dialog', lambda d: d.accept()); pg.click('#reset'); expect(card).to_be_hidden()
-    ctx.close()
-
-@test
-def persistent_storage_asked_at_first_pick(b):
-    # #49: at the first pick, the page asks the browser to keep its data (navigator.storage.persist), once, and not if
-    # it's already kept; nothing is asked before a pick.
-    stub = ("window.__persist = 0; window.__persisted = %s; Object.defineProperty(navigator, 'storage', { configurable: true, value: {"
-            " persisted: () => { window.__checked = (window.__checked || 0) + 1; return Promise.resolve(window.__persisted); },"
-            " persist: () => { window.__persist++; return Promise.resolve(true); } } });")
-    for already, want in ((False, 1), (True, 0)):
-        ctx, pg = new_page(b); pg.add_init_script(stub % ('true' if already else 'false')); pg.goto(BASE)
-        saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('#result:not(.hidden)'); pg.wait_for_timeout(200)
-        assert pg.evaluate('window.__persist') == 0 and not pg.evaluate('window.__checked'), 'asked before any pick'
-        pick(pg, 'c070', 'Qadri'); pick(pg, 'c071', 'For'); pg.wait_for_timeout(200)
-        assert pg.evaluate('window.__persist') == want and pg.evaluate('window.__checked') == 1, (already, pg.evaluate('[window.__persist, window.__checked]'))
-        ctx.close()
 
 # ---------------------------------------------------------------- phone layout (preview build only until promotion)
 import urllib.request, time
@@ -2649,7 +1918,7 @@ def phone_offline_kill_switch_and_promotion(b):
     ctx, pg = phone_page(b, sw=True)
     try:
         pg.goto(url); assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])')
-        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, f"caches.keys().then(k => k.includes('{mine}'))", 15)
+        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, f"caches.open('{mine}').then(c => c.match(location.href)).then(r => !!r)", 15)   # a copy kept, not just a cache made (Pass 2)
         m.OFFLINE = False; page = m.build(preview=pv, phone=True); m.OFFLINE = True
         Flip.swap = {'/' + PAGE: page.encode('utf-8'), '/' + folder + 'sw.js': m.sw_off_js(pv).encode('utf-8')}
         pg.reload(); poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 0)", 15)
@@ -2701,7 +1970,11 @@ def promotion_hands_the_preview_on(b):
     finally: m.PHONE_LIVE = False
     assert post['next/index.html'] == m.moved_page() and post['next/sw.js'] == m.sw_off_js(True), sorted(post)
     assert post['index.html'].count(m.SW_NEXT) == 1 and 'id="ph-bar"' in post['index.html'], 'the promoted page clears the preview'
-    assert m.SW_NEXT not in pre['next/index.html'] and m.SW_NEXT not in m.outputs(False)['index.html'], 'only the promoted main page does'
+    live_now = m.PHONE_LIVE; m.PHONE_LIVE = False
+    try: back = m.outputs(False)                                                            # a rollback after promotion (Pass 2)
+    finally: m.PHONE_LIVE = live_now
+    assert m.SW_NEXT not in pre['next/index.html'] and m.SW_NEXT not in back['index.html'], 'only the promoted main page does'
+    assert back['sw.js'] == m.sw_off_js(False), 'a rollback must remove the offline copy phones kept since promotion'
     moved = post['next/index.html']
     assert '<link rel="manifest"' not in moved and 'sw.register' not in moved and m.sha(m.MOVED_JS) in moved, 'next/ can no longer be installed'
     before = {'/next/index.html': pre['next/index.html'], '/next/': pre['next/index.html'], '/next/sw.js': pre['next/sw.js']}
@@ -2748,9 +2021,9 @@ def promotion_hands_the_preview_on(b):
         # Promotion audit #3: after the hand-off, the Home Screen app (start_url next/) and the main page still open
         # with no connection at all, before any second visit: the main page's worker keeps both from its install.
         Flip.swap, Flip.fail = enc(before), {}
-        ctx, pg = phone_page(b, sw=True); pg.goto(base + 'next/')
+        ctx, pg = phone_page(b, sw=True, csp=True); pg.goto(base + 'next/')                  # under the pages' own CSP (Pass 2)
         poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, nextcache, 15)
-        Flip.swap = enc(dict(after, **{'/next/sw.js': pre['next/sw.js']})); pg.wait_for_timeout(3000); Flip.swap = enc(after)
+        Flip.swap = enc(after)
         pg.goto('about:blank'); pg.goto(base + 'next/', wait_until='commit'); pg.wait_for_url(base, timeout=15000)
         poll(pg, f"caches.open('ballotta-1').then(c => Promise.all([c.match('{base}'), c.match('{base}next/')])).then(([a, n]) => !!a && !!n)", 15)
         poll(pg, preview.replace('r.some(', '!r.some('), 15)                                 # the preview's worker has gone
@@ -2762,6 +2035,23 @@ def promotion_hands_the_preview_on(b):
         Flip.swap, Flip.gone, Flip.fail = {}, set(), {}
         if ctx: ctx.close()
         srv.shutdown(); srv.server_close()
+
+@test
+def offline_copy_install_never_waits_on_a_slow_line(b):
+    # Pass 2: the worker keeps the page at install, but a slow line holds its install (and so the 4-second fallback, and
+    # any update queued behind it, the kill switch's included) for 8 seconds at most.
+    m = build_module()
+    files = {'/index.html': m.build(phone=True), '/sw.js': m.sw_js(False), '/next/': m.moved_page()}
+    Flip.swap, Flip.gone, Flip.fail, Flip.slow = {k: v.encode('utf-8') for k, v in files.items()}, set(), {}, {'/next/': 25}
+    srv, url = own_server(); base = url.split('/', 3)[0] + '//' + url.split('/', 3)[2] + '/'
+    ctx, pg = phone_page(b, sw=True)
+    try:
+        pg.goto(base + 'index.html'); t0 = time.time()
+        poll(pg, "navigator.serviceWorker.getRegistration().then(g => !!(g && g.active))", 20)
+        assert time.time() - t0 < 15, ('the install waited on the slow page', time.time() - t0)
+        assert pg.evaluate(f"caches.open('ballotta-1').then(c => c.match('{base}next/')).then(r => !r)"), 'a page that never arrived was kept'
+    finally:
+        Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}; ctx.close(); srv.shutdown(); srv.server_close()
 
 @phone_test
 def laptops_stay_laptops_after_a_narrow_start(b):
@@ -2813,7 +2103,7 @@ def phone_taps_land_where_they_were_aimed(b):
 # ---------- ports of the old phone page's tests to the phone layout (cold audit #29, Oct 17) ----------
 # ---------------------------------------------------------------- ports of today's phone-page tests to the phone layout (group A)
 # Each drives the phone layout at phone width (or, where the old test also checked the laptop, the laptop too), so it
-# keeps guarding the same behaviour once the phone layout is the live page and OLD_PHONE_TESTS are skipped there.
+# keeps guarding the same behaviour now that the phone layout is the live page (the old tests went with promotion).
 def pa_menu(pg, item):                                       # Feedback & Info, as a phone visitor opens it: a sheet
     pg.click('#dk-help'); pg.wait_for_selector('#ph-menu[open]')
     pg.locator('#ph-mitems button', has_text=item).click()
@@ -3813,8 +3103,6 @@ def main():
                 skipped += 1; print('SKIP', fn.__name__, '- no laptop layout in', PAGE); continue
             if fn.__name__ in PHONE_TESTS and not HAS_PHONE:
                 skipped += 1; print('SKIP', fn.__name__, '- no phone layout in', PAGE); continue
-            if fn.__name__ in OLD_PHONE_TESTS and HAS_PHONE:
-                skipped += 1; print('SKIP', fn.__name__, '- drives today\'s phone page: runs on index.html'); continue
             try:
                 fn(b); print('PASS', fn.__name__)
             except Exception as e:

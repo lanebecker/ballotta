@@ -22,8 +22,9 @@ DESK_LIVE = True
 # The phone layout (narrower than 1024px: the laptop app folded up, plus Add to Home Screen and an offline copy) is
 # marked the same way: /*PHONE*/ ... /*/PHONE*/ and <!--PHONE--> ... <!--/PHONE-->. Until Lane approves the preview at
 # ballotta.org/next/, the live build removes every marked block, so index.html stays byte-for-byte what it was.
-# Promotion: set PHONE_LIVE = True (docs/plans/2026-10-15-phone-layout.md, Task 13).
-PHONE_LIVE = False
+# Promotion: set PHONE_LIVE = True (docs/plans/2026-10-15-phone-layout.md, Task 13). Promoted Oct 17 (Lane): next/
+# now only hands people on (moved_page), and its worker removes itself; the main build writes both.
+PHONE_LIVE = True
 # The offline copy (sw.js). False writes a sw.js that removes itself and its copies from every phone that has it, and
 # the page stops installing it: the switch to pull if offline copies ever cause trouble. Rebuild and push to apply.
 OFFLINE = True
@@ -129,10 +130,12 @@ SW_JS = (
     "// Built by source/build_site.py; don't edit sw.js. Ballotta's offline copy: network first, kept copy as a fallback.\n"
     "const CACHE = 'ballotta-1';\n"
     "// The page keeps a copy of itself from the start, so it opens offline before its next visit, and so does a Home\n"
-    "// Screen app that installed the preview, whose next/ now sends it on to ./ (promotion audit #3). Nothing fails if it can't.\n"
+    "// Screen app that installed the preview, whose next/ now sends it on to ./ (promotion audit #3). Nothing fails if it can't,\n"
+    "// and a slow line never holds the install up for more than 8 seconds (no-cache: a 304 when the page hasn't changed).\n"
     "self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => Promise.all(KEEP.map((u) => {\n"
-    "  const at = new URL(u, location.href).href;\n"
-    "  return fetch(at, { cache: 'no-store' }).then((res) => res.ok && res.type === 'basic' && c.put(at, res)).catch(() => {}); })))); });\n"
+    "  const at = new URL(u, location.href).href, stop = new AbortController(), t = setTimeout(() => stop.abort(), 8000);\n"
+    "  return fetch(at, { cache: 'no-cache', signal: stop.signal }).then((res) => res.ok && res.type === 'basic' && !res.redirected && c.put(at, res))\n"
+    "    .catch(() => {}).finally(() => clearTimeout(t)); })))); });\n"
     "self.addEventListener('activate', (e) => e.waitUntil(caches.keys()\n"
     "  .then((ks) => Promise.all(ks.filter((k) => k.startsWith('PREFIX') && !k.startsWith('PREFIXnext-') && k !== CACHE).map((k) => caches.delete(k))))\n"
     "  .then(() => self.clients.claim())));\n"
@@ -212,6 +215,8 @@ def outputs(preview):
     if PHONE_LIVE:
         out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False),
                     "next/sw.js": sw_off_js(True), "next/index.html": moved_page()})
+    else:   # a rollback after promotion: phones keep a worker until its sw.js says otherwise, so it removes itself (Pass 2)
+        out["sw.js"] = sw_off_js(False)
     return out
 
 
