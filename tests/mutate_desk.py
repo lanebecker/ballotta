@@ -314,6 +314,8 @@ M = [
  ('D51 links written in the new order', PREV, "back = REORDERED[id], ix", "back = false, ix", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
  ('D52 Share links marked for new pages only', PREV, "packFrag('s', { v: 1, n: name,", "packFrag('s', { v: 1, r: 2, n: name,", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
  ('D53 Keep links marked for new pages only', PREV, "packFrag('k', { v: 1, at:", "packFrag('k', { v: 1, r: 2, at:", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
+ ('D54 one list\'s table wrong (c179)', PREV, 'c179: [2, 3, 0, 1]', 'c179: [3, 2, 1, 0]', ['links_keep_the_old_order_for_the_ten_reordered_lists']),
+ ('D55 links written through the table the wrong way round', PREV, "back && back.indexOf(i) >= 0 ? back.indexOf(i) : i", "back && back[i] !== undefined ? back[i] : i", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

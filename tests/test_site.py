@@ -640,6 +640,17 @@ def links_keep_the_old_order_for_the_ten_reordered_lists(b):
     assert pg.evaluate("optionsOf(BYID.c154)") == ['Grant Ballew', 'John Berry', 'Carrington Saathoff', 'Ryan Sullivan', 'William Waller']
     for n, names in PRE_FIX_ORDER.items():                                   # the lists hold the same people, reordered
         assert sorted(pg.evaluate(f"optionsOf(BYID.c{n:03d}).filter(x => x !== 'Write-in')")) == sorted(names), n
+    table = pg.evaluate("REORDERED")                                         # the page's table, contest by contest (Pass 2)
+    assert sorted(table) == sorted(f'c{n:03d}' for n in PRE_FIX_ORDER), sorted(table)
+    for n, names in PRE_FIX_ORDER.items():
+        today = pg.evaluate(f"optionsOf(BYID.c{n:03d})")
+        assert [today[table[f'c{n:03d}'][i]] for i in range(len(names))] == names, n
+    # Every table today is its own inverse, so a mapping applied the wrong way round would pass the checks above: try
+    # one that isn't (old 0 -> 1, 1 -> 2, 2 -> 0). Grant Ballew, first today, must go out as old position 2 and come back.
+    turn = pg.evaluate("""() => { const keep = REORDERED.c154, was = [picks, whys]; REORDERED.c154 = [1, 2, 0, 3, 4];
+      try { picks = { c154: ['Grant Ballew'] }; whys = {}; const p = packPicks(['c154'], false, false).p;
+            return [p[154], unpackPicks({ v: 1, p }).P.c154]; } finally { REORDERED.c154 = keep; [picks, whys] = was; } }""")
+    assert turn == [2, ['Grant Ballew']], turn
     old = pg.evaluate("unpackPicks({ v: 1, p: { 154: 0, 202: [0, 2], 1: 0 } }).P")
     assert old['c154'] == ['Carrington Saathoff'] and old['c202'] == ['Beth Jones', 'Hanoi Avila'], old
     mine = {'c154': ['Grant Ballew'], 'c214': ['Philip Waters', 'Abigail Joffrain', 'Paul Wadehra'], 'c202': ['Thomas Vacek', 'Beth Jones']}
