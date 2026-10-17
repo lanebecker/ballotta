@@ -322,6 +322,9 @@ M = [
  ('D59 the promoted page updates its own worker instead', BLD, "sw.getRegistration('next/').then((g) => g && g.scope === new URL('next/', location.href)", "sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href)", ['promotion_hands_the_preview_on']),
  ('D60 MUD 41 routed to nobody', PREV, '"c193": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "medium"', '"c193": {"clauses": null, "conf": "unrouted"', ['mud_41_reaches_its_addresses_marked_double_check']),
  ('D61 MUD 41 shown as certain', PREV, '"c194": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "medium"', '"c194": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "high"', ['mud_41_reaches_its_addresses_marked_double_check']),
+ ('D62 next/ updates whatever worker it finds', BLD, "g && g.scope === new URL('./', location.href).href && g.update()),", "g && g.update()),", ['promotion_hands_the_preview_on']),
+ ('D63 the main page updates its own worker for next/', BLD, "g && g.scope === new URL('next/', location.href).href && g.update()", "g && g.update()", ['promotion_hands_the_preview_on']),
+ ('D64 the worker keeps nothing at install', BLD, "keep = \"['./']\" if preview else \"['./', 'next/']\"", "keep = \"[]\"", ['promotion_hands_the_preview_on']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

@@ -14,6 +14,8 @@ PAGE = os.environ.get('BALLOTTA_PAGE', 'index.html')
 BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
+if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(encoding='utf-8'):   # promotion audit #5
+    sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
 LIVE_SHA = '8c2f9aa3f2f0b2116d0a714b5e3a958ca1be96632f126bbd0fb405c91c4cacc1'  # Oct 17: MUD 41 routed to M41 at medium confidence (Lane); the wait-times note on the laptop's Where to vote
@@ -463,12 +465,17 @@ def live_build_is_unchanged_until_promotion(b):
         assert 'id="dk-app"' in live, 'promoted: the live page carries the laptop layout'
     else:
         assert 'id="dk-app"' not in live and 'DESK' not in live, 'laptop layout leaked into the live build'
+    # Every file the main build writes is on disk as written, before and after promotion (promotion audit #2: after
+    # it, next/index.html, next/sw.js, sw.js and manifest.webmanifest are the build's too, and a stale or missing one
+    # would ship), and the live page is the one pinned.
+    for path, text in m.outputs(False).items():
+        assert (ROOT / path).exists() and (ROOT / path).read_text(encoding='utf-8') == text, f'{path} on disk is not what build_site.py writes: rebuild, and commit it'
+    got = hashlib.sha256(live.encode('utf-8')).hexdigest()
+    assert got == LIVE_SHA, f'live index.html changed ({got}). Expected only with a deliberate change to the live page: re-pin LIVE_SHA in that commit.'
     if m.PHONE_LIVE:
         assert 'id="ph-bar"' in live and "worker-src 'self'" in live, 'promoted: the live page carries the phone layout'
     else:
         assert 'id="ph-bar"' not in live and 'PHONE' not in live and 'rel="manifest"' not in live and "worker-src" not in live, 'phone layout leaked into the live build'
-        got = hashlib.sha256(live.encode('utf-8')).hexdigest()
-        assert got == LIVE_SHA, f'live index.html changed ({got}). Expected only after a data rebuild: re-pin LIVE_SHA in that commit.'
         assert (ROOT / 'next/index.html').read_bytes() == prev.encode('utf-8'), 'next/index.html on disk is not what the build writes'
         assert (ROOT / 'next/manifest.webmanifest').read_text(encoding='utf-8') == m.manifest(True) and (ROOT / 'next/sw.js').read_text(encoding='utf-8') == (m.sw_js(True) if m.OFFLINE else m.sw_off_js(True))
         assert not (ROOT / 'sw.js').exists() and not (ROOT / 'manifest.webmanifest').exists(), 'no offline copy on the live site before promotion'
@@ -1074,7 +1081,7 @@ def desk_phone_layout_matches_live_page(b):
     # promotion, when index.html itself carries the laptop layout (audit #28).
     m = build_module(); shots = []
     for name, desk in (('_parity_plain.html', False), ('_parity_desk.html', True)):              # served from memory: nothing is written (Pass 1)
-        html = m.build(desk=desk)
+        html = m.build(desk=desk, phone=False)                                                  # the old phone page, as a rollback would bring it back
         ctx, pg = new_page(b); ctx.route(f'**/{name}', (lambda h: lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=h))(html))
         pg.goto(f'http://127.0.0.1:{PORT}/{name}'); pg.wait_for_timeout(600)
         assert pg.evaluate('!!document.getElementById("dk-app")') == desk, (name, 'built the wrong flavour')
@@ -1142,7 +1149,7 @@ def privacy_firewall_drops_anything_unlisted(b):
         pg.evaluate("track('lookup_started')"); pg.fill('#street', ''); pg.click('#go')
         assert events(pg) == [], (signal, 'no events (page views: see real_tracker_sends_only_listed_events)')
         ctx.close()
-    plain = build_module().build(desk=False)                                                    # after a rollback, wide screens are phones
+    plain = build_module().build(desk=False, phone=False)                                                    # after a rollback, wide screens are phones
     ctx, pg = new_page(b, wide=True); ctx.route('**/_rollback.html', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=plain))
     pg.goto(f'http://127.0.0.1:{PORT}/_rollback.html'); pg.evaluate("track('faq_seen')")
     assert events(pg)[-1] == ['faq_seen', {'layout': 'phone'}], events(pg)
@@ -1152,10 +1159,11 @@ def privacy_firewall_drops_anything_unlisted(b):
 def real_tracker_sends_only_listed_events(b):
     # The real pinned umami.js, pointed at this test server: every request it makes is caught and checked.
     TOP = {'website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'tag', 'name', 'data', 'ttfb', 'fcp', 'lcp', 'cls', 'inp', 'duration'}
+    live_phone = 'id="ph-bar"' in (ROOT / 'index.html').read_text(encoding='utf-8')            # always the live page, which may carry the phone layout
     for gpc in ('', "Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true })",
                 "Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' })"):
         sent = []
-        ctx = b.new_context(viewport={'width': 400, 'height': 900})
+        ctx = b.new_context(viewport={'width': 400, 'height': 900}, has_touch=live_phone)
         if gpc: ctx.add_init_script(gpc)
         def page(route):
             r = route.fetch(); body = r.text().replace('data-domains="ballotta.org,www.ballotta.org,lanebecker.github.io"', 'data-domains="127.0.0.1"')
@@ -1163,7 +1171,8 @@ def real_tracker_sends_only_listed_events(b):
         ctx.route(re.compile(r'.*/index\.html$|.*:%d/$' % PORT), page)
         ctx.route('https://gateway.umami.is/**', lambda r: (sent.append(r.request.post_data_json), r.fulfill(status=200, content_type='application/json', body='{}')))
         pg = ctx.new_page(); pg.goto(f'http://127.0.0.1:{PORT}/index.html')
-        lookup(pg); pick(pg, 'c070', 'Qadri'); pg.wait_for_timeout(1500)
+        if live_phone: lookup_phone(pg); pb_go(pg, 'c070'); pb_line(pg, 'Qadri').click(); pg.wait_for_timeout(1500)   # promoted: the phone layout
+        else: lookup(pg); pick(pg, 'c070', 'Qadri'); pg.wait_for_timeout(1500)
         pg.evaluate("Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange'))")
         pg.wait_for_timeout(1500)                                                                 # the tracker sends its page-speed report on hide
         if gpc:
@@ -2630,7 +2639,8 @@ def phone_paste_shows_only_the_link(b):
 def phone_offline_kill_switch_and_promotion(b):
     # B2, B3: OFFLINE = False removes the copy and its caches for good (a later load can't bring the cache back);
     # the preview keeps its own cache name; once promoted, the build writes a self-removing next/sw.js.
-    m = build_module()
+    m = build_module(); pv = PAGE.startswith('next/')                                # the preview, or the promoted main page (promotion audit #1)
+    folder = PAGE.rsplit('/', 1)[0] + '/' if '/' in PAGE else ''; mine = 'ballotta-next-1' if pv else 'ballotta-1'
     on, off = m.sw_js(True), m.sw_off_js(True)
     assert "'ballotta-next-1'" in on and "'ballotta-1'" in m.sw_js(False) and "startsWith('ballotta-next-')" in off and "startsWith('ballotta-')" in m.sw_off_js(False)
     m.PHONE_LIVE = True; out = m.outputs(False); m.PHONE_LIVE = False
@@ -2639,9 +2649,9 @@ def phone_offline_kill_switch_and_promotion(b):
     ctx, pg = phone_page(b, sw=True)
     try:
         pg.goto(url); assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])')
-        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, "caches.keys().then(k => k.includes('ballotta-next-1'))", 15)
-        m.OFFLINE = False; page = m.build(preview=True); m.OFFLINE = True
-        Flip.swap = {'/' + PAGE: page.encode('utf-8'), '/' + PAGE.rsplit('/', 1)[0] + '/sw.js': m.sw_off_js(True).encode('utf-8')}
+        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, f"caches.keys().then(k => k.includes('{mine}'))", 15)
+        m.OFFLINE = False; page = m.build(preview=pv, phone=True); m.OFFLINE = True
+        Flip.swap = {'/' + PAGE: page.encode('utf-8'), '/' + folder + 'sw.js': m.sw_off_js(pv).encode('utf-8')}
         pg.reload(); poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 0)", 15)
         poll(pg, "caches.keys().then(k => !k.some(x => x.startsWith('ballotta')))", 15)
         pg.evaluate("() => new Promise(ok => { const i = new Image(); i.onload = i.onerror = ok; i.src = '../icon-512.png?late'; })"); pg.wait_for_timeout(500)
@@ -2652,26 +2662,28 @@ def phone_offline_kill_switch_and_promotion(b):
             ctx, pg = (new_page(b, wide=True, sw=True) if wide else phone_page(b, sw=True)); pg.goto(url)
             if wide: pg.evaluate("navigator.serviceWorker.register('sw.js')")             # an older install, before laptops were left out
             poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 1)", 15)
-            pg.evaluate("caches.open('ballotta-next-1').then(c => c.put(location.href, new Response('x')))")
+            pg.evaluate(f"caches.open('{mine}').then(c => c.put(location.href, new Response('x')))")
             Flip.swap = {'/' + PAGE: page.encode('utf-8')}
-            swp = '/' + PAGE.rsplit('/', 1)[0] + '/sw.js'
+            swp = '/' + folder + 'sw.js'
             if gone == 503: Flip.fail = {swp: 503}
-            else: Flip.swap[swp] = m.sw_off_js(True).encode('utf-8')
+            else: Flip.swap[swp] = m.sw_off_js(pv).encode('utf-8')
             pg.wait_for_timeout(3000); Flip.hits = []                                       # let the browser's own update check settle first
             pg.reload()
             if gone == 503:                                                                  # a hiccup is not "gone": the copy stays
                 pg.wait_for_timeout(2500)
                 assert 'getRegistration(\'./\')' in pg.content() and swp in Flip.hits, ('the kill switch never asked for sw.js', Flip.hits)
-                assert pg.evaluate("navigator.serviceWorker.getRegistrations().then(r => r.length)") == 1 and pg.evaluate("caches.has('ballotta-next-1')"), 'a 503 removed the copy'
+                assert pg.evaluate("navigator.serviceWorker.getRegistrations().then(r => r.length)") == 1 and pg.evaluate(f"caches.has('{mine}')"), 'a 503 removed the copy'
             else:
                 poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 0)", 15)
                 poll(pg, "caches.keys().then(k => !k.some(x => x.startsWith('ballotta')))", 15)
             ctx.close()
         Flip.swap, Flip.gone, Flip.fail = {}, set(), {}                                    # a page never touches another folder's copy (Pass 3)
         ctx, pg = phone_page(b, sw=True); pg.goto(url); poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 1)", 15)
-        Flip.swap = {'/_other.html': m.build(phone=True).encode('utf-8')}; Flip.fail = {'/' + PAGE.rsplit('/', 1)[0] + '/sw.js': 503}
-        pg.goto(url.rsplit('/', 2)[0] + '/_other.html'); pg.wait_for_timeout(2500)
-        assert pg.evaluate("navigator.serviceWorker.getRegistrations().then(r => r.some(g => g.scope.endsWith('/next/')))"), 'another page removed the preview copy'
+        other = '/_other.html' if pv else '/next/_other.html'                              # a page in another folder
+        Flip.swap = {other: m.build(phone=True).encode('utf-8')}; Flip.fail = {'/' + folder + 'sw.js': 503}
+        origin = url.split('/', 3)[0] + '//' + url.split('/', 3)[2]
+        pg.goto(origin + other); pg.wait_for_timeout(2500)
+        assert pg.evaluate("s => navigator.serviceWorker.getRegistrations().then(r => r.some(g => g.scope === s))", origin + '/' + folder), 'another page removed this folder\'s copy'
     finally:
         Flip.swap, Flip.gone, Flip.fail = {}, set(), {}; ctx.close(); srv.shutdown(); srv.server_close()
 
@@ -2721,6 +2733,31 @@ def promotion_hands_the_preview_on(b):
                 poll(pg, preview.replace('r.some(', '!r.some('), 15)                          # the preview's worker, gone
                 poll(pg, nextcache.replace('k.some(', '!k.some('), 15)                       # and its copies
             ctx.close(); ctx = None
+        # Promotion audit #4: a phone with only the main page's worker (it never had the preview) opens next/ and then
+        # the main page: neither asks the main page's worker to update; each touches only next/'s own registration.
+        Flip.swap, Flip.fail = enc(after), {}
+        spy = ("const u = ServiceWorkerRegistration.prototype.update; ServiceWorkerRegistration.prototype.update = function () {"
+               " try { localStorage.setItem('spy.update', (localStorage.getItem('spy.update') || '') + this.scope + ' '); } catch (e) {} return u.call(this); };")
+        ctx, pg = phone_page(b, sw=True, init=spy); pg.goto(base); poll(pg, '!!navigator.serviceWorker.controller', 15)
+        pg.goto('about:blank'); pg.goto(base + 'next/#s2ROOTONLY', wait_until='commit'); pg.wait_for_url(base, timeout=15000)
+        assert pg.evaluate('window.__incoming') == 's2ROOTONLY'
+        pg.reload(); pg.wait_for_timeout(1000)
+        assert pg.evaluate("localStorage.getItem('spy.update')") in (None, ''), ('a page updated a worker that isn\'t next/\'s', pg.evaluate("localStorage.getItem('spy.update')"))
+        assert pg.evaluate("navigator.serviceWorker.getRegistrations().then(r => r.map(g => g.scope))") == [base], 'the main page\'s worker was touched'
+        ctx.close(); ctx = None
+        # Promotion audit #3: after the hand-off, the Home Screen app (start_url next/) and the main page still open
+        # with no connection at all, before any second visit: the main page's worker keeps both from its install.
+        Flip.swap, Flip.fail = enc(before), {}
+        ctx, pg = phone_page(b, sw=True); pg.goto(base + 'next/')
+        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, nextcache, 15)
+        Flip.swap = enc(dict(after, **{'/next/sw.js': pre['next/sw.js']})); pg.wait_for_timeout(3000); Flip.swap = enc(after)
+        pg.goto('about:blank'); pg.goto(base + 'next/', wait_until='commit'); pg.wait_for_url(base, timeout=15000)
+        poll(pg, f"caches.open('ballotta-1').then(c => Promise.all([c.match('{base}'), c.match('{base}next/')])).then(([a, n]) => !!a && !!n)", 15)
+        poll(pg, preview.replace('r.some(', '!r.some('), 15)                                 # the preview's worker has gone
+        srv.shutdown(); srv.server_close()                                                    # no connection at all from here
+        for start in (base + 'next/', base):
+            pg.goto('about:blank'); pg.goto(start, wait_until='commit'); pg.wait_for_url(base, timeout=15000); pg.wait_for_selector('#ph-bar', state='attached', timeout=15000)
+            assert pg.evaluate("document.documentElement.dataset.copy") == 'offline', (start, 'not the kept copy')
     finally:
         Flip.swap, Flip.gone, Flip.fail = {}, set(), {}
         if ctx: ctx.close()

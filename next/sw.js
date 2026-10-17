@@ -1,6 +1,10 @@
 // Built by source/build_site.py; don't edit sw.js. Ballotta's offline copy: network first, kept copy as a fallback.
 const CACHE = 'ballotta-next-1';
-self.addEventListener('install', () => self.skipWaiting());
+// The page keeps a copy of itself from the start, so it opens offline before its next visit, and so does a Home
+// Screen app that installed the preview, whose next/ now sends it on to ./ (promotion audit #3). Nothing fails if it can't.
+self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => Promise.all(['./'].map((u) => {
+  const at = new URL(u, location.href).href;
+  return fetch(at, { cache: 'no-store' }).then((res) => res.ok && res.type === 'basic' && c.put(at, res)).catch(() => {}); })))); });
 self.addEventListener('activate', (e) => e.waitUntil(caches.keys()
   .then((ks) => Promise.all(ks.filter((k) => k.startsWith('ballotta-next-') && !k.startsWith('ballotta-next-next-') && k !== CACHE).map((k) => caches.delete(k))))
   .then(() => self.clients.claim())));
