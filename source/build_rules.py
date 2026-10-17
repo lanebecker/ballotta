@@ -6,7 +6,7 @@ for state/federal), keyed by 2026 precinct number.
 Confidence: "high" = code meaning confirmed by the county's JurisdictionCodes key and ballot text;
 "medium" = plausible but unconfirmed (see note). Contests with rule None cannot be routed yet.
 """
-import csv, json, re, collections, pathlib
+import csv, json, re, collections, pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 
@@ -93,6 +93,13 @@ def rule_for(c):
     raise ValueError("no rule for " + t)
 
 
+# Contests no address reaches, each with the reason (cold audit, Oct 17, #4). The build stops on any other: one wrong
+# or missing code hides a whole election from the voters who have it.
+UNREACHED_OK = {
+    "Travis County MUD No. 41": "No county code confirmed for this district; M41 (two address rows, 1,217 addresses in "
+                                "precinct 142) is the likely code and is with the Tax Office.",
+}
+
 rules = {}
 for c in contests:
     r, conf, note = rule_for(c)
@@ -119,9 +126,12 @@ if __name__ == "__main__":
     combos = [f["attributes"] for f in json.load(open(HERE / "data/combos_temp.json"))["features"]]
     hits = collections.Counter(); sets = collections.Counter(); problems = []
     by = {c["id"]: c for c in contests}
+    no_tlc = collections.Counter()
     for rec in combos:
         p = rec.get("Precinct")
         if not p or p not in tlc:
+            if p: no_tlc[p] += rec["n"]   # these addresses would get no US Rep, State Rep or State Senator: stop below
+            # (a row with no precinct at all is not a voting address)
             continue
         rec = dict(rec, **tlc[p])
         got = [cid for cid in rules if applies(rules[cid], rec)]
@@ -129,8 +139,9 @@ if __name__ == "__main__":
         sets[tuple(got)] += rec["n"]
         cds = [g for g in got if by[g]["title"].startswith("United States Representative")]
         hds = [g for g in got if by[g]["title"].startswith("State Representative")]
-        if len(cds) != 1 or len(hds) != 1:
-            problems.append((p, rec.get("Split"), len(cds), len(hds)))
+        sds = [g for g in got if by[g]["title"].startswith("State Senator")]
+        if len(cds) != 1 or len(hds) != 1 or len(sds) > 1:   # not every precinct has a State Senate race this year
+            problems.append((p, rec.get("Split"), len(cds), len(hds), len(sds)))
     never = [by[c]["title"] for c in rules if hits[c] == 0 and rules[c]["clauses"] is not None]
     print("combos:", len(combos), "distinct contest sets:", len(sets))
     sizes = [len(s) for s in sets]; print("contests per ballot: min", min(sizes), "max", max(sizes))
@@ -138,5 +149,12 @@ if __name__ == "__main__":
     print("medium:", sum(1 for c in rules.values() if c["conf"] == "medium"), " unrouted:", sum(1 for c in rules.values() if c["clauses"] is None))
     print("contests matching zero addresses:", never)
     print("combos without exactly one US Rep and one State Rep:", problems[:10], len(problems))
+    unreached = sorted({by[c]["entity"] for c in rules if hits[c] == 0})
+    for e in unreached:
+        print(f"no address reaches {e}: {UNREACHED_OK.get(e, 'NOT ALLOWED')}")
+    bad = [e for e in unreached if e not in UNREACHED_OK] + [e for e in UNREACHED_OK if e not in unreached]
+    if no_tlc: print("precincts missing from the Legislative Council table (addresses):", dict(no_tlc))
+    if bad or problems or no_tlc:
+        sys.exit(f"stopping: unexplained unreached contests {bad}, district problems {problems[:5]}, precincts without districts {dict(no_tlc)}")
     json.dump(rules, open(HERE / "rules.json", "w"), indent=1)
     json.dump({str(k): v for k, v in tlc.items()}, open(HERE / "tlc_precincts.json", "w"))

@@ -310,6 +310,10 @@ M = [
  ('D47 the old headings', PREV, '<span class="ov">Print your choices</span><h1>Crib sheet</h1>', '<span class="ov">Crib sheet</span><h1>Print your notes</h1>', ['desk_crib_options_and_print']),
  ('D48 At a glance title hugs its line', PREV, '  .dk-gh > div{display:flex;flex-direction:column;gap:18px}', '  .dk-gh > div{}', ['view_titles_sit_the_same_distance_below_their_line']),
  ('D49 At a glance title smaller than the rest', PREV, '  .dk-gh{display:flex;align-items:flex-end;gap:16px;justify-content:space-between}\n', '  .dk-gh{display:flex;align-items:flex-end;gap:16px;justify-content:space-between}\n  .dk-gh h1{font-size:36px}\n', ['view_titles_sit_the_same_distance_below_their_line']),
+ ('D50 old links read in the new order', PREV, 'const was = o.r !== 2 && REORDERED[id]', 'const was = false', ['links_from_before_the_ballot_order_fix_keep_their_picks']),
+ ('D51 new links read as old ones', PREV, 'const was = o.r !== 2 && REORDERED[id]', 'const was = REORDERED[id]', ['links_from_before_the_ballot_order_fix_keep_their_picks']),
+ ('D52 Keep links not marked', PREV, "packFrag('k', { v: 1, r: 2, at:", "packFrag('k', { v: 1, at:", ['links_from_before_the_ballot_order_fix_keep_their_picks']),
+ ('D53 Share links not marked', PREV, "packFrag('s', { v: 1, r: 2, n: name,", "packFrag('s', { v: 1, n: name,", ['links_from_before_the_ballot_order_fix_keep_their_picks']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

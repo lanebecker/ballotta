@@ -16,7 +16,7 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 # sha256 of the live index.html as built from commit 06b7030 (Oct 15). The phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'e9c4086f4dbfa41272f59b8a9e5fc7dd55913583c446e81c5c63332cc46fde7b'  # round J (Oct 17): pick column; "Print your choices"; "My ballot choices"; title spacing and size
+LIVE_SHA = '7cd89b09536377dff2fe869fd9855f95d262aaee2125aed13e9bea971a54b521'  # Oct 17: the ballot data in ballot order with the ballot's English (cold audit wave 1)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -616,6 +616,20 @@ def desk_glance_picks_fit_their_names(b):
         assert r['head'] == 1, (w, '"Your pick" wraps', r['head'])   # its text's lines (the header row is as tall as its tallest cell)
         assert r['sideways'] <= 0 and (w < 1200 or r['links'] == 0), (w, r)
         ctx.close()
+
+@test
+def links_from_before_the_ballot_order_fix_keep_their_picks(b):
+    # Cold audit, Oct 17, #1: ten "vote for up to N" lists now follow the ballot's order. Keep and Share links count
+    # picks by position, so a link made before the fix still means the candidate it meant; links made since say so (r: 2).
+    ctx, pg = new_page(b); pg.goto(BASE)
+    old, new, first = pg.evaluate("""() => [unpackPicks({ v: 1, p: { 154: 0, 202: [0, 2], 1: 0 } }).P, unpackPicks({ v: 1, r: 2, p: { 154: 0 } }).P, optionsOf(BYID.c001)[0]]""")
+    assert old['c154'] == ['Carrington Saathoff'] and old['c202'] == ['Beth Jones', 'Hanoi Avila'] and old['c001'] == [first], old
+    assert new['c154'] == ['Grant Ballew'], new
+    assert pg.evaluate("optionsOf(BYID.c154)") == ['Grant Ballew', 'John Berry', 'Carrington Saathoff', 'Ryan Sullivan', 'William Waller']
+    kr = pg.evaluate("keepURL().then(u => unpackFrag(u.split('#')[1])).then(o => o.r)")
+    sr = pg.evaluate("prepShare().p.then(u => unpackFrag(u.split('#')[1])).then(o => o.r)")
+    assert kr == 2 and sr == 2, (kr, sr)
+    ctx.close()
 
 TITLE_GAP = """() => { const p = document.getElementById('dk-paper'), h = p.querySelector('h1');
   const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return [...r.getClientRects()].filter(x => x.width); };

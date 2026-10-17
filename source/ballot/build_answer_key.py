@@ -1,7 +1,19 @@
-"""Turn parsed.json into a reviewed answer key for the Nov 3, 2026 Travis County ballot."""
-import json, re
+"""Turn parsed.json into the reviewed answer key for the Nov 3, 2026 Travis County ballot (source/answer_key.json).
 
-src = json.load(open("parsed.json", encoding="utf-8"))
+    python3 source/ballot/build_answer_key.py [--out PATH]      # from any folder; tests/test_pipeline.py checks that
+                                                                 # this reproduces the committed key byte for byte
+Every correction lives here, not in the JSON (cold audit, Oct 17, #3): the Oct 14 corrected ballot's changes, the
+choice order of the "vote for up to N" contests (#1), and the measure texts, which come straight from the ballot PDF's
+English text (#2: a parsed text could carry the start of the Spanish caption). parsed.json itself was made by
+parse_ballot.py from a column extraction of the earlier PDF that is not in the repo."""
+import json, pathlib, re, sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import pdf_lines
+
+OUT = pathlib.Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else HERE.parent / "answer_key.json"
+src = json.load(open(HERE / "parsed.json", encoding="utf-8"))
 contests = src["contests"]
 
 DROP = {
@@ -38,20 +50,23 @@ FIX_CHOICES = {
     "Judge, County Court at Law No. 1": ["Todd Wong (DEM)"],
     "County Judge": ["Andy Brown (DEM)"],
     "City of Sunset Valley, Mayor": ["Marc Bruner"],
+    "District Judge, 331st Judicial District": ["Chantal Melissa Eldridge (DEM)"],  # the Oct 14 corrected ballot adds the party
 }
+# Contests the parser could not read. Choices in the order the ballot prints them, top to bottom (Oct 17, #1: the ten
+# "vote for up to N" lists were first typed in a column extraction's order, which split each list in two).
 ADD = [
     ("City of Sunset Valley, Two City Council Member Seats (vote for up to 2)", "candidate", ["Sarah Ponder", "Robert Johnson", "Charles Young"], "City of Sunset Valley, Mayor"),
     ("Village of Volente, Village Council (vote for up to 2)", "candidate", ["Eric Peeters", "Tony Ruff"], "Village of Volente, Village Mayor"),
-    ("Eastwood MUD Permanent Directors (vote for up to 5)", "candidate", ["Carrington Saathoff", "Ryan Sullivan", "Grant Ballew", "John Berry", "William Waller"], "Eastwood MUD Proposition G"),
-    ("Hidden Lakes MUD No. 1 of Travis County, Board of Directors (vote for up to 5)", "candidate", ["Nicodemus Abowd", "Denis Fletcher", "Jeff Markey", "Mariano Ravelo", "Barry Marotz"], "Hidden Lakes MUD No. 1 Proposition J"),
-    ("Kennedy Hill MUD Permanent Directors (vote for up to 5)", "candidate", ["Daniel McElrath", "Chase Nixon", "Jacob Clark", "Ross Hamilton", "Dane Rymer"], "Kennedy Hill MUD Proposition G"),
-    ("Northtown MUD Directors (vote for up to 3)", "candidate", ["Scott Moser", "Brenda Vrabel", "R. Lee Hill", "Chris Capers"], "North Austin MUD No. 1 Director, Place 4"),
-    ("Travis County MMD No. 1 Permanent Directors (vote for up to 5)", "candidate", ["Felicity Maxwell", "Casey Paulson", "Mickey Jamail", "Daniel Kavelman", "Ryan Puzycki"], "Travis County MMD No. 1 Proposition F"),
-    ("Travis County MUD No. 41 Permanent Directors (vote for up to 5)", "candidate", ["Jason Nobbe", "Kelly Schill", "Ashtyn Bogue", "Lyndsey Mylius", "Jared Williams"], "Travis County MUD No. 41 Proposition F"),
-    ("Williamson-Travis Counties MUD No. 1 Directors (vote for up to 3)", "candidate", ["Beth Jones", "Stephen Bodnarchuk Jr.", "Hanoi Avila", "David Flores", "Kimberly Massaro", "Linda Fabre", "Thomas Vacek"], "Vista MUD of Travis County Proposition B"),
-    ("Cypress Ranch WCID No. 1, Board of Directors (vote for up to 3)", "candidate", ["Richard Kenyon", "Travis Wright", "Rick Shute", "Jason Blair"], "Williamson-Travis Counties MUD No. 1 Directors (vote for up to 3)"),
-    ("Travis County WCID No. 17 Directors (vote for up to 3)", "candidate", ["Elicia Michaud", "Larry Harlan", "Phil Han", "Sonja DeLaFuente", "Ryan Carretta"], "Cypress Ranch WCID No. 1, Board of Directors (vote for up to 3)"),
-    ("Wells Branch Community Library District Board of Trustees (vote for up to 3)", "candidate", ["Rudolf J. Valenti", "Paul Wadehra", "Philip Waters", "Abigail Joffrain", "Elizabeth Martin"], None),
+    ("Eastwood MUD Permanent Directors (vote for up to 5)", "candidate", ["Grant Ballew", "John Berry", "Carrington Saathoff", "Ryan Sullivan", "William Waller"], "Eastwood MUD Proposition G"),
+    ("Hidden Lakes MUD No. 1 of Travis County, Board of Directors (vote for up to 5)", "candidate", ["Jeff Markey", "Mariano Ravelo", "Nicodemus Abowd", "Denis Fletcher", "Barry Marotz"], "Hidden Lakes MUD No. 1 Proposition J"),
+    ("Kennedy Hill MUD Permanent Directors (vote for up to 5)", "candidate", ["Jacob Clark", "Ross Hamilton", "Daniel McElrath", "Chase Nixon", "Dane Rymer"], "Kennedy Hill MUD Proposition G"),
+    ("Northtown MUD Directors (vote for up to 3)", "candidate", ["R. Lee Hill", "Chris Capers", "Scott Moser", "Brenda Vrabel"], "North Austin MUD No. 1 Director, Place 4"),
+    ("Travis County MMD No. 1 Permanent Directors (vote for up to 5)", "candidate", ["Mickey Jamail", "Daniel Kavelman", "Felicity Maxwell", "Casey Paulson", "Ryan Puzycki"], "Travis County MMD No. 1 Proposition F"),
+    ("Travis County MUD No. 41 Permanent Directors (vote for up to 5)", "candidate", ["Ashtyn Bogue", "Lyndsey Mylius", "Jason Nobbe", "Kelly Schill", "Jared Williams"], "Travis County MUD No. 41 Proposition F"),
+    ("Williamson-Travis Counties MUD No. 1 Directors (vote for up to 3)", "candidate", ["Hanoi Avila", "David Flores", "Beth Jones", "Stephen Bodnarchuk Jr.", "Kimberly Massaro", "Linda Fabre", "Thomas Vacek"], "Vista MUD of Travis County Proposition B"),
+    ("Cypress Ranch WCID No. 1, Board of Directors (vote for up to 3)", "candidate", ["Rick Shute", "Jason Blair", "Richard Kenyon", "Travis Wright"], "Williamson-Travis Counties MUD No. 1 Directors (vote for up to 3)"),
+    ("Travis County WCID No. 17 Directors (vote for up to 3)", "candidate", ["Phil Han", "Sonja DeLaFuente", "Elicia Michaud", "Larry Harlan", "Ryan Carretta"], "Cypress Ranch WCID No. 1, Board of Directors (vote for up to 3)"),
+    ("Wells Branch Community Library District Board of Trustees (vote for up to 3)", "candidate", ["Philip Waters", "Abigail Joffrain", "Rudolf J. Valenti", "Paul Wadehra", "Elizabeth Martin"], None),
 ]
 
 JUNK = re.compile(
@@ -111,6 +126,9 @@ for c in contests:
     if t == "Round Rock Independent School District Proposition A":
         t = "Round Rock ISD Proposition A"
     if c["type"] == "candidate":
+        for x in c["choices"]:
+            if JUNK.match(x) and t not in FIX_CHOICES:
+                print(f"dropped from {t!r}: {x!r}", file=sys.stderr)  # never silently (#5)
         ch = FIX_CHOICES.get(t) or [x for x in c["choices"] if not JUNK.match(x)]
         ch = [x for x in ch if x != "Write-in"] + (["Write-in"] if "Write-in" in c["choices"] else [])
     else:
@@ -167,9 +185,23 @@ for it in final:
         it["level"] = lvl
         it["kind"] = "measure"
 
+# Measure texts exactly as the ballot prints them in English, from the PDF in this folder (the Oct 14 corrected ballot):
+# the measures appear in the same order in both, and each pair's "Proposition X" must agree.
+pdf_measures = pdf_lines.measures()
+key_measures = [it for it in final if it["type"] == "measure"]
+assert len(pdf_measures) == len(key_measures), (len(pdf_measures), len(key_measures))
+for (ptitle, ptext), it in zip(pdf_measures, key_measures):
+    letter = lambda t: re.search(r"Proposition\s+([A-Z0-9]+)", t).group(1)
+    assert letter(ptitle) == letter(it["title"]), (ptitle, it["title"])
+    assert ptext, it["title"]
+    if pdf_lines.norm(it["text"]) != ptext:
+        print(f"{it['id']} text from the PDF (parsed: …{pdf_lines.norm(it['text'])[-40:]!r})", file=sys.stderr)
+    it["text"] = ptext
+
 key = {
     "election": "Travis County Joint General and Special Elections, November 3, 2026",
-    "source": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+    "source": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final.pdf",
+    "source_corrected": "2026-10-14",
     "source_note": "Consolidated ('bedsheet') ballot listing every contest in the county. No single voter sees all of these; each ballot is a subset by precinct.",
     "unopposed_not_on_ballot": [
         "Coupland ISD trustees (declared elected unopposed)",
@@ -177,7 +209,7 @@ key = {
     ],
     "contests": final,
 }
-json.dump(key, open("../answer_key.json", "w"), ensure_ascii=False, indent=1)
+json.dump(key, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 from collections import Counter
 print(len(final), "contests")
 print(Counter((it["level"], it["type"]) for it in final))

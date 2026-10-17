@@ -74,6 +74,7 @@ Everything that makes the page lives in `source/`:
 - `vote_sites.json`: the county's vote center lists, geocoded
 
 ```
+python3 source/ballot/build_answer_key.py           # only when the ballot changes: writes answer_key.json
 python3 source/build_rules.py                       # only when the contests or district data change
 python3 source/parse_lwv.py LWVAA-VG-EN.pdf source/answer_key.json source/data/lwv_candidates.json
 python3 source/check_sites.py                       # after any parse: records which listed sites load
@@ -81,6 +82,7 @@ python3 source/build_learn.py
 python3 source/build_site.py                        # writes index.html and census.html
 python3 source/build_site.py --preview              # writes next/ (the phone preview, its manifest.webmanifest and sw.js)
 python3 source/make_icons.py                        # only if the logo changes: the Home Screen icons
+python3 tests/test_pipeline.py                      # the answer key against the ballot PDF (no browser)
 python3 tests/test_site.py                          # end-to-end checks (Playwright, live county services) of the live page
 BALLOTTA_PAGE=next/index.html python3 tests/test_site.py   # the same against the phone preview
 python3 tests/mutate_desk.py                        # mutation check of the tests (slow; restores every file it touches, even when stopped)
@@ -89,7 +91,11 @@ python3 tests/mutate_phone.py                       # the same for the phone lay
 
 `parse_lwv.py` prints any listed site it couldn't credit to a candidate, and stops the build if a contested race shows an "unopposed" candidate or if a sole candidate is shown as answering without a hand check. It needs PyMuPDF (`pip install pymupdf`); the tests need Playwright with Chromium (`pip install playwright && playwright install chromium`); `make_icons.py` needs Playwright too.
 
-`answer_key.json` is not rebuilt by these commands: `source/ballot/parse_ballot.py` reads per-column text files extracted from the ballot PDF by hand (not in the repo), `source/ballot/build_answer_key.py` turns its `parsed.json` into the key, and the corrected ballot's changes (Oct 14) were applied to the key directly. Regenerating it today would undo those corrections; see the audit of Oct 17.
+`build_answer_key.py` turns `source/ballot/parsed.json` (from `parse_ballot.py`, which read per-column text files extracted from the ballot PDF by hand, not in the repo) into the key. Its hand fixes live in the script, so a rerun gives the committed key byte for byte, the Oct 14 corrections included: the order of choices in the "vote for up to N" contests is the ballot's, top to bottom, and every measure's text is read straight from the corrected ballot PDF (`source/ballot/bedsheet.pdf`, by `source/ballot/pdf_lines.py`: English only, since the ballot sets Spanish in italic). Both need pdfplumber (`pip install pdfplumber`). `tests/test_pipeline.py` holds the key to the PDF: choice order, measure texts, party labels and the count of measures.
+
+Keep and Share links store picks by each choice's position in its list. The Oct 17 fix put ten lists in ballot order, so links made before it (no `r: 2` inside) are read through the page's `REORDERED` table and keep meaning the same candidates; never reorder a list again without the same care.
+
+`build_rules.py` stops the build when a contest's district is reached by no address on file (unless it's explained in `UNREACHED_OK`: today only Travis County MUD No. 41, whose county code isn't confirmed), when an address would get anything but one member of Congress and one State Rep, or more than one State Senator, or when an address's precinct is missing from the Legislative Council table.
 
 ## Custom domain (ballotta.org)
 
