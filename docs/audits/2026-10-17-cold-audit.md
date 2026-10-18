@@ -296,6 +296,12 @@ Dependencies worth respecting: #3 before #1/#2; #30 or a `LIVE_SHA` re-pin in an
 
 ---
 
+## Filed (Oct 17, evening)
+
+Finding → GitHub issue, one milestone per wave (Waves 1–6) and labels P0–P3 plus data/page/phone/tests/process/cleanup: #3 → issue #55, #4 → issue #56, #6 → issue #57, #7 → issue #58, #8 → issue #59, #9 → issue #60, #10 → issue #61, #11 → issue #62, #12 → issue #63, #13 → issue #67, #14 → issue #68, #16 → issue #69, #18 → issue #64, #19 → issue #73, #20 → issue #74, #23 → issue #75, #24 → issue #65, #25 → issue #66, #26 → issue #70, #27 → issue #71, #28 → issue #72, #30 → issue #77, #31 → issue #78, #32 → issue #79, #33 → issue #80, #34 → issue #81, #35 → issue #82, #36 → issue #83, #37 → issue #84, #38 → issue #85, #39 → issue #86, #40 → issue #87, #41 → issue #88, #42 → issue #89, #43 → issue #90, #44 → issue #91, #45 → issue #92, #46 → issue #93, #47 → issue #76. #38 and #47 are filed as one checklist issue each. The earlier #50 went to wave 3; #51–#53 and #54 (offline-copy test gaps from the promotion audit) to wave 4.
+
+Done before filing, so not filed: #1, #2, #5 (wave 1, commits 663feec–9c1a30f); #3 and #4 except their remainders (issues #55, #56); #21 and #29 (promotion prep, f02b029 onward); #15 (the tracker's `defer` is pinned again by the ported `phone_tracker_tag_and_link_targets`, which runs on the live page); #17 (moot since promotion: the suite tests only index.html); #22 (moot: the preview app is gone); and #47's duplicate viewport item (preview only).
+
 ## Argued down (not filed)
 
 Kept here so the next round does not re-find them.
