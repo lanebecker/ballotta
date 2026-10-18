@@ -57,7 +57,7 @@ the election (Lane).
 - **`requirements.txt`** (#82): every Python package the build and tests use, pinned, with one install line in the README.
 - **Only the site is published** (#83): the Pages workflow deploys a folder holding the built pages and the files they
   point at (`build_site.py --site`; a phone rollback keeps next/ in it), so tests, docs and sources are no longer
-  served. It waits for the Pages setting to move to GitHub Actions.
+  served. (The Pages setting moved to GitHub Actions the same day; the live site confirms it.)
 - **`SECURITY.md` and `fonts/OFL.txt`** (#84): how to report a problem privately, and the fonts' license with their
   copyright notices. The code stays all rights reserved (README).
 - **Sources for two inputs** (#85): `source/fetch_combos.py` records the county query behind the district-code
