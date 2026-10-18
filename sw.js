@@ -21,9 +21,9 @@ self.addEventListener('fetch', (e) => {
   e.waitUntil(net.catch(() => {}));  // a late answer still refreshes the kept copy
   e.respondWith(Promise.race([net.catch(() => 'offline'), new Promise((ok) => setTimeout(ok, 4000, 'slow'))])
     .then(async (first) => {
-      // A server error (5xx) inside 4 seconds (a deploy, a proxy) counts as no answer when a copy is kept (#74); a 404 is shown,
+      // A server error (5xx), a timeout or a rate limit (408, 429) inside 4 seconds (a deploy, a proxy) counts as no answer when a copy is kept (#74); a 404 is shown,
       // so a page that's really gone is never masked by its copy (Wave 4 Pass 1).
-      const bad = typeof first !== 'string' && first.type === 'basic' && first.status >= 500;
+      const bad = typeof first !== 'string' && first.type === 'basic' && (first.status >= 500 || first.status === 408 || first.status === 429);
       if (typeof first !== 'string' && !bad) return first;  // the network's own answer
       const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies
       if (!kept) return net;  // nothing kept: wait for the network
@@ -34,4 +34,4 @@ self.addEventListener('fetch', (e) => {
 // A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy="offline">,
 // "slow" or "error". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).
 const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');
-  return new Response(t.replace(/^(\s*(?:<!--[\s\S]*?-->\s*)*(?:<!doctype[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*<html)(?=[\s>])/i, '$1 data-copy="' + why + '"'), { status: res.status, statusText: res.statusText, headers: h }); });
+  return new Response(t.replace(/^(\s*(?:<!--(?:>|->|(?:(?!-->)[\s\S])*-->)\s*)*(?:<!doctype[^>]*>\s*)?(?:<!--(?:>|->|(?:(?!-->)[\s\S])*-->)\s*)*<html)(?=[\s>])/i, '$1 data-copy="' + why + '"'), { status: res.status, statusText: res.statusText, headers: h }); });

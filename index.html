@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-oVEIXI87XNRzeu08RkyRDBDADyJ6QataYTDAK8+dTNI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-u+EWz9zSNoKE1WWxupbEBzJ3okeu1cWDNGJMJcAxG+A='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1270,7 +1270,8 @@ function showBallot(list, meta) {
 function chev() { return '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'; }
 const ARROW = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg>';
 // Only contests and choices on today's ballot count (#76), filtered as they're read: what's stored is never trimmed, so a
-// copy of the page from another build can't delete picks it doesn't know (Wave 4 Pass 1).
+// copy of the page from another build can't delete picks in contests it doesn't know (Wave 4 Pass 1). A pick in a contest
+// does drop that contest's unknown choices, so the other build can never see more picks than seats (Pass 2).
 function current(cid) {
   const c = BYID[cid], v = picks[cid], a = Array.isArray(v) ? v : (v ? [v] : []);
   if (!c) return [];
@@ -2654,19 +2655,33 @@ const phone = (() => {
   // with no answer. Try again reloads; the bar goes when the network comes back.
   const copy = document.documentElement.dataset.copy;
   if (copy === 'offline' || copy === 'slow' || copy === 'error') {
-    $('ph-saved').querySelector('b').textContent = (copy === 'slow' ? 'Slow connection' : copy === 'error' ? 'Ballotta isn’t answering' : 'No connection') + ', so this is the copy saved on your phone.';
+    const said1 = (copy === 'slow' ? 'Slow connection' : copy === 'error' ? 'Ballotta isn’t answering' : 'No connection') + ', so this is the copy saved on your phone.';
+    $('ph-saved').querySelector('b').textContent = said1;
     // Once the site answers again (#73), the bar says so and offers the newer page; it never reloads by itself, so nothing
     // half-typed is lost (Lane, Oct 18). Checked when the page comes back into view, when the phone says it's online, and
-    // every 20 seconds, with a HEAD request the offline copy never answers; one at a time, given up after 8 seconds.
+    // every 20 seconds, with a HEAD request the offline copy never answers, one at a time. Only an answer within 3.5 seconds
+    // counts: a reload goes through the copy's 4-second rule, so a slower line would only land on the copy again. If the site
+    // stops answering again, the bar says so again (Wave 4 Pass 2).
     let busy = false;
-    const back = () => { siteBack = true; $('ph-saved').querySelector('b').textContent = 'Ballotta is back.'; $('ph-saved').querySelector('b + span').textContent = ''; $('ph-saved-go').textContent = 'Reload'; };
+    const back = (on) => {
+      if (on === siteBack) return;
+      siteBack = on;
+      $('ph-saved').querySelector('b').textContent = on ? 'Ballotta is back.' : said1;
+      $('ph-saved-go').textContent = on ? 'Reload' : 'Try again';
+      if (on) $('ph-saved').querySelector('b + span').textContent = ''; else savedSay();
+    };
     const check = () => {
-      if (busy || siteBack || document.visibilityState === 'hidden') return;
+      if (busy || document.visibilityState === 'hidden') return;
       busy = true;
-      fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined })
-        .then((r) => { if (r.ok) back(); }).catch(() => {}).finally(() => { busy = false; });
+      const ac = typeof AbortController === 'function' ? new AbortController() : null, t0 = Date.now(), t = setTimeout(() => { if (ac) ac.abort(); }, 3500);
+      const done = () => { clearTimeout(t); busy = false; };
+      try {
+        fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: ac ? ac.signal : undefined })
+          .then((r) => back(r.ok && Date.now() - t0 < 3500), () => back(false)).then(done, done);
+      } catch (e) { done(); }
     };
     document.addEventListener('visibilitychange', check); window.addEventListener('online', check); setInterval(check, 20000);
+    window.addEventListener('offline', () => back(false));
     $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
     savedSay();
   }

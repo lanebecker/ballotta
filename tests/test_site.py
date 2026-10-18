@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '50074ab7c6c479dfb8bfd9fdee234b6cf4320c6898ff64f02f8310c92a0f95de'  # Oct 18: wave 4 (phone layout follow-ups)
+LIVE_SHA = '33a28106f999e7f012ff23131d12db17622ea0f9473702e94f48a420bf2fe0d2'  # Oct 18: wave 4 (phone layout follow-ups)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -2678,6 +2678,10 @@ def offline_copy_marks_any_html_tag(b):
         assert out.count('data-copy="slow"') == 1 and out.endswith('x'), (html, out)
     out = run('<!doctype html>\n<html lang="en"><script>const s = "<html>";</script>')
     assert out.count('data-copy') == 1 and out.index('data-copy') < out.index('<script>'), out
+    out = run('<!--> <!doctype html>\n<html lang="en"><body><!-- a --><html>x')   # Pass 2: an abrupt comment; only the real tag
+    assert out.count('data-copy') == 1 and out.index('data-copy') < out.index('<body>'), out
+    ms = pg.evaluate("([s, h]) => { const f = (0, eval)('(() => { ' + s + '; return said; })()'); const t = performance.now(); return f(new Response(h), 'slow').then(() => performance.now() - t); }", [said, '<!-- a -->' * 24 + '<body>x'])
+    assert ms < 200, ('comments before a page that has no <html> took', ms)   # Pass 2: no runaway backtracking
     ctx.close()
 
 @phone_test
@@ -2707,6 +2711,19 @@ def phone_saved_copy_bar_follows_the_site(b):
         assert visible() and "isn’t answering" in bar.inner_text() and 'copy saved on your phone' in bar.inner_text(), bar.inner_text()
         seen(); pg.wait_for_timeout(1500); assert visible(), 'the site still answers with an error: the bar stays'
         Flip.fail = {}; pg.evaluate("window.dispatchEvent(new Event('online'))"); poll(pg, back, 10)   # the phone saying it's online asks too
+        pg.evaluate("window.dispatchEvent(new Event('offline'))"); assert "isn’t answering" in bar.inner_text(), ('offline: the bar takes its word back', bar.inner_text())
+        pg.evaluate("window.dispatchEvent(new Event('online'))"); poll(pg, back, 10)
+        Flip.fail = {'/' + PAGE: 503}; seen(); pg.wait_for_timeout(1500)      # Pass 2: the site stops answering again: the bar says so again
+        assert "isn’t answering" in bar.inner_text() and pg.inner_text('#ph-saved-go') == 'Try again', bar.inner_text()
+        Flip.fail = {'/' + PAGE: 429}; pg.reload(timeout=20000)               # Pass 2: a rate limit is no answer too
+        assert pg.get_attribute('html', 'data-copy') == 'error', 'a 429 was shown, not the kept page'
+        Flip.fail = {}; Flip.slow = {'/' + PAGE: 5}; pg.reload(timeout=20000)  # Pass 2: a line answering in 5 s: Reload would land on the copy again
+        assert pg.get_attribute('html', 'data-copy') == 'slow'
+        seen(); pg.wait_for_timeout(6500)
+        assert 'Ballotta is back.' not in bar.inner_text(), 'it said the site was back, but a reload would still take the copy'
+        pg.evaluate('window.AbortController = undefined'); seen(); pg.wait_for_timeout(6500)   # a browser that can't cut a request short (older iPhones)
+        assert 'Ballotta is back.' not in bar.inner_text(), 'without AbortController, a slow answer counted as back'
+        Flip.slow = {}; seen(); poll(pg, back, 10)
         srv.shutdown(); srv.server_close(); up = False
         pg.reload(timeout=20000); assert visible() and 'No connection' in bar.inner_text()
         seen(); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1500)
@@ -2829,12 +2846,13 @@ def phone_candidate_links_are_full_size_targets(b):
 def the_map_shows_all_five_closest_centers(b):
     # #76: from an outlying address (Webberville), the five numbered centers were mostly off the map, while its label
     # promised them. The map now widens just enough to fit all five; closer in, it keeps its usual scale.
-    for pt, wide in (([-97.50, 30.24], True), ([-98.10, 30.55], True), ([-97.7431, 30.2747], False)):   # Pass 1: far northwest too
+    for pt, wide in (([-97.50, 30.24], True), ([-98.10, 30.55], True), ([-98.17, 30.62], True), ([-97.7431, 30.2747], False)):   # Pass 1, 2: far northwest too
         ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70], pt=pt); pg.wait_for_selector('body.dk-app-on')
         pg.evaluate("desk.ph.setView('vote')"); pg.wait_for_selector('#dk-map')
         assert pg.locator('#dk-map .top').count() == 5, (pt, pg.locator('#dk-map .top').count())
         assert pg.evaluate("[...document.querySelectorAll('#dk-map > text')].every(t => +t.getAttribute('x') >= 48 && +t.getAttribute('x') <= 512)"), 'a town name cut off at the edge'
         assert pg.evaluate("[...document.querySelectorAll('#dk-map .top text')].pop().textContent") == '1', 'center 1 is drawn last, on top'
+        assert pg.evaluate("(() => { const t = [...document.querySelectorAll('#dk-map > text')].map(e => [+e.getAttribute('x'), +e.getAttribute('y')]); return t.every((a, i) => t.every((b, j) => i === j || Math.hypot(a[0] - b[0], a[1] - b[1]) >= 60)); })()") or not wide, 'widened: town names pile up'   # Pass 2 (measured: never closer than 70px at real far points, so no spacing code)
         if not wide:
             assert pg.evaluate("[...document.querySelectorAll('#dk-map > circle')].length") <= 15, 'downtown: the usual close-in map, not one widened to most of the county'
         ctx.close()

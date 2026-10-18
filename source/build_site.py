@@ -163,9 +163,9 @@ SW_JS = (
     "  e.waitUntil(net.catch(() => {}));  // a late answer still refreshes the kept copy\n"
     "  e.respondWith(Promise.race([net.catch(() => 'offline'), new Promise((ok) => setTimeout(ok, 4000, 'slow'))])\n"
     "    .then(async (first) => {\n"
-    "      // A server error (5xx) inside 4 seconds (a deploy, a proxy) counts as no answer when a copy is kept (#74); a 404 is shown,\n"
+    "      // A server error (5xx), a timeout or a rate limit (408, 429) inside 4 seconds (a deploy, a proxy) counts as no answer when a copy is kept (#74); a 404 is shown,\n"
     "      // so a page that's really gone is never masked by its copy (Wave 4 Pass 1).\n"
-    "      const bad = typeof first !== 'string' && first.type === 'basic' && first.status >= 500;\n"
+    "      const bad = typeof first !== 'string' && first.type === 'basic' && (first.status >= 500 || first.status === 408 || first.status === 429);\n"
     "      if (typeof first !== 'string' && !bad) return first;  // the network's own answer\n"
     "      const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies\n"
     "      if (!kept) return net;  // nothing kept: wait for the network\n"
@@ -176,7 +176,7 @@ SW_JS = (
     "// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy=\"offline\">,\n"
     "// \"slow\" or \"error\". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).\n"
     "const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');\n"
-    "  return new Response(t.replace(/^(\\s*(?:<!--[\\s\\S]*?-->\\s*)*(?:<!doctype[^>]*>\\s*)?(?:<!--[\\s\\S]*?-->\\s*)*<html)(?=[\\s>])/i, '$1 data-copy=\"' + why + '\"'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
+    "  return new Response(t.replace(/^(\\s*(?:<!--(?:>|->|(?:(?!-->)[\\s\\S])*-->)\\s*)*(?:<!doctype[^>]*>\\s*)?(?:<!--(?:>|->|(?:(?!-->)[\\s\\S])*-->)\\s*)*<html)(?=[\\s>])/i, '$1 data-copy=\"' + why + '\"'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
 SW_OFF_JS = (
     "// Built by source/build_site.py: removes Ballotta's offline copy from this browser. It takes the open pages over first,\n"
     "// so the old copy can't keep filling its cache, then deletes its caches (only Ballotta's), then itself.\n"

@@ -17,12 +17,14 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 ### Fixed
 - **On the laptop, "Next" never points at the contest already open** (#53). When it's the only undecided one, Next goes
   on in ballot order ("Next: …"), and from the last contest to At a glance ("Last contest · see At a glance").
-- **A server error no longer beats the copy saved on a phone** (#74): a 5xx that arrives within 4 seconds (a deploy,
-  a proxy) opens the kept page with the bar "Ballotta isn’t answering, so this is the copy saved on your phone." A 404
+- **A server error no longer beats the copy saved on a phone** (#74): a 5xx, 408 or 429 that arrives within 4 seconds (a
+  deploy, a proxy, a rate limit) opens the kept page with the bar "Ballotta isn’t answering, so this is the copy saved on your phone." A 404
   is shown as it is, so a page that's really gone is never masked by its copy.
 - **The saved-copy bar says when the site is back** (#73): once the site answers again, it reads "Ballotta is back."
   with Reload (Lane), where before it stayed until Try again on a slow line and vanished on "online" even when the site
-  didn't answer. The page checks when it comes back into view, when the phone says it's online, and every 20 seconds.
+  didn't answer. The page checks when it comes back into view, when the phone says it's online, and every 20 seconds;
+  only an answer quick enough that Reload would really get the newer page counts, and if the site stops answering
+  again the bar says so again.
 - **The offline copy marks its page by the page's own opening tag**, whatever attributes it carries, so a template
   change can't quietly hide the saved-copy bar (#75); `/` and `/index.html` are one kept copy (#76).
 - **The map shows all five closest vote centers from an outlying address** (#76): from Manor, Webberville, Lago Vista
@@ -83,7 +85,6 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
   `esc()` and both CSPs, all killed (#72). New checks: framed with and without scripts (nothing of the page visible,
   text or not), JavaScript off (only the note), and the guard can never stop the first script's link scrub.
 - The test stand-in for the tracker loads before the page (the real tag's `integrity=` refuses a substitute).
-- Three remediation-audit passes, converged.
 
 ## [1.1.0] — 2026-10-17
 
