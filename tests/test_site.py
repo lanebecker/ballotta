@@ -1364,7 +1364,8 @@ def share_names_block_lookalikes_and_nicknames(b):
                 'TravisGOP', 'AustinDems', 'GOP2026', 'Dems4Travis', 'TeaParty', 'SiteAdmin', '9OP', '8allotta', 'VoterGuide',
                 'Cityof Austin', 'Travis Co. Tax Office', 'Travis County Clerk',   # Pass 3
                 'voterguide', 'VOTERGUIDE', 'cityofaustin', 'travisclerk', 'texasvoters', 'travistaxoffice', 'villageofx',
-                'GOPTravis', 'DNCTexas', 'VOTERInfo', 'STATEParty']:   # Pass 4
+                'GOPTravis', 'DNCTexas', 'VOTERInfo', 'STATEParty',   # Pass 4
+                'X-GOP', 'GOP-X', 'J/RNC', 'Z+DNC', 'GOP_X']:   # #94: punctuation is a space, even beside a single letter
         assert sn(bad) == '', bad
     for good in ['Maya', 'Ana', 'José', "O'Brien", 'Dempsey', 'Ελένη', 'Ольга', '李明', 'Demetria', 'Gopal', 'Mary-Jane', 'Jean-Paul', 'A J', 'Liz 2',
                  'J R R Tolkien', 'A.J.', 'D J', 'R2-D2', "D'Angelo", 'Estate Jones', 'G O Pal', 'Işıl Yılmaz', 'Partyka', 'Admina',
@@ -1710,7 +1711,8 @@ def share_names_close_remaining_gaps(b):
                 'G O P Texas', 'Travis G O P', 'D N C Team', 'R N C Chair', 'D E M S Austin', 'A D M I N Team', 'g op', 'v oter guide',
                 'ꓖꓳꓑ', 'ꓓꓠꓚ Texas',   # Pass 1 (Lisu letters: caseless, so only the table itself maps them)
                 'G Oᴘ', 'G Oᴘ Texas', 'V Oᴛᴇʀ Guide', 'R Nᴄ', 'D Nᴄ Team', 'Dn C', 'Go P Texas', 'G Op Texas', 'Бallotta', 'БALLOTTA Team',   # Pass 2
-                'V Oꭲꭼꮢ Guide', 'D Eꮇꮪ', 'D Eꮇꮪ Texas', 'D Eмѕ', 'V Oтer Guide', 'G Oᴩ']:   # Pass 3
+                'V Oꭲꭼꮢ Guide', 'D Eꮇꮪ', 'D Eꮇꮪ Texas', 'D Eмѕ', 'V Oтer Guide', 'G Oᴩ',   # Pass 3
+                '9overnment', 'Vote 9OP']:   # #94: 9 reads as g
         assert sn(bad) == '', bad
     assert sn('ϹOUNTY') == 'ΣOUNTY', 'display normalization turns a lunate sigma into Σ: no longer a look-alike'
     for good in ['Mary J Blige', 'J Smith', 'Νίκος', 'Ηλέκτρα', 'Γιώργος', 'Георгий', 'Борис', 'Ольга Петрова', 'Արամ', 'Անի', 'ᏣᎳᎩ',

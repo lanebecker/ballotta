@@ -212,7 +212,10 @@ M = [
  ('A28 Ctrl-C not handled', MD_SELF, 'SIGS = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)\nPENDING', 'SIGS = (signal.SIGTERM, signal.SIGHUP)\nPENDING', ['mutation_runner_restores_on_any_signal']),
  ('A29 importing the runner starts a run', MD_SELF, "\nif __name__ == '__main__':", '\nif True:', ['mutation_runner_restores_on_any_signal']),
  ('R2 hyphen-joined words get through', PREV, "const w = t.replace(/[\\p{P}\\p{S}]/gu, ' ')", "const w = t.replace(/[\\p{P}\\p{S}]/gu, '')", ['share_names_block_lookalikes_and_nicknames']),
- ('R8 runs of spaces not collapsed', PREV, " ' ').replace(/\\s+/g, ' ').trim();", " ' ');", ['share_names_block_lookalikes_and_nicknames']),
+ # R8 (runs of spaces not collapsed in words()) retired Oct 18, equivalent (#94): the uneven-split form collapses the
+ # same spaces and joins the same single letters, and 6,916 generated names (reserved words beside single letters and
+ # punctuation, spelled out letter by letter) gave the same answer with and without it. The line stays as a second
+ # guard. R2's twin (punctuation read as nothing) is real: 'X-GOP', 'J/RNC', 'GOP_X' got through, now in the test.
  ('R11 Print… counted twice', PREV, "    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }", "    setView('crib'); track('view_opened', { view: 'crib' });", ['desk_print_button_opens_the_crib_sheet']),
  ('P1 laptop Print… prints straight away', PREV, "    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }\n    const pr", "    $('print').click(); return;\n    const pr", ['desk_print_button_opens_the_crib_sheet']),
  ('P2 laptop Print… not counted as a view', PREV, "{ setView('crib'); track('view_opened', { view: 'crib' }); }", "{ setView('crib'); }", ['desk_print_button_opens_the_crib_sheet']),
@@ -251,7 +254,7 @@ M = [
  ('B11 census.html runs unsandboxed', BLD, "if (self.origin !== 'null' || ", 'if (', ['census_runs_in_a_sandbox']),
  ('B12 a reloading frame loops', PREV, ", '*'), { once: true });  // once", ", '*'));  // once", ['census_runs_in_a_sandbox']),
  ('B13 preview looks for census.html in its own folder', BLD, ', ("f.src = \'census.html\'", "f.src = \'../census.html\'")', '', ['census_runs_in_a_sandbox']),
- ('R19 9 not read as g', PREV, ", '8': 'b', '9': 'g',\n", ", '8': 'b',\n", ['share_names_close_remaining_gaps']),
+ ('R19 9 not read as g', PREV, ", '8': 'b', '9': 'g',\n", ", '8': 'b',\n", ['share_names_close_remaining_gaps', 'share_names_block_lookalikes_and_nicknames']),
  ('A4 stand-ins not folded', PREV, 'const fold = (t) => t.replace(/[1i|!0345@$6789€©¢]/g, ch => FOLD[ch]);', 'const fold = (t) => t;', ['share_names_block_lookalikes_and_nicknames']),
  ('A2 stored picks not checked', PREV, "let picks = cleanPicks(LS.get('ballotta.picks', {}))", "let picks = LS.get('ballotta.picks', {})", ['phone_stored_junk_never_breaks_keep_or_share']),
  ('R10 Print… leaves keyboard focus behind', PREV, "    if (pr && (e.detail === 0 || e.pointerType === 'touch' || e.pointerType === 'pen')) { pr.focus({ preventScroll: true }); pr.scrollIntoView({ block: 'nearest' }); }\n", '', ['desk_print_button_opens_the_crib_sheet']),
