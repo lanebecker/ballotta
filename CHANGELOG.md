@@ -14,6 +14,12 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.1.0] — 2026-10-17
+
+**Look-ups and dates** (cold audit wave 2), two days before early voting starts.
+
 ### Fixed
 - **Street names that start like a unit are looked up whole** ("2505 Steck Ave", "555 Unity Dr", "Stevens Rd", "Steiner
   Ranch Blvd" were asked as just the number, so an exact match fell back to "nearby") (#57).
