@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-DrOLJJppY6ngyXRjgDZctM4qp4uFVSbTpAxxzJqEO38='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-1FGmToUmZlJb/xid7rFGsUwzs6F49QmD5V/ZACc5D0E='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1188,8 +1188,10 @@ function render(rec, mode, label, neighbors, pt) {
   const before = ballot.map(b => b.c.id).join(','), after = list.map(b => b.c.id).join(',');
   here = pt ? [Math.round(pt.x * 1000) / 1000, Math.round(pt.y * 1000) / 1000] : null;
   const where = label.replace(/, AUSTIN, TX/i, ', Austin') + ' · Precinct ' + rec.Precinct + ' · Nov 3, 2026';
-  const ln = neighbors ? list.filter(x => x.line).map(x => num(x.c.id)) : undefined;  // which contests the district line flagged (#62, Pass 1)
-  LS.set('ballotta.ballot', { pr: String(rec.Precinct), b: list.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), mode, at: Date.now(), pt: here, ...(ln ? { ln } : {}) });
+  // Which contests the district line flagged (#62): always recorded, an empty list when none, so a missing list means
+  // "not known" (a ballot saved before this, a Keep link from an older page) (Pass 3).
+  const ln = list.filter(x => x.line).map(x => num(x.c.id));
+  LS.set('ballotta.ballot', { pr: String(rec.Precinct), b: list.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), mode, at: Date.now(), pt: here, ln });
   // Counted before the ballot shows, so a progress milestone the new ballot triggers comes after ballot_found.
   track('ballot_found', { match: { exact: 'exact', nearby: 'nearby', 'nearby-mixed': 'near a line' }[mode] || mode });
   if (before && before !== after) track('address_changed');  // came back and looked up an address with a different ballot
@@ -1210,8 +1212,11 @@ function listFromStored(st) {
   const ln = Array.isArray(st.ln) ? new Set(st.ln) : null, rule = (id) => DATA.rules[id] || {};
   const unsure = (id) => rule(id).conf === 'medium' || (rule(id).clauses || []).some(c => c && c._conf === 'medium');
   const line = (id) => ln ? ln.has(num(id)) : st.mode === 'nearby-mixed' && !unsure(id);
-  const why = (id) => line(id) ? 'Your address is near a district line, so this contest may or may not be on your ballot.'
-    : rule(id).note || 'Not confirmed for your address. Check your official ballot.';
+  const LINE = 'Your address is near a district line, so this contest may or may not be on your ballot.', GENERIC = 'Not confirmed for your address. Check your official ballot.';
+  // With the list, the reason is known. Without it, a specific reason only when it can't be false: a rule uncertain as a
+  // whole keeps its note; one uncertain by a clause (Austin's limited-purpose residents) gets the generic line (Pass 3).
+  const why = (id) => ln ? (ln.has(num(id)) ? LINE : rule(id).note || GENERIC)
+    : rule(id).conf === 'medium' ? rule(id).note || GENERIC : line(id) ? LINE : GENERIC;
   return cleanBallot(st.b).map(n => { const id = cidOf(Math.abs(n)); const c = BYID[id]; return c ? { c, conf: n < 0 ? 'medium' : 'high', note: n < 0 ? why(id) : '' } : null; }).filter(Boolean).sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
 }
 // A precinct is a precinct number and a point is two numbers in Texas, whatever a link or storage says (#63).
@@ -1540,7 +1545,7 @@ document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e =
 async function keepURL(noWhy) {
   const ids = ballot.map(b => b.c.id), pk = packPicks(ids, true, !noWhy);
   const st = LS.get('ballotta.ballot', null);
-  return baseURL() + '#' + await packFrag('k', { v: 1, at: Math.floor(Date.now() / 1000), pr: st ? st.pr : String(lastLookup.precinct || ''), b: ballot.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), p: pk.p, w: pk.w });
+  return baseURL() + '#' + await packFrag('k', { v: 1, at: Math.floor(Date.now() / 1000), pr: st ? st.pr : String(lastLookup.precinct || ''), b: ballot.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), p: pk.p, w: pk.w, ...(st && Array.isArray(st.ln) ? { ln: st.ln } : {}) });
 }
 let keepPrep = null, keeping = false;  // { p: Promise<url>, url }; keeping ignores a second tap mid-share
 // A link past ~8,000 characters (long reasons in Chinese, Japanese, Korean or emoji can make one of 50 KB or more) gets
@@ -1640,7 +1645,8 @@ $('restore-go').addEventListener('click', () => {
   const { P, W } = unpackPicks(o);
   picks = P; whys = W; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys);
   const prev = LS.get('ballotta.ballot', null);
-  const pr = cleanPr(o.pr), st = { pr, b: cleanBallot(o.b), mode: 'saved', at: Date.now(), pt: prev && pr && prev.pr === pr ? cleanPt(prev.pt) : null };
+  const pr = cleanPr(o.pr), b = cleanBallot(o.b), st = { pr, b, mode: 'saved', at: Date.now(), pt: prev && pr && prev.pr === pr ? cleanPt(prev.pt) : null };
+  if (Array.isArray(o.ln)) { const flagged = new Set(b.filter(n => n < 0).map(n => -n)); st.ln = [...new Set(o.ln.filter(n => Number.isInteger(n) && flagged.has(n)))]; }  // only this ballot's Double-check contests (Pass 3)
   LS.set('ballotta.ballot', st); renderStored(st, 'loaded from your saved link');
   $('d-restore').close();
   incomingKeep = null;

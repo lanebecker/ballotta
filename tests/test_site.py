@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'fb13f09a6afd0d78a9906c0e1fd6d7a2f9e3bbef9bee82172c32edc821a6db49'  # Oct 17: wave 2 (look-ups and dates)
+LIVE_SHA = 'cee3502dc612a3bec35a571161ed27b070e507a4eba0bf31478cb074cd0b2f70'  # Oct 17: wave 2 (look-ups and dates)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -559,6 +559,19 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     pg.reload(); pg.wait_for_selector('body.dk-app-on')
     after = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
     assert set(live) == {'c071', 'c193'} and all('district line' in v for v in live.values()) and after == live, (live, after)
+    # Pass 3: a Keep link carries which contests the line flagged, so a restored ballot says the same.
+    url = pg.evaluate('keepURL()'); fresh_goto(pg, url); pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
+    kept = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
+    assert kept == live, ('through a Keep link', live, kept)
+    # Without that record (a ballot saved before it existed, a Keep link from an older page): a contest uncertain only by
+    # one clause of its rule gets the generic line, never a specific reason that may be false; one whose whole rule is
+    # uncertain keeps the rule's note; near a line, a contest whose rule is sure says the line.
+    for mode in ('nearby-mixed', 'saved'):
+        pg.evaluate("m => localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70, -71, -193], mode: m, at: 0, pt: null }))", mode); pg.reload()
+        pg.wait_for_selector('body.dk-app-on')
+        n = pg.evaluate("Object.fromEntries(ballot.filter(x => x.conf === 'medium').map(x => [x.c.id, x.note]))")
+        assert n['c071'].startswith('Not confirmed') and 'M41' in n['c193'], (mode, n)
+        assert ('district line' in n['c070']) == (mode == 'nearby-mixed'), (mode, n)
     ctx.close()
 
 @test
