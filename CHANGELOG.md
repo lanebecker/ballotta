@@ -16,13 +16,14 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ### Security
 - **The counting firewall passes no free text** (#50, #67): a page view's title is the page's own title as it loaded,
-  no tag is sent, and a payload for any page address but `/` or `/index.html` is dropped whole (so a future
-  `history.pushState` can't carry anything out); the website id, screen size and language pass only in their own
-  shapes, and the hostname only if it is the page's own.
+  no tag is sent, and the page address goes out in its normal form, this site's `/` or `/index.html` only; a payload
+  for any other address is dropped whole (so a future `history.pushState` can't carry anything out). The hostname,
+  website id, screen size and language pass only as their true values.
 - **The tracker is pinned by its hash** (#68): the build refuses any `umami.js` but the reviewed copy, and the tag's
   `integrity=` makes browsers refuse one too.
-- **Framed by another site, the page shows nothing** (#69). GitHub Pages can't send the header that forbids framing,
-  so the page's first script hides it.
+- **Framed by another site, the page shows nothing** (#69), even in a frame with scripts turned off. GitHub Pages
+  can't send the header that forbids framing, so the page starts hidden and its first script shows it only when it
+  isn't framed.
 - **Smaller locks** (#85): the Census answer is taken only from the sandboxed frame's own (`null`) origin; the page's
   data is written so that no text in it can end its script or change how it is read; the build stops on a campaign
   site or source link that isn't http(s); counting happens only on ballotta.org (the lanebecker.github.io entry was
@@ -32,7 +33,7 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 - The mutation runner re-hashes a mutated page's Content-Security-Policy, so a kill means a test noticed the change and
   not that the browser refused the page, and it counts a timeout only if it happens twice (#70, #71). Rerun with it,
   21 of the 22 mutants it had judged are killed; P93 is equivalent and retired with its reason.
-- New mutants over the firewall, the pin, the frame check, link handling, ballot routing, `esc()` and both CSPs (#72).
+- The runner re-hashes only the page itself (census.html and next/index.html keep their own policies). New mutants over the firewall, the pin, the frame check, link handling, ballot routing, `esc()` and both CSPs (#72).
 - The test stand-in for the tracker loads before the page (the real tag's `integrity=` refuses a substitute).
 
 ## [1.1.0] — 2026-10-17

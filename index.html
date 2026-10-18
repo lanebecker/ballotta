@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-pHSYI0sfTwsw3I923Qpwx74orxRZI42UFHsKucQdheU=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-7QmwsPPBPQN01vil/ZLocEWvRj6iO9yaj2wmV6ENsKQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-P7ybg5zSDg9Kk3uVD0SXetN8/NcCkOiwoNzerNMmvv8=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-vFTK1nSHJJXOKwZjUQuIWBSXMiCVXQq1gEeWhc/UN04='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -13,8 +13,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ballotta">
 <!--/PHONE-->
+<style id="frame-guard">html{display:none!important}</style>
 <script>
-if (top !== self) document.documentElement.hidden = true;   /* framed by any page: show nothing (GitHub Pages can't send frame-ancestors; issue #69) */
+if (top === self) document.getElementById('frame-guard').remove();   /* hidden until here, and in any frame, even one with scripts off (GitHub Pages can't send frame-ancestors; issue #69) */
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
    or copied by accident. */
@@ -1013,28 +1014,31 @@ function clean(name, data) {
 }
 const NO_COUNT = (() => { try { return navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1'; } catch (e) { return false; } })();
 // The tracker calls this with every payload it is about to send. Only page views, events and page-speed reports
-// pass, rebuilt from a fixed list of fields, none of them free text (issues #50, #67): the page's own address only (/ or
-// /index.html, without ?query or #fragment; a payload for any other path is dropped whole), the referrer as its site only,
-// the page's title as it was at load, this page's own hostname, and website, screen and language only in their own shapes.
+// pass, rebuilt from a fixed list of fields, none of them free text (issues #50, #67): the page's own address only (this
+// origin, / or /index.html, sent normalized, never as it came; a payload for any other address is dropped whole), the
+// referrer as its site only, the page's title as it was at load, and hostname, website id, screen size and language only
+// as their true values.
 // No tag, no distinct id, no identify data, nothing a future tracker might add. A stand-in defined before the tracker tag
 // drops everything until this one exists, so if this script failed to run, nothing would be sent (build_site.py).
 const TOP = ['website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'name'];
 const SPEED = ['ttfb', 'fcp', 'lcp', 'cls', 'inp', 'duration'];
 const TITLE = document.title, PAGE_PATHS = ['/', '/index.html'];
-const SHAPE = { website: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, screen: /^\d{1,5}x\d{1,5}$/, language: /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*(?:@[a-z]+)?$/ };
+const REAL = {                                                   // what the tracker reads for each, so nothing else can pass as one
+  hostname: () => location.hostname, screen: () => screen.width + 'x' + screen.height, language: () => navigator.language,
+  website: () => { const s = document.querySelector('script[data-website-id]'); return s ? s.getAttribute('data-website-id') : null; },
+};
 const siteOf = (r) => { try { const u = new URL(r); return u.host ? u.protocol + '//' + u.host : ''; } catch (e) { return ''; } };  // a referrer becomes just its site (or app)
-const pathOf = (u) => { try { return new URL(u, location.href).pathname; } catch (e) { return null; } };
+const pageURL = (v) => { try { const u = new URL(v, location.href); return u.origin === location.origin && !u.username && !u.password && PAGE_PATHS.includes(u.pathname) ? u.origin + u.pathname : null; } catch (e) { return null; } };
 window.ballottaBeforeSend = (type, p) => {
   if (NO_COUNT || !p || typeof p !== 'object' || (type !== 'event' && type !== 'performance')) return null;
   const out = {};
   for (const k of TOP) {
     const v = p[k];
     if (typeof v !== 'string') continue;
-    if (k === 'url') { if (!PAGE_PATHS.includes(pathOf(v))) return null; out.url = v.split(/[?#]/)[0]; }
+    if (k === 'url') { const u = pageURL(v); if (!u) return null; out.url = u; }
     else if (k === 'referrer') out.referrer = siteOf(v);
     else if (k === 'title') out.title = TITLE;
-    else if (k === 'hostname') { if (v === location.hostname) out.hostname = v; }
-    else if (SHAPE[k]) { if (SHAPE[k].test(v)) out[k] = v; }
+    else if (REAL[k]) { if (v === REAL[k]()) out[k] = v; }
     else out[k] = v;                                             // name: checked against EVENTS below
   }
   if (type === 'performance') SPEED.forEach(k => { if (typeof p[k] === 'number') out[k] = p[k]; });

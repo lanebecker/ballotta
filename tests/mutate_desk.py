@@ -361,19 +361,20 @@ M = [
  ('E35 a Keep link takes another tab\'s line list', PREV, "st = got && Array.isArray(got.b) && sig(cleanBallot(got.b)) === sig(b) ? got : null;", "st = got;", ['a_restored_ballot_keeps_each_contests_own_caveat']),
  ('E36 a timeout kills at once', MD_SELF, "                if type(e).__name__ == 'TimeoutError' and attempt == 1: continue\n", "", ['mutation_runner_judges_mutants_honestly']),
  ('E37 a mutant leaves the page CSP stale', MD_SELF, "else None\n    if m and '<!--' not in m.group(0):", "else None\n    if False:", ['mutation_runner_judges_mutants_honestly']),
- ('G1 a framed page shows', PREV, 'if (top !== self) document.documentElement.hidden = true;   /*', '/*', ['page_refuses_to_show_in_another_sites_frame']),
- ('G2 the page hides itself everywhere', PREV, 'if (top !== self) document.documentElement', 'if (true) document.documentElement', ['page_refuses_to_show_in_another_sites_frame']),
+ ('G1 the page is not hidden from the start', PREV, '<style id="frame-guard">html{display:none!important}</style>', '', ['page_refuses_to_show_in_another_sites_frame']),
+ ('G2 the page never shows', PREV, "if (top === self) document.getElementById('frame-guard').remove();", '', ['page_refuses_to_show_in_another_sites_frame']),
  ('G3 the tracker tag carries no pin', BLD, ' integrity="{sri}"', '', ['tracker_runs_only_as_pinned', 'page_is_built_locked_down']),
  ('G4 the build takes any umami.js', BLD, '!= UMAMI_SHA256:\n        sys.exit', '!= UMAMI_SHA256 and False:\n        sys.exit', ['page_is_built_locked_down']),
  ('G5 a tag passes the firewall', PREV, "'referrer', 'name'];", "'referrer', 'tag', 'name'];", ['privacy_firewall_drops_anything_unlisted']),
  ('G6 any title passes', PREV, "else if (k === 'title') out.title = TITLE;", "else if (k === 'title') out.title = v;", ['privacy_firewall_drops_anything_unlisted']),
  ('G7 the title is read as sent', PREV, 'out.title = TITLE;', 'out.title = document.title;', ['privacy_firewall_drops_anything_unlisted']),
- ('G8 any page address passes', PREV, 'if (!PAGE_PATHS.includes(pathOf(v))) return null; ', '', ['privacy_firewall_drops_anything_unlisted']),
- ('G9 another path drops only the address', PREV, 'pathOf(v))) return null;', 'pathOf(v))) continue;', ['privacy_firewall_drops_anything_unlisted']),
- ('G10 any hostname passes', PREV, 'if (v === location.hostname) out.hostname', 'if (v) out.hostname', ['privacy_firewall_drops_anything_unlisted']),
- ('G11 shapes are not checked', PREV, 'if (SHAPE[k].test(v)) out[k] = v;', 'out[k] = v;', ['privacy_firewall_drops_anything_unlisted']),
- ('G12 any language passes', PREV, 'language: /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*(?:@[a-z]+)?$/', 'language: /./', ['privacy_firewall_drops_anything_unlisted']),
- ('G13 the path checked is the page', PREV, 'new URL(u, location.href).pathname', 'location.pathname', ['privacy_firewall_drops_anything_unlisted']),
+ ('G8 any page address passes', PREV, 'const u = pageURL(v); if (!u) return null; out.url = u;', 'out.url = v;', ['privacy_firewall_drops_anything_unlisted']),
+ ('G9 another address drops only the address', PREV, 'if (!u) return null; out.url = u;', 'if (!u) continue; out.url = u;', ['privacy_firewall_drops_anything_unlisted']),
+ ('G10 a user name rides in the address', PREV, '&& !u.username && !u.password ', '', ['privacy_firewall_drops_anything_unlisted']),
+ ('G11 fields are not compared to their true values', PREV, 'if (v === REAL[k]()) out[k] = v;', 'out[k] = v;', ['privacy_firewall_drops_anything_unlisted']),
+ ('G12 another origin passes', PREV, 'u.origin === location.origin && ', '', ['privacy_firewall_drops_anything_unlisted']),
+ ('G13 the address goes out as it came', PREV, 'if (!u) return null; out.url = u;', 'if (!u) return null; out.url = v;', ['privacy_firewall_drops_anything_unlisted']),
+ ('G14 shown in a frame where scripts run', PREV, "if (top === self) document.getElementById('frame-guard')", "if (true) document.getElementById('frame-guard')", ['page_refuses_to_show_in_another_sites_frame']),
  ('H1 the first script leaves a link in the address bar', PREV, "    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}\n  }\n})();", '  }\n})();', ['phone_keep_link_round_trip', 'links_are_short_and_safe_for_chat_apps']),
  ('H2 a link opened in an open tab is ignored', PREV, '  if (!FRAG_RE.test(h.slice(1))) return;\n  try { history', '  return;\n  try { history', ['audit_a7_same_tab_link']),
  ('H3 a link opened in an open tab stays in the address bar', PREV, "  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}\n  SS.set('ballotta.incoming', h.slice(1));", "  SS.set('ballotta.incoming', h.slice(1));", ['audit_a7_same_tab_link']),
@@ -394,17 +395,21 @@ M = [
  ('I5 links are not checked', BLD, 'if bad:\n        sys.exit(f"learn.json', 'if False:\n        sys.exit(f"learn.json', ['page_data_cannot_break_out_of_its_script']),
  ('I6 any scheme counts as a web link', BLD, 'not re.match(r"https?://", u)', 'not re.match(r"", u)', ['page_data_cannot_break_out_of_its_script']),
  ('I7 counting on the old address too', BLD, 'UMAMI_DOMAINS = "ballotta.org,www.ballotta.org"', 'UMAMI_DOMAINS = "ballotta.org,www.ballotta.org,lanebecker.github.io"', ['page_is_built_locked_down']),
+ ('E38 every built file gets the page CSP', MD_SELF, 'if f.resolve() == PREV.resolve() else None\n    if m and', "if f.suffix == '.html' else None\n    if m and", ['mutation_runner_judges_mutants_honestly']),
+ ('E39 phone-ness read after the mutant', MD_SELF, 'csp_meta(rest, \'id="ph-bar"\' in text)', 'csp_meta(rest, \'id="ph-bar"\' in out)', ['mutation_runner_judges_mutants_honestly']),
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
 def mutate(f, text, a, z):
     """The file's text with the mutant in. On a built page (one carrying the page's CSP meta), the policy's script hashes
     are recomputed the way build_site.py computes them, so a test run under the page's own policy fails for what the
-    mutant changed, not because the policy then refuses the whole script (cold audit #26, #70)."""
+    mutant changed, not because the policy then refuses the whole script (cold audit #26, #70). Only the page itself:
+    census.html and next/index.html have policies of their own; and whether it is the phone page is read from the page
+    as it was before the mutant (Pass 1)."""
     out = text.replace(a, z)
-    m = CSP_META.search(out) if f.suffix == '.html' else None
+    m = CSP_META.search(out) if f.resolve() == PREV.resolve() else None
     if m and '<!--' not in m.group(0):
         rest = out[:m.start()] + out[m.end():]
-        out = out[:m.start()] + T.build_module().csp_meta(rest, 'id="ph-bar"' in out) + out[m.end():]
+        out = out[:m.start()] + T.build_module().csp_meta(rest, 'id="ph-bar"' in text) + out[m.end():]
     return out
 
 def run_targets(b, tests):

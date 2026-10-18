@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '4732b24b3745aa129b2cb91bf0f86a74f7b531baef604d93a35f5674d8209924'  # Oct 17: wave 3 (the privacy promise, verified)
+LIVE_SHA = '72269c11c86c87d039fed4968a2af6945a889196bc5ddaaa7697d2065e6de580'  # Oct 17: wave 3 (the privacy promise, verified)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 def stub_tracker(ctx):
     # A stand-in for the tracker that records events. The real tag carries integrity= (issue #68), so a stand-in served as
@@ -458,7 +458,9 @@ def page_is_built_locked_down(b):
     try: m.build(); raise AssertionError('the build used a umami.js that is not the pinned copy')
     except SystemExit as e: assert 'pinned' in str(e), e
     # Issue #69: GitHub Pages can't send frame-ancestors, so the page's first script hides it when it's framed.
-    assert re.search(r'<script>\s*if \(top !== self\) document\.documentElement\.hidden = true;', html), 'the frame check runs first'
+    g = '<style id="frame-guard">html{display:none!important}</style>'
+    assert html.count(g) == 1 and html.index(g) < html.index('<script'), 'hidden from the start (Pass 1)'
+    assert re.search(r"<script>\s*if \(top === self\) document\.getElementById\('frame-guard'\)\.remove\(\);", html), 'only the first script shows it, and only when not framed'
 
 @test
 def tracker_runs_only_as_pinned(b):
@@ -475,15 +477,16 @@ def page_refuses_to_show_in_another_sites_frame(b):
     # Issue #69: framed by another site, the page shows nothing (so it can't be dressed up to trick a visitor).
     # The framer is another origin (localhost, not 127.0.0.1) on the same test server: Chrome won't let a stubbed page,
     # which it counts as public, frame a loopback address at all.
-    ctx, pg = new_page(b); pg.goto(f'http://localhost:{PORT}/census.html')
-    pg.evaluate("u => new Promise(ok => { const f = document.createElement('iframe'); f.src = u; f.width = 400; f.height = 800; f.onload = ok; document.body.appendChild(f); })", BASE)
-    fr = [f for f in pg.frames if f != pg.main_frame][0]
-    assert fr.url == BASE, fr.url
-    assert fr.evaluate('document.documentElement.hidden') is True and fr.evaluate('getComputedStyle(document.documentElement).display') == 'none'
-    assert not fr.locator('#street').is_visible()
-    ctx.close()
+    # Hidden until the page's own script shows it, so a frame with scripts turned off (sandbox) shows nothing either (Pass 1).
+    for sandbox in (None, '', 'allow-forms allow-popups', 'allow-scripts'):
+        ctx, pg = new_page(b); pg.goto(f'http://localhost:{PORT}/census.html')
+        pg.evaluate("([u, s]) => new Promise(ok => { const f = document.createElement('iframe'); if (s !== null) f.setAttribute('sandbox', s); f.src = u; f.width = 400; f.height = 800; f.onload = ok; document.body.appendChild(f); })", [BASE, sandbox])
+        fr = [f for f in pg.frames if f != pg.main_frame][0]
+        assert fr.url == BASE, (sandbox, fr.url)
+        assert fr.evaluate('getComputedStyle(document.documentElement).display') == 'none' and not fr.locator('#street').is_visible(), ('shown in a frame', sandbox)
+        ctx.close()
     ctx, pg = new_page(b); pg.goto(BASE)
-    assert pg.evaluate('document.documentElement.hidden') is False and pg.locator('#street').is_visible(), 'not framed: shown'
+    assert pg.evaluate('getComputedStyle(document.documentElement).display') != 'none' and pg.locator('#street').is_visible(), 'not framed: shown'
     ctx.close()
 
 @desk_test
@@ -1170,38 +1173,46 @@ def journey_check(pg, layout):
 def privacy_firewall_drops_anything_unlisted(b):
     ctx, pg = new_page(b); pg.goto(BASE)
     bs = lambda p: pg.evaluate('p => window.ballottaBeforeSend("event", p)', p)
+    R = pg.evaluate('location.origin') + '/'                  # the address goes out normalized: this origin, its own path (Pass 1)
     assert bs({'name': 'not_an_event', 'data': {}}) is None, 'an unlisted event never leaves the browser'
     got = bs({'name': 'lookup_failed', 'data': {'reason': 'not_found', 'street': '1000 Guadalupe St', 'layout': 'phone'}, 'id': 'someone', 'url': '/'})
-    assert got['data'] == {'reason': 'not_found', 'layout': 'phone'} and 'id' not in got and got['url'] == '/', got
+    assert got['data'] == {'reason': 'not_found', 'layout': 'phone'} and 'id' not in got and got['url'] == R, got
     assert bs({'name': 'lookup_failed', 'data': {'reason': '1000 Guadalupe St'}})['data'] == {}, 'a value off the list is dropped'
     assert bs({'name': 'progress', 'data': {'at': {'x': 1}}})['data'] == {}, 'objects are never values'
     assert bs({'name': 'share_created', 'data': {'sections': ['federal']}})['data'] == {}, 'arrays are never values'
     title = pg.evaluate('document.title')
-    assert bs({'url': '/', 'title': 'Ballotta'}) == {'url': '/', 'title': title}, 'page views pass, titled only with the page\'s own title'
+    assert bs({'url': '/', 'title': 'Ballotta'}) == {'url': R, 'title': title}, 'page views pass, titled only with the page\'s own title'
     # Issues #50, #67: no free text in any field, and no page address but the page's own.
-    assert bs({'url': '/', 'tag': 'Precinct 123'}) == {'url': '/'}, 'no tag'
+    assert bs({'url': '/', 'tag': 'Precinct 123'}) == {'url': R}, 'no tag'
     pg.evaluate("document.title = 'Precinct 300'")
     assert bs({'url': '/', 'title': 'Precinct 300'})['title'] == title, 'a changed title is never sent'
-    ok = {'website': '3f2504e0-4f89-41d3-9a0c-0305e82c3301', 'hostname': pg.evaluate('location.hostname'), 'screen': '390x844', 'language': 'en-US', 'url': 'https://ballotta.org/index.html'}
+    ok = pg.evaluate("({ website: document.querySelector('script[data-website-id]').dataset.websiteId, hostname: location.hostname, screen: screen.width + 'x' + screen.height, language: navigator.language, url: location.origin + '/index.html' })")
     assert bs(dict(ok)) == ok, 'the tracker\'s ordinary fields pass'
-    for k, v in (('website', 'Precinct 300'), ('hostname', '1000 Guadalupe St'), ('screen', '78701'), ('language', 'Qadri for Council')):
+    # Each field passes only as its true value, never as something shaped like one (Pass 1).
+    for k, v in (('website', 'Precinct 300'), ('website', '00078701-0300-4000-8000-0000000000aa'), ('hostname', '1000 Guadalupe St'), ('screen', '78701'),
+                 ('screen', '78701x300'), ('language', 'Qadri for Council'), ('language', 'en-Qadri-for-Council'), ('language', 'en-300')):
         assert k not in bs(dict(ok, **{k: v})), (k, v)
     assert bs({'url': '/300'}) is None, 'a path other than the page\'s own, while the page is at /'
+    host = pg.evaluate('location.host')
+    for u in ('https://precinct-300.qadri-for-council.example/', '//qadri.example/', '\\\\qadri.example\\', 'javascript:/', f'http://1000-Guadalupe-St:78701@{host}/'):
+        assert bs({'url': u}) is None, ('only this origin, with no user name or password', u)    # Pass 1
+    for u, out in (('/1000-Guadalupe-St/precinct-300/../../', R), ('/Qadri/%2e%2e/index.html', R + 'index.html')):
+        assert bs({'url': u})['url'] == out, ('the address goes out normalized, never as it came', u)
     pg.evaluate("history.pushState(null, '', '/300')")
     for u in ('/300', 'https://ballotta.org/300?x=1', 'https://ballotta.org/c070/', '/next/300'):
         assert bs({'url': u}) is None and bs({'url': u, 'name': 'faq_seen', 'data': {}}) is None, ('only the page\'s own address', u)
     assert bs({'url': pg.evaluate('location.href')}) is None, 'not even after the page itself moves'
     pg.evaluate("history.replaceState(null, '', '/')")
     # Verification pass: payloads without a name, other payload types and extra fields can't carry anything either.
-    assert bs({'url': '/', 'data': {'street': '1000 Guadalupe St'}, 'precinct': '300'}) == {'url': '/'}, 'a page view carries no details'
+    assert bs({'url': '/', 'data': {'street': '1000 Guadalupe St'}, 'precinct': '300'}) == {'url': R}, 'a page view carries no details'
     odd = {'url': '/?addr=1000+Guadalupe#k=x', 'referrer': 'https://forum.example/thread/1000-guadalupe-st?q=1', 'title': {'street': 'x'}, 'tag': ['78701'], 'website': 'w'}
-    assert bs(odd) == {'url': '/', 'referrer': 'https://forum.example'}, 'only text fields in their shapes; no query or fragment; a referrer is just its site'
-    assert bs({'url': '/', 'referrer': 'not a url'}) == {'url': '/', 'referrer': ''}
+    assert bs(odd) == {'url': R, 'referrer': 'https://forum.example'}, 'only text fields in their shapes; no query or fragment; a referrer is just its site'
+    assert bs({'url': '/', 'referrer': 'not a url'}) == {'url': R, 'referrer': ''}
     assert bs({'referrer': 'android-app://com.google.android.googlequicksearchbox/'}) == {'referrer': 'android-app://com.google.android.googlequicksearchbox'}, 'an app referrer keeps its name'
     assert bs({'referrer': 'about:blank'}) == {'referrer': ''} and bs({'referrer': 'file:///x'}) == {'referrer': ''}, 'never the string "null"'
     assert pg.evaluate('window.ballottaBeforeSend("identify", { data: { street: "1000 Guadalupe St" } })') is None, 'no session data'
     perf = pg.evaluate('window.ballottaBeforeSend("performance", { url: "/", lcp: 812.5, cls: 0.01, street: "x", data: { a: 1 } })')
-    assert perf == {'url': '/', 'lcp': 812.5, 'cls': 0.01}, perf
+    assert perf == {'url': R, 'lcp': 812.5, 'cls': 0.01}, perf
     for ev, d in (('share_opened', {'generation': 100, 'has_picks': 'yes', 'link': 'ABC!!'}), ('share_created', {'sections': 'federal,bogus'}),
                   ('faq_seen', {'layout': 'tablet'})):
         assert bs({'name': ev, 'data': d})['data'] == ({'has_picks': 'yes'} if ev == 'share_opened' else {}), (ev, d)   # pattern checks
@@ -1456,6 +1467,9 @@ src = re.search(r'<script>(.*?)</script>', page, re.S).group(1)
 mut = R.mutate(R.PREV, page, src, src + ' ')
 meta = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', mut).group(1)
 hashed = R.T.build_module().sha(src + ' ') in meta and R.T.build_module().sha(src) not in meta
+others = {p: R.mutate(R.ROOT / p, (R.ROOT / p).read_text(encoding='utf-8'), '<title>', '<title>') == (R.ROOT / p).read_text(encoding='utf-8')
+          for p in ('census.html', 'next/index.html')}                     # each keeps its own policy (Pass 1)
+phone = 'worker-src' in R.mutate(R.PREV, page, 'id="ph-bar"', 'id="ph-bar-x"') if 'id="ph-bar"' in page else True
 calls = {}
 def fake(name, plan):
     def f(b):
@@ -1465,13 +1479,14 @@ def fake(name, plan):
     setattr(R.T, name, f)
 class TimeoutError(Exception): pass
 fake('once', [TimeoutError('slow')]); fake('twice', [TimeoutError('slow'), TimeoutError('slow')]); fake('fails', [AssertionError('no')]); fake('fine', [])
-print(json.dumps({'same': same, 'hashed': hashed, 'once': R.run_targets(None, ['once']), 'twice': R.run_targets(None, ['twice']),
+print(json.dumps({'same': same, 'hashed': hashed, 'others': others, 'phone': phone, 'once': R.run_targets(None, ['once']), 'twice': R.run_targets(None, ['twice']),
                   'fails': R.run_targets(None, ['fails']), 'fine': R.run_targets(None, ['fine'])}))
 """ % str(ROOT / 'tests')
     r = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, cwd=str(ROOT), timeout=120)
     assert r.returncode == 0, r.stderr[-1500:]
     got = json.loads(r.stdout.strip().splitlines()[-1])
     assert got['same'] and got['hashed'], ('the page CSP after a mutant', got)
+    assert all(got['others'].values()) and got['phone'], ('only the page is re-hashed, by what it was before the mutant', got)
     assert got['once'] == [] and got['twice'] == ['twice:TimeoutError x2'] and got['fails'] == ['fails:AssertionError'] and got['fine'] == [], got
 
 @test
