@@ -14,6 +14,12 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.1.1] — 2026-10-17
+
+**The privacy promise, verified** (cold audit wave 3).
+
 ### Security
 - **The counting firewall passes no free text** (#50, #67): a page view's title is the page's own title as it loaded,
   no tag is sent, and the page address goes out in its normal form, this site's `/` or `/index.html` only; a payload
@@ -21,25 +27,29 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
   website id, screen size and language pass only as their true values.
 - **The tracker is pinned by its hash** (#68): the build refuses any `umami.js` but the reviewed copy, and the tag's
   `integrity=` makes browsers refuse one too.
-- **Framed by another site, the page shows nothing** (#69), even in a frame with scripts turned off. GitHub Pages
-  can't send the header that forbids framing, so the page starts hidden and its first script shows it only when it
-  isn't framed.
-
-### Changed
-- **With JavaScript off, the page says so:** "Ballotta needs JavaScript to look up your ballot. Turn it on for
-  ballotta.org, or use the Travis County Voter Lookup." (with the county's link), instead of a lookup form that couldn't
-  work (Lane's wording).
+- **Framed by another site, the page shows nothing of itself** (#69), even in a frame with scripts turned off (which
+  shows only the JavaScript note below). GitHub Pages can't send the header that forbids framing, so the page starts
+  hidden and its first script shows it only when it isn't framed.
 - **Smaller locks** (#85): the Census answer is taken only from the sandboxed frame's own (`null`) origin; the page's
   data is written so that no text in it can end its script or change how it is read; the build stops on a campaign
   site or source link that isn't http(s); counting happens only on ballotta.org (the lanebecker.github.io entry was
   dead: that address redirects).
 
+### Changed
+- **With JavaScript off, the page says so:** "Ballotta needs JavaScript to look up your ballot. Turn it on for
+  ballotta.org, or use the Travis County Voter Lookup." (with the county's link), instead of a lookup form that couldn't
+  work (Lane's wording).
+
 ### Tests
 - The mutation runner re-hashes a mutated page's Content-Security-Policy, so a kill means a test noticed the change and
-  not that the browser refused the page, and it counts a timeout only if it happens twice (#70, #71). Rerun with it,
-  21 of the 22 mutants it had judged are killed; P93 is equivalent and retired with its reason.
-- The runner re-hashes only the page itself (census.html and next/index.html keep their own policies). New mutants over the firewall, the pin, the frame check, link handling, ballot routing, `esc()` and both CSPs (#72).
+  not that the browser refused the page, and it counts a timeout only if it happens twice (#70, #71); it re-hashes only
+  the page itself (census.html and next/index.html keep their own policies). Rerun with it, 21 of the 22 mutants it had
+  judged are killed; P93 is equivalent and retired with its reason.
+- New mutants over the firewall, the pin, the frame guard and the JavaScript note, link handling, ballot routing,
+  `esc()` and both CSPs, all killed (#72). New checks: framed with and without scripts (nothing of the page visible,
+  text or not), JavaScript off (only the note), and the guard can never stop the first script's link scrub.
 - The test stand-in for the tracker loads before the page (the real tag's `integrity=` refuses a substitute).
+- Three remediation-audit passes, converged.
 
 ## [1.1.0] — 2026-10-17
 

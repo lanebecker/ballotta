@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'b26b1e99f1e2e505c70a275657b6337bd1b5d74673dab37030658c55f75f5536'  # Oct 17: wave 3 (the privacy promise, verified)
+LIVE_SHA = 'b26b1e99f1e2e505c70a275657b6337bd1b5d74673dab37030658c55f75f5536'  # Oct 17: wave 3 (the privacy promise, verified; the JavaScript note)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -487,6 +487,8 @@ def page_refuses_to_show_in_another_sites_frame(b):
         fr = [f for f in pg.frames if f != pg.main_frame][0]
         assert fr.url == BASE, (sandbox, fr.url)
         assert fr.inner_text('body').strip() == shown and not fr.locator('#street').is_visible(), ('shown in a frame', sandbox, fr.inner_text('body')[:200])
+        seen = fr.evaluate("[...document.querySelectorAll('body *')].filter(e => e.checkVisibility() && !e.closest('noscript')).map(e => e.tagName + (e.id ? '#' + e.id : ''))")
+        assert seen == [], ('visible in a frame, text or not (Pass 3)', sandbox, seen[:10])
         ctx.close()
     ctx, pg = new_page(b); pg.goto(BASE)
     assert pg.locator('#street').is_visible() and NOJS not in pg.inner_text('body'), 'not framed: shown, without the JavaScript note'
