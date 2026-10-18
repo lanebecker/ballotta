@@ -33,6 +33,9 @@ MD_SELF = ROOT / 'tests/mutate_desk.py'                    # the runner's own si
 # Also retired then: A30-A33 and R6 (the old phone page's footer button, now inside the hidden legacy page) and R5
 # (the paper is redrawn from the picks, so a cleared limit note can't linger). The laptop half of the retired
 # extra_pick_is_explained, the build half of page_is_locked_down and #40's notice came back as their own tests.
+# Then, from the full run: A17, D14 and D32 (the old page's limit note, vote-center list and backup card, all in the
+# hidden legacy page), D41 (its fallback names the old page's Keep button; the phone branch always finds a home first)
+# and A26 (a_good_link_clears_a_damaged_links_notice shows the notice goes by a second path anyway; the test stays).
 M = [
  ('M1 live page changes', TPL, '<title>Ballotta ·', '<title>Ballotta  ·', ['live_build_is_unchanged_until_promotion']),
  ('M2 block stripping gone', BLD, "        elif not in_block:\n            out.append(line)", "        else:\n            out.append(line)", ['live_build_is_unchanged_until_promotion']),
@@ -199,14 +202,12 @@ M = [
  ('A14 extra pick refused silently', PREV, '{ limitNote(cid, n); return false; }', '{ return false; }', ['phone_extra_pick_is_explained']),
  ('A15 limit note never clears', PREV, '  limitNote(cid, 0);\n  picks[cid] = cur;', '  picks[cid] = cur;', ['phone_extra_pick_is_explained']),
  ('A16 refused key pick announced', PREV, 'if (pick(b.c.id, o) !== false) announce(b.c);', 'pick(b.c.id, o); announce(b.c);', ['desk_extra_pick_is_explained', 'phone_extra_pick_is_explained']),
- ('A17 limit note not a status', PREV, 'data-limit="\' + c.id + \'" role="status"></span>\' : \'\') + \'</p>\';', 'data-limit="\' + c.id + \'"></span>\' : \'\') + \'</p>\';', ['desk_extra_pick_is_explained', 'phone_extra_pick_is_explained']),
  ('A18 no check for a new day', PREV, 'setInterval(dayCheck, 60000);\n', '', ['dates_move_on_in_a_tab_left_open']),
  ('A19 chosen period overridden', PREV, '  if (!periodChosen) period = defaultPeriod();\n', '  period = defaultPeriod();\n', ['dates_move_on_in_a_tab_left_open']),
  ('A20 tab choice forgotten', PREV, "period = 'early'; periodChosen = true; renderVote();", "period = 'early'; renderVote();", ['dates_move_on_in_a_tab_left_open']),
  ('A22 date frozen at load', PREV, 'const today = () => new Date();', 'const FROZEN = new Date(), today = () => FROZEN;', ['dates_move_on_in_a_tab_left_open']),
  ('A23 data inserted first', BLD, '        html = strip_desk(html)\n', '        html = strip_desk(html)\n    html = html.replace("__DATA__", data)\n', ['build_inserts_data_last']),
  ('A24 moves not announced', PREV, 'where(curB()); }', '}', ['desk_moves_are_announced']),
- ('A26 old link notice survives a new ballot', PREV, "      $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)\n", '', ['a_good_link_clears_a_damaged_links_notice']),
  ('A27 a stop signal leaves the mutant', MD_SELF, '    for f_, t_ in PENDING: put(f_, t_)\n', '', ['mutation_runner_restores_on_any_signal']),
  ('A28 Ctrl-C not handled', MD_SELF, 'SIGS = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)\nPENDING', 'SIGS = (signal.SIGTERM, signal.SIGHUP)\nPENDING', ['mutation_runner_restores_on_any_signal']),
  ('A29 importing the runner starts a run', MD_SELF, "\nif __name__ == '__main__':", '\nif True:', ['mutation_runner_restores_on_any_signal']),
@@ -264,7 +265,6 @@ M = [
  ('D8 odd generation sent', PREV, 'gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1,', 'gen = Math.max(1, Math.min(99, g0 || 1)),', ['phone_stored_junk_in_share_fields']),
  ('D9 odd share name shown', PREV, "$('sharename').value = typeof nm === 'string' ? nm.slice(0, 30) : '';", "$('sharename').value = nm || '';", ['phone_stored_junk_in_share_fields']),
  ('D12 a touch leaves focus on Print…', PREV, " || e.pointerType === 'touch' || e.pointerType === 'pen'", '', ['desk_print_by_touch_and_announced']),
- ('D14 a new day rebuilds the phone list', PREV, '  if (period !== was) renderVote(); else waitsNote();', '  renderVote();', ['phone_new_day_keeps_the_vote_list_and_focus', 'phone_wait_times_note_says_when_it_fills_in']),
  ('D15 a new day forgets the dated note', PREV, 'renderVote(); else waitsNote();', 'renderVote();', ['phone_new_day_keeps_the_vote_list_and_focus', 'phone_wait_times_note_says_when_it_fills_in']),
  ('D17 no second card at 25', PREV, 'n >= 25 && !st.d25 ? 25 : ', '', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D19 a kept link ignored', PREV, "if (via) { track('keep_created', { via }); nudgeKept(); } });", "if (via) { track('keep_created', { via }); } });", ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
@@ -281,7 +281,6 @@ M = [
  ('D29 Not now at 25+ brings the 25 card', PREV, "  if (countPicks(ballot.map(b => b.c.id)) >= 25) { const st = nudgeState(); st.d25 = 1; LS.set('ballotta.nudge', st); }\n", '', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D30 focus left on a hidden button', PREV, '  if (home) home.focus({ preventScroll: true });\n', '', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D31 Clear my picks leaves the card', PREV, "track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false);", "track('cleared', { what: 'picks' });", ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
- ('D32 the phone card pushes the page', PREV, '.nudge{position:fixed;left:12px;right:12px;', '.nudge{left:12px;right:12px;', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D33 the laptop card pushes the paper', PREV, '  .dk-nudge{position:fixed;right:24px;bottom:24px;', '  .dk-nudge{grid-column:1/-1;', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D25 a capitalised word glued to an initial', PREV, '\\s(?!\\p{Lu}\\p{Ll}{2,})|(?<!(^|\\s)\\p{Lu}\\p{Ll}{2,})\\s(?=', '\\s|\\s(?=', ['share_names_close_remaining_gaps']),
  ('D26 б not read as b', PREV, "LOOKALIKE['б'] = LOOKALIKE['Б'] = 'b';", "delete LOOKALIKE['б']; delete LOOKALIKE['Б'];", ['share_names_close_remaining_gaps']),
@@ -297,7 +296,6 @@ M = [
  ('D13 Print… says nothing', PREV, "    say({ text: 'Crib sheet: print options, then the Print button.' });\n", '', ['desk_print_by_touch_and_announced']),
  ('D35 small capitals read as lower case', PREV, 'const uneven = caps.replace(', 'const uneven = n.replace(', ['share_names_close_remaining_gaps']),
  ('D40 Cyrillic small capitals missed', PREV, 'тмнквп]/gu, ch =>', ']/gu, ch =>', ['share_names_close_remaining_gaps']),
- ('D41 focus lost in a closed race', PREV, "  if (document.activeElement !== home) { const f = $(wide ? 'dk-paper' : 'a-keep'); if (f) f.focus({ preventScroll: true }); }", '', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D42 room under the card on paper', PREV, '@media screen{html.nudging{', '@media all{html.nudging{', ['phone_backup_nudge_after_fifth_pick', 'desk_backup_nudge_after_fifth_pick']),
  ('D43 the pick column takes what is left', PREV, '  .dk-tbl td:nth-child(2){width:240px}', '  .dk-tbl td:nth-child(2){width:auto}', ['desk_glance_picks_fit_their_names']),
  ('D44 the contest column keeps a third', PREV, '  .dk-tbl tbody th{width:24%}\n', '  .dk-tbl tbody th{width:34%}\n', ['desk_glance_picks_fit_their_names']),
