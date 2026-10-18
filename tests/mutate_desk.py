@@ -26,6 +26,10 @@ PREV, TPL, BLD = ROOT / os.environ['BALLOTTA_PAGE'], ROOT / 'source/template-tra
 README = ROOT / 'README.md'
 LEARN = ROOT / 'source/learn.json'
 MD_SELF = ROOT / 'tests/mutate_desk.py'                    # the runner's own signal handling (#41), tested in a child process
+# Retired at promotion (Oct 17), each verified equivalent on the promoted page: M34, M38, M42 sit behind
+# `/*PHONE*/false && /*/PHONE*/` (print options now survive a narrow window by design); M16b's redraw on resize is
+# redundant now that one DOM and one render serve both widths; M31's string check is redundant because every
+# path that writes a reason keeps text only (the load filter, restore and the two reason boxes).
 M = [
  ('M1 live page changes', TPL, '<title>Ballotta ·', '<title>Ballotta  ·', ['live_build_is_unchanged_until_promotion']),
  ('M2 block stripping gone', BLD, "        elif not in_block:\n            out.append(line)", "        else:\n            out.append(line)", ['live_build_is_unchanged_until_promotion']),
@@ -44,7 +48,6 @@ M = [
  ('M15 compare counted per screen', PREV, "/*/PHONE*/ && ui.cmpFor !== friend)", "/*/PHONE*/)", ['desk_compare_counted_once_per_link']),
  ('M15b compare counted per reload', PREV, "if (!(k && list.includes(k))) {", "if (true) {", ['desk_compare_counted_once_per_link']),
  ('M16 refresh hook gone', PREV, "renderCompare();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/", "renderCompare();", ['desk_glance_selects_and_filters', 'desk_decide_pick_keys_and_sync']),
- ('M16b no redraw on resize', PREV, "  WIDE.addEventListener('change', () => {", "  WIDE.addEventListener('change-never', () => {", ['phone_resize_keeps_picks_and_reasons_in_step']),
  ('M17 friend reason unescaped', PREV, "' · “' + esc(friend.W[c.id]) + '”'", "' · “' + friend.W[c.id] + '”'", ['desk_hostile_friend_is_escaped']),
  ('M18 dialogs stay bottom sheets', PREV, "  dialog.sheet{max-width:520px;margin:auto;border-radius:16px;padding:24px 28px}\n", '', ['desk_share_and_keep_open_as_centered_windows']),
  ('M19 ballot hook gone', PREV, "renderVote();/*DESK*/ if (window.desk) try { desk.ballot(meta); } catch (e) {}/*/DESK*/", "renderVote();", ['desk_layout_header_and_rail', 'desk_restore_link_on_laptop']),
@@ -56,18 +59,14 @@ M = [
  ('M30 Escape only inside the list', PREV, "    if (e.key === 'Escape' && !$('dk-menu').classList.contains('hidden')) { e.preventDefault(); menu(false); $('dk-help').focus(); }", "", ['desk_help_menu_info_address_and_clear']),
  ('M22 phone takes laptop shortcuts', PREV, "if (!WIDE.matches || !ballot.length || ui.landing", "if (!ballot.length || ui.landing", ['phone_takes_no_laptop_shortcuts']),
  ('M24 phone spacing lost', TPL, "#start{display:flex;flex-direction:column;gap:18px}", '', ['desk_phone_layout_matches_live_page']),
- ('M31 non-text reason throws', PREV, "typeof whys[cid] === 'string' && whys[cid].trim() !== ''", "!!(whys[cid] && whys[cid].trim())", ['phone_junk_and_hook_failures_never_break_the_lookup']),
  ('M32 hook unguarded', PREV, "if (window.desk) try { desk.ballot(meta); } catch (e) {}", "if (window.desk) desk.ballot(meta);", ['phone_junk_and_hook_failures_never_break_the_lookup']),
  ('M33 compare without a shared race', PREV, "      if (Object.keys(friend.P).some(id => mine.has(id))) {\n        ui.cmpFor = friend;", "      if (true) {\n        ui.cmpFor = friend;", ['desk_compare_counted_once_per_link']),
- ('M34 print options follow to phone', PREV, "ui.two = ui.hideCrib = false; $('crib').classList.remove('two'); renderCrib(); }  // laptop-only", "}  // laptop-only", ['laptop_crib_options_and_print_go_to_the_phone']),
  ('M35 held key flickers', PREV, "    if (e.repeat && (/^[1-9]$/.test(k) || k === 's')) return;  // a held key picks once (pick() toggles)\n", '', ['desk_decide_pick_keys_and_sync']),
  ('M36 J drops focus', PREV, "go(ballot[i + 1].c.id, true); used('move'); }", "go(ballot[i + 1].c.id); used('move'); }", ['desk_decide_pick_keys_and_sync']),
  ('M37 odd whitespace after a close accepted', BLD, "        elif ALONE_CLOSE.fullmatch(line):", "        elif re.fullmatch(CLOSE, line.strip()):", ['live_build_is_unchanged_until_promotion']),
- ('M38 printing resets the options', PREV, "!printing && !matchMedia('print').matches && ", "", ['laptop_crib_options_and_print_go_to_the_phone']),
  ('M39 a first no-overlap view blocks the count', PREV, "      const mine = new Set(ballot.map(b => b.c.id)), k = friend.code", "      ui.cmpFor = friend; const mine = new Set(ballot.map(b => b.c.id)), k = friend.code", ['desk_compare_counted_once_per_link']),
  ('M40 laptop compare counted twice', PREV, "track('share_compare');", "track('share_compare'); track('share_compare');", ['desk_compare_counted_once_per_link']),
  ('M41 stray marker inside a block accepted', BLD, "            assert not re.search(OPEN + '|' + CLOSE, line), f\"line {n}: a {tag} marker inside a block isn't alone on its line\"", "            pass", ['live_build_is_unchanged_until_promotion']),
- ('M42 print flag can stick', PREV, "  ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { printing = false; }, true));", "", ['laptop_crib_options_and_print_go_to_the_phone']),
  ('M43 laptop box does not grow', PREV, "      fit(ta);\n      whys[c.id] = ta.value;", "      whys[c.id] = ta.value;", ['laptop_and_phone_why_box_grows_with_the_reason']),
  ('M23 card and notes drift apart', PREV, "column-gap:clamp(24px,calc((100% - 992px) / 3),32px);", "column-gap:calc((100% - 992px) / 3);", ['desk_layout_header_and_rail']),
  ('M28 no gutters at 1280', PREV, "justify-content:center;gap:24px;column-gap:clamp(24px,calc((100% - 992px) / 3),32px);align-items:start;min-width:0;padding:28px 24px 64px}", "justify-content:center;align-items:start;min-width:0;padding:28px 0 64px}", ['desk_layout_header_and_rail']),
