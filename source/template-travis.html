@@ -525,7 +525,8 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-line[aria-pressed=true] .dk-oval{border:none;background:var(--ink)}
   .dk-nm{flex:1;font-size:18px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
   .dk-nm small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
-  .dk-paper .links{padding:0 0 10px 44px;margin:-6px 0 0}
+  .dk-paper .links{padding:0 0 4px 44px;margin:-12px 0 0;row-gap:0}
+  .dk-paper .links a{display:inline-flex;align-items:center;min-height:44px;padding:0}  /* full-size targets, like every other phone control (#51) */
   .dk-fp{display:flex;gap:8px;align-items:center;padding:0 0 10px 44px;font-size:13px;color:var(--plum)}
   .dk-two{display:flex;flex-direction:column;gap:12px}
   .dk-why{display:flex;flex-direction:column;gap:10px;background:var(--ground);border:1px solid var(--line);border-radius:12px;padding:12px 14px 14px}
@@ -954,6 +955,9 @@ let ballot = [];  // [{c, conf, note}]
 let here = null;  // [lon, lat] of the looked-up address, kept on this device only
 let lastLookup = { mode: '', precinct: '', total: 0 };
 const BYID = Object.fromEntries(DATA.contests.map(c => [c.id, c]));
+// Picks and reasons read from this device keep only contests and choices on today's ballot (#76).
+picks = Object.fromEntries(Object.entries(picks).filter(([k]) => BYID[k]).map(([k, v]) => [k, v[0] === '__skip' ? (v.length === 1 ? v : []) : v.filter(x => optionsOf(BYID[k]).includes(x))]).filter(([, v]) => v.length));
+whys = Object.fromEntries(Object.entries(whys).filter(([k]) => BYID[k]));
 const ORDER = Object.fromEntries(DATA.contests.map((c, i) => [c.id, i]));
 const num = (cid) => parseInt(cid.slice(1), 10);
 const cidOf = (n) => 'c' + String(n).padStart(3, '0');
@@ -1822,7 +1826,7 @@ function openFriend(o, fresh) {
   $('f-own').addEventListener('click', seeOwn);
   $('f-cmp').addEventListener('click', () => { wantCompare = true; if (ballot.length) showCompare(); else seeOwn(); });
   $('f-hide').addEventListener('click', hideFriend);
-  if (fresh) {
+  if (fresh && n) {  // a link with no readable picks counts nothing and starts no generation (#76)
     // Count each link once per browser, even if it's opened again in a new tab.
     const seen = LS.get('ballotta.opened', []);
     if (friend.code && Array.isArray(seen) && !seen.includes(friend.code)) {
@@ -1831,7 +1835,9 @@ function openFriend(o, fresh) {
       LS.set('ballotta.opened', seen.concat(friend.code).slice(-50));
     }
     if (!LS.get('ballotta.gen', null)) LS.set('ballotta.gen', friend.gen + 1);
-  }/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
+  }
+  if (!$('compare').classList.contains('hidden')) renderCompare();  // an open comparison follows the new friend (#76)
+  /*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
 }
 let wantCompare = false;
 function ownTracked() {
@@ -2161,15 +2167,18 @@ const desk = (() => {
   }
   function dotMap(all) {
     if (!here) return '<p class="note">Look up your address to see the closest vote centers on a map.</p>';
-    const W = 560, H = 520, sx = 0.12, sy = sx * H / W * Math.cos(here[1] * Math.PI / 180);
+    // Usually 0.12° wide; wider just enough that the five numbered centers all fit, for an outlying address (#76).
+    const W = 560, H = 520, pad = 24, k = H / W * Math.cos(here[1] * Math.PI / 180);
+    const fit = all.slice(0, 5).reduce((m, s) => Math.max(m, 2 * Math.abs(s.pt[0] - here[0]) / (1 - 2 * pad / W), 2 * Math.abs(s.pt[1] - here[1]) / k / (1 - 2 * pad / H)), 0);
+    const sx = Math.min(0.6, Math.max(0.12, fit)), sy = sx * k;
     const X = (lon) => (lon - here[0] + sx / 2) / sx * W, Y = (lat) => (here[1] + sy / 2 - lat) / sy * H;
     const inView = (p) => X(p[0]) >= 8 && X(p[0]) <= W - 8 && Y(p[1]) >= 8 && Y(p[1]) <= H - 8;
     let g = '';
     for (let k = 50; k < W; k += 50) g += '<line x1="' + k + '" y1="0" x2="' + k + '" y2="' + H + '"></line>';
     for (let k = 50; k < H; k += 50) g += '<line x1="0" y1="' + k + '" x2="' + W + '" y2="' + k + '"></line>';
-    const labels = PLACES.filter(p => inView([p[1], p[2]])).map(p => '<text x="' + X(p[1]).toFixed(0) + '" y="' + Y(p[2]).toFixed(0) + '">' + esc(p[0]) + '</text>').join('');
+    const labels = PLACES.filter(p => X(p[1]) >= 48 && X(p[1]) <= W - 48 && Y(p[2]) >= 16 && Y(p[2]) <= H - 8).map(p => '<text x="' + X(p[1]).toFixed(0) + '" y="' + Y(p[2]).toFixed(0) + '">' + esc(p[0]) + '</text>').join('');
     const rest = all.slice(5).filter(s => inView(s.pt)).map(s => '<circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="6"' + (s.f.includes('L') ? ' class="late"' : '') + '><title>' + esc(s.name) + '</title></circle>').join('');
-    const top = all.slice(0, 5).map((s, k) => [s, k]).filter(([s]) => inView(s.pt)).map(([s, k]) => '<g class="top"><circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="11"><title>' + esc(s.name) + '</title></circle><text x="' + X(s.pt[0]).toFixed(1) + '" y="' + (Y(s.pt[1]) + 4).toFixed(1) + '">' + (k + 1) + '</text></g>').join('');
+    const top = all.slice(0, 5).map((s, k) => [s, k]).filter(([s]) => inView(s.pt)).reverse().map(([s, k]) => '<g class="top"><circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="11"><title>' + esc(s.name) + '</title></circle><text x="' + X(s.pt[0]).toFixed(1) + '" y="' + (Y(s.pt[1]) + 4).toFixed(1) + '">' + (k + 1) + '</text></g>').join('');
     const you = '<g aria-hidden="true"><circle cx="' + W / 2 + '" cy="' + H / 2 + '" r="16" style="fill:#E9A92A;opacity:.3;stroke:none"></circle><rect x="' + (W / 2 - 6) + '" y="' + (H / 2 - 6) + '" width="12" height="12" rx="2" fill="#241A2E" transform="rotate(45 ' + W / 2 + ' ' + H / 2 + ')"></rect></g>';
     return '<svg class="dk-map" id="dk-map" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Map of vote centers around your address, with the five closest numbered">' + g + labels + rest + top + you + '</svg>' +
       '<p class="note">Drawn on your device from the county’s list; no map company sees where you live. Numbers match the list. Gold dots stay open till 10pm Oct 29–30.</p>';
@@ -2368,7 +2377,7 @@ const phone = (() => {
   const NARROW = window.matchMedia('(max-width: 1023.98px)'), D = desk.ph, cls = document.body.classList;
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const iOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null;
+  let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null, installed = false;
   setTimeout(() => { booting = false; });  // a ballot already saved on this phone opens where the browser left the page
 
   /* ----- after every laptop render: the title, the bottom bar, the fold, the map fold ----- */
@@ -2400,6 +2409,8 @@ const phone = (() => {
       $('ph-fold').textContent = (friend ? 'You and ' + friendName() + ' · ' : '') + what;
       $('ph-fold').setAttribute('aria-expanded', foldOpen ? 'true' : 'false');
       $('dk-notes').classList.toggle('ph-open', foldOpen);
+      // Nothing behind it (a measure with no sources): no fold (#76).
+      $('ph-fold').classList.toggle('hidden', ![...$('dk-notes').children].some(e => getComputedStyle(e).display !== 'none' && e.textContent.trim()));
     }
     const top = $('dk-paper').querySelector('.dk-top .note'), pr = $('dk-loc').querySelector('b');  // the precinct left the top bar
     if (top) top.textContent = (NARROW.matches && app && pr && /\d/.test(pr.textContent) ? pr.textContent + ' · ' : '') + 'Saved on this device';
@@ -2422,7 +2433,7 @@ const phone = (() => {
   }
   function next() {
     const nx = upcoming(), i = D.idx(D.ui.cur);
-    if (nx) D.go(nx.c.id);
+    if (nx) { const was = D.ui.view; D.go(nx.c.id); if (was !== 'decide') track('view_opened', { view: 'decide' }); }  // as back() counts it (#76)
     else if (D.ui.view === 'decide' && i < ballot.length - 1) D.go(ballot[i + 1].c.id);
     else { D.setView('crib'); track('view_opened', { view: 'crib' }); }
   }
@@ -2483,11 +2494,13 @@ const phone = (() => {
   $('ph-fold').addEventListener('click', () => { foldOpen = !foldOpen; after(); });
   new MutationObserver(bar).observe($('dk-count'), { childList: true });  // a pick changes the count: the bar follows
   // The map waits behind a fold on a phone, however the vote view was drawn (a view change, the period, "See all", a new day).
+  let mapOpen = false;  // a redrawn vote view keeps the fold as it was (#76)
   function mapFold() {
     const map = $('dk-map');
     if (!NARROW.matches || !map || map.closest('details')) return;
     const box = map.parentNode, d = document.createElement('details');
-    d.className = 'ph-mapfold'; d.innerHTML = '<summary>Map of vote centers</summary>';
+    d.className = 'ph-mapfold'; d.innerHTML = '<summary>Map of vote centers</summary>'; d.open = mapOpen;
+    d.addEventListener('toggle', () => { mapOpen = d.open; });
     box.before(d); d.append(box);
   }
   new MutationObserver(mapFold).observe($('dk-paper'), { childList: true, subtree: true });
@@ -2501,7 +2514,7 @@ const phone = (() => {
       item(el.dataset.help, el.innerHTML, el.classList.contains('bad'));
       if (el.dataset.help !== 'address') return;
       if (standalone() && iOS()) item('paste', '<b>Paste my picks link</b><small>Bring picks from Safari or another device</small>');
-      else if (!standalone()) item('home', '<b>Add to your Home Screen</b><small>Opens like an app, and keeps your picks longer</small>');
+      else if (!standalone() && !installed) item('home', '<b>Add to your Home Screen</b><small>Opens like an app, and keeps your picks longer</small>');
     });
   }
   menuItems();
@@ -2545,7 +2558,7 @@ const phone = (() => {
   /* ----- Add to Home Screen ----- */
   // Android: on a phone, our button shows the browser's own prompt (so Chrome's automatic banner waits for it); laptops are left alone.
   window.addEventListener('beforeinstallprompt', (e) => { if (!NARROW.matches) return; e.preventDefault(); bip = e; });
-  window.addEventListener('appinstalled', () => { bip = null; track('home_screen', { action: 'added' }); });
+  window.addEventListener('appinstalled', () => { bip = null; installed = true; menuItems(); track('home_screen', { action: 'added' }); });  // the tab stops offering it (#76)
   function install(from) {
     track('home_screen', { action: 'opened', from });
     const ios = !bip && iOS(), picked = countPicks(ballot.map(b => b.c.id)) > 0;
@@ -2651,7 +2664,8 @@ const phone = (() => {
   try {  // the offline copy: phones and tablets only (C1)
     if ('serviceWorker' in navigator) {
       const sw = navigator.serviceWorker;
-      if (NARROW.matches && matchMedia('(pointer: coarse)').matches) sw.register('sw.js').catch(() => {});
+      const keep = () => { if (NARROW.matches && matchMedia('(pointer: coarse)').matches) sw.register('sw.js').catch(() => {}); };
+      keep(); NARROW.addEventListener('change', keep);  // a tablet loaded in landscape, turned upright later (#76)
     }
   } catch (e) {}
   return {

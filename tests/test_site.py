@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '9519d3281a01c5b4b661006e65f540def858cbaebc5a5316488ff91d76e76f7d'  # Oct 18: wave 4 (phone layout follow-ups)
+LIVE_SHA = 'ee1792e72da0b02f4620eb498d46c80038248a45055986d3d279f3e83e0a70ae'  # Oct 18: wave 4 (phone layout follow-ups)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -1972,6 +1972,7 @@ def phone_glance_vote_and_crib_fit_the_screen(b):
     assert pg.locator('.dk-site').count() == 5 and pg.locator('.ph-mapfold:not([open])').count() == 1
     expect(pg.locator('#dk-map')).to_be_hidden(); pg.click('.ph-mapfold summary'); expect(pg.locator('#dk-map')).to_be_visible()
     pg.click('[data-period="eday"]'); assert pg.locator('.ph-mapfold').count() == 1, 'redrawn: one fold, never two'
+    assert pg.locator('.ph-mapfold[open]').count() == 1 and pg.locator('#dk-map').is_visible(), 'redrawn: the fold stays open (#76)'
     assert sideways(pg) <= 0
     pg.click('#ph-list'); pg.click('#dk-views [data-view="crib"]')
     for t in ('#dk-cw', '#dk-c2', '#dk-cu'): expect(pg.locator(t)).to_be_visible()
@@ -2176,7 +2177,7 @@ def phone_offline_copy_after_one_visit(b):
         Flip.swap = {}; pg.reload(); assert pg.inner_text('#start h1') == "What's on your ballot?"
         kept = pg.evaluate("n => caches.open(n).then(c => c.keys()).then(ks => ks.map(r => r.url))", 'ballotta-next-1' if PAGE.startswith('next/') else 'ballotta-1')   # each scope its own
         origin = url.split('/' + PAGE)[0]
-        assert url in kept and any(k.endswith('.woff2') for k in kept) and all(k.startswith(origin + '/') for k in kept), kept
+        assert re.sub(r'index\.html$', '', url) in kept and any(k.endswith('.woff2') for k in kept) and all(k.startswith(origin + '/') for k in kept), kept   # the page is kept as its folder (#76)
         srv.shutdown(); srv.server_close(); up = False                                   # now there is no network at all
         pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
         assert pg.inner_text('#start h1') == "What's on your ballot?" and pg.evaluate("document.fonts.check('16px \"Public Sans\"')"), 'offline, another cache answered'
@@ -2703,6 +2704,124 @@ def phone_saved_copy_bar_follows_the_site(b):
         Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}
         ctx.close()
         if up: srv.shutdown(); srv.server_close()
+
+@phone_test
+def phone_menu_after_install_offers_no_home_screen(b):
+    # #76: after an Android install, the tab's Feedback & Info sheet no longer offers "Add to your Home Screen".
+    ctx, pg = phone_page(b); pg.goto(BASE)
+    items = lambda: pg.evaluate("[...document.querySelectorAll('#ph-mitems button')].map(b => b.dataset.ph)")
+    assert 'home' in items()
+    pg.evaluate("window.dispatchEvent(new Event('appinstalled'))")
+    assert 'home' not in items(), items()
+    ctx.close()
+
+@phone_test
+def phone_measure_without_sources_has_no_empty_fold(b):
+    # #76: a measure with nothing behind its fold shows no fold; one with sources keeps it.
+    ctx, pg = phone_page(b); pg.goto(BASE)
+    bare, rich = pg.evaluate("(() => { const m = DATA.contests.filter(c => c.type === 'measure'); const has = c => ((DATA.learn[c.id] || {}).src || []).length; return [m.find(c => !has(c)).id, m.find(has).id]; })()")
+    saved_ballot(pg, [int(bare[1:]), int(rich[1:])]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate('id => desk.ph.go(id)', bare); pg.wait_for_timeout(200)
+    assert not pg.locator('#ph-fold').is_visible(), (bare, 'an empty fold')
+    pg.evaluate('id => desk.ph.go(id)', rich); pg.wait_for_timeout(200)
+    assert pg.locator('#ph-fold').is_visible(), (rich, 'its sources lost their fold')
+    ctx.close()
+
+@test
+def a_tablet_turned_upright_keeps_an_offline_copy(b):
+    # #76: a tablet that loads in landscape (the laptop layout) gets the offline copy once it's turned upright.
+    ctx, pg = new_page(b, touch=True, size={'width': 1180, 'height': 820}, sw=True); pg.goto(BASE)
+    reg = lambda: pg.evaluate("navigator.serviceWorker.getRegistration().then(g => !!g)")
+    pg.wait_for_timeout(800); assert not reg(), 'landscape: no copy, as on a laptop'
+    pg.set_viewport_size({'width': 820, 'height': 1180}); poll(pg, "navigator.serviceWorker.getRegistration().then(g => !!g)", 10)
+    ctx.close()
+    ctx, pg = new_page(b, size={'width': 1440, 'height': 900}, sw=True); pg.goto(BASE)          # a laptop narrowed: still never
+    pg.set_viewport_size({'width': 700, 'height': 900}); pg.wait_for_timeout(1000); assert not reg(), 'a laptop window got the offline copy'
+    ctx.close()
+
+@phone_test
+def phone_next_from_another_view_counts_decide(b):
+    # #76: "Next" from At a glance or Where to vote opens a contest, and counts view_opened: decide, as "Back" does.
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, [1, 70]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("desk.ph.setView('glance')"); pg.click('#ph-next'); pg.wait_for_timeout(200)
+    assert pg.evaluate('desk.ph.ui.view') == 'decide' and any(e[0] == 'view_opened' and e[1].get('view') == 'decide' for e in events(pg)), events(pg)
+    ctx.close()
+
+@phone_test
+def offline_copy_one_copy_for_the_page(b):
+    # #76: / and /index.html are one page, so one kept copy, and either opens offline.
+    Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}; srv, url = own_server(); up = True
+    base = url.rsplit('/', 1)[0] + '/'
+    ctx, pg = phone_page(b, sw=True)
+    try:
+        pg.goto(base + 'index.html'); poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); pg.wait_for_timeout(500)
+        keys = pg.evaluate("caches.open('ballotta-1').then(c => c.keys()).then(ks => ks.map(r => r.url))")
+        assert base in keys and base + 'index.html' not in keys, keys
+        srv.shutdown(); srv.server_close(); up = False
+        for at in (base, base + 'index.html'):
+            pg.goto(at); assert pg.get_attribute('html', 'data-copy') == 'offline' and pg.locator('#street').count() == 1, at
+    finally:
+        ctx.close()
+        if up: srv.shutdown(); srv.server_close()
+
+@test
+def a_share_link_without_picks_counts_nothing(b):
+    # #76: a link with no picks it can read says so, and is not counted as opened, nor starts a share generation.
+    ctx, pg = new_page(b); pg.goto(link('s', {'v': 1, 'n': 'Al', 'c': 'zero0001', 'g': 3, 'p': {'9999': 0}}))
+    pg.wait_for_selector('#friend:not(.hidden)')
+    assert 'didn’t contain any picks' in pg.inner_text('#friend')
+    assert not any(e[0] == 'share_opened' for e in events(pg)) and pg.evaluate("localStorage.getItem('ballotta.gen')") is None, events(pg)
+    ctx.close()
+
+@test
+def a_new_friend_updates_the_compare_card(b):
+    # #76: a second share link arriving in the same tab redraws an open comparison for the new friend.
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, [1, 70]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('s', {'v': 1, 'n': 'Al', 'c': 'abcd2501', 'g': 1, 'p': {'70': 0}}))
+    pg.wait_for_function("friend && friend.name === 'Al'"); pg.evaluate('showCompare()')
+    assert pg.inner_text('#cmph') == 'You and Al'
+    pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('s', {'v': 1, 'n': 'Bea', 'c': 'abcd2502', 'g': 1, 'p': {'70': 1}}))
+    pg.wait_for_function("friend && friend.name === 'Bea'")
+    assert pg.inner_text('#cmph') == 'You and Bea', pg.inner_text('#cmph')
+    ctx.close()
+
+@test
+def stored_picks_only_for_this_ballot(b):
+    # #76: picks read from this device keep only contests and choices on today's ballot, so nothing stale counts as
+    # decided or reaches a link.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    pg.evaluate("""() => { const o = optionsOf(BYID.c071)[0];
+        localStorage.setItem('ballotta.picks', JSON.stringify({ c999: ['X'], c070: ['Not a candidate'], c071: [o, 'Bogus'], c001: ['__skip'], c006: ['__skip', 'X'] }));
+        localStorage.setItem('ballotta.whys', JSON.stringify({ c999: 'old', c071: 'kept' })); }""")
+    pg.reload()
+    got = pg.evaluate('[picks, whys]')
+    assert got[0] == {'c071': [pg.evaluate('optionsOf(BYID.c071)[0]')], 'c001': ['__skip']}, got
+    assert got[1] == {'c071': 'kept'}, got
+    ctx.close()
+
+@phone_test
+def phone_candidate_links_are_full_size_targets(b):
+    # #51: "Campaign site" and "League guide answers" under each name are 44px tall on a phone, like every other control.
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, [1, 70]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("desk.ph.go('c001')"); pg.wait_for_timeout(200)
+    hs = pg.evaluate("[...document.querySelectorAll('#dk-paper .links a')].map(a => Math.round(a.getBoundingClientRect().height))")
+    assert hs and min(hs) >= 44, hs
+    assert sideways(pg) <= 0
+    ctx.close()
+
+@test
+def the_map_shows_all_five_closest_centers(b):
+    # #76: from an outlying address (Webberville), the five numbered centers were mostly off the map, while its label
+    # promised them. The map now widens just enough to fit all five; closer in, it keeps its usual scale.
+    for pt, wide in (([-97.50, 30.24], True), ([-97.7431, 30.2747], False)):
+        ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70], pt=pt); pg.wait_for_selector('body.dk-app-on')
+        pg.evaluate("desk.ph.setView('vote')"); pg.wait_for_selector('#dk-map')
+        assert pg.locator('#dk-map .top').count() == 5, (pt, pg.locator('#dk-map .top').count())
+        assert pg.evaluate("[...document.querySelectorAll('#dk-map > text')].every(t => +t.getAttribute('x') >= 48 && +t.getAttribute('x') <= 512)"), 'a town name cut off at the edge'
+        assert pg.evaluate("[...document.querySelectorAll('#dk-map .top text')].pop().textContent") == '1', 'center 1 is drawn last, on top'
+        if not wide:
+            assert pg.evaluate("[...document.querySelectorAll('#dk-map > circle')].length") <= 15, 'downtown: the usual close-in map, not one widened to most of the county'
+        ctx.close()
 
 @phone_test
 def laptops_stay_laptops_after_a_narrow_start(b):

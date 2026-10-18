@@ -13,7 +13,7 @@ self.addEventListener('activate', (e) => e.waitUntil(caches.keys()
 self.addEventListener('fetch', (e) => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== 'GET' || u.origin !== location.origin || r.headers.has('range')) return;  // the browser handles it, as if there were no copy
-  const key = u.origin + u.pathname;  // one copy per file, whatever ?query a link adds
+  const key = u.origin + u.pathname.replace(/\/index\.html$/, '/');  // one copy per file, whatever ?query a link adds; / and /index.html are one page (#76)
   const net = fetch(r).then((res) => {
     if (res.ok && res.type === 'basic') { const copy = res.clone(); e.waitUntil(caches.open(CACHE).then((c) => c.put(key, copy)).catch(() => {})); }
     return res;

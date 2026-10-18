@@ -155,7 +155,7 @@ SW_JS = (
     "self.addEventListener('fetch', (e) => {\n"
     "  const r = e.request, u = new URL(r.url);\n"
     "  if (r.method !== 'GET' || u.origin !== location.origin || r.headers.has('range')) return;  // the browser handles it, as if there were no copy\n"
-    "  const key = u.origin + u.pathname;  // one copy per file, whatever ?query a link adds\n"
+    "  const key = u.origin + u.pathname.replace(/\\/index\\.html$/, '/');  // one copy per file, whatever ?query a link adds; / and /index.html are one page (#76)\n"
     "  const net = fetch(r).then((res) => {\n"
     "    if (res.ok && res.type === 'basic') { const copy = res.clone(); e.waitUntil(caches.open(CACHE).then((c) => c.put(key, copy)).catch(() => {})); }\n"
     "    return res;\n"
