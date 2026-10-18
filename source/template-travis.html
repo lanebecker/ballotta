@@ -13,9 +13,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ballotta">
 <!--/PHONE-->
-<style id="frame-guard">html{display:none!important}</style>
+<style id="frame-guard">body>:not(noscript){display:none!important}.nojs{max-width:34em;margin:48px auto;padding:0 16px;font:17px/1.5 system-ui,-apple-system,sans-serif;color:#241A2E}.nojs a{color:#4B2A6B}</style>
 <script>
-if (top === self) { var guard = document.getElementById('frame-guard'); if (guard) guard.remove(); }   /* hidden until here, and in any frame, even one with scripts off (GitHub Pages can't send frame-ancestors; issue #69); never throws, so the scrub below always runs */
+if (top === self) { var guard = document.getElementById('frame-guard'); if (guard) guard.remove(); }   /* the page stays hidden until here, and in any frame, even one with scripts off, where only the JavaScript note shows (GitHub Pages can't send frame-ancestors; issue #69); never throws, so the scrub below always runs */
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
    or copied by accident. */
@@ -687,6 +687,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 </style>
 </head>
 <body>
+<noscript><p class="nojs">Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the <a href="https://votetravis.gov/voter-lookup/">Travis County Voter Lookup</a>.</p></noscript>
 <!--DESK-->
 <header class="dk-hdr" id="dk-hdr">
   <span class="dk-brand"><svg width="21" height="26" viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"></circle><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path><path d="M2 52 H84" stroke="#FFF9F1" stroke-width="8" stroke-linecap="round"></path></svg><b>Ballotta</b></span>

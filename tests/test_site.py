@@ -22,8 +22,9 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '88c496638b514edacd7199a9ff7fe767b7da3982a168686dabbe9a7fb3c91b26'  # Oct 17: wave 3 (the privacy promise, verified)
+LIVE_SHA = 'b26b1e99f1e2e505c70a275657b6337bd1b5d74673dab37030658c55f75f5536'  # Oct 17: wave 3 (the privacy promise, verified)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
+NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
     # A stand-in for the tracker that records events. The real tag carries integrity= (issue #68), so a stand-in served as
     # umami.js would be refused: it goes in before the page's scripts instead and appears when a deferred script would
@@ -458,8 +459,9 @@ def page_is_built_locked_down(b):
     try: m.build(); raise AssertionError('the build used a umami.js that is not the pinned copy')
     except SystemExit as e: assert 'pinned' in str(e), e
     # Issue #69: GitHub Pages can't send frame-ancestors, so the page's first script hides it when it's framed.
-    g = '<style id="frame-guard">html{display:none!important}</style>'
+    g = '<style id="frame-guard">body>:not(noscript){display:none!important}'
     assert html.count(g) == 1 and html.index(g) < html.index('<script'), 'hidden from the start (Pass 1)'
+    assert html.count('<noscript>') == 1 and html.index('<noscript>') > html.index('<body>'), 'one JavaScript note, in the body'
     assert re.search(r"<script>\s*if \(top === self\) \{ var guard = document\.getElementById\('frame-guard'\); if \(guard\) guard\.remove\(\); \}", html), 'only the first script shows it, and only when not framed'
 
 @test
@@ -477,21 +479,28 @@ def page_refuses_to_show_in_another_sites_frame(b):
     # Issue #69: framed by another site, the page shows nothing (so it can't be dressed up to trick a visitor).
     # The framer is another origin (localhost, not 127.0.0.1) on the same test server: Chrome won't let a stubbed page,
     # which it counts as public, frame a loopback address at all.
-    # Hidden until the page's own script shows it, so a frame with scripts turned off (sandbox) shows nothing either (Pass 1).
-    for sandbox in (None, '', 'allow-forms allow-popups', 'allow-scripts'):
+    # Hidden until the page's own script shows it, so a frame with scripts turned off (sandbox) shows nothing of the page
+    # either (Pass 1), only the JavaScript note, which is harmless anywhere (Lane, Oct 17).
+    for sandbox, shown in ((None, ''), ('', NOJS), ('allow-forms allow-popups', NOJS), ('allow-scripts', '')):
         ctx, pg = new_page(b); pg.goto(f'http://localhost:{PORT}/census.html')
         pg.evaluate("([u, s]) => new Promise(ok => { const f = document.createElement('iframe'); if (s !== null) f.setAttribute('sandbox', s); f.src = u; f.width = 400; f.height = 800; f.onload = ok; document.body.appendChild(f); })", [BASE, sandbox])
         fr = [f for f in pg.frames if f != pg.main_frame][0]
         assert fr.url == BASE, (sandbox, fr.url)
-        assert fr.evaluate('getComputedStyle(document.documentElement).display') == 'none' and not fr.locator('#street').is_visible(), ('shown in a frame', sandbox)
+        assert fr.inner_text('body').strip() == shown and not fr.locator('#street').is_visible(), ('shown in a frame', sandbox, fr.inner_text('body')[:200])
         ctx.close()
     ctx, pg = new_page(b); pg.goto(BASE)
-    assert pg.evaluate('getComputedStyle(document.documentElement).display') != 'none' and pg.locator('#street').is_visible(), 'not framed: shown'
+    assert pg.locator('#street').is_visible() and NOJS not in pg.inner_text('body'), 'not framed: shown, without the JavaScript note'
+    ctx.close()
+    # JavaScript off (Tor Browser's Safest setting, NoScript): the note, with the county's own lookup (Lane, Oct 17).
+    ctx = b.new_context(java_script_enabled=False); pg = ctx.new_page(); pg.goto(BASE)
+    assert pg.inner_text('body').strip() == NOJS and not pg.locator('#street').is_visible(), pg.inner_text('body')[:300]
+    assert pg.get_attribute('.nojs a', 'href') == 'https://votetravis.gov/voter-lookup/'
     ctx.close()
     # Pass 2: the guard can never take the first script's link scrub down with it, even if its style were missing.
     ctx, pg = new_page(b)
-    ctx.route(re.compile(r'.*/index\.html$'), lambda r: (lambda res: r.fulfill(response=res, body=res.text().replace('<style id="frame-guard">html{display:none!important}</style>', '')))(r.fetch()))
+    ctx.route(re.compile(r'.*/index\.html$'), lambda r: (lambda res: r.fulfill(response=res, body=re.sub(r'<style id="frame-guard">.*?</style>', '', res.text(), count=1)))(r.fetch()))
     pg.goto(BASE + '#k2SECRETPICKSAAAAAAAAAAAA'); pg.wait_for_timeout(500)
+    assert pg.locator('#frame-guard').count() == 0, 'the probe itself: the guard style is gone'
     assert pg.evaluate('location.hash') == '', 'the picks link stayed in the address bar'
     ctx.close()
 

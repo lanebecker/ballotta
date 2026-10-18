@@ -24,6 +24,11 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 - **Framed by another site, the page shows nothing** (#69), even in a frame with scripts turned off. GitHub Pages
   can't send the header that forbids framing, so the page starts hidden and its first script shows it only when it
   isn't framed.
+
+### Changed
+- **With JavaScript off, the page says so:** "Ballotta needs JavaScript to look up your ballot. Turn it on for
+  ballotta.org, or use the Travis County Voter Lookup." (with the county's link), instead of a lookup form that couldn't
+  work (Lane's wording).
 - **Smaller locks** (#85): the Census answer is taken only from the sandboxed frame's own (`null`) origin; the page's
   data is written so that no text in it can end its script or change how it is read; the build stops on a campaign
   site or source link that isn't http(s); counting happens only on ballotta.org (the lanebecker.github.io entry was
