@@ -456,7 +456,7 @@ def desk_decide_pick_keys_and_sync(b):
     pg.keyboard.press('s'); assert cur(pg, 'c070') == []
     pg.click('#dk-w'); pg.keyboard.type('Knows the district s')                                   # typing an "s" must not skip
     assert cur(pg, 'c070') == [] and pg.input_value('#wc070') == 'Knows the district s'
-    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys')).c070") == 'Knows the district s'
+    pg.wait_for_function("(JSON.parse(localStorage.getItem('ballotta.whys')) || {}).c070 === 'Knows the district s'", timeout=2000)   # saved once typing pauses (#91)
     pg.keyboard.press('Escape'); pg.keyboard.press('j')
     assert 'Proposition A' in pg.inner_text('#dk-paper h1')
     assert pg.evaluate('document.activeElement.id') == 'dk-paper', 'keyboard moves keep focus on the paper'
@@ -549,6 +549,108 @@ def mud_41_reaches_its_addresses_marked_double_check(b):
     assert [g[0] for g in got] == ids and all(g[1] == 'medium' and 'M41' in g[2] for g in got), got
     assert pg.evaluate("r => route(r).some(x => x.c.entity === 'Travis County MUD No. 41')", other) is False, 'MUD 41 reached an address outside M41'
     assert "can't be placed on a map" not in pg.content(), 'the page still says MUD 41 cannot be placed'
+    ctx.close()
+
+@test
+def two_tabs_stay_in_step(b):
+    # #92: two tabs on the same ballot each kept their own copy of the picks and reasons, so whichever saved last wrote
+    # over the other's changes without a word. A tab now takes the other's saved copy, everywhere it shows it; a reason
+    # being typed when the other tab saves is kept, not lost.
+    ctx, a = new_page(b, wide=True, county='stub'); a.goto(BASE); lookup_wide(a)
+    t = ctx.new_page(); t.goto(BASE); t.wait_for_selector('body.dk-app-on')
+    first = lambda pg, k: pg.evaluate('''k => { const c = ballot[k].c.id;                       // a choice as its button names it
+        return [c, document.querySelector('[data-c="' + c + '"][data-pick]:not([data-pick="__skip"])').dataset.pick]; }''', k)
+    (c0, v0), (c1, v1), (c2, v2), (c3, v3) = first(a, 0), first(a, 1), first(a, 2), first(a, 3)
+    a.evaluate('([c, v]) => pick(c, v)', [c0, v0])
+    t.wait_for_function('c => current(c).length === 1', arg=c0, timeout=5000)
+    t.evaluate('([c, v]) => pick(c, v)', [c1, v1])                                  # the other tab's pick must not undo A's
+    a.wait_for_function('c => current(c).length === 1', arg=c1, timeout=5000)
+    saved = a.evaluate("JSON.parse(localStorage.getItem('ballotta.picks'))")
+    assert saved.get(c0) == [v0] and saved.get(c1) == [v1], ('a pick was lost between tabs', saved)
+    for pg in (a, t):                                                               # what each tab shows, not just its memory
+        assert pg.text_content('#dk-count').startswith('2 of '), pg.text_content('#dk-count')
+        on = pg.evaluate("([c, v]) => [...document.querySelectorAll('[data-c=\"' + c + '\"][data-pick]')].filter(x => x.dataset.pick === v).map(x => x.getAttribute('aria-pressed'))", [c0, v0])
+        assert on and all(x == 'true' for x in on), (on, 'a picked choice is not shown as picked')
+    here = a.evaluate("document.querySelector('#dk-paper [data-pick]').dataset.c")
+    a.fill('#dk-w', 'because A said so')
+    t.wait_for_function('([c, w]) => whys[c] === w', arg=[here, 'because A said so'], timeout=5000)
+    if t.evaluate("document.querySelector('#dk-paper [data-pick]').dataset.c") == here:
+        t.wait_for_function("document.getElementById('dk-w').value === 'because A said so'", timeout=5000)
+    t.click('#dk-w'); t.keyboard.press('End'); t.keyboard.type(', and B agrees')              # B is typing...
+    t.keyboard.press('Home')                                                        # ...with the caret moved to the start...
+    a.evaluate('([c, v]) => pick(c, v)', [c2, v2])                                  # ...when A saves a pick
+    t.wait_for_function('c => current(c).length === 1', arg=c2, timeout=5000)
+    t.keyboard.type('Q')                                                            # the caret stayed where B left it
+    t.wait_for_timeout(500)
+    assert t.input_value('#dk-w') == 'Qbecause A said so, and B agrees', t.input_value('#dk-w')
+    t.keyboard.press('End'); t.keyboard.type('!')                                    # B types, A saves at once, B types nothing more:
+    a.evaluate('([c, v]) => pick(c, v)', [c3, v3])                                  # B's last keystroke must still be saved
+    t.wait_for_function('c => current(c).length === 1', arg=c3, timeout=5000)
+    t.wait_for_timeout(500)
+    final = t.evaluate("[JSON.parse(localStorage.getItem('ballotta.picks')), JSON.parse(localStorage.getItem('ballotta.whys'))]")
+    assert all(final[0].get(c) for c in (c0, c1, c2, c3)) and final[1].get(here) == 'Qbecause A said so, and B agrees!', final
+    assert t.input_value('#dk-w') == 'Qbecause A said so, and B agrees!'
+    t.click('#dk-views [data-view="glance"]')                                          # B looks At a glance while A picks (Pass 1)
+    c4, v4 = first(a, 4); c5 = first(a, 5)[0]
+    t.focus('[data-sel="%s"]' % c5)                                                 # B's keyboard is on another contest's dropdown
+    a.evaluate('([c, v]) => pick(c, v)', [c4, v4])
+    t.wait_for_function('([c, v]) => (document.querySelector(\'[data-sel="\' + c + \'"]\') || {}).value === v', arg=[c4, v4], timeout=5000)
+    assert t.evaluate('document.activeElement.dataset.sel') == c5, ('the redraw took the keyboard away (Pass 2)', t.evaluate('document.activeElement.outerHTML.slice(0, 80)'))
+    c6, v6 = first(a, 6)
+    t.focus('#dk-paper button[data-go="%s"]:not([data-why])' % c5)               # a button, not a dropdown (Pass 3)
+    a.evaluate('([c, v]) => pick(c, v)', [c6, v6])
+    t.wait_for_function('c => current(c).length === 1', arg=c6, timeout=5000); t.wait_for_timeout(300)
+    assert t.evaluate('[document.activeElement.dataset.go, document.activeElement.dataset.why || ""]') == [c5, ''], t.evaluate('document.activeElement.outerHTML.slice(0, 80)')
+    t.click('#dk-views [data-view="decide"]')
+    t.click('#dk-w'); t.keyboard.press('End'); t.keyboard.type(' SECRET')           # B types; A clears everything at once:
+    with t.expect_navigation(timeout=10000):                                        # nothing B was about to save comes back (Pass 1)
+        a.evaluate("window.confirm = () => true; clearEverything()")
+    t.wait_for_load_state(); a.wait_for_load_state(); t.wait_for_timeout(500)
+    left = t.evaluate("Object.keys(localStorage).filter(k => k.startsWith('ballotta.')).map(k => k + '=' + localStorage.getItem(k))")
+    assert not [x for x in left if 'SECRET' in x or x.startswith(('ballotta.whys', 'ballotta.picks'))], left
+    ctx.close()
+
+@test
+def reasons_are_saved_when_typing_pauses(b):
+    # #91: every keystroke in a reason box saved all reasons (a storage event in every other tab each time) and redrew
+    # the rail and the crib sheet. Now the reason is kept in memory at once and saved and redrawn once typing pauses
+    # (150 ms), and at once if the page is hidden or closed, so nothing typed is lost.
+    ctx, pg = new_page(b, wide=True, county='stub')
+    pg.add_init_script("""window.__whySaves = 0; const _set = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (k, v) { if (k === 'ballotta.whys') window.__whySaves++; return _set.call(this, k, v); };""")
+    pg.goto(BASE); lookup_wide(pg)
+    here = pg.evaluate("document.querySelector('#dk-paper [data-pick]').dataset.c")
+    before = pg.evaluate('window.__whySaves')
+    assert pg.text_content('#dk-filt [data-f="why"]') == 'Reasons 0'
+    pg.click('#dk-w'); pg.keyboard.type('a reason typed quickly', delay=15)
+    mid = pg.evaluate('[window.__whySaves, whys[arguments[0]] || "", document.querySelector("#dk-filt [data-f=why]").textContent]'.replace('arguments[0]', repr(here)))
+    assert mid[0] - before <= 1 and mid[1] == 'a reason typed quickly', ('saved on every keystroke, or not kept in memory', mid, before)
+    pg.wait_for_timeout(500)
+    after = pg.evaluate('[window.__whySaves, JSON.parse(localStorage.getItem("ballotta.whys"))[%r], document.querySelector("#dk-filt [data-f=why]").textContent]' % here)
+    assert after[0] - before <= 2 and after[1] == 'a reason typed quickly' and after[2] == 'Reasons 1', after
+    saved = lambda: pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys'))[%r]" % here)
+    pg.keyboard.type(' X'); pg.evaluate("dispatchEvent(new PageTransitionEvent('pagehide'))")            # the page going away
+    assert saved() == 'a reason typed quickly X', saved()
+    pg.keyboard.type('Y'); pg.evaluate("Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden")
+    assert saved() == 'a reason typed quickly XY', saved()                                           # the tab going to the background
+    pg.evaluate("document.getElementById('withwhy').checked = true; renderCrib()")                  # a printout with reasons
+    pg.keyboard.type('Z'); pg.evaluate("dispatchEvent(new Event('beforeprint'))")                   # printing at once (Pass 1)
+    assert saved() == 'a reason typed quickly XYZ' and 'a reason typed quickly XYZ' in pg.text_content('#crib'), 'the printout misses the reason just typed'
+    pg.fill('#dk-w', 'a reason typed quickly')
+    pg.keyboard.type(' and more'); pg.reload(); pg.wait_for_selector('body.dk-app-on')      # leaving at once still saves it
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys'))[%r]" % here) == 'a reason typed quickly and more'
+    pg.evaluate("document.getElementById('withwhy').checked = true; renderCrib()")                  # (a reload turned it off)
+    keep = pg.evaluate("localStorage.getItem('ballotta.ballot')")                    # the ballot gone (cleared elsewhere) while a
+    pg.click('#dk-w'); pg.keyboard.type(' late'); pg.evaluate("localStorage.removeItem('ballotta.ballot')")   # save waits:
+    pg.wait_for_timeout(400)                                                        # nothing is written back (Pass 2)
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys'))[%r]" % here) == 'a reason typed quickly and more'
+    assert 'a reason typed quickly and more late' in pg.text_content('#crib'), 'nothing written, but the crib sheet still follows (Pass 3)'
+    pg.evaluate("b => localStorage.setItem('ballotta.ballot', b)", keep)
+    pg.click('#dk-w'); pg.keyboard.type(' SECRET')                                  # typing, then Clear everything at once:
+    with pg.expect_navigation(timeout=10000):                                       # the reason must not come back (Pass 1)
+        pg.evaluate("window.confirm = () => true; clearEverything()")
+    pg.wait_for_load_state(); pg.wait_for_timeout(300)
+    assert pg.evaluate("localStorage.getItem('ballotta.whys')") is None, pg.evaluate("localStorage.getItem('ballotta.whys')")
     ctx.close()
 
 @test
@@ -846,7 +948,9 @@ def a_reload_before_answering_keeps_the_keep_link(b):
         ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.goto(BASE)
         fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]')
         pg.reload(); pg.wait_for_selector('#d-restore[open]', timeout=5000)
-        pg.click('#d-restore [data-close]'); pg.reload(); pg.wait_for_timeout(1500)
+        pg.click('#d-restore [data-close]')
+        pg.wait_for_function("sessionStorage.getItem('ballotta.incoming') === null", timeout=5000)   # the answer lands, then the reload (a race under load, Oct 18)
+        pg.reload(); pg.wait_for_timeout(1500)
         assert not pg.is_visible('#d-restore'), 'asked again after the visitor said no'
         ctx.close()
     # Pass 1: a friend's link that arrives while the question is open is not dropped when it's answered.
@@ -1502,13 +1606,61 @@ def share_names_block_lookalikes_and_nicknames(b):
                 'Cityof Austin', 'Travis Co. Tax Office', 'Travis County Clerk',   # Pass 3
                 'voterguide', 'VOTERGUIDE', 'cityofaustin', 'travisclerk', 'texasvoters', 'travistaxoffice', 'villageofx',
                 'GOPTravis', 'DNCTexas', 'VOTERInfo', 'STATEParty',   # Pass 4
-                'X-GOP', 'GOP-X', 'J/RNC', 'Z+DNC', 'GOP_X']:   # #94: punctuation is a space, even beside a single letter
+                'X-GOP', 'GOP-X', 'J/RNC', 'Z+DNC', 'GOP_X',   # #94: punctuation is a space, even beside a single letter
+                'Ɍepublican', 'Łwv', 'Ɠop', 'Ɗems', 'Ðems', 'Ƿarty', 'Ꝑarty', 'ɍepublican', 'łwv austin',   # #93: stroke and hook letters
+                'LANEGOP', 'TRAVISDEMS', 'AUSTINRNC', 'TEXASDNC',   # #93: shouted, glued to the end
+                'GØP', 'Travis GØP', 'LANEGØP', 'Đemocrat', 'Đems', 'Sŧate', 'Ƈounty', 'Øfficial', 'goƥ', 'Repuƀlican', 'Ɓallotta',   # Pass 1
+                'Repʋblican', 'REPƲBLICAN', 'Coʋnty', 'Partᶌ', 'GƟP', 'Travis GƟP', 'ƟFFICIAL', 'Repʉblican', 'Coʉnty', 'Ꟈemocrat',   # Pass 2
+                'ʋote411', 'Ʋote411', 'ᶌote411', 'ᴃallotta', 'Repuᴃlican', 'ᴌwv', 'Coᵾnty', 'Offᵻcial', 'Electᵻon', 'GꬾP',   # Pass 3
+                'C\U0001DF1Bunty', 'Sta\U0001DF2Ae']:   # Pass 3: letters beyond 16 bits (Latin Extended-G): County, State
         assert sn(bad) == '', bad
     for good in ['Maya', 'Ana', 'José', "O'Brien", 'Dempsey', 'Ελένη', 'Ольга', '李明', 'Demetria', 'Gopal', 'Mary-Jane', 'Jean-Paul', 'A J', 'Liz 2',
                  'J R R Tolkien', 'A.J.', 'D J', 'R2-D2', "D'Angelo", 'Estate Jones', 'G O Pal', 'Işıl Yılmaz', 'Partyka', 'Admina',
                  'Gustavo Terrazas', 'Ivo Terzić', 'Felicity Ofori', 'Clerkin', 'DeMarco', 'DeShawn', 'McDonald', 'LaToya',   # Pass 3
-                 'Clerkson', 'DeClerck', 'JRRTolkien', 'DJ Khaled', 'MacArthur', 'Gopinath', 'Rajagopal', 'Staten']:   # Pass 4
+                 'Clerkson', 'DeClerck', 'JRRTolkien', 'DJ Khaled', 'MacArthur', 'Gopinath', 'Rajagopal', 'Staten',   # Pass 4
+                 'Łukasz', 'Ðorđe', 'Ɗemba', 'GOPAL', 'GOPINATH', 'ADAM', 'Lanegop', 'MARIA', 'Ådne',   # #93
+                 'ERDEM', 'ERDEM YILMAZ', 'ÖZDEM', 'Erdem', 'Søren', 'Bjørn', 'Đorđe Petrović', 'Ørjan',   # Pass 1
+                 'Đặng Thị Đào', 'Ɗanjuma Ƙabir', 'Ɓello Ƴaro', 'Łucja Dembska', 'Muħammad Ħili', 'Sigríður Eðvarðsdóttir']:   # Pass 2
         assert sn(good) == good, good
+    odd = '¼Joﷺﬃﷺ'                                                             # Pass 2: the cut lands after a space
+    assert sn(sn(odd)) == sn(odd) and sn(odd) and not sn(odd).endswith(' '), repr(sn(odd))
+    ctx.close()
+
+@test
+def a_refused_share_name_is_said_to_the_sender(b):
+    # #93: a name the friend's page would refuse ("Travis GOP") went into the link anyway, and the sender was never told:
+    # the friend just saw "Your friend". Now the sender sees why under the box (Lane's words), and the name is neither
+    # sent nor kept. Names are cut at 30 characters, never inside one (an emoji is two UTF-16 units).
+    ctx, pg = new_page(b, wide=True, county='stub'); pg.goto(BASE); lookup_wide(pg)
+    pg.evaluate('''() => { const c = ballot[0].c.id;
+        pick(c, document.querySelector('[data-c="' + c + '"][data-pick]:not([data-pick="__skip"])').dataset.pick); }''')
+    pg.evaluate('openShare()')
+    note = lambda: pg.text_content('#sharename-no')
+    assert note() == '' and pg.get_attribute('#sharename', 'aria-describedby') == 'sharename-no'
+    pg.evaluate("window.__notes = []; new MutationObserver(() => __notes.push(document.getElementById('sharename-no').textContent)).observe(document.getElementById('sharename-no'), { childList: true, characterData: true, subtree: true })")
+    pg.click('#sharename'); pg.keyboard.type('Demi', delay=60)                     # "Dem…" on the way to "Demi" is not refused (Pass 1)
+    pg.wait_for_timeout(1000)
+    assert not [x for x in pg.evaluate('__notes') if x] and note() == '' and pg.evaluate('sharePrep.name') == 'Demi', pg.evaluate('__notes')
+    pg.fill('#sharename', 'Travis GOP')
+    assert pg.evaluate('sharePrep.name') == '', 'a refused name is never sent, even before the note shows'
+    pg.wait_for_function("document.getElementById('sharename-no').textContent !== ''", timeout=3000)   # once typing pauses
+    assert note() == 'That name can’t be used. Try your first name.', note()
+    pg.fill('#sharename', 'Maya  Lee'); assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya Lee'   # cleaned, still sent
+    pg.fill('#sharename', 'Travis GØP'); pg.evaluate("document.getElementById('sharename').blur()")
+    assert note() == 'That name can’t be used. Try your first name.' and pg.evaluate('sharePrep.name') == ''      # leaving the box: at once
+    pg.evaluate(r"document.getElementById('sharename').value = 'Travis­́GOP'; prepShare()")   # passes once, refused when checked again (Pass 1)
+    assert pg.evaluate('sharePrep.name') == '', ('a name the friend\'s page would refuse goes into the link', pg.evaluate('sharePrep.name'))
+    url = pg.evaluate('sharePrep.p')
+    frag = url.split('#', 1)[1]
+    assert pg.evaluate('f => unpackFrag(f).then(o => o.n)', frag) == '', 'a refused name went into the link'
+    pg.fill('#sharename', 'Maya')
+    assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya'
+    pg.fill('#sharename', 'Travis GOP'); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
+    assert pg.evaluate("localStorage.getItem('ballotta.name')") in (None, '""'), 'a refused name was kept for next time'
+    pg.evaluate(r"document.getElementById('sharename').value = 'a'.repeat(29) + '\u{1F600}\u{1F600}'; prepShare()")
+    got = pg.evaluate('sharePrep.name')
+    assert got == 'a' * 29 + '\U0001F600' and len(got.encode('utf-16-le')) == 62, ('cut inside a character', [hex(ord(c)) for c in got[-2:]])
+    assert pg.evaluate(r"safeName('b'.repeat(29) + '\u{1F600}x')") == 'b' * 29 + '\U0001F600'
     ctx.close()
 
 @desk_test
@@ -2074,7 +2226,7 @@ def phone_pick_reason_fold_and_steps(b):
     assert pg.locator('.dk-line', has_text='Qadri').get_attribute('aria-pressed') == 'true' and cur(pg, 'c070') == ['Zohaib “Zo” Qadri']
     pg.wait_for_function("document.getElementById('ph-count').textContent === '1 of 63 decided'")
     pg.fill('#dk-w', 'Knows the district')
-    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys')).c070") == 'Knows the district'
+    pg.wait_for_function("(JSON.parse(localStorage.getItem('ballotta.whys')) || {}).c070 === 'Knows the district'", timeout=2000)   # saved once typing pauses (#91)
     assert pg.evaluate('window.__persist') == 1, 'the browser is asked to keep the picks at the first one (#49)'
     fold = pg.locator('#ph-fold')
     assert fold.inner_text() == 'About this office · Learn more' and fold.get_attribute('aria-expanded') == 'false'
@@ -4080,7 +4232,7 @@ def laptop_and_phone_why_box_grows_with_the_reason(b):
     h0 = pg.locator('#dk-w').bounding_box()['height']
     pg.click('#dk-w'); pg.keyboard.type(LONG_WHY)
     assert fits(pg, '#dk-w') and pg.locator('#dk-w').bounding_box()['height'] > h0 * 3, ('the phone box grows as you type', h0, pg.locator('#dk-w').bounding_box())
-    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys')).c070") == LONG_WHY
+    pg.wait_for_function("w => (JSON.parse(localStorage.getItem('ballotta.whys')) || {}).c070 === w", arg=LONG_WHY, timeout=2000)   # saved once typing pauses (#91)
     pb_go(pg, 'c071'); assert pg.input_value('#dk-w') == ''
     pb_go(pg, 'c070'); assert fits(pg, '#dk-w') and pg.input_value('#dk-w') == LONG_WHY, 'a long saved reason opens at full height on a phone'
     assert sideways(pg) <= 0 and pg.errs == [], pg.errs

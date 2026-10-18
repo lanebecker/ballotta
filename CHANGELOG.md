@@ -16,6 +16,30 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.1.4] — 2026-10-18
+
+**Wave 6, the voter-facing part** (cold audit). #86–#90 (refactors, and removing the phone rollback) moved to after
+the election (Lane).
+
+### Fixed
+- **Two tabs stay in step** (#92): a tab takes the other tab's saved picks and reasons and shows them, so the one that
+  saves last no longer writes over the other's changes without a word, whichever view it shows. A reason being typed
+  when the other tab saves is kept.
+- **A share name the friend's page would refuse is said to the sender** (#93): "That name can’t be used. Try your first
+  name." (Lane's words) appears under the name box once typing pauses (so "Dem…" on the way to "Demi" isn't refused),
+  and the name is neither sent nor kept. Names are cut at 30 characters, never inside one. Latin letters with a stroke,
+  hook or bar ("GØP", "Đemocrat", "GƟP", "ᴃallotta": 250 letters, from Unicode's own names) are read as their base
+  letter as well as the way Unicode's look-alike table reads them, and shouted party names glued on ("LANEGOP") are
+  refused like the others; "Łukasz", "Søren", "Đặng", "GOPAL" and "ERDEM" are fine.
+
+### Changed
+- **Reasons are saved when typing pauses** (#91): a reason is kept in memory at every keystroke but saved, and the rail
+  and crib sheet redrawn, 150 ms after the last one (each save reached every other tab), and at once when the page is
+  hidden, closed or printed. Clear everything drops a reason still waiting to be saved, in either tab.
+
+### Tests
+- `a_reload_before_answering_keeps_the_keep_link` waits for "No" to land before reloading (it failed once under load).
+
 ## [1.1.3] — 2026-10-18
 
 **Process** (cold audit wave 5), and three vote center spellings.

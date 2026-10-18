@@ -245,6 +245,34 @@ def every_browser_context_gets_the_county_stub():
 
 
 @test
+def stroked_letters_cover_unicode():
+    # #93, Pass 1–2: letters with a stroke, hook or bar ("GØP", "Đemocrat", "GƟP") got a reserved share name past the
+    # page's check. The page's STROKED table is every Latin letter Unicode names "... LETTER X WITH ...", "... BARRED X"
+    # or "... X BAR" (small capitals, blackletter) that normalizing doesn't already strip. This regenerates it with this Python's Unicode data (all
+    # of it below U+A7C0, where it is settled; what the page has above must be right) and checks that every letter the
+    # page looks up, which is the lower case (the page lower-cases first), is there.
+    import unicodedata
+    src = (ROOT / 'source/template-travis.html').read_text(encoding='utf-8')
+    m = re.search(r"const STROKED = \['([^']*)', '([^']*)'\];", src); assert m, 'no STROKED table'
+    page = dict(zip(m.group(1), m.group(2)))                                     # Python strings are code points, like the page's Array.from
+    assert len(m.group(1)) == len(m.group(2)) == len(page) > 240, (len(m.group(1)), len(m.group(2)))
+    pat = re.compile(r'LATIN (?:SMALL |CAPITAL )?(?:LETTER )?(?:SMALL CAPITAL )?(?:LETTER )?(?:BARRED |BLACKLETTER )?([A-Z])(?: WITH (.*)| BAR)?$')
+    def base(ch):
+        nm = unicodedata.name(ch, ''); k = pat.match(nm)
+        if not k or not (' WITH ' in nm or 'BARRED' in nm or nm.endswith(' BAR')): return None
+        if ''.join(c for c in unicodedata.normalize('NFKD', ch) if not unicodedata.combining(c)).lower() == k.group(1).lower(): return None
+        return k.group(1).lower()
+    want = {chr(cp): base(chr(cp)) for lo, hi in [(0x80, 0x2B0), (0x1D00, 0x1DC0), (0x1E00, 0x1F00), (0x2C60, 0x2C80), (0xA720, 0xA7C0), (0xAB30, 0xAB70), (0x1DF00, 0x1E000)]
+            for cp in range(lo, hi) if base(chr(cp))}
+    missing = {c: b for c, b in want.items() if page.get(c) != b}
+    wrong = {c: (b, unicodedata.name(c, '?')) for c, b in page.items() if unicodedata.name(c, '') and base(c) != b}
+    unseen = [c for c in page if unicodedata.normalize('NFKD', c) == c and c.lower() != c and c.lower() not in page]
+    assert not missing and not wrong and not unseen, (missing, wrong, unseen)
+    assert all(page.get(c) == b for c, b in zip('ØĐŧƇƥƀɍłɠɗꝑƟɵɄʉᴃᴌᵻᵾꬾ', 'odtcpbrlgdpoouubliuo'))
+    assert "return refused(LOOKALIKE) || refused(LOOKALIKE_STROKE) ? '' : n;" in src, 'a name must be checked with both readings (ʋ: u and v)'
+
+
+@test
 def guide_sites_are_compared_whole():
     # #85: parse_lwv.py reports guide sites it couldn't credit to a ballot candidate. It compared the first 14 characters,
     # so one credited Facebook page claimed every other; a URL cut short at a line wrap must still match its site.

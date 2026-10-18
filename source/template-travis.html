@@ -891,7 +891,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 <dialog class="sheet" id="d-share" aria-labelledby="dsh">
   <div class="handle" aria-hidden="true"></div>
   <div class="sheethead"><h2 id="dsh" style="font-size:26px">Share your picks with a friend</h2><button type="button" class="x" data-close>Close</button></div>
-  <div class="field"><label for="sharename">Your first name <span style="font-weight:400;color:var(--muted)">(so they know it’s you)</span></label><input id="sharename" type="text" maxlength="30" autocomplete="given-name"></div>
+  <div class="field"><label for="sharename">Your first name <span style="font-weight:400;color:var(--muted)">(so they know it’s you)</span></label><input id="sharename" type="text" maxlength="30" autocomplete="given-name" aria-describedby="sharename-no"><span class="limit" id="sharename-no" role="status"></span></div>
   <div><span style="font-size:14px;font-weight:600;display:block;padding-bottom:4px">What to share</span><div id="sharesecs"></div></div>
   <div class="sw" style="border-top:1px solid var(--line)"><label for="sharewhy">Include my reasons<br><span id="sharewhycount"></span></label><input type="checkbox" role="switch" id="sharewhy" checked></div>
   <div class="infobox" id="sharesum" aria-live="polite"></div>
@@ -950,7 +950,8 @@ const SS = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { retu
 // object) can't make the page, Keep or Share throw (#20).
 const plain = (o) => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
 const cleanPicks = (o) => Object.fromEntries(Object.entries(plain(o)).map(([k, v]) => [k, (Array.isArray(v) ? v : [v]).filter(x => typeof x === 'string')]).filter(([, v]) => v.length));  // option names only (#44)
-let picks = cleanPicks(LS.get('ballotta.picks', {})), whys = Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string'));
+const readWhys = () => Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string'));
+let picks = cleanPicks(LS.get('ballotta.picks', {})), whys = readWhys();
 let ballot = [];  // [{c, conf, note}]
 let here = null;  // [lon, lat] of the looked-up address, kept on this device only
 let lastLookup = { mode: '', precinct: '', total: 0 };
@@ -1263,7 +1264,7 @@ function showBallot(list, meta) {
   const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));
   $('groups').innerHTML = LEVELS.filter(L => byLevel[L]).map(L => '<div style="display:flex;flex-direction:column;gap:8px"><h3>' + esc(LEVEL_LABEL[L] || L) + '</h3><div class="list">' + byLevel[L].map(raceHTML).join('') + '</div></div>').join('');
   $('groups').querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => pick(btn.dataset.c, btn.dataset.pick)));
-  $('groups').querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { whys[t.dataset.c] = t.value; LS.set('ballotta.whys', whys); renderCrib(); }));
+  $('groups').querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => whyTyped(t.dataset.c, t)));  // saved once typing pauses (#91)
   quietProgress = true; try { refresh(); } finally { quietProgress = false; }  // showing a ballot isn't progress
   renderVote();/*DESK*/ if (window.desk) try { desk.ballot(meta); } catch (e) {}/*/DESK*/
 }
@@ -1392,6 +1393,20 @@ function cribHTML() {  // the crib sheet, for the phone page and the laptop's cr
   return html;
 }
 function renderCrib() { $('crib').innerHTML = cribHTML(); }
+// #91: a reason is kept in memory at each keystroke, but saved, and the crib sheet and rail redrawn, only once typing
+// pauses (every save is a storage event in each other tab), and at once when the page is hidden or closed.
+let whyTimer = 0, whyTyping = null;  // [contest id, its box] while a save is pending
+function whyTyped(cid, box) { whys[cid] = box.value; whyTyping = [cid, box]; clearTimeout(whyTimer); whyTimer = setTimeout(whySave, 150); }
+function whySave() {
+  clearTimeout(whyTimer); whyTimer = 0;
+  if (!whyTyping) return;
+  whyTyping = null;
+  if (LS.get('ballotta.ballot', null) !== null) LS.set('ballotta.whys', whys);  // everything cleared (here or in another tab): write nothing back (Pass 2); still redraw (Pass 3)
+  renderCrib();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/
+}
+window.addEventListener('pagehide', whySave);
+window.addEventListener('beforeprint', whySave);  // the crib sheet printed carries the reason just typed (Pass 1)
+document.addEventListener('visibilitychange', () => { if (document.hidden) whySave(); });
 $('withwhy').addEventListener('change', renderCrib);
 
 /* ---------- where and when to vote ---------- */
@@ -1716,7 +1731,9 @@ function updateShareSum() {
 }
 let sharePrep = null;  // the link for the sheet's current choices, packed ahead of the tap
 function prepShare(keepShown) {  // keepShown: right after a share, the link just shown stays (Oct 17)
-  const ids = chosenIds(), name = $('sharename').value.trim().slice(0, 30), withWhy = $('sharewhy').checked;
+  const typed = cut30($('sharename').value.trim()), once = safeName(typed), ids = chosenIds(), withWhy = $('sharewhy').checked;
+  const name = once && safeName(once) === once ? once : '';  // the friend's page runs the check on what the link carries (Pass 1)
+  nameNote(typed && !name);  // the friend's page would refuse it: say so here (once typing pauses), send nothing (#93)
   const pk = packPicks(ids, false, withWhy), g0 = LS.get('ballotta.gen', 1), gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1, code = rand8();  // a whole number or 1 (#44)
   const st = { ids, name, withWhy, pk, gen, code, url: null };
   if (!keepShown) $('share-out').classList.add('hidden');  // never leave an older link on screen next to new choices
@@ -1724,9 +1741,18 @@ function prepShare(keepShown) {  // keepShown: right after a share, the link jus
   sharePrep = st; return st;
 }
 $('sharename').addEventListener('input', prepShare);
+// The note waits for typing to pause, or for the box to be left: "Dem…" on the way to "Demi" isn't a refusal, and the
+// note is read aloud (Pass 1). Clearing it never waits.
+let nameNoteTimer = 0, nameRefused = false;
+function nameNote(on) {
+  clearTimeout(nameNoteTimer); nameRefused = on;
+  const say = () => { $('sharename-no').textContent = on ? 'That name can’t be used. Try your first name.' : ''; };
+  if (!on || document.activeElement !== $('sharename')) say(); else nameNoteTimer = setTimeout(say, 700);
+}
+$('sharename').addEventListener('blur', () => nameNote(nameRefused));
 function openShare() {  // Share my picks, from either layout (#38)
   const secs = shareSections();
-  const nm = LS.get('ballotta.name', ''); $('sharename').value = typeof nm === 'string' ? nm.slice(0, 30) : '';  // text only (#44)
+  const nm = LS.get('ballotta.name', ''); $('sharename').value = typeof nm === 'string' ? cut30(nm) : '';  // text only (#44)
   $('sharesecs').innerHTML = secs.length ? secs.map((s, i) => '<div class="sw"><label for="ss' + i + '">' + esc(s.label) + ' <span>· ' + s.ids.length + ' pick' + (s.ids.length === 1 ? '' : 's') + '</span></label><input type="checkbox" role="switch" id="ss' + i + '" data-k="' + s.k + '" data-label="' + esc(s.label) + '" data-ids="' + s.ids.join(',') + '" checked></div>').join('') : '<p class="note">Make a pick or two first; skipped and undecided races aren’t shared.</p>';
   $('sharesecs').querySelectorAll('input').forEach(i => i.addEventListener('change', updateShareSum));
   $('share-out').classList.add('hidden');
@@ -1779,7 +1805,16 @@ const LOOKALIKE_TABLE = {2: "ƧϨᒿꙄꛯꝚ𝟐𝟚𝟤𝟮𝟸🯲", 3: "ƷȜ
 for (const [k, chars] of Object.entries(LOOKALIKE_TABLE)) for (const ch of chars) if (!LOOKALIKE[ch]) LOOKALIKE[ch] = k;
 for (const [k, chars] of Object.entries(LOOKALIKE_TABLE)) for (const ch of chars) { const lc = ch.toLowerCase(); if (lc !== ch && !LOOKALIKE[lc] && !/[a-z0-9]/.test(lc)) LOOKALIKE[lc] = k; }
 for (let i = 0; i < 26; i++) LOOKALIKE[String.fromCodePoint(0x1F1E6 + i)] = String.fromCharCode(97 + i);
+// Letters with a stroke, hook, bar… read as their base letter (#93: "GØP", "Đemocrat", "GƟP", "ᴃallotta"): the Latin
+// letters Unicode names "… X WITH …", "… BARRED X" or "… X BAR" (small capitals and blackletter too) that normalizing
+// doesn't already strip, generated from those names (tests/test_pipeline.py regenerates and compares). A name is checked
+// twice, as Unicode's look-alike table reads it and with these read as their base letter, since the two can differ
+// (ʋ: u or v; Passes 2 and 3). Plus eth and wynn, which look like d and p. Read by code point: some are beyond 16 bits.
+const STROKED = ['ØøĐđĦħĿŀŁłŦŧƀƁƂƃƇƈƊƋƌƑƒƓƗƘƙƚƝƞƟƤƥƫƬƭƮƲƳƴƵƶǅǈǋǤǥǲǾǿȠȡȤȥȴȵȶȺȻȼȽȾȿɀɃɄɆɇɈɉɋɌɍɎɏɓɕɖɗɠɦɨɫɬɭɱɲɳɵɼɽɾʂʈʉʋʐʑʛʝʠᴃᴌᵬᵭᵮᵯᵰᵱᵲᵳᵴᵵᵶᵻᵽᵾᶀᶁᶂᶃᶄᶅᶆᶇᶈᶉᶊᶌᶍᶎᶏᶑᶒᶖᶙẚỾỿⱠⱡⱢⱣⱤⱥⱦⱧⱨⱩⱪⱫⱬⱮⱱⱲⱳⱴⱸⱺⱾⱿꝀꝁꝂꝃꝄꝅꝈꝉꝊꝋꝌꝍꝐꝑꝒꝓꝔꝕꝖꝗꝘꝙꝞꝟꞎꞐꞑꞒꞓꞔꞕꞖꞗꞘꞙꞠꞡꞢꞣꞤꞥꞦꞧꞨꞩꞪꞭꞲꞸꞹꟄꟅꟆꟇꟈꟉꟊꬳꬴꬷꬸꬹꬺꬻꬾꭆꭉꭎꭒꭖꭗꭘꭙꭚ𝼄𝼉𝼑𝼓𝼖𝼚𝼛𝼝𝼞𝼥𝼦𝼧𝼨𝼩𝼪', 'ooddhhllllttbbbbccdddffgikklnnoppttttvyyzzdlnggdoondzzlntaccltszbueejjqrryybcddghilllmnnorrrstuvzzgjqblbdfmnprrstzipubdfgklmnprsvxzadeiuayylllprathhkkzzmvwwveoszkkkkkkllooooppppppqqqqvvlnnccchbbffggkknnrrsshljuucszddsseelllmnorruuxxxxyltllriocsdlnrst'];
+const STROKE_PAIRS = Array.from(STROKED[0]).map((ch, i) => [ch, Array.from(STROKED[1])[i]]);
+LOOKALIKE['ð'] = LOOKALIKE['Ð'] = 'd'; LOOKALIKE['ƿ'] = LOOKALIKE['Ƿ'] = 'p';
 LOOKALIKE['б'] = LOOKALIKE['Б'] = 'b'; LOOKALIKE['ᴩ'] = 'p';  // Unicode lists б as a look-alike of 6 (read as g): "Бор" is "bop", not "gop" (Pass 1, 2)
+const LOOKALIKE_STROKE = Object.assign({}, LOOKALIKE, Object.fromEntries(STROKE_PAIRS));  // last: every fix above applies to both readings (Pass 4)
 const FOLD = { '1': 'l', 'i': 'l', '|': 'l', '!': 'l', '0': 'o', '3': 'e', '4': 'a', '@': 'a', '5': 's', '$': 's', '6': 'g', '7': 't', '8': 'b', '9': 'g',
   '€': 'e', '©': 'c', '¢': 'c' };  // symbols Unicode's table doesn't list as letters (#43)
 const fold = (t) => t.replace(/[1i|!0345@$6789€©¢]/g, ch => FOLD[ch]);
@@ -1792,23 +1827,30 @@ const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].
   + '|\\S{2,}(' + ['voters?', 'cityof'].map(fold).join('|') + ')(\\s|$)');
 const RESERVED_WORDS = new RegExp('(?<![\\p{L}\\p{N}])(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
   'tax ?office'].map(fold).join('|') + ')(?![\\p{L}\\p{N}])', 'u');
+const cut30 = (t) => [...t].slice(0, 30).join('');  // 30 characters, never half of one (#93: an emoji is two UTF-16 units)
 function safeName(n) {
   if (typeof n !== 'string') return '';
-  n = n.normalize('NFKC').replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 30);
-  const latin = (t) => [...t.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()].map(ch => LOOKALIKE[ch] || ch).join('');
-  const low = latin(n), split = latin(n.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
-  const run = (t) => t.replace(/[\s\p{P}\p{S}]/gu, '');
-  const words = (t) => {
-    const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
-    return [t.replace(/[\p{P}\p{S}]/gu, ''), w, w.replace(/(?<=(^|\s)\S)\s(?=\S(\s|$))/gu, '')];
+  n = cut30(n.normalize('NFKC').replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, '').replace(/\s+/g, ' ').trim()).trim();  // cut, then trim again (Pass 2)
+  const refused = (L) => {  // L: how look-alike letters read; a name is checked with each reading (Pass 3)
+    const latin = (t) => [...t.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()].map(ch => L[ch] || ch).join('');
+    const low = latin(n), split = latin(n.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
+    const run = (t) => t.replace(/[\s\p{P}\p{S}]/gu, '');
+    const words = (t) => {
+      const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
+      return [t.replace(/[\p{P}\p{S}]/gu, ''), w, w.replace(/(?<=(^|\s)\S)\s(?=\S(\s|$))/gu, '')];
+    };
+    // Uneven splits ("G OP", "V oter"): from the name as typed, a single letter joins its neighbour, except a
+    // capitalised word ("S Tate" stays a person) (#43, Pass 1).
+    // Small capitals (ᴘ, ᴛ…) look like capitals, so they count as capitals here; a capitalised word needs 3+ letters (Pass 2).
+    const caps = n.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (L[ch] || L[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
+    const uneven = caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim().replace(/(?<=(^|\s)\S)\s(?!\p{Lu}\p{Ll}{2,})|(?<!(^|\s)\p{Lu}\p{Ll}{2,})\s(?=\S(\s|$))/gu, '');
+    const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split), fold(latin(uneven))];
+    // Shouted with a party at the end ("LANEGOP"): all capitals can't be split into words, and no name ends that way;
+    // only at the end, so "GOPAL" is fine (#93).
+    const shouted = caps.split(/[\s\p{P}\p{S}]+/u).some(w => /^[\p{Lu}\p{N}]{5,}$/u.test(w) && /.(gop|dems|rnc|dnc)$/.test(fold(latin(w))));  // not "dem": ERDEM (Pass 1)
+    return shouted || forms.some(t => RESERVED.test(run(t)) || words(t).some(x => RESERVED_WORDS.test(x) || RESERVED_GLUED.test(x)));
   };
-  // Uneven splits ("G OP", "V oter"): from the name as typed, a single letter joins its neighbour, except a
-  // capitalised word ("S Tate" stays a person) (#43, Pass 1).
-  // Small capitals (ᴘ, ᴛ…) look like capitals, so they count as capitals here; a capitalised word needs 3+ letters (Pass 2).
-  const caps = n.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (LOOKALIKE[ch] || LOOKALIKE[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
-  const uneven = caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim().replace(/(?<=(^|\s)\S)\s(?!\p{Lu}\p{Ll}{2,})|(?<!(^|\s)\p{Lu}\p{Ll}{2,})\s(?=\S(\s|$))/gu, '');
-  const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split), fold(latin(uneven))];
-  return forms.some(t => RESERVED.test(run(t)) || words(t).some(x => RESERVED_WORDS.test(x) || RESERVED_GLUED.test(x))) ? '' : n;
+  return refused(LOOKALIKE) || refused(LOOKALIKE_STROKE) ? '' : n;
 }
 function hideFriend() {  // Hide these picks, from either layout (#38)
   $('friend').classList.add('hidden'); $('compare').classList.add('hidden'); SS.del('ballotta.incoming'); friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
@@ -1907,6 +1949,7 @@ $('print').addEventListener('click', printCrib);
 // Clear everything on this device (#29): every ballotta.* key in this browser, then a fresh page. Asks first.
 function clearEverything() {
   if (!confirm('Clear everything Ballotta saved in this browser: your ballot, picks, reasons, map location and share name?')) return;
+  clearTimeout(whyTimer); whyTyping = null;  // a reason waiting to be saved must not come back on the way out (Pass 1)
   track('cleared', { what: 'everything' });
   ['localStorage', 'sessionStorage'].forEach(n => { try { const s = window[n]; Object.keys(s).filter(k => k.startsWith('ballotta.')).forEach(k => s.removeItem(k)); } catch (e) {} });  // blocked storage can't stop the reload
   location.replace(location.pathname);
@@ -1921,7 +1964,20 @@ function footClear() {
 }
 window.addEventListener('storage', () => footClear());  // another tab saved something: the footer button follows (Pass 1)
 // Clear everything in another tab: this tab's copy is stale, so start fresh instead of writing it back.
-window.addEventListener('storage', (e) => { if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null) location.replace(location.pathname); });
+window.addEventListener('storage', (e) => { if (e.key === 'ballotta.ballot' && e.newValue === null && e.oldValue !== null) { clearTimeout(whyTimer); whyTyping = null; location.replace(location.pathname); } });  // nothing waiting to be saved comes back (Pass 1)
+// #92: another tab saved picks or reasons: take its copy and show it, so neither tab writes over the other's changes.
+// A reason being typed here stays on top of it and is saved when typing pauses. Nothing is counted: this tab did nothing.
+window.addEventListener('storage', (e) => {
+  if (e.key !== 'ballotta.picks' && e.key !== 'ballotta.whys') return;
+  const typing = whyTyping;  // (clearing everything removes the ballot too: that listener drops any pending reason)
+  picks = cleanPicks(LS.get('ballotta.picks', {})); whys = readWhys();
+  if (typing) whys[typing[0]] = typing[1].value;
+  if (!ballot.length) return;
+  document.querySelectorAll('[data-c][data-pick]').forEach(btn => { const on = current(btn.dataset.c).includes(btn.dataset.pick); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); if (btn.parentNode.classList.contains('optw')) btn.parentNode.classList.toggle('on', on); });
+  ballot.forEach(x => { const s = $('s' + x.c.id); if (s) s.innerHTML = summaryHTML(x.c.id); const w = $('w' + x.c.id); if (w) w.value = whys[x.c.id] || ''; });  // a box being typed in gets its own text back: its caret stays
+  /*DESK*/if (window.desk) try { desk.syncWhy(); } catch (err) {}/*/DESK*/
+  quietProgress = true; try { refresh(); } finally { quietProgress = false; }
+});
 function clearPicks() { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
 $('reset').addEventListener('click', clearPicks);
 
@@ -2111,9 +2167,8 @@ const desk = (() => {
     fit(ta);
     ta.addEventListener('input', () => {
       fit(ta);
-      whys[c.id] = ta.value; LS.set('ballotta.whys', whys);
       const pw = $('w' + c.id); if (pw) pw.value = ta.value;  // keep the phone layout's box in step
-      renderCrib(); rail();
+      whyTyped(c.id, ta);  // saved, and the rail and crib sheet redrawn, once typing pauses (#91)
     });
     P().querySelectorAll('[data-prompt]').forEach(btn => btn.addEventListener('click', () => {
       ta.value = ta.value.trim() ? ta.value.replace(/\s*$/, ' ') + btn.dataset.prompt : btn.dataset.prompt;
@@ -2344,6 +2399,17 @@ const desk = (() => {
       ui.addr = /^Precinct /.test(first) ? '' : first.split(',')[0].toLowerCase().replace(/\b[a-z]/g, ch => ch.toUpperCase());
       if (idx(ui.cur) < 0) ui.cur = (nextUndecided('') || ballot[0]).c.id;
       render();
+    },
+    syncWhy() {  // another tab's picks or reasons (#92): the open reason box follows (one being typed in keeps its own
+      const ta = $('dk-w');  // text, so its caret stays), and At a glance, which refresh() doesn't redraw, is drawn again (Pass 1)
+      if (ta && ui.view === 'decide') { ta.value = whys[ui.cur] || ''; fit(ta); }
+      else if (ui.view === 'glance') {  // and keyboard focus stays where it was, on any control (Passes 2, 3)
+        const f = document.activeElement, mine = f && f !== document.body && P().contains(f);
+        const key = (el) => el.tagName + (el.id ? '#' + el.id : '') + JSON.stringify(Object.entries(el.dataset)) + (el.getAttribute('href') || '');
+        const k = mine ? key(f) : '', nth = mine ? [...P().querySelectorAll(f.tagName)].filter(x => key(x) === k).indexOf(f) : -1;
+        render();
+        if (mine) { const g = [...P().querySelectorAll(f.tagName)].filter(x => key(x) === k)[nth]; if (g) g.focus({ preventScroll: true }); }
+      }
     },
     refresh() {
       if (!ballot.length) return;
