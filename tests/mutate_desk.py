@@ -322,7 +322,7 @@ M = [
  ('D62 next/ updates whatever worker it finds', BLD, "g && g.scope === new URL('./', location.href).href && g.update()),", "g && g.update()),", ['promotion_hands_the_preview_on']),
  ('D63 the main page updates its own worker for next/', BLD, "g && g.scope === new URL('next/', location.href).href && g.update()", "g && g.update()", ['promotion_hands_the_preview_on']),
  ('D64 the worker keeps nothing at install', BLD, "keep = \"['./']\" if preview else \"['./', 'next/']\"", "keep = \"[]\"", ['promotion_hands_the_preview_on']),
- ('D65 the install waits as long as the line', BLD, "setTimeout(() => stop.abort(), 8000)", "setTimeout(() => {}, 8000)", ['offline_copy_install_never_waits_on_a_slow_line']),
+ ('D65 the install waits as long as the line', BLD, "setTimeout(() => stop.abort(), 8000)", "setTimeout(() => {}, 8000)", ['offline_copy_install_never_waits_on_a_slow_line', 'offline_copy_install_skips_redirects_and_cut_downloads']),
  ('D66 a rollback leaves the offline copy on phones', BLD, '        out["sw.js"] = sw_off_js(False)', '        pass', ['promotion_hands_the_preview_on']),
  ('D67 the shared link vanishes once shared', PREV, "  prepShare(true);  // a fresh link code", "  prepShare();  // a fresh link code", ['shared_link_stays_on_screen_after_sharing']),
  ('D68 an older link stays next to new choices', PREV, "  if (!keepShown) $('share-out').classList.add('hidden');", "  if (false) $('share-out').classList.add('hidden');", ['shared_link_stays_on_screen_after_sharing']),
@@ -404,6 +404,19 @@ M = [
  ('I7 counting on the old address too', BLD, 'UMAMI_DOMAINS = "ballotta.org,www.ballotta.org"', 'UMAMI_DOMAINS = "ballotta.org,www.ballotta.org,lanebecker.github.io"', ['page_is_built_locked_down']),
  ('E38 every built file gets the page CSP', MD_SELF, 'if f.resolve() == PREV.resolve() else None\n    if m and', "if f.suffix == '.html' else None\n    if m and", ['mutation_runner_judges_mutants_honestly']),
  ('E39 phone-ness read after the mutant', MD_SELF, 'csp_meta(rest, \'id="ph-bar"\' in text)', 'csp_meta(rest, \'id="ph-bar"\' in out)', ['mutation_runner_judges_mutants_honestly']),
+ ('W1 Next names the contest already open', PREV, "return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }", 'return nx; }', ['desk_next_never_points_at_the_open_contest']),
+ ('W2 Next never goes on in order', PREV, 'const nx = upNext() || inOrder();', 'const nx = upNext();', ['desk_next_never_points_at_the_open_contest']),
+ ('W3 no in-order label', PREV, 'if (io) return \'<span class="dk-nt">Next: \'', 'if (false) return \'<span class="dk-nt">Next: \'', ['desk_next_never_points_at_the_open_contest']),
+ ('W4 a server error beats the kept copy', ROOT / 'sw.js', "if (typeof first !== 'string' && !bad) return first;", "if (typeof first !== 'string') return first;", ['phone_saved_copy_bar_follows_the_site']),
+ ('W5 a server error is marked as no connection', ROOT / 'sw.js', "bad ? 'error' : first", 'first', ['phone_saved_copy_bar_follows_the_site']),
+ ('W6 only lower-case html tags are marked', BLD, ")(?=[\\\\s>])/i, '$1", ")(?=[\\\\s>])/, '$1", ['offline_copy_marks_any_html_tag']),
+ ('W7 the bar never goes on its own', PREV, 'if (r.ok) savedGone();', 'if (false) savedGone();', ['phone_saved_copy_bar_follows_the_site']),
+ ('W8 no check when the page comes back into view', PREV, "document.addEventListener('visibilitychange', check); ", '', ['phone_saved_copy_bar_follows_the_site']),
+ ('W9 the check asks the offline copy', PREV, "method: 'HEAD', cache: 'no-store'", "method: 'GET', cache: 'no-store'", ['phone_saved_copy_bar_follows_the_site']),
+ ('W10 the install keeps a redirected page', BLD, ' && !res.redirected && c.put(', ' && c.put(', ['offline_copy_install_skips_redirects_and_cut_downloads']),
+ ('W11 no error sentence', PREV, "copy === 'error' ? 'Ballotta isn’t answering' : ", '', ['phone_saved_copy_bar_follows_the_site']),
+ ('W12 an error copy shows no bar', PREV, " || copy === 'error') {", ') {', ['phone_saved_copy_bar_follows_the_site']),
+ ('W13 the page cannot check itself', BLD, "connect-src 'self' https://taxmaps", 'connect-src https://taxmaps', ['page_is_built_locked_down']),
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
 def mutate(f, text, a, z):

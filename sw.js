@@ -21,13 +21,16 @@ self.addEventListener('fetch', (e) => {
   e.waitUntil(net.catch(() => {}));  // a late answer still refreshes the kept copy
   e.respondWith(Promise.race([net.catch(() => 'offline'), new Promise((ok) => setTimeout(ok, 4000, 'slow'))])
     .then(async (first) => {
-      if (typeof first !== 'string') return first;  // the network's own answer
+      // A server error inside 4 seconds (a deploy, a proxy, a portal) counts as no answer when a copy is kept (#74).
+      const bad = typeof first !== 'string' && (first.type === 'error' || (first.type === 'basic' && !first.ok));
+      if (typeof first !== 'string' && !bad) return first;  // the network's own answer
       const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies
       if (!kept) return net;  // nothing kept: wait for the network
       const page = r.mode === 'navigate' && (kept.headers.get('content-type') || '').startsWith('text/html');  // never an image or the manifest, even opened directly
-      return page ? said(kept.clone(), first).catch(() => kept) : kept;
+      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : kept;
     }));
 });
-// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy="offline"> or "slow".
+// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy="offline">,
+// "slow" or "error". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).
 const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');
-  return new Response(t.replace('<html lang="en">', '<html lang="en" data-copy="' + why + '">'), { status: res.status, statusText: res.statusText, headers: h }); });
+  return new Response(t.replace(/^(\s*(?:<!doctype html>\s*)?<html)(?=[\s>])/i, '$1 data-copy="' + why + '"'), { status: res.status, statusText: res.statusText, headers: h }); });

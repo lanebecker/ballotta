@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'b26b1e99f1e2e505c70a275657b6337bd1b5d74673dab37030658c55f75f5536'  # Oct 17: wave 3 (the privacy promise, verified; the JavaScript note)
+LIVE_SHA = '9519d3281a01c5b4b661006e65f540def858cbaebc5a5316488ff91d76e76f7d'  # Oct 18: wave 4 (phone layout follow-ups)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -443,7 +443,7 @@ def page_is_built_locked_down(b):
     assert m and html.index(m.group(0)) < html.index('<script'), 'a CSP meta tag before the first script'
     pol = dict((d.split(' ', 1) + [''])[:2] for d in m.group(1).split('; '))
     assert pol['default-src'] == "'none'" and pol['frame-src'] == "'self'" and pol['base-uri'] == "'none'" and pol['form-action'] == "'none'", pol
-    assert pol['connect-src'] == 'https://taxmaps.traviscountytx.gov https://gateway.umami.is', pol['connect-src']
+    assert pol['connect-src'] == "'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is", pol['connect-src']   # 'self': the saved-copy bar's check (#73)
     srcs = pol['script-src'].split()
     assert srcs[0] == "'self'" and all(x.startswith("'sha256-") for x in srcs[1:]) and len(srcs) == 1 + html.count('<script>'), srcs
     assert '<meta name="referrer" content="no-referrer">' in html and html.index('name="referrer"') < html.index('<script')
@@ -1700,6 +1700,27 @@ def desk_works_without_phone_buttons(b):
 def saved_ballot(pg, nums, pt=None):
     pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', json.dumps({'pr': '999', 'b': nums, 'mode': 'saved', 'at': 0, 'pt': pt})); pg.reload()
 
+@desk_test
+def desk_next_never_points_at_the_open_contest(b):
+    # #53: when the contest that is open is the only undecided one, the laptop's Next control named it and went nowhere.
+    # As on the phone (round I), Next is never the contest already open: it goes on to the next contest in order, and
+    # from the last one to At a glance.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    ui = lambda: pg.evaluate('[desk.ph.ui.view, desk.ph.ui.cur]')
+    for decided, open_, after in ((['c001', 'c071'], 'c070', ['decide', 'c071']), (['c001', 'c070'], 'c071', ['glance', 'c071'])):
+        pg.evaluate("ids => localStorage.setItem('ballotta.picks', JSON.stringify(Object.fromEntries(ids.map(id => [id, [optionsOf(BYID[id])[0]]]))))", decided)
+        saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+        pg.evaluate('id => desk.ph.go(id)', open_); pg.wait_for_timeout(200)
+        assert ui() == ['decide', open_], ui()
+        label = pg.inner_text('#dk-next')
+        assert 'Next undecided' not in label, (open_, 'names the contest already open', label)
+        assert label.startswith('Next: ' if open_ == 'c070' else 'Last contest · see At a glance'), (open_, label)   # Lane, Oct 18
+        pg.click('#dk-next'); pg.wait_for_timeout(200)
+        assert ui() == after, (open_, ui())
+        pg.evaluate('id => desk.ph.go(id)', open_); pg.focus('#dk-paper'); pg.keyboard.press('n'); pg.wait_for_timeout(200)
+        assert ui() == after, (open_, 'N', ui())
+    ctx.close()
+
 @test
 def share_names_close_remaining_gaps(b):
     # #43: Unicode's look-alike table (not a hand-made map), flag letters, a stray space next to a single letter,
@@ -2095,12 +2116,25 @@ def phone_home_screen_app_pastes_picks(b):
 
 class Flip(http.server.SimpleHTTPRequestHandler):           # the repo's files, except any path in swap (served as given) or gone (404)
     swap, gone, fail, hits, slow, gzip = {}, set(), {}, [], {}, False   # fail: path -> a status to answer instead (503, say); hits: paths asked for; slow: path -> seconds; gzip: pages sent gzipped, as GitHub Pages does
+    moved, stall = {}, {}   # moved: path -> where a 301 sends it; stall: path -> seconds to hang after sending half the page (#54)
     def log_message(self, *a): pass
+    def do_HEAD(self):                                       # the saved-copy bar's check that the site answers again (#73)
+        p = self.path.split('?')[0]
+        Flip.hits.append('HEAD ' + p)
+        if p in Flip.slow: time.sleep(Flip.slow[p])
+        if p in Flip.gone or p in Flip.fail: self.send_response(404 if p in Flip.gone else Flip.fail[p]); self.end_headers(); return
+        return super().do_HEAD()
     def do_GET(self):
         Flip.hits.append(self.path.split('?')[0])
         if self.path.split('?')[0] in Flip.slow: time.sleep(Flip.slow[self.path.split('?')[0]])
         if self.path.split('?')[0] in Flip.gone: return self.send_error(404)
         if self.path.split('?')[0] in Flip.fail: return self.send_error(Flip.fail[self.path.split('?')[0]])
+        if self.path.split('?')[0] in Flip.moved:
+            self.send_response(301); self.send_header('Location', Flip.moved[self.path.split('?')[0]]); self.send_header('Content-Length', '0'); self.end_headers(); return
+        if self.path.split('?')[0] in Flip.stall:
+            body = Flip.swap.get(self.path.split('?')[0]) or (ROOT / self.path.split('?')[0].lstrip('/')).read_bytes()
+            self.send_response(200); self.send_header('Content-Type', 'text/html; charset=utf-8'); self.send_header('Content-Length', str(len(body))); self.end_headers()
+            self.wfile.write(body[:len(body) // 2]); self.wfile.flush(); time.sleep(Flip.stall[self.path.split('?')[0]]); return
         body = Flip.swap.get(self.path.split('?')[0])
         if body is None and Flip.gzip and self.path.split('?')[0].endswith('.html'):
             import gzip as gz; body = gz.compress((ROOT / self.path.split('?')[0].lstrip('/')).read_bytes())
@@ -2606,6 +2640,70 @@ def offline_copy_install_never_waits_on_a_slow_line(b):
     finally:
         Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}; ctx.close(); srv.shutdown(); srv.server_close()
 
+@test
+def offline_copy_install_skips_redirects_and_cut_downloads(b):
+    # #54: the install keeps nothing that came by a redirect (a redirected answer to a page is refused when replayed
+    # offline) and nothing cut off partway (the 8-second abort mid-body), and still keeps the page itself.
+    m = build_module()
+    files = {'/index.html': m.build(phone=True), '/sw.js': m.sw_js(False), '/next/': m.moved_page()}
+    for mode in ('moved', 'stall'):
+        Flip.swap, Flip.gone, Flip.fail, Flip.slow = {k: v.encode('utf-8') for k, v in files.items()}, set(), {}, {}
+        Flip.moved, Flip.stall = ({'/next/': '/index.html'}, {}) if mode == 'moved' else ({}, {'/next/': 25})
+        srv, url = own_server(); base = url.split('/', 3)[0] + '//' + url.split('/', 3)[2] + '/'
+        ctx, pg = phone_page(b, sw=True)
+        try:
+            pg.goto(base + 'index.html'); t0 = time.time()
+            poll(pg, "navigator.serviceWorker.getRegistration().then(g => !!(g && g.active))", 20)
+            assert time.time() - t0 < 15, (mode, 'the install waited', time.time() - t0)
+            assert '/next/' in Flip.hits, (mode, 'the install never asked for next/')
+            assert pg.evaluate(f"caches.open('ballotta-1').then(c => c.match('{base}next/')).then(r => !r)"), (mode, 'next/ was kept')
+            assert pg.evaluate(f"caches.open('ballotta-1').then(c => c.match('{base}')).then(r => !!r)"), (mode, 'the page itself was lost')
+        finally:
+            Flip.swap, Flip.gone, Flip.fail, Flip.slow, Flip.moved, Flip.stall = {}, set(), {}, {}, {}, {}; ctx.close(); srv.shutdown(); srv.server_close()
+
+@test
+def offline_copy_marks_any_html_tag(b):
+    # #75: the worker marks a kept page by its opening <html> tag, whatever attributes it carries, not by one exact
+    # string, so a template change can't quietly stop the saved-copy bar. Only the document's own opening tag.
+    src = build_module().sw_js(False)
+    said = src[src.index('const said = '):]
+    ctx, pg = new_page(b); pg.goto(BASE)
+    run = lambda html: pg.evaluate("([s, h]) => (0, eval)('(() => { ' + s + '; return said; })()')(new Response(h, { headers: { 'content-type': 'text/html' } }), 'slow').then(r => r.text())", [said, html])
+    for html in ('<!doctype html>\n<html lang="en">x', '<!doctype html>\n<html lang="en" class="phone">x', '<!DOCTYPE html><HTML LANG="en">x', '<html lang="en-US" dir="ltr">x'):
+        out = run(html)
+        assert out.count('data-copy="slow"') == 1 and out.endswith('x'), (html, out)
+    out = run('<!doctype html>\n<html lang="en"><script>const s = "<html>";</script>')
+    assert out.count('data-copy') == 1 and out.index('data-copy') < out.index('<script>'), out
+    ctx.close()
+
+@phone_test
+def phone_saved_copy_bar_follows_the_site(b):
+    # #73: the "Slow connection" bar goes once the site answers again (checked when the page comes back into view, and
+    # every so often), not only on the browser's "online" event, which a slow line never fires. #74: a server error that
+    # arrives inside 4 seconds (a deploy, a proxy) opens the kept page, saying so, never the error.
+    Flip.swap, Flip.gone, Flip.fail, Flip.slow, Flip.gzip = {}, set(), {}, {}, False; srv, url = own_server(); up = True
+    ctx, pg = phone_page(b, csp=True, sw=True); pg.add_init_script(CSP_WATCH)
+    bar, visible = pg.locator('#ph-saved'), lambda: pg.evaluate("!document.getElementById('ph-saved').classList.contains('hidden')")
+    seen = lambda: pg.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+    try:
+        pg.goto(url); poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
+        Flip.slow = {'/' + PAGE: 7}; pg.reload(timeout=20000); Flip.slow = {}
+        assert visible() and 'Slow connection' in bar.inner_text()
+        seen(); poll(pg, "document.getElementById('ph-saved').classList.contains('hidden')", 10)
+        Flip.fail = {'/' + PAGE: 503}; pg.reload(timeout=20000)
+        assert pg.get_attribute('html', 'data-copy') == 'error' and pg.locator('#start h1').is_visible(), ('a 503 was shown, not the kept page', pg.content()[:200])
+        assert visible() and "isn’t answering" in bar.inner_text() and 'copy saved on your phone' in bar.inner_text(), bar.inner_text()
+        seen(); pg.wait_for_timeout(1500); assert visible(), 'the site still answers with an error: the bar stays'
+        Flip.fail = {}; seen(); poll(pg, "document.getElementById('ph-saved').classList.contains('hidden')", 10)
+        srv.shutdown(); srv.server_close(); up = False
+        pg.reload(timeout=20000); assert visible() and 'No connection' in bar.inner_text()
+        seen(); pg.wait_for_timeout(1500); assert visible(), 'no connection: the bar stays'
+        assert pg.evaluate('window.__csp') == [], pg.evaluate('window.__csp')
+    finally:
+        Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}
+        ctx.close()
+        if up: srv.shutdown(); srv.server_close()
+
 @phone_test
 def laptops_stay_laptops_after_a_narrow_start(b):
     # C1, C2: a narrow window on a laptop (a mouse, not a finger) never installs the offline copy; a laptop-wide Home
@@ -2954,7 +3052,7 @@ def phone_page_is_locked_down(b):
     assert m and html.index(m.group(0)) < html.index('<script'), 'a CSP meta tag before the first script'
     pol = dict((d.split(' ', 1) + [''])[:2] for d in m.group(1).split('; '))
     assert pol['default-src'] == "'none'" and pol['frame-src'] == "'self'" and pol['base-uri'] == "'none'" and pol['form-action'] == "'none'", pol
-    assert pol['connect-src'] == 'https://taxmaps.traviscountytx.gov https://gateway.umami.is', pol['connect-src']
+    assert pol['connect-src'] == "'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is", pol['connect-src']   # 'self': the saved-copy bar's check (#73)
     srcs = pol['script-src'].split()
     assert srcs[0] == "'self'" and all(x.startswith("'sha256-") for x in srcs[1:]) and len(srcs) == 1 + html.count('<script>'), srcs
     assert '<meta name="referrer" content="no-referrer">' in html and html.index('name="referrer"') < html.index('<script')

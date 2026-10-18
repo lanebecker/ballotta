@@ -2056,9 +2056,15 @@ const desk = (() => {
   function where(b) { say({ move: b.c }); }  // a move to another contest: the paper's own label never changes (#39)
   // Decide by mouse puts you back on the paper, where the keys work; by keyboard you stay on the tabs (Pass 2).
   function setView(v, toPaper) { ui.view = v; save(); render(); if (WIDE.matches) { window.scrollTo(0, 0); if (v === 'decide' && toPaper) P().focus({ preventScroll: true }); } }
+  // Next is never the contest already open (it would go nowhere, #53, as on the phone): when the open contest is the only
+  // undecided one, Next goes on to the next contest in order, and from the last one to At a glance.
+  function upNext() { const nx = nextUndecided(ui.cur); return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }
+  function inOrder() { const i = idx(ui.cur); return ui.view === 'decide' && nextUndecided(ui.cur) && i < ballot.length - 1 ? ballot[i + 1] : null; }
   function nextLabel() {
-    const nx = nextUndecided(ui.cur);
-    return nx ? '<span class="dk-nt">Next undecided: ' + esc(cleanTitle(nx.c)) + '</span> <span class="kbd" aria-hidden="true">N</span>' : '<span class="dk-nt">All decided · see At a glance</span>';
+    const nx = upNext(), io = !nx && inOrder(), k = ' <span class="kbd" aria-hidden="true">N</span>';
+    if (nx) return '<span class="dk-nt">Next undecided: ' + esc(cleanTitle(nx.c)) + '</span>' + k;
+    if (io) return '<span class="dk-nt">Next: ' + esc(cleanTitle(io.c)) + '</span>' + k;
+    return nextUndecided(ui.cur) ? '<span class="dk-nt">Last contest · see At a glance</span>' + k : '<span class="dk-nt">All decided · see At a glance</span>';
   }
   function line(c, val, sub, k, links) {
     const on = current(c.id).includes(val), F = friend && friend.P[c.id];
@@ -2206,7 +2212,7 @@ const desk = (() => {
   /* ----- actions ----- */
   function act(a, focus) {
     if (a === 'prev') { const i = idx(ui.cur); if (i > 0) go(ballot[i - 1].c.id, focus); }
-    else if (a === 'next') { const nx = nextUndecided(ui.cur); if (nx) go(nx.c.id, focus); else setView('glance'); }
+    else if (a === 'next') { const nx = upNext() || inOrder(); if (nx) go(nx.c.id, focus); else setView('glance'); }
     else if (a === 'hidefriend') { hideFriend(); if (WIDE.matches) P().focus({ preventScroll: true }); }
     else if (a === 'print') printCrib();
   }
@@ -2630,13 +2636,18 @@ const phone = (() => {
   // The kept copy says so (Lane, B4): sw.js marks a page it answered from this phone's copy, offline or after 4 seconds
   // with no answer. Try again reloads; the bar goes when the network comes back.
   const copy = document.documentElement.dataset.copy;
-  if (copy === 'offline' || copy === 'slow') {
-    $('ph-saved').querySelector('b').textContent = (copy === 'slow' ? 'Slow connection' : 'No connection') + ', so this is the copy saved on your phone.';
+  const savedGone = () => { $('ph-saved').classList.add('hidden'); document.documentElement.classList.remove('ph-saved-on'); };
+  if (copy === 'offline' || copy === 'slow' || copy === 'error') {
+    $('ph-saved').querySelector('b').textContent = (copy === 'slow' ? 'Slow connection' : copy === 'error' ? 'Ballotta isn’t answering' : 'No connection') + ', so this is the copy saved on your phone.';
+    // The bar goes once the site answers again (#73): a slow line or a server error never fires "online". Checked when the
+    // page comes back into view and every 20 seconds, with a HEAD request the offline copy never answers.
+    const check = () => { if (document.visibilityState !== 'hidden' && !$('ph-saved').classList.contains('hidden')) fetch(location.href, { method: 'HEAD', cache: 'no-store' }).then((r) => { if (r.ok) savedGone(); }).catch(() => {}); };
+    document.addEventListener('visibilitychange', check); setInterval(check, 20000);
     $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
     savedSay();
   }
   $('ph-saved-go').addEventListener('click', () => location.reload());
-  window.addEventListener('online', () => { $('ph-saved').classList.add('hidden'); document.documentElement.classList.remove('ph-saved-on'); });
+  window.addEventListener('online', savedGone);
   try {  // the offline copy: phones and tablets only (C1)
     if ('serviceWorker' in navigator) {
       const sw = navigator.serviceWorker;

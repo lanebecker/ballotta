@@ -80,7 +80,7 @@ def strip_phone(html):
 # ---- Content-Security-Policy (#36). Only the page's own inline scripts (by hash) and files from this site run; data
 # goes only to the county map server and the counting service; frames only from this site (the Census sandbox).
 PAGE_CSP = ("default-src 'none'; script-src 'self' {hashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
-            "connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'")
+            "connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'")
 
 
 def script_json(obj):
@@ -163,16 +163,19 @@ SW_JS = (
     "  e.waitUntil(net.catch(() => {}));  // a late answer still refreshes the kept copy\n"
     "  e.respondWith(Promise.race([net.catch(() => 'offline'), new Promise((ok) => setTimeout(ok, 4000, 'slow'))])\n"
     "    .then(async (first) => {\n"
-    "      if (typeof first !== 'string') return first;  // the network's own answer\n"
+    "      // A server error inside 4 seconds (a deploy, a proxy, a portal) counts as no answer when a copy is kept (#74).\n"
+    "      const bad = typeof first !== 'string' && (first.type === 'error' || (first.type === 'basic' && !first.ok));\n"
+    "      if (typeof first !== 'string' && !bad) return first;  // the network's own answer\n"
     "      const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies\n"
     "      if (!kept) return net;  // nothing kept: wait for the network\n"
     "      const page = r.mode === 'navigate' && (kept.headers.get('content-type') || '').startsWith('text/html');  // never an image or the manifest, even opened directly\n"
-    "      return page ? said(kept.clone(), first).catch(() => kept) : kept;\n"
+    "      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : kept;\n"
     "    }));\n"
     "});\n"
-    "// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy=\"offline\"> or \"slow\".\n"
+    "// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy=\"offline\">,\n"
+    "// \"slow\" or \"error\". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).\n"
     "const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');\n"
-    "  return new Response(t.replace('<html lang=\"en\">', '<html lang=\"en\" data-copy=\"' + why + '\">'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
+    "  return new Response(t.replace(/^(\\s*(?:<!doctype html>\\s*)?<html)(?=[\\s>])/i, '$1 data-copy=\"' + why + '\"'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
 SW_OFF_JS = (
     "// Built by source/build_site.py: removes Ballotta's offline copy from this browser. It takes the open pages over first,\n"
     "// so the old copy can't keep filling its cache, then deletes its caches (only Ballotta's), then itself.\n"
