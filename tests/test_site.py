@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '72269c11c86c87d039fed4968a2af6945a889196bc5ddaaa7697d2065e6de580'  # Oct 17: wave 3 (the privacy promise, verified)
+LIVE_SHA = '88c496638b514edacd7199a9ff7fe767b7da3982a168686dabbe9a7fb3c91b26'  # Oct 17: wave 3 (the privacy promise, verified)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 def stub_tracker(ctx):
     # A stand-in for the tracker that records events. The real tag carries integrity= (issue #68), so a stand-in served as
@@ -460,7 +460,7 @@ def page_is_built_locked_down(b):
     # Issue #69: GitHub Pages can't send frame-ancestors, so the page's first script hides it when it's framed.
     g = '<style id="frame-guard">html{display:none!important}</style>'
     assert html.count(g) == 1 and html.index(g) < html.index('<script'), 'hidden from the start (Pass 1)'
-    assert re.search(r"<script>\s*if \(top === self\) document\.getElementById\('frame-guard'\)\.remove\(\);", html), 'only the first script shows it, and only when not framed'
+    assert re.search(r"<script>\s*if \(top === self\) \{ var guard = document\.getElementById\('frame-guard'\); if \(guard\) guard\.remove\(\); \}", html), 'only the first script shows it, and only when not framed'
 
 @test
 def tracker_runs_only_as_pinned(b):
@@ -487,6 +487,12 @@ def page_refuses_to_show_in_another_sites_frame(b):
         ctx.close()
     ctx, pg = new_page(b); pg.goto(BASE)
     assert pg.evaluate('getComputedStyle(document.documentElement).display') != 'none' and pg.locator('#street').is_visible(), 'not framed: shown'
+    ctx.close()
+    # Pass 2: the guard can never take the first script's link scrub down with it, even if its style were missing.
+    ctx, pg = new_page(b)
+    ctx.route(re.compile(r'.*/index\.html$'), lambda r: (lambda res: r.fulfill(response=res, body=res.text().replace('<style id="frame-guard">html{display:none!important}</style>', '')))(r.fetch()))
+    pg.goto(BASE + '#k2SECRETPICKSAAAAAAAAAAAA'); pg.wait_for_timeout(500)
+    assert pg.evaluate('location.hash') == '', 'the picks link stayed in the address bar'
     ctx.close()
 
 @desk_test
@@ -1189,6 +1195,8 @@ def privacy_firewall_drops_anything_unlisted(b):
     ok = pg.evaluate("({ website: document.querySelector('script[data-website-id]').dataset.websiteId, hostname: location.hostname, screen: screen.width + 'x' + screen.height, language: navigator.language, url: location.origin + '/index.html' })")
     assert bs(dict(ok)) == ok, 'the tracker\'s ordinary fields pass'
     # Each field passes only as its true value, never as something shaped like one (Pass 1).
+    pg.set_viewport_size({'width': 900, 'height': 400}); pg.wait_for_timeout(200)      # a phone turned sideways after load (Pass 2)
+    assert pg.evaluate("screen.width + 'x' + screen.height") != ok['screen'] and bs(dict(ok)) == ok, 'the tracker\'s values from load still pass'
     for k, v in (('website', 'Precinct 300'), ('website', '00078701-0300-4000-8000-0000000000aa'), ('hostname', '1000 Guadalupe St'), ('screen', '78701'),
                  ('screen', '78701x300'), ('language', 'Qadri for Council'), ('language', 'en-Qadri-for-Council'), ('language', 'en-300')):
         assert k not in bs(dict(ok, **{k: v})), (k, v)

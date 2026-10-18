@@ -15,7 +15,7 @@
 <!--/PHONE-->
 <style id="frame-guard">html{display:none!important}</style>
 <script>
-if (top === self) document.getElementById('frame-guard').remove();   /* hidden until here, and in any frame, even one with scripts off (GitHub Pages can't send frame-ancestors; issue #69) */
+if (top === self) { var guard = document.getElementById('frame-guard'); if (guard) guard.remove(); }   /* hidden until here, and in any frame, even one with scripts off (GitHub Pages can't send frame-ancestors; issue #69); never throws, so the scrub below always runs */
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
    or copied by accident. */
@@ -1023,7 +1023,10 @@ const NO_COUNT = (() => { try { return navigator.globalPrivacyControl === true |
 const TOP = ['website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'name'];
 const SPEED = ['ttfb', 'fcp', 'lcp', 'cls', 'inp', 'duration'];
 const TITLE = document.title, PAGE_PATHS = ['/', '/index.html'];
-const REAL = {                                                   // what the tracker reads for each, so nothing else can pass as one
+// What the tracker reads for each, so nothing else can pass as one. It reads screen and language once, when it loads
+// (after this script), so the values as of now pass too: a phone turned sideways later still counts (Pass 2).
+const AT_LOAD = { screen: screen.width + 'x' + screen.height, language: navigator.language };
+const REAL = {
   hostname: () => location.hostname, screen: () => screen.width + 'x' + screen.height, language: () => navigator.language,
   website: () => { const s = document.querySelector('script[data-website-id]'); return s ? s.getAttribute('data-website-id') : null; },
 };
@@ -1038,7 +1041,7 @@ window.ballottaBeforeSend = (type, p) => {
     if (k === 'url') { const u = pageURL(v); if (!u) return null; out.url = u; }
     else if (k === 'referrer') out.referrer = siteOf(v);
     else if (k === 'title') out.title = TITLE;
-    else if (REAL[k]) { if (v === REAL[k]()) out[k] = v; }
+    else if (REAL[k]) { if (v === REAL[k]() || v === AT_LOAD[k]) out[k] = v; }
     else out[k] = v;                                             // name: checked against EVENTS below
   }
   if (type === 'performance') SPEED.forEach(k => { if (typeof p[k] === 'number') out[k] = p[k]; });
