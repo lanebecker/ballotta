@@ -16,6 +16,51 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.1.5] — 2026-10-18
+
+**Round-2 cold audit, wave 0** (`docs/audits/2026-10-18-cold-audit.md`, "round-2 #N"): what had to be right before
+the site goes public on Oct 19.
+
+### Fixed
+- **Travis County MUD No. 41 goes back to no address** (round-2 #1, #99). 0.6.3 sent its seven contests (five tax and
+  bond measures) to the 1,217 addresses the county codes `M41`. The county's codes run in sequence, not by district
+  number: the districts created in 2026 sit at M118–M128, MUD No. 41 was created in May on land whose water system is
+  yet to be built, and M41 sits among long-established districts. So M41 is very likely another district, and those
+  voters were shown contests not on their ballot. Until the Tax Office names its code (#56), no address gets MUD No. 41,
+  and the page says again that one district can't be placed on a map yet. A ballot saved, or a link made, while 1.1.4
+  showed it no longer lists it. The build now stops when a district holding its confirmation election (so, a new one)
+  reaches more than 300 addresses.
+- **Print in an iPhone or iPad Home Screen app says how** (round-2 #6, #104). Printing does nothing there (Lane tried
+  it on his iPhone; Safari prints). There the note under the Print button says: "Printing doesn’t work in a Home
+  Screen app. To print, tap Keep my picks, then Copy link, and open the link in Safari. Print from there." (Lane's
+  wording), and a tap on Print turns the note into a warning instead of doing nothing.
+- **The campaign-site check was run again** (round-2 #2, #100), from an ordinary connection, under 1.1.3's rule: no
+  link a voter sees changes (Okey Anyiam's site answers; Lane checked it in a browser too, and the two 404s stay
+  unlinked).
+
+### Changed
+- **Search engines may list ballotta.org** (round-2 #6, #104; Lane): the page no longer carries `noindex`. The old
+  preview address, `next/`, keeps it.
+- **Pages runs the pipeline tests before it deploys** (round-2 #3, #101), so a data edit the build faithfully copies
+  can't go live before the checks say so. They run in their own job, without the deploy's permissions; a deploy by
+  hand can skip them if PyPI is down during a rollback (`docs/RUNBOOK.md`).
+- **The workflows run on Ubuntu 24.04** (round-2 #4, #102), not `ubuntu-latest`, which moves to Ubuntu 26 from Oct 19.
+- **`check_sites.py` records the rule it used and the sites it checked, with their results**
+  (`data/sites_checked.json`), and `build_learn.py` stops when any has changed since (round-2 #2); a run behind a proxy
+  records no stamp.
+
+### Added
+- **`docs/RUNBOOK.md`** (round-2 #5, #103): taking back a bad release, step by step, as a forward release.
+
+### Tests
+- `mud_41_reaches_no_address_until_its_code_is_confirmed` replaces `mud_41_reaches_its_addresses_marked_double_check`;
+  `a_restored_ballot_keeps_each_contests_own_caveat` uses Travis County MMD No. 1 as its contest whose whole rule is
+  uncertain; `phone_print_in_a_home_screen_app_says_how`.
+- Pipeline: `rules_are_rebuilt_and_new_districts_stay_small`, `campaign_sites_were_checked_with_todays_rule`,
+  `search_engines_may_list_the_page`.
+- Mutants D60, D61 and D61a retargeted to the unrouted contest; P137–P145 for Print in a Home Screen app (on screen,
+  said to a screen reader, on every tap).
+
 ## [1.1.4] — 2026-10-18
 
 **Wave 6, the voter-facing part** (cold audit). #86–#90 (refactors, and removing the phone rollback) moved to after

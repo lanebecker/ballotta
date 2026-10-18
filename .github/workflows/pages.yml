@@ -2,32 +2,61 @@ name: Pages
 
 # #83: publish only the site's own files (`build_site.py --site`: the built pages and what they point at), not the
 # whole repo, so tests/, docs/ and source/ are never served. On every push to main, and by hand.
-# `--site` refuses when the committed build has drifted from its sources (the same check as Build check).
-# Until Settings → Pages → Source is "GitHub Actions", Pages publishes the branch itself: this workflow then builds the
-# folder and says so, but deploys nothing, so it can't fail before the switch.
+# The pipeline tests run first, in their own job with read-only permissions (round-2 audit #3): a hand edit to the
+# answer key or the vote centers that the build faithfully copies would otherwise deploy before Build check, running
+# in parallel, turned red; and the packages they install from PyPI never run where the deploy credentials are.
+# `--site` then refuses when the committed build has drifted from its sources (the same check as Build check).
+# If PyPI itself is down during a rollback, run this workflow by hand with "skip the pipeline tests" (docs/RUNBOOK.md).
+# If Settings → Pages → Source is ever set back to a branch, Pages publishes the branch itself: this workflow then
+# builds the folder and says so, but deploys nothing.
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      skip_pipeline_tests:
+        description: "Skip the pipeline tests (only if PyPI is down during a rollback; --site's build check still runs)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
+  pipeline:
+    if: ${{ !inputs.skip_pipeline_tests }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The PDF libraries the pipeline tests use (pinned in requirements.txt)
+        run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
+      - name: The answer key against the ballot PDF, and the release check, before anything deploys
+        run: python3 tests/test_pipeline.py
+
   deploy:
-    runs-on: ubuntu-latest
+    needs: pipeline
+    if: ${{ !cancelled() && (needs.pipeline.result == 'success' || (needs.pipeline.result == 'skipped' && inputs.skip_pipeline_tests)) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build the site folder
         run: python3 source/build_site.py --site _site
       - name: Where Pages publishes from

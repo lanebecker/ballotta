@@ -536,19 +536,28 @@ def desk_glance_picks_fit_their_names(b):
         ctx.close()
 
 @test
-def mud_41_reaches_its_addresses_marked_double_check(b):
-    # Lane, Oct 17: Travis County MUD No. 41 goes to the addresses the county codes M41 (precinct 142), at medium
-    # confidence ("Double-check") until the Tax Office confirms the code; before, no address reached its 7 contests.
+def mud_41_reaches_no_address_until_its_code_is_confirmed(b):
+    # Round-2 audit #1 (Oct 18): the county's district codes run in sequence, not by district number, so M41 is very
+    # likely an older district, not MUD No. 41 (created May 2026; its order describes raw land). Its 7 contests go to
+    # nobody until the Tax Office confirms a code (#56), and the page says one district can't be placed. This reverses
+    # Oct 17's routing to M41 (0.6.3).
     rows = [f['attributes'] for f in json.loads((ROOT / 'source/data/district_combos.json').read_text())['features']]
     m41 = next(r for r in rows if (r.get('MUD') or '').strip() == 'M41')
-    other = next(r for r in rows if r.get('Precinct') == 142 and (r.get('MUD') or '').strip() != 'M41')
     ctx, pg = new_page(b); pg.goto(BASE)
     ids = pg.evaluate("DATA.contests.filter(c => c.entity === 'Travis County MUD No. 41').map(c => c.id)")
     assert len(ids) == 7, ids
-    got = pg.evaluate("r => route(r).filter(x => x.c.entity === 'Travis County MUD No. 41').map(x => [x.c.id, x.conf, x.note])", m41)
-    assert [g[0] for g in got] == ids and all(g[1] == 'medium' and 'M41' in g[2] for g in got), got
-    assert pg.evaluate("r => route(r).some(x => x.c.entity === 'Travis County MUD No. 41')", other) is False, 'MUD 41 reached an address outside M41'
-    assert "can't be placed on a map" not in pg.content(), 'the page still says MUD 41 cannot be placed'
+    assert all(pg.evaluate("id => DATA.rules[id].clauses === null && DATA.rules[id].conf === 'unrouted'", i) for i in ids), 'MUD 41 still has a rule'
+    assert pg.evaluate("r => route(r).some(x => x.c.entity === 'Travis County MUD No. 41')", m41) is False, 'MUD 41 reached the M41 addresses'
+    assert pg.evaluate("r => route(r).length", m41) > 20, 'the M41 addresses still get the rest of their ballot'
+    assert "one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet" in pg.content(), 'the page no longer says MUD 41 cannot be placed'
+    # A ballot saved, or a Keep link made, while 1.1.4 routed it still lists the 7 contests: they no longer show, and a
+    # Keep link made now leaves them out.
+    nums = [-int(i[1:]) for i in ids]
+    pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '142', b, mode: 'exact', at: 0, pt: null, ln: [] }))", [1, 3] + nums); pg.reload()
+    pg.wait_for_selector('body.dk-app-on')
+    assert pg.evaluate("ballot.map(x => x.c.id)") == ['c001', 'c003'], pg.evaluate("ballot.map(x => x.c.id)")
+    o = pg.evaluate("keepURL().then(u => unpackFrag(u.split('#')[1]))")
+    assert o['b'] == [1, 3], ('a Keep link made now carries MUD 41', o)
     ctx.close()
 
 @test
@@ -875,10 +884,10 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     # #62 (audit #11): after a reload or a Keep link, a contest marked "Double-check" says why, as the live lookup did
     # (the rule's own note), not only the generic line.
     ctx, pg = new_page(b, wide=True); pg.goto(BASE)
-    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '142', b: [1, -193, -194], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload()
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '142', b: [1, -186, -187], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload()
     pg.wait_for_selector('body.dk-app-on')
     notes = pg.evaluate("Object.fromEntries(ballot.map(x => [x.c.id, x.note]))")
-    assert 'M41' in notes['c193'] and 'M41' in notes['c194'] and notes['c001'] == '', notes
+    assert 'M125' in notes['c186'] and 'M125' in notes['c187'] and notes['c001'] == '', notes
     pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70], mode: 'nearby-mixed', at: 0, pt: null }))"); pg.reload()
     pg.wait_for_selector('body.dk-app-on')
     assert 'district line' in pg.evaluate("ballot.find(x => x.c.id === 'c070').note"), 'a contest marked near a district line says so after a reload'
@@ -892,19 +901,19 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     assert lp and 'limited-purpose' in lp and pg.evaluate("ballot.find(x => x.c.id === 'c071').note") == lp, (lp, pg.evaluate("ballot.find(x => x.c.id === 'c071').note"))
     # Pass 1: an address near the Austin city line: the city's propositions are flagged by the line, and say so after a
     # reload too (their rule carries a different note, about limited-purpose residents).
-    # (MUD 41's own rule is uncertain too, so only a record of which contests the line flagged keeps its note right.)
-    near = [dict(COUNTY_REC, MUD='M41', CodeCat='300P03G10J05L49N14C10CA9S01T45ACCM41', LongitudeX=-97.7201, LatitudeY=30.3601),
+    # (MMD No. 1's own rule is uncertain too, so only a record of which contests the line flagged keeps its note right.)
+    near = [dict(COUNTY_REC, MUD='M125', CodeCat='300P03G10J05L49N14C10CA9S01T45ACCM125', LongitudeX=-97.7201, LatitudeY=30.3601),
             dict(COUNTY_REC, Muni='', MuniSMD='', CodeCat='300P03G10J05L49N14S01T45ACC', LongitudeX=-97.7202, LatitudeY=30.3602)]
     stub_county(pg, [['findAddressCandidates', 0, candidate('7 EDGE ST')], ['Address+%3D', 0, {'features': []}], ['geometry=', 0, {'features': [{'attributes': r} for r in near]}]])
     pg.evaluate("() => { document.getElementById('street').value = '7 EDGE ST'; document.getElementById('zip').value = '78757'; lookup(); }")
     pg.wait_for_function("(window.__events || []).filter(e => e[0] === 'ballot_found').length >= 1", timeout=10000)
-    live = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
+    live = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c186'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
     pg.reload(); pg.wait_for_selector('body.dk-app-on')
-    after = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
-    assert set(live) == {'c071', 'c193'} and all('district line' in v for v in live.values()) and after == live, (live, after)
+    after = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c186'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
+    assert set(live) == {'c071', 'c186'} and all('district line' in v for v in live.values()) and after == live, (live, after)
     # Pass 3: a Keep link carries which contests the line flagged, so a restored ballot says the same.
     url = pg.evaluate('keepURL()'); fresh_goto(pg, url); pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
-    kept = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
+    kept = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c186'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
     assert kept == live, ('through a Keep link', live, kept)
     # Without that record (a ballot saved before it existed, a Keep link from an older page): a contest uncertain only by
     # one clause of its rule gets the generic line, never a specific reason that may be false; one whose whole rule is
@@ -912,17 +921,17 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     # (Pass 4: a rule's note says how the address was matched, so without the list it shows only on a ballot from an
     # exact or nearby match, where the line can't have added the contest.)
     for mode in ('nearby-mixed', 'saved', 'exact'):
-        pg.evaluate("m => localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70, -71, -193], mode: m, at: 0, pt: null }))", mode); pg.reload()
+        pg.evaluate("m => localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70, -71, -186], mode: m, at: 0, pt: null }))", mode); pg.reload()
         pg.wait_for_selector('body.dk-app-on')
         n = pg.evaluate("Object.fromEntries(ballot.filter(x => x.conf === 'medium').map(x => [x.c.id, x.note]))")
-        assert n['c071'].startswith('Not confirmed') and (('M41' in n['c193']) if mode == 'exact' else n['c193'].startswith('Not confirmed')), (mode, n)
+        assert n['c071'].startswith('Not confirmed') and (('M125' in n['c186']) if mode == 'exact' else n['c186'].startswith('Not confirmed')), (mode, n)
         assert ('district line' in n['c070']) == (mode == 'nearby-mixed'), (mode, n)
     # Pass 4: another tab's lookup changes what's stored; this tab's Keep link then carries neither its line list nor its precinct.
-    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -193], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload()
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -186], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload()
     pg.wait_for_selector('body.dk-app-on')
-    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '301', b: [1, -70, -193], mode: 'nearby-mixed', at: 0, pt: null, ln: [70, 193] }))")
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '301', b: [1, -70, -186], mode: 'nearby-mixed', at: 0, pt: null, ln: [70, 186] }))")
     o = pg.evaluate("keepURL().then(u => unpackFrag(u.split('#')[1]))")
-    assert 'ln' not in o and o['pr'] != '301' and o['b'] == [1, -193], o
+    assert 'ln' not in o and o['pr'] != '301' and o['b'] == [1, -186], o
     ctx.close()
 
 @test
@@ -2421,6 +2430,40 @@ def phone_add_to_home_screen_three_ways(b):
     ctx.close()
 
 STANDALONE = "Object.defineProperty(navigator, 'standalone', { configurable: true, get: () => true });"
+
+@phone_test
+def phone_print_in_a_home_screen_app_says_how(b):
+    # Round-2 audit #6: Print does nothing in an iPhone Home Screen app (Lane tried it on his iPhone, Oct 18; Safari
+    # prints). There the note under Print says how to print from Safari, and a tap on Print turns it into a warning, on
+    # screen where the voter tapped (not under the bottom bar; an iPad in landscape too: Pass 2) and said by a screen
+    # reader, and never calls print. Safari on the same iPhone, and a Home Screen app elsewhere (Android's prints), are unchanged.
+    NO = 'Printing doesn’t work in a Home Screen app. To print, tap Keep my picks, then Copy link, and open the link in Safari. Print from there.'
+    IPAD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+    for init, ua, home, size in ((STANDALONE, IPHONE_UA, True, None), (STANDALONE, IPHONE_UA, True, {'width': 320, 'height': 568}),
+                                 (STANDALONE + "Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 }); Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' });", IPAD, True, {'width': 1180, 'height': 820}),
+                                 (None, IPHONE_UA, False, None), (STANDALONE, None, False, None)):
+        ctx, pg = phone_page(b, init=init, ua=ua, size=size); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+        pg.evaluate('() => { window.__printed = 0; window.print = () => { window.__printed++; }; }')
+        if size and size['width'] >= 1024: pg.click('#dk-views [data-view="crib"]')
+        else: pa_view(pg, 'crib')
+        note = pg.inner_text('#dk-notes [data-act="print"] + .note')
+        assert (note == NO) == home, (init, ua, size, note)
+        assert (pg.get_attribute('#dk-notes [data-act="print"] + .note', 'role') == 'status') == home, 'a screen reader isn\'t told'
+        assert pg.evaluate("document.getElementById('noprint').textContent") == (NO if home else ''), 'the plain layout\'s note'
+        pg.evaluate("""() => { window.__texts = []; const n = document.querySelector('#dk-notes [data-act="print"] + *');
+            new MutationObserver(() => window.__texts.push(n.textContent)).observe(n, { childList: true, characterData: true, subtree: true }); }""")
+        for tap in (1, 2):   # Pass 3: the second tap too (the first one's class change hid the note from the next)
+            pg.evaluate("document.querySelector('#dk-notes [data-act=\"print\"]').scrollIntoView({ block: 'end' })")   # the button at the screen's bottom edge, as a tap leaves it
+            pg.evaluate("window.__texts.length = 0; document.querySelector('#dk-notes [data-act=\"print\"]').click()"); pg.wait_for_timeout(400)
+            assert pg.evaluate('__printed') == (0 if home else tap), (init, ua, size, tap, 'print was called' if home else 'print was not called')
+            said = pg.evaluate("""(() => { const n = document.querySelector('#dk-notes [data-act="print"] + *'), r = n.getBoundingClientRect();
+                const seen = r.top >= 0 && r.bottom <= innerHeight && [0.1, 0.5, 0.9].every(f => n.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height * f)));
+                return [n.className, n.textContent, seen]; })()""")
+            assert (said[0] == 'status warn' and said[1] == NO and said[2]) == home, (init, ua, size, tap, 'a tap says nothing where the voter can see it', said)
+            if home: assert pg.evaluate('__texts') == ['', NO], (tap, 'the warning isn\'t set anew, so a screen reader may say nothing', pg.evaluate('__texts'))
+        assert NO not in pg.inner_text('#lookupmsg'), 'the address form keeps the print message (Pass 1)'
+        assert (names(pg)[-1:] == ['crib_printed']) != home, names(pg)[-3:]
+        ctx.close()
 
 @phone_test
 def phone_home_screen_app_pastes_picks(b):

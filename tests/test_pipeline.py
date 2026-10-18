@@ -169,6 +169,37 @@ def build_check_catches_drift_and_broken_markers():
         r = run(d); assert r.returncode != 0 and 'DESK' in r.stdout + r.stderr, ('an unpaired marker passed', r.stdout[-400:])
 
 @test
+def rules_are_rebuilt_and_new_districts_stay_small():
+    # Round-2 audit #1: build_rules.py reproduces the committed rules.json, and stops when a district holding its
+    # confirmation election (so, just created) reaches more than 300 addresses: MUD No. 41 routed to M41 reached 1,217.
+    import shutil
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 'source'
+        shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('__pycache__', '*.pdf'))
+        run = lambda: subprocess.run([sys.executable, 'build_rules.py'], capture_output=True, text=True, cwd=str(d))
+        r = run(); assert r.returncode == 0, ('build_rules.py stopped', r.stdout[-600:], r.stderr[-600:])
+        for f in ('rules.json', 'tlc_precincts.json'):
+            assert (d / f).read_bytes() == (ROOT / 'source' / f).read_bytes(), f + ' is not what build_rules.py writes'
+        src = d / 'build_rules.py'; s = src.read_text(encoding='utf-8')
+        unrouted = 'return None, "unrouted", "No confirmed county code for this district yet; asking the Tax Office."'
+        m41 = s.replace(unrouted, 'return [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "medium", "M41"', 1)
+        m41 = m41.replace('\n# A district holding its confirmation election', '\nUNREACHED_OK.pop("Travis County MUD No. 41")\n# A district holding its confirmation election', 1)
+        assert m41.count('M41') >= 3 and 'UNREACHED_OK.pop' in m41, 'the test no longer finds what it changes'
+        src.write_text(m41, encoding='utf-8'); r = run()
+        assert r.returncode != 0 and "'Travis County MUD No. 41': 1217" in r.stdout + r.stderr, ('MUD No. 41 on M41 passed the build', r.stdout[-600:], r.stderr[-400:])
+        src.write_text(m41.replace('CONFIRMATION_OK = {}', 'CONFIRMATION_OK = {"Travis County MUD No. 41": "test"}', 1), encoding='utf-8')
+        assert run().returncode == 0, 'an explained new district still stops the build'
+
+@test
+def search_engines_may_list_the_page():
+    # Round-2 audit #6 (Lane, Oct 18): from the public launch, search engines may list ballotta.org. The old preview
+    # address (next/), now a page that sends people on, stays unlisted.
+    robots = re.compile(r'<meta\s+name="robots"[^>]*noindex', re.I)
+    assert not robots.search((ROOT / 'index.html').read_text(encoding='utf-8')), 'index.html still asks search engines not to list it'
+    assert not robots.search((ROOT / 'source/template-travis.html').read_text(encoding='utf-8')), 'the template still carries noindex'
+    assert robots.search((ROOT / 'next/index.html').read_text(encoding='utf-8')), 'the moved preview page lost its noindex'
+
+@test
 def site_folder_holds_only_the_site():
     # #83: Pages publishes the folder `build_site.py --site` writes: every built file and the files the pages point at,
     # nothing else (no tests/, docs/, source/), and nothing at all when the build check fails.
@@ -304,6 +335,32 @@ def every_guide_measure_belongs_to_a_contest():
 
 
 @test
+def campaign_sites_were_checked_with_todays_rule():
+    # Round-2 audit #2: 1.1.3 changed the broken-link rule but the shipped results came from the Oct 14 run, so a site
+    # the new rule unlinks stayed linked. The results must carry today's rule and today's list of sites, and every site
+    # that never answered must carry curl's exit code; build_learn.py stops otherwise (the same stale()).
+    import copy, importlib
+    cs = importlib.import_module('check_sites')
+    r = json.loads(cs.P.read_text(encoding='utf-8')); stamp = json.loads(cs.STAMP.read_text()) if cs.STAMP.exists() else None
+    assert cs.stale(r, stamp) is None, cs.stale(r, stamp)
+    assert cs.stale(r, dict(stamp, rule=cs.RULE - 1)), 'results from an older rule passed'
+    assert cs.stale(r, None), 'no record passed'
+    moved = copy.deepcopy(r); ch = next(k for k, v in moved.items() if v.get('site')); moved[ch]['site'] += '.example'
+    assert cs.stale(moved, stamp), 'a site changed after the check passed'
+    edited = copy.deepcopy(r); edited[ch]['http'] = '404' if str(edited[ch].get('http')) != '404' else '200'
+    assert cs.stale(edited, stamp), 'a result edited by hand after the check passed'
+    old = copy.deepcopy(r); old[ch]['http'] = '000'; old[ch].pop('curl', None)                 # as if stamped after these results
+    assert cs.stale(old, dict(stamp, sites=cs.digest(old))), 'an unanswered site without curl\'s exit code passed'
+    old[ch]['curl'] = 35; assert cs.stale(old, dict(stamp, sites=cs.digest(old))) is None
+    del old[ch]['http']; assert cs.stale(old, dict(stamp, sites=cs.digest(old))), 'a site with no result passed'
+    import shutil                                                            # and build_learn.py stops on it
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__'))
+        (d / 'data/sites_checked.json').write_text(json.dumps(dict(stamp, rule=cs.RULE - 1)), encoding='utf-8')
+        r = subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d))
+        assert r.returncode != 0 and 'out of date' in r.stderr, ('build_learn.py used results from an older rule', r.stderr[-300:])
+
+@test
 def a_site_is_broken_only_when_it_surely_is():
     # #85: check_sites.py took "no answer" as working, so a site whose name doesn't resolve, or whose secure connection
     # fails (Okey Anyiam's, Oct 17), stayed linked. Now curl's exit code counts (6, 35); bot walls and timeouts don't; a
@@ -364,9 +421,20 @@ def a_site_is_broken_only_when_it_surely_is():
         lwv = json.loads((d / 'data/lwv_candidates.json').read_text(encoding='utf-8'))
         lwv['Okey Anyiam (DEM)'].update(http='000', curl=35)
         (d / 'data/lwv_candidates.json').write_text(json.dumps(lwv), encoding='utf-8')
+        (d / 'data/sites_checked.json').write_text(json.dumps({'rule': cs.RULE, 'sites': cs.digest(lwv)}), encoding='utf-8')   # as a check that found it so
         r = subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d)); assert r.returncode == 0, r.stderr[-600:]
         e = json.loads((d / 'learn.json').read_text(encoding='utf-8'))[lwv['Okey Anyiam (DEM)']['contest']]['cands']['Okey Anyiam']
         assert e.get('s') is None and e.get('sx') == 1, e
+        # Pass 1 (round 2): a run behind a proxy, when told to go ahead, leaves no stamp, so build_learn.py stops.
+        assert (d / 'data/sites_checked.json').exists()
+        r = subprocess.run([sys.executable, str(d / 'check_sites.py'), '--behind-proxy'], capture_output=True, text=True, timeout=300,
+                           env={**{k: v for k, v in os.environ.items() if k.lower() not in ('no_proxy', 'https_proxy', 'http_proxy', 'all_proxy')},   # every request fails at once,
+                                **{k: 'http://127.0.0.1:9' for k in ('https_proxy', 'http_proxy', 'HTTPS_PROXY', 'ALL_PROXY')}})   # never reaching a site
+        assert r.returncode == 0 and not (d / 'data/sites_checked.json').exists(), ('a run behind a proxy was stamped', r.stdout[-300:], r.stderr[-300:])
+        got = json.loads((d / 'data/lwv_candidates.json').read_text(encoding='utf-8'))
+        assert all(v['http'] == '000' for v in got.values() if v.get('site')), 'a request got past the dead proxy (a ~/.curlrc?): this test reached a site'
+        r = subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d))
+        assert r.returncode != 0 and 'out of date' in r.stderr, r.stderr[-300:]
 
 
 if __name__ == '__main__':

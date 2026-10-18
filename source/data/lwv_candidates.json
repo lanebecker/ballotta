@@ -275,7 +275,7 @@
   "answered": true,
   "unopposed": false,
   "url": "https://www.claytontuckertx.com",
-  "http": "403"
+  "http": "200"
  },
  "Austin R. Kelly (LIB)": {
   "contest": "c011",
@@ -403,7 +403,7 @@
   "answered": true,
   "unopposed": false,
   "url": "https://okeyanyiamforjudge.com",
-  "http": "000"
+  "http": "200"
  },
  "Mark Ash (LIB)": {
   "contest": "c017",
@@ -540,8 +540,8 @@
   "site": "juliefortexassenate.com",
   "answered": true,
   "unopposed": false,
-  "url": "http://juliefortexassenate.com",
-  "http": "503"
+  "url": "https://juliefortexassenate.com",
+  "http": "200"
  },
  "Judith Zaffirini (DEM)": {
   "contest": "c021",
@@ -1062,8 +1062,8 @@
   "site": "www.FarrahAbraham.com",
   "answered": true,
   "unopposed": false,
-  "url": "http://www.FarrahAbraham.com",
-  "http": "503"
+  "url": "https://www.FarrahAbraham.com",
+  "http": "200"
  },
  "Ryan Alter": {
   "contest": "c068",
@@ -1177,7 +1177,8 @@
   "answered": true,
   "unopposed": false,
   "url": "https://www.facebook.com/ArminaeMcDonaldLagoVista",
-  "http": "200"
+  "http": "200",
+  "curl": 92
  },
  "Norma Owen": {
   "contest": "c086",
@@ -1611,7 +1612,7 @@
   "answered": true,
   "unopposed": false,
   "url": "https://www.serenity4lisd.com",
-  "http": "429"
+  "http": "200"
  },
  "Gerald Prater": {
   "contest": "c133",
@@ -1776,8 +1777,8 @@
   "site": "cuero4rrisd.com",
   "answered": true,
   "unopposed": false,
-  "url": "http://cuero4rrisd.com",
-  "http": "503"
+  "url": "https://cuero4rrisd.com",
+  "http": "200"
  },
  "Troy J. Evanovich": {
   "contest": "c145",

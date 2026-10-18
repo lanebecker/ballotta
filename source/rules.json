@@ -2269,116 +2269,39 @@
   "note": "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
  },
  "c193": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c194": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c195": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c196": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c197": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c198": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c199": {
-  "clauses": [
-   {
-    "MUD": [
-     "M41"
-    ]
-   },
-   {
-    "Temp": [
-     "M41"
-    ]
-   }
-  ],
-  "conf": "medium",
-  "note": "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+  "clauses": null,
+  "conf": "unrouted",
+  "note": "No confirmed county code for this district yet; asking the Tax Office."
  },
  "c200": {
   "clauses": [

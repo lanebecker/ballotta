@@ -31,7 +31,6 @@ if (top === self) { var guard = document.getElementById('frame-guard'); if (guar
 <!--ANALYTICS-->
 <title>Ballotta · What's on your ballot? (Travis County test)</title>
 <meta name="description" content="See exactly what's on your November 3, 2026 ballot in Travis County, make your picks with private notes, and print a crib sheet to take to the polls.">
-<meta name="robots" content="noindex">
 <meta name="theme-color" content="#4B2A6B">
 <meta property="og:title" content="Ballotta · What's on your ballot?">
 <meta property="og:description" content="Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet. An early test.">
@@ -848,6 +847,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
         <button class="btn" id="print" type="button">Print crib sheet</button>
         <button class="btn secondary" id="reset" type="button">Clear my picks</button>
       </div>
+      <p class="note hidden" id="noprint"></p>
       <button type="button" class="x" id="reset-all" style="align-self:flex-start">Clear everything on this device</button>
     </section>
   </div>
@@ -855,7 +855,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <section class="card">
     <h3>About this test</h3>
     <p class="note">Ballotta is an early test for Travis County voters only. It isn't affiliated with Travis County, the League of Women Voters, or any campaign, and it doesn't tell you how to vote.</p>
-    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026 (corrected Oct 14). Candidate answers and the campaign websites we link: the <a href="https://austinvotersguide.org/LWVAA-VG-EN.pdf" target="_blank" rel="noopener">League of Women Voters of the Austin Area 2026 Voters Guide</a>, linked as published. Voting locations: Travis County Clerk; map positions from the U.S. Census geocoder, Travis County and © OpenStreetMap contributors. Contests marked "Double-check" aren't confirmed yet. Always compare with your official ballot using the county’s <a href="https://votetravis.gov/voter-lookup/" target="_blank" rel="noopener">Voter Lookup</a> (search by name and birth date).</p>
+    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026 (corrected Oct 14). Candidate answers and the campaign websites we link: the <a href="https://austinvotersguide.org/LWVAA-VG-EN.pdf" target="_blank" rel="noopener">League of Women Voters of the Austin Area 2026 Voters Guide</a>, linked as published. Voting locations: Travis County Clerk; map positions from the U.S. Census geocoder, Travis County and © OpenStreetMap contributors. Contests marked "Double-check" aren't confirmed yet; one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet. Always compare with your official ballot using the county’s <a href="https://votetravis.gov/voter-lookup/" target="_blank" rel="noopener">Voter Lookup</a> (search by name and birth date).</p>
   </section>
   <footer class="card" aria-label="Feedback">
     <h3>Tell us what you think</h3>
@@ -1224,10 +1224,11 @@ function render(rec, mode, label, neighbors, pt) {
   afterBallot();
 }
 function cleanBallot(b) {
-  // Keep only known contests, once each; a crafted link can't inflate or duplicate the ballot.
+  // Keep only known contests, once each; a crafted link can't inflate or duplicate the ballot. A contest no address is
+  // routed to today never shows, though a ballot saved or a link made by a build that routed it lists it (round-2 #1).
   if (!Array.isArray(b) || b.length > DATA.contests.length) return [];
   const seen = new Set();
-  return b.filter(n => { if (!Number.isInteger(n)) return false; const a = Math.abs(n); if (seen.has(a) || !BYID[cidOf(a)]) return false; seen.add(a); return true; });
+  return b.filter(n => { if (!Number.isInteger(n)) return false; const a = Math.abs(n); if (seen.has(a) || !BYID[cidOf(a)] || !(DATA.rules[cidOf(a)] || {}).clauses) return false; seen.add(a); return true; });
 }
 function listFromStored(st) {
   // A Double-check contest says why, as the live lookup did: the rule's own note, else the district line, else the generic line (#62).
@@ -1944,7 +1945,26 @@ function sendFeedback() {  // from either layout (#38)
   location.href = 'mailto:' + to + '?' + new URLSearchParams({ subject: 'Ballotta test feedback', body }).toString().replace(/\+/g, '%20');
 }
 $('feedback').addEventListener('click', (e) => { e.preventDefault(); sendFeedback(); });
-function printCrib() { track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print(); }  // from either layout (#38)
+// An iPhone or iPad Home Screen app can't print: window.print() does nothing there (Lane tested it, Oct 18; round-2 #6).
+// Say how instead, under each Print button and on a tap, so the button never silently does nothing.
+const NO_PRINT = 'Printing doesn’t work in a Home Screen app. To print, tap Keep my picks, then Copy link, and open the link in Safari. Print from there.';
+function cantPrint() {
+  return (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) &&
+    (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+}
+function printCrib() {  // from either layout (#38)
+  if (cantPrint()) {  // where the voter tapped: the note under the button becomes a warning (a message at the top of the page was off screen on a phone; Pass 1)
+    const notes = [...document.querySelectorAll('#noprint, #dk-noprint')];  // by id: a second tap finds them too (Pass 3)
+    notes.forEach(n => { n.className = 'status warn'; n.setAttribute('role', 'status'); n.textContent = ''; });
+    setTimeout(() => {  // set anew after a pause a screen reader can't merge away, so it says it on every tap (Pass 2, 3); then on screen, an iPad in landscape too
+      notes.forEach(n => { n.textContent = NO_PRINT; });
+      const shown = notes.find(n => n.isConnected && n.getClientRects().length); if (shown) shown.scrollIntoView({ block: 'center' });
+    }, 150);
+    return;
+  }
+  track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print();
+}
+if (cantPrint()) { $('noprint').textContent = NO_PRINT; $('noprint').classList.remove('hidden'); }
 $('print').addEventListener('click', printCrib);
 // Clear everything on this device (#29): every ballotta.* key in this browser, then a fresh page. Asks first.
 function clearEverything() {
@@ -2270,7 +2290,7 @@ const desk = (() => {
     N().innerHTML = '<section><h3>Print options</h3><div class="sw"><label for="dk-cw">Include my reasons</label><input type="checkbox" role="switch" id="dk-cw"' + ($('withwhy').checked ? ' checked' : '') + '></div>' +
       '<div class="sw"><label for="dk-c2">Two columns</label><input type="checkbox" role="switch" id="dk-c2"' + (ui.two ? ' checked' : '') + '></div>' +
       '<div class="sw"><label for="dk-cu">Hide unopposed races</label><input type="checkbox" role="switch" id="dk-cu"' + (ui.hideCrib ? ' checked' : '') + '></div></section>' +
-      '<button class="btn" type="button" data-act="print">Print crib sheet</button><p class="note">The printout has your picks and, if you choose, your reasons. Nothing else.</p>';
+      '<button class="btn" type="button" data-act="print">Print crib sheet</button><p class="note"' + (cantPrint() ? ' id="dk-noprint" role="status"' : '') + '>' + (cantPrint() ? NO_PRINT : 'The printout has your picks and, if you choose, your reasons. Nothing else.') + '</p>';
     $('dk-cw').addEventListener('change', () => { $('withwhy').checked = $('dk-cw').checked; renderCrib(); cribPaper(); });
     $('dk-c2').addEventListener('change', () => { ui.two = $('dk-c2').checked; $('crib').classList.toggle('two', ui.two); cribPaper(); });
     $('dk-cu').addEventListener('change', () => { ui.hideCrib = $('dk-cu').checked; renderCrib(); cribPaper(); });

@@ -147,6 +147,15 @@ M = [
  ("P134 the back button's name hides where it goes", PREV, "dec ? 'Previous contest' : 'Contest ' + (i + 1) + ', go back'", "dec ? 'Previous contest' : 'Previous contest'", ['phone_next_undecided_then_the_crib_sheet']),
  ("P135 the laptop's paper shows the precinct", PREV, 'NARROW.matches && app && pr', 'app && pr', ['phone_lookup_opens_the_app_at_its_top']),
  ('P136 At a glance title hugs its line on a phone', PREV, '  .dk-gh > div{display:flex;flex-direction:column;gap:16px}', '  .dk-gh > div{}', ['view_titles_sit_the_same_distance_below_their_line']),
+ ('P137 a Home Screen app is never noticed', PREV, "  return (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) &&", "  return false &&", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P138 every Home Screen app is taken for an iPhone', PREV, "    (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));\n}\nfunction printCrib", "    true;\n}\nfunction printCrib", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P139 Print calls print anyway', PREV, "  if (cantPrint()) {  // where the voter tapped", "  if (false) {  // where the voter tapped", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P140 the note under Print says nothing new', PREV, "(cantPrint() ? NO_PRINT : 'The printout", "(false ? NO_PRINT : 'The printout", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P141 the plain layout keeps quiet', PREV, "if (cantPrint()) { $('noprint').textContent", "if (false) { $('noprint').textContent", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P142 a tap says nothing', PREV, "notes.forEach(n => { n.className = 'status warn'; n.setAttribute('role', 'status'); n.textContent = ''; });", "notes.forEach(n => { n.className = 'status warn'; });", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P143 the warning is left off screen', PREV, "if (shown) shown.scrollIntoView({ block: 'center' });", "", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P144 a screen reader is not told', PREV, "<p class=\"note\"' + (cantPrint() ? ' id=\"dk-noprint\" role=\"status\"' : '') + '>'", "<p class=\"note\"' + (cantPrint() ? ' id=\"dk-noprint\"' : '') + '>'", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P145 a second tap finds nothing', PREV, "const notes = [...document.querySelectorAll('#noprint, #dk-noprint')];", "const notes = [...document.querySelectorAll('#noprint, [data-act=\"print\"] + .note')];", ['phone_print_in_a_home_screen_app_says_how']),
 ]
 if __name__ == '__main__':
     R.main(M)

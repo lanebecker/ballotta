@@ -15,6 +15,8 @@ import check_sites                                  # the one broken-link rule (
 HERE = pathlib.Path(__file__).resolve().parent
 key = json.load(open(HERE / 'answer_key.json', encoding='utf-8'))
 lwv = json.load(open(HERE / 'data/lwv_candidates.json', encoding='utf-8'))
+_stale = check_sites.stale(lwv, json.load(open(check_sites.STAMP)) if check_sites.STAMP.exists() else None)
+assert not _stale, ('the campaign-site results are out of date; run python3 source/check_sites.py from an ordinary connection', _stale)
 lwvm = json.load(open(HERE / 'data/lwv_measures.json', encoding='utf-8'))
 asked = set()                                      # the guide's measure entries a contest reads (#85)
 

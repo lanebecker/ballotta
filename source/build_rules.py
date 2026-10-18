@@ -75,9 +75,8 @@ def rule_for(c):
         return [{"MUD": [code]}, {"Temp": [code]}], "high", None
     if ent == "Travis County MMD No. 1":
         return [{"MUD": ["M125"]}, {"Temp": ["M125"]}], "medium", "Two possible county codes for this district (M125 or M119); using M125 until the Tax Office confirms."
-    if ent == "Travis County MUD No. 41":   # Lane, Oct 17: route it at medium confidence rather than to nobody
-        return [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "medium", \
-            "Matched to the county's district code M41, which the Tax Office hasn't confirmed is MUD No. 41."
+    if ent == "Travis County MUD No. 41":   # to nobody until the Tax Office confirms a code (round-2 audit #1, Oct 18)
+        return None, "unrouted", "No confirmed county code for this district yet; asking the Tax Office."
     if ent == "Cypress Ranch WCID No. 1": return [{"WCID": ["W02"]}], "high", None
     if ent == "Travis County WCID No. 17": return [{"WCID": ["W17"]}], "high", None
     if ent == "Wells Branch Community Library District": return [{"Library": ["L02"]}], "high", None
@@ -96,7 +95,20 @@ def rule_for(c):
 
 # Contests no address reaches, each with the reason (cold audit, Oct 17, #4). The build stops on any other: one wrong
 # or missing code hides a whole election from the voters who have it.
-UNREACHED_OK = {}   # Travis County MUD No. 41 was here until Lane chose medium confidence on M41 (Oct 17)
+UNREACHED_OK = {
+    "Travis County MUD No. 41": "No county code confirmed. It was routed to M41 on Oct 17 and back to nobody on Oct 18 "
+                                "(round-2 audit #1): the county's codes run in sequence, not by district number, the "
+                                "districts created in 2026 sit at M118-M128, and this one was created May 4, 2026 on "
+                                "land whose water system is yet to be built, while M41 has 1,217 voting addresses. "
+                                "With the Tax Office (#56).",
+}
+
+# A district holding its confirmation election was just created, so few voters live in it yet (Hidden Lakes MUD No. 1:
+# 207 addresses). One that reaches more is likely matched to an older district's code, as MUD No. 41 was to M41
+# (round-2 audit #1): the build stops unless the count is explained here.
+CONFIRMATION_MAX = 300
+CONFIRMATION_OK = {}   # entity -> why it may reach more than CONFIRMATION_MAX addresses
+CONFIRMATION = re.compile(r"\bconfirm(ation|ing)\b", re.I)
 
 rules = {}
 for c in contests:
@@ -152,7 +164,12 @@ if __name__ == "__main__":
         print(f"no address reaches {e}: {UNREACHED_OK.get(e, 'NOT ALLOWED')}")
     bad = [e for e in unreached if e not in UNREACHED_OK] + [e for e in UNREACHED_OK if e not in unreached]
     if no_tlc: print("precincts missing from the Legislative Council table (addresses):", dict(no_tlc))
-    if bad or problems or no_tlc:
-        sys.exit(f"stopping: unexplained unreached contests {bad}, district problems {problems[:5]}, precincts without districts {dict(no_tlc)}")
+    new_districts = sorted({c["entity"] for c in contests if CONFIRMATION.search(json.dumps(c, ensure_ascii=False))})
+    reach = {e: max(hits[c["id"]] for c in contests if c["entity"] == e) for e in new_districts}
+    print("districts holding a confirmation election (addresses reached):", reach)
+    big = {e: n for e, n in reach.items() if n > CONFIRMATION_MAX and e not in CONFIRMATION_OK}
+    if bad or problems or no_tlc or big:
+        sys.exit(f"stopping: unexplained unreached contests {bad}, district problems {problems[:5]}, precincts without districts {dict(no_tlc)}, "
+                 f"new districts reaching more than {CONFIRMATION_MAX} addresses (an older district's code?) {big}")
     json.dump(rules, open(HERE / "rules.json", "w"), indent=1)
     json.dump({str(k): v for k, v in tlc.items()}, open(HERE / "tlc_precincts.json", "w"))
