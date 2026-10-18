@@ -9,6 +9,8 @@ import base64, hashlib, json, re, pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+import check_release  # VERSION, CHANGELOG.md and version.json in step (source/check_release.py)
 # Public address of the site.
 BASE_URL = "https://ballotta.org/"
 # Umami Cloud website ID (anonymous, cookieless counts). Empty string = no analytics script at all.
@@ -211,7 +213,9 @@ def outputs(preview):
     if preview:
         return {"next/index.html": build(True), "next/manifest.webmanifest": manifest(True),
                 "next/sw.js": sw_js(True) if OFFLINE else sw_off_js(True)}
-    out = {"index.html": build(False), "census.html": census_page()}
+    out = {"index.html": build(False), "census.html": census_page(),
+           # What the live site runs (ballotta.org/version.json; the README's badge reads it). VERSION is the one source.
+           "version.json": json.dumps({"version": check_release.version(ROOT)}) + "\n"}
     if PHONE_LIVE:
         out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False),
                     "next/sw.js": sw_off_js(True), "next/index.html": moved_page()})
@@ -312,6 +316,8 @@ if __name__ == "__main__":
     if preview and PHONE_LIVE:
         print("The phone layout is live: the main build writes next/ (a page that sends people on, and the self-removing next/sw.js).")
         sys.exit(0)  # not an error, so `--preview && build_site.py` still builds the live page (Pass 2)
+    if not preview and (bad := check_release.problems(ROOT, check_json=False)):  # VERSION and CHANGELOG.md first
+        sys.exit("not building: " + "; ".join(bad))
     for path, text in outputs(preview).items():  # the page, then the files that sit next to it (#36: census.html)
         out = ROOT / path
         out.parent.mkdir(exist_ok=True)

@@ -10,12 +10,14 @@
 5. The ballot's FOR / AGAINST pairs number exactly the key's measures.
 6. Every English line on the ballot is in the key (a measure text or a choice) or is a page number, "Vote for" line or
    notice; each measure's text is all the upright text between its title and its Spanish, whatever the font weight.
+7. Release bookkeeping (source/check_release.py): VERSION, CHANGELOG.md's newest release and version.json agree, and
+   the check refuses each kind of drift.
 """
 import json, pathlib, re, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / 'source/ballot'))
-import pdf_lines
+sys.path.insert(0, str(ROOT / 'source/ballot')); sys.path.insert(0, str(ROOT / 'source'))
+import pdf_lines, check_release
 
 KEY = json.loads((ROOT / 'source/answer_key.json').read_text(encoding='utf-8'))
 L = pdf_lines.lines()
@@ -113,6 +115,37 @@ def for_and_against_pairs_match_the_measures():
     measures = sum(1 for c in KEY['contests'] if c['type'] == 'measure')
     assert fors == againsts == measures, (fors, againsts, measures)
 
+
+
+@test
+def release_bookkeeping_is_consistent():
+    assert check_release.problems() == [], check_release.problems()
+
+
+@test
+def release_check_refuses_drift():
+    good = ('# Changelog\n\n## [Unreleased]\n\n_Nothing yet._\n\n## [1.1.0] — 2026-10-18\n\n- b\n\n## [1.0.0] — 2026-10-17\n\n- a\n')
+    cases = {
+        'fine': ('1.1.0', good, {'version': '1.1.0'}, False),
+        'VERSION bumped, no CHANGELOG section': ('1.2.0', good, {'version': '1.2.0'}, True),
+        'CHANGELOG section, VERSION not bumped': ('1.0.0', good, {'version': '1.0.0'}, True),
+        'not semver': ('1.1', good, {'version': '1.1'}, True),
+        'no Unreleased section': ('1.1.0', good.replace('## [Unreleased]\n\n_Nothing yet._\n\n', ''), {'version': '1.1.0'}, True),
+        'Unreleased below a release': ('1.1.0', good.replace('## [Unreleased]\n\n_Nothing yet._\n\n', '') + '\n## [Unreleased]\n', {'version': '1.1.0'}, True),
+        'release without a date': ('1.1.0', good.replace('[1.0.0] — 2026-10-17', '[1.0.0]'), {'version': '1.1.0'}, True),
+        'out of order': ('1.1.0', good.replace('[1.0.0]', '[1.2.0]'), {'version': '1.1.0'}, True),
+        'a version twice': ('1.1.0', good.replace('[1.0.0]', '[1.1.0]'), {'version': '1.1.0'}, True),
+        'version.json stale': ('1.1.0', good, {'version': '1.0.0'}, True),
+        'version.json missing': ('1.1.0', good, None, True),
+    }
+    wrong = []
+    for name, (v, log, js, refused) in cases.items():
+        with tempfile.TemporaryDirectory() as d:
+            d = pathlib.Path(d); (d / 'VERSION').write_text(v + '\n'); (d / 'CHANGELOG.md').write_text(log, encoding='utf-8')
+            if js is not None: (d / 'version.json').write_text(json.dumps(js))
+            if bool(check_release.problems(d)) != refused: wrong.append((name, check_release.problems(d)))
+    assert not wrong, wrong
+    assert check_release.key('1.2.10') > check_release.key('1.2.9') > check_release.key('1.2.9-rc1')
 
 if __name__ == '__main__':
     failed = 0

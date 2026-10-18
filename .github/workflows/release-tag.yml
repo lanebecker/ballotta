@@ -1,0 +1,83 @@
+name: Release tag
+
+# Runs whenever VERSION is pushed to main: validates the version, warns (without failing) if CHANGELOG.md was not
+# updated in the same push, and tags the release commit v<VERSION>. Adapted from TraxWax's release-tag.yml.
+#
+# To cut a release: bump VERSION and add its dated CHANGELOG.md section in the SAME push (the "Release check"
+# workflow and the build both refuse a VERSION whose section is missing); this workflow then tags it. The CHANGELOG
+# step below is only a backstop warning.
+#
+# Security: the VERSION file is repo content, so its bytes are treated as untrusted input. The value is validated
+# against a strict semver pattern before use and handed to every shell via env: (referenced as "$VERSION"), never
+# textually interpolated into a run: script with ${{ }}, so a crafted VERSION cannot inject shell into this job,
+# which holds contents: write. The checkout action is pinned to a full commit SHA.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+
+# A per-commit group, so a rapid series of VERSION pushes never cancels a pending run and leaves that release
+# untagged. Tagging targets the triggering commit (github.sha), so tags do not depend on run ordering.
+concurrency:
+  group: release-tag-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # the tag push
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0          # full history: the CHANGELOG diff needs the pre-push tip
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read and validate version
+        id: ver
+        # Read VERSION into a shell variable (command substitution of `cat` is data, not eval) and reject
+        # anything that is not a plain semantic version BEFORE it is published as a step output. The optional
+        # `-<suffix>` keeps pre-release tags like 1.4.0-rc1 working while still excluding every shell
+        # metacharacter ($ ` ( ) | & \ / and space).
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error file=VERSION::VERSION content '${version}' is not a valid semantic version (expected e.g. 1.5.4 or 1.5.4-rc1); refusing to proceed."
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Warn if CHANGELOG.md not updated
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          BEFORE: ${{ github.event.before }}   # the pre-push tip; env indirection (never ${{ }} inside run:)
+        run: |
+          # Diff the WHOLE push range (before..GITHUB_SHA), not HEAD~1..HEAD: a multi-commit push whose CHANGELOG edit
+          # sits in an earlier commit would draw a false warning. Fall back to HEAD~1 when `before` is absent/all-zero.
+          base="$BEFORE"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="HEAD~1"
+          fi
+          if git diff --name-only "$base" "$GITHUB_SHA" | grep -q '^CHANGELOG\.md$'; then
+            echo "✅ CHANGELOG.md was updated alongside VERSION — nice work."
+          else
+            echo "::warning file=VERSION::VERSION was bumped to ${VERSION} but CHANGELOG.md was not updated in this commit. Add a [${VERSION}] section to CHANGELOG.md so the release is documented."
+          fi
+
+      - name: Tag the release
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        # Tag the EXACT commit that triggered this run (GITHUB_SHA): it carries THIS VERSION by construction, whereas
+        # main may already have moved on. Idempotent against origin, so a re-run never recreates a published tag.
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code origin "refs/tags/v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists on origin — leaving it untouched."
+          else
+            git tag -a "v${VERSION}" "${GITHUB_SHA}" -m "Release v${VERSION}"
+            git push origin "v${VERSION}"
+          fi

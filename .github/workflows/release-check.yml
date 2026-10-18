@@ -1,0 +1,30 @@
+name: Release check
+
+# VERSION is the one source of truth for Ballotta's version (the TraxWax model). This check fails a push or pull
+# request whose VERSION isn't a plain semantic version, whose CHANGELOG.md doesn't open with [Unreleased] and then
+# a dated "## [VERSION]" section, or whose version.json (written by source/build_site.py) disagrees. The rules
+# live in source/check_release.py, so they run identically on a laptop and in the build. Stdlib only: no installs.
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: VERSION, CHANGELOG.md and version.json agree
+        run: python3 source/check_release.py

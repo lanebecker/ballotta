@@ -1,5 +1,7 @@
 # Ballotta (early test)
 
+[![version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fballotta.org%2Fversion.json&query=%24.version&label=version&color=4B2A6B)](CHANGELOG.md)
+
 **Your ballot, considered together.** Enter the Travis County, Texas address where you're registered to vote, see exactly what's on your November 3, 2026 ballot, make picks with private notes, and print a crib sheet to bring to the polls (Texas bans phones where you vote; paper notes are allowed).
 
 Live test: https://ballotta.org (the old lanebecker.github.io/ballotta address redirects there)
@@ -79,9 +81,9 @@ python3 source/build_rules.py                       # only when the contests or 
 python3 source/parse_lwv.py LWVAA-VG-EN.pdf source/answer_key.json source/data/lwv_candidates.json
 python3 source/check_sites.py                       # after any parse: records which listed sites load
 python3 source/build_learn.py
-python3 source/build_site.py                        # writes index.html and census.html
+python3 source/build_site.py                        # writes index.html, census.html, version.json, sw.js, manifest.webmanifest and next/ (checks VERSION and CHANGELOG.md first)
 python3 source/make_icons.py                        # only if the logo changes: the Home Screen icons
-python3 tests/test_pipeline.py                      # the answer key against the ballot PDF (no browser)
+python3 tests/test_pipeline.py                      # the answer key against the ballot PDF, and the release check (no browser)
 python3 tests/test_site.py                          # end-to-end checks (Playwright, live county services) of the live page
 python3 tests/mutate_desk.py                        # mutation check of the tests (slow; restores every file it touches, even when stopped)
 python3 tests/mutate_phone.py                       # the same for the phone layout's tests
@@ -94,6 +96,15 @@ python3 tests/mutate_phone.py                       # the same for the phone lay
 Keep and Share links store picks by each choice's position in its list. The Oct 17 fix put ten lists in ballot order, but links keep counting those ten in the old order, through the page's `REORDERED` table, both when a link is made and when it is read: an old link still means what it meant, and a copy of the page from before the fix (a phone's offline copy, a tab left open) reads a new link right. Never reorder a list again without the same care.
 
 `build_rules.py` stops the build when a contest's district is reached by no address on file (unless it's explained in `UNREACHED_OK`, empty today: Travis County MUD No. 41 is matched to the county's code M41 at medium confidence, marked Double-check, until the Tax Office confirms it), when an address would get anything but one member of Congress and one State Rep, or more than one State Senator, or when an address's precinct is missing from the Legislative Council table.
+
+## Versioning
+
+`VERSION` ([semantic versioning](https://semver.org/): `MAJOR.MINOR.PATCH`) is the one source of truth for Ballotta's version; nothing else hardcodes it. `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com/en/1.0.0/)) says what changed in each release, newest first, under an `## [Unreleased]` section that collects changes as they land. `source/build_site.py` writes `version.json` next to the page, so https://ballotta.org/version.json says which release the live site runs, and the badge at the top of this file reads it from there (it shows what is deployed, not what is committed). The approach is TraxWax's.
+
+- **As you work:** add a line under `## [Unreleased]` (Added / Changed / Fixed / Removed / Security / Tests).
+- **To cut a release:** rename `[Unreleased]` to `## [x.y.z] — YYYY-MM-DD`, put a fresh `## [Unreleased]` with `_Nothing yet._` above it, set `VERSION` to `x.y.z`, run `python3 source/build_site.py`, and commit and push all of it together. A visitor-facing change (a fix, a wording change, a data correction) is a PATCH; a new feature or a layout change is a MINOR; a change that breaks Keep or Share links people already have, or Ballotta's promises about privacy, is a MAJOR.
+- **What checks it:** `source/check_release.py` (VERSION is semver; CHANGELOG.md opens with `[Unreleased]` and its newest release, dated, is VERSION; releases run newest first; `version.json` agrees). The build refuses to run without it, `tests/test_pipeline.py` runs it, and the GitHub workflow **Release check** runs it on every push and pull request. When a push changes `VERSION` on `main`, the workflow **Release tag** tags that commit `v<VERSION>` (and warns if `CHANGELOG.md` didn't change in the same push).
+- **History:** the releases before 1.0.0 were numbered on Oct 17, 2026 from the commit history, one per milestone, and each is tagged at its last commit.
 
 ## Custom domain (ballotta.org)
 
