@@ -395,6 +395,54 @@ def shared_link_stays_on_screen_after_sharing(b):
         assert not pg.is_visible('#share-out'), 'an older link stayed next to new choices'
         ctx.close()
 
+@test
+def page_is_built_locked_down(b):
+    # #36, from the retired page_is_locked_down (its browser half lives on in phone_page_is_locked_down): what the
+    # build writes, from the template and build_site.py (index.html on disk equals it: live_build test), has a
+    # Content-Security-Policy before any script: only the page's own scripts (by hash) and files from this site run,
+    # data goes only to the county map server and the counting service, frames only from this site; and no referrer.
+    html = build_module().build()
+    m = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', html)
+    assert m and html.index(m.group(0)) < html.index('<script'), 'a CSP meta tag before the first script'
+    pol = dict((d.split(' ', 1) + [''])[:2] for d in m.group(1).split('; '))
+    assert pol['default-src'] == "'none'" and pol['frame-src'] == "'self'" and pol['base-uri'] == "'none'" and pol['form-action'] == "'none'", pol
+    assert pol['connect-src'] == 'https://taxmaps.traviscountytx.gov https://gateway.umami.is', pol['connect-src']
+    srcs = pol['script-src'].split()
+    assert srcs[0] == "'self'" and all(x.startswith("'sha256-") for x in srcs[1:]) and len(srcs) == 1 + html.count('<script>'), srcs
+    assert '<meta name="referrer" content="no-referrer">' in html and html.index('name="referrer"') < html.index('<script')
+
+@desk_test
+def desk_extra_pick_is_explained(b):
+    # #33, the laptop half of the retired extra_pick_is_explained (the phone half is phone_extra_pick_is_explained):
+    # on a "vote for up to 2" race a third pick changes nothing and says why, as a status; a refused key pick isn't
+    # announced as a pick; the note clears on the next pick.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [113]); pg.wait_for_selector('body.dk-app-on')
+    opts, msg = pg.evaluate('optionsOf(BYID.c113)'), 'You can pick up to 2. Unpick one first.'
+    line = lambda i: pg.locator('#dk-paper .dk-line').nth(i); note = pg.locator('#dk-paper [data-limit="c113"]')
+    line(0).click(); line(1).click(); expect(note).to_have_text('')
+    line(2).click()
+    assert pg.evaluate("current('c113')") == opts[:2], pg.evaluate("current('c113')")
+    expect(note).to_have_text(msg); assert note.get_attribute('role') == 'status'
+    assert line(2).get_attribute('aria-pressed') == 'false'
+    pg.focus('#dk-paper'); pg.keyboard.press('3'); pg.wait_for_timeout(300)
+    assert pg.evaluate("current('c113')") == opts[:2] and pg.text_content('#dk-live') == '', ('a refused key pick was announced', pg.text_content('#dk-live'))
+    line(0).click(); expect(note).to_have_text('')
+    line(2).click(); assert pg.evaluate("current('c113')") == [opts[1], opts[2]]
+    ctx.close()
+
+@test
+def a_good_link_clears_a_damaged_links_notice(b):
+    # #40, on both layouts: a damaged link's notice goes once a good Keep link brings a new ballot (the path that skips
+    # the landing page, whose own reset hides it too).
+    for wide in ((True, False) if HAS_PHONE else (True,)):
+        ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.goto(BASE); saved_ballot(pg, [1, 70]); pg.wait_for_selector('body.dk-app-on')
+        pg.evaluate("location.hash = '#s2' + 'A'.repeat(40)")
+        pg.wait_for_function("!document.getElementById('dk-say').classList.contains('hidden')", timeout=5000)
+        fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}}))
+        pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
+        assert pg.evaluate("document.getElementById('dk-say').classList.contains('hidden')"), ('wide' if wide else 'phone', 'the damaged link\'s notice outlived a good link')
+        ctx.close()
+
 # The ten "vote for up to N" lists in the order every page before Oct 17 had them (git show b0e514f:source/answer_key.json).
 PRE_FIX_ORDER = {
     154: ['Carrington Saathoff', 'Ryan Sullivan', 'Grant Ballew', 'John Berry', 'William Waller'],

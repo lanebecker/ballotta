@@ -30,6 +30,9 @@ MD_SELF = ROOT / 'tests/mutate_desk.py'                    # the runner's own si
 # `/*PHONE*/false && /*/PHONE*/` (print options now survive a narrow window by design); M16b's redraw on resize is
 # redundant now that one DOM and one render serve both widths; M31's string check is redundant because every
 # path that writes a reason keeps text only (the load filter, restore and the two reason boxes).
+# Also retired then: A30-A33 and R6 (the old phone page's footer button, now inside the hidden legacy page) and R5
+# (the paper is redrawn from the picks, so a cleared limit note can't linger). The laptop half of the retired
+# extra_pick_is_explained, the build half of page_is_locked_down and #40's notice came back as their own tests.
 M = [
  ('M1 live page changes', TPL, '<title>Ballotta ·', '<title>Ballotta  ·', ['live_build_is_unchanged_until_promotion']),
  ('M2 block stripping gone', BLD, "        elif not in_block:\n            out.append(line)", "        else:\n            out.append(line)", ['live_build_is_unchanged_until_promotion']),
@@ -195,24 +198,18 @@ M = [
  ('A13 extra pick accepted', PREV, '    if (!cur.includes(val) && cur.length >= n) { limitNote(cid, n); return false; }  // already N picks: say why nothing changed (#33)\n', '', ['phone_extra_pick_is_explained']),
  ('A14 extra pick refused silently', PREV, '{ limitNote(cid, n); return false; }', '{ return false; }', ['phone_extra_pick_is_explained']),
  ('A15 limit note never clears', PREV, '  limitNote(cid, 0);\n  picks[cid] = cur;', '  picks[cid] = cur;', ['phone_extra_pick_is_explained']),
- ('A16 refused key pick announced', PREV, 'if (pick(b.c.id, o) !== false) announce(b.c);', 'pick(b.c.id, o); announce(b.c);', ['phone_extra_pick_is_explained']),
- ('A17 limit note not a status', PREV, 'data-limit="\' + c.id + \'" role="status"></span>\' : \'\') + \'</p>\';', 'data-limit="\' + c.id + \'"></span>\' : \'\') + \'</p>\';', ['phone_extra_pick_is_explained']),
+ ('A16 refused key pick announced', PREV, 'if (pick(b.c.id, o) !== false) announce(b.c);', 'pick(b.c.id, o); announce(b.c);', ['desk_extra_pick_is_explained', 'phone_extra_pick_is_explained']),
+ ('A17 limit note not a status', PREV, 'data-limit="\' + c.id + \'" role="status"></span>\' : \'\') + \'</p>\';', 'data-limit="\' + c.id + \'"></span>\' : \'\') + \'</p>\';', ['desk_extra_pick_is_explained', 'phone_extra_pick_is_explained']),
  ('A18 no check for a new day', PREV, 'setInterval(dayCheck, 60000);\n', '', ['dates_move_on_in_a_tab_left_open']),
  ('A19 chosen period overridden', PREV, '  if (!periodChosen) period = defaultPeriod();\n', '  period = defaultPeriod();\n', ['dates_move_on_in_a_tab_left_open']),
  ('A20 tab choice forgotten', PREV, "period = 'early'; periodChosen = true; renderVote();", "period = 'early'; renderVote();", ['dates_move_on_in_a_tab_left_open']),
  ('A22 date frozen at load', PREV, 'const today = () => new Date();', 'const FROZEN = new Date(), today = () => FROZEN;', ['dates_move_on_in_a_tab_left_open']),
  ('A23 data inserted first', BLD, '        html = strip_desk(html)\n', '        html = strip_desk(html)\n    html = html.replace("__DATA__", data)\n', ['build_inserts_data_last']),
  ('A24 moves not announced', PREV, 'where(curB()); }', '}', ['desk_moves_are_announced']),
- ('A26 old link notice survives a new ballot', PREV, "      $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)\n", '', ['phone_old_link_warning_gone_after_new_lookup']),
+ ('A26 old link notice survives a new ballot', PREV, "      $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)\n", '', ['a_good_link_clears_a_damaged_links_notice']),
  ('A27 a stop signal leaves the mutant', MD_SELF, '    for f_, t_ in PENDING: put(f_, t_)\n', '', ['mutation_runner_restores_on_any_signal']),
  ('A28 Ctrl-C not handled', MD_SELF, 'SIGS = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)\nPENDING', 'SIGS = (signal.SIGTERM, signal.SIGHUP)\nPENDING', ['mutation_runner_restores_on_any_signal']),
  ('A29 importing the runner starts a run', MD_SELF, "\nif __name__ == '__main__':", '\nif True:', ['mutation_runner_restores_on_any_signal']),
- ('A30 footer button never shown', PREV, "  const f = $('reset-all-foot'); if (f) f.classList.toggle('hidden', !has);\n", '', ['phone_can_clear_everything_from_the_menu']),
- ('A31 footer button not wired', PREV, "$('reset-all-foot').addEventListener('click', clearEverything);", '', ['phone_can_clear_everything_from_the_menu']),
- ('A32 a lookup does not show the footer button', PREV, 'localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} footClear(); }', 'localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }', ['phone_can_clear_everything_from_the_menu']),
- ('A33 a later visit hides the footer button', PREV, '  footClear();  // a link opened before this script ran is already in sessionStorage\n', '', ['phone_can_clear_everything_from_the_menu']),
- ('R5 Clear my picks leaves the limit note', PREV, " document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {};", ' picks = {};', ['phone_extra_pick_is_explained']),
- ('R6 another tab leaves the footer button stale', PREV, "window.addEventListener('storage', () => footClear());", '', ['phone_can_clear_everything_from_the_menu']),
  ('R2 hyphen-joined words get through', PREV, "const w = t.replace(/[\\p{P}\\p{S}]/gu, ' ')", "const w = t.replace(/[\\p{P}\\p{S}]/gu, '')", ['share_names_block_lookalikes_and_nicknames']),
  ('R8 runs of spaces not collapsed', PREV, " ' ').replace(/\\s+/g, ' ').trim();", " ' ');", ['share_names_block_lookalikes_and_nicknames']),
  ('R11 Print… counted twice', PREV, "    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }", "    setView('crib'); track('view_opened', { view: 'crib' });", ['desk_print_button_opens_the_crib_sheet']),
@@ -235,10 +232,10 @@ M = [
  ('M29 hiding a friend leaves the landing broken', PREV, 'friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/\n}\nfunction friendName', 'friend = null;\n}\nfunction friendName', ['desk_friend_hide_on_landing']),
  ('V40 clear everything missing from the menu', PREV, "    else if (a === 'clearall') clearEverything();\n", '', ['desk_counts_laptop_features']),
  ('F11 old warning survives a good link', PREV, "  notify('');\n", '', ['desk_launch_audit_fixes']),
- ('B1 no Content-Security-Policy', BLD, 'return html.replace("<!--CSP-->", csp_meta(html, phone), 1)', 'return html', ['phone_page_is_locked_down']),
- ('B2 inline scripts allowed', BLD, "script-src 'self' {hashes};", "script-src 'self' 'unsafe-inline';", ['phone_page_is_locked_down']),
- ('B3 referrer sent', TPL, '<meta name="referrer" content="no-referrer">\n', '', ['phone_page_is_locked_down']),
- ('B4 data may go anywhere', BLD, 'connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is;', 'connect-src *;', ['phone_page_is_locked_down']),
+ ('B1 no Content-Security-Policy', BLD, 'return html.replace("<!--CSP-->", csp_meta(html, phone), 1)', 'return html', ['page_is_built_locked_down']),
+ ('B2 inline scripts allowed', BLD, "script-src 'self' {hashes};", "script-src 'self' 'unsafe-inline';", ['page_is_built_locked_down']),
+ ('B3 referrer sent', TPL, '<meta name="referrer" content="no-referrer">\n', '', ['page_is_built_locked_down']),
+ ('B4 data may go anywhere', BLD, 'connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is;', 'connect-src *;', ['page_is_built_locked_down']),
  ('B5 Census frame not sandboxed', PREV, "f.setAttribute('sandbox', 'allow-scripts');", "f.setAttribute('sandbox', 'allow-scripts allow-same-origin');", ['census_runs_in_a_sandbox']),
  ('B6 any point accepted', PREV, ' && d.x > -107 && d.x < -93 && d.y > 25 && d.y < 37', '', ['census_runs_in_a_sandbox']),
  ('B7 any window may answer', PREV, '      if (e.source !== f.contentWindow) return;\n', '', ['census_runs_in_a_sandbox']),
