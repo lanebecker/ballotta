@@ -128,14 +128,14 @@ and Share link people already have still opens.
 
 ## [0.4.0] — 2026-10-15
 
-### Changed
-- **Usage counts grow to 25 named events behind an allow-list firewall that fails closed**: no address, no picks, no
-  candidate names, no query strings or #links. Do Not Track and Global Privacy Control now turn counting off
-  entirely, page views included.
-
 ### Added
 - **"Clear everything on this device"** next to Clear my picks (and in the laptop menu) removes every Ballotta key
-  and reloads other open tabs.
+  and reloads other open tabs (#29).
+
+### Changed
+- **Usage counts grow to 25 named events behind an allow-list firewall that fails closed**: no address, no picks, no
+  candidate names, no query strings or #links. Page speed is counted too, as bare numbers only. Do Not Track and
+  Global Privacy Control now turn counting off entirely, page views included.
 
 ### Fixed
 - A lookup no longer hangs when the county server fails after the Census fallback.
@@ -169,7 +169,7 @@ and Share link people already have still opens.
 - Anonymous counts of a few actions (Umami); the About box points at the county's Voter Lookup.
 
 ### Changed
-- **The ballot follows the county's corrected consolidated ballot** (posted Oct 14).
+- **The ballot follows the county's corrected consolidated ballot** (corrected Oct 14).
 
 ## [0.1.0] — 2026-10-13
 
