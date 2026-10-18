@@ -2,6 +2,11 @@
 into a JSON answer key: sections (jurisdiction elections) -> contests -> choices.
 
 Heuristic parser; output is reviewed by hand afterwards.
+
+KEPT AS A RECORD; IT CAN'T BE RERUN FROM THIS REPO (#55). It read cols/p*_c*.txt, per-column text extracted by hand
+from the Sep 30 ballot PDF and never committed. Its output, parsed.json, is a frozen snapshot: build_answer_key.py
+applies the Oct 14 corrections to it, and tests/test_pipeline.py checks the finished key against the corrected PDF.
+Replacing this step with a parser over pdf_lines.py is issue #97, after the election.
 """
 import glob, json, re, sys
 

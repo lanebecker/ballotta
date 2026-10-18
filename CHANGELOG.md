@@ -14,7 +14,10 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- **The ballot pipeline says what can't be rerun** (#55): `parsed.json` is a frozen snapshot of the Sep 30 PDF (its
+  hand-made column extraction was never committed); the tests against the corrected PDF are its check. Building the key
+  straight from the PDF is #97, after the election.
 
 ## [1.1.2] — 2026-10-18
 

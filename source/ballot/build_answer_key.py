@@ -4,8 +4,12 @@
                                                                  # this reproduces the committed key byte for byte
 Every correction lives here, not in the JSON (cold audit, Oct 17, #3): the Oct 14 corrected ballot's changes, the
 choice order of the "vote for up to N" contests (#1), and the measure texts, which come straight from the ballot PDF's
-English text (#2: a parsed text could carry the start of the Spanish caption). parsed.json itself was made by
-parse_ballot.py from a column extraction of the earlier PDF that is not in the repo."""
+English text (#2: a parsed text could carry the start of the Spanish caption).
+
+parsed.json is a FROZEN SNAPSHOT (#55): parse_ballot.py made it from the Sep 30 PDF using a hand-made column extraction
+that was never committed, so it can't be regenerated. What guards it is tests/test_pipeline.py, which checks the key this
+script writes against the corrected Oct 14 PDF (choice order, measure texts line by line, party labels, count of
+measures). Building the key straight from the PDF instead is issue #97, after the election."""
 import hashlib, json, pathlib, re, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
