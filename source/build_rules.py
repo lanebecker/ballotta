@@ -121,7 +121,7 @@ def applies(rule, rec):
 
 
 if __name__ == "__main__":
-    combos = [f["attributes"] for f in json.load(open(HERE / "data/combos_temp.json"))["features"]]
+    combos = [f["attributes"] for f in json.load(open(HERE / "data/district_combos.json"))["features"]]
     hits = collections.Counter(); sets = collections.Counter(); problems = []
     by = {c["id"]: c for c in contests}
     no_tlc = collections.Counter()

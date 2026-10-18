@@ -1,0 +1,7 @@
+# Everything Ballotta's build and tests use beyond Python 3.9+ itself (#82). Pinned to the versions the suite last passed
+# with; install with:  pip install -r requirements.txt && python3 -m playwright install chromium
+playwright==1.56.0       # tests/test_site.py, the mutation runners, source/make_icons.py (needs >= 1.45 for pg.clock)
+pdfplumber==0.11.10      # source/ballot/pdf_lines.py: measure texts and the PDF checks in tests/test_pipeline.py
+pdfminer.six==20260107   # pdfplumber's PDF reader, pinned too: the answer key rebuilds byte for byte only with the same reading
+PyMuPDF==1.28.2          # source/parse_lwv.py (the League guide)
+pypdf==5.9.0             # tests/test_site.py: the crib sheet's printed PDF

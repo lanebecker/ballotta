@@ -14,7 +14,53 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.1.3] — 2026-10-18
+
+**Process** (cold audit wave 5), and three vote center spellings.
+
+### Fixed
+- **Three vote centers spelled as the county spells them elsewhere** (#85, approved by Lane): Millennium Youth
+  Entertainment Complex's "East Media and Conference Room" and Gus Garcia Recreation Center's "1201 E Rundberg Ln" in
+  the early voting list, and Hartfield Performing Arts Center's "5800 McNeil Dr" in the Election Day list. All 45 early
+  voting sites now read exactly as their Election Day entries.
+
+### Added
+- **A check on every push** (#81): the Build check workflow runs `build_site.py --check` (rebuilds in memory, writes
+  nothing, fails if a committed file isn't what the build writes, which catches a hand edit or a left-behind mutant, or
+  if a rollback build's markers don't pair up) and the pipeline tests. No browser, no county server.
+- **`requirements.txt`** (#82): every Python package the build and tests use, pinned, with one install line in the README.
+- **Only the site is published** (#83): the Pages workflow deploys a folder holding the built pages and the files they
+  point at (`build_site.py --site`; a phone rollback keeps next/ in it), so tests, docs and sources are no longer
+  served. It waits for the Pages setting to move to GitHub Actions.
+- **`SECURITY.md` and `fonts/OFL.txt`** (#84): how to report a problem privately, and the fonts' license with their
+  copyright notices. The code stays all rights reserved (README).
+- **Sources for two inputs** (#85): `source/fetch_combos.py` records the county query behind the district-code
+  combinations (renamed `source/data/district_combos.json` and refreshed; the routing it checks is unchanged), and
+  `source/og.html` draws the link-preview card (`make_icons.py --og`; `og.png` is redrawn from it, the same to the eye,
+  and carries the hash of what it was drawn from, so a test can tell when it's out of date).
+- **The county's answers, recorded** (#78): `BALLOTTA_STUB_COUNTY=1` answers the tests' county lookups from
+  `tests/county_answers.json`, so the suite runs when the county's server is down or slow; the mutation runners use it
+  by default. `county_is_live` always asks the real server and fails if its answers have changed.
+  `BALLOTTA_RECORD_COUNTY=1` records them again.
+
 ### Changed
+- **The mutation runners run alone** (#79): a run holds `.mutate-lock` and refuses to start while another run's lock, or
+  a half-written `*.mutate-tmp`, is there; a run killed outright leaves the lock, since a mutant may still be on disk;
+  the build refuses to run while the lock is there.
+- **Every test a mutant names must be able to see it** (#80): a template or build-script mutant only reaches tests that
+  run the build; a built-page mutant only tests that load the page or read it. Three lists named a test that couldn't
+  (L9, G3, H13), and lose it.
+- **The pipeline's loose ends** (#85): `check_sites.py` counts a site as broken when its name doesn't resolve, its
+  secure connection fails or its certificate is refused (an incomplete chain, which browsers complete, is not), even
+  when an http redirect answered first, and a break only if it repeats, with `build_learn.py` using the same rule; a
+  site that answered over https keeps its https link, and the check stops behind a proxy, whose own failures look like
+  broken sites; `parse_lwv.py` compares guide sites whole (one Facebook page no longer vouches for every other) and
+  leaves out the guide's Williamson County measures, which `build_learn.py` now refuses to carry unread; the design
+  checker's file-wide waiver records why it can't be narrower.
+- **No hash pin on the live page** (#77): `LIVE_SHA` was re-pinned in every commit that changed the page, so it guarded
+  nothing the build-equals-disk check doesn't.
 - **The ballot pipeline says what can't be rerun** (#55): `parsed.json` is a frozen snapshot of the Sep 30 PDF (its
   hand-made column extraction was never committed); the tests against the corrected PDF are its check. Building the key
   straight from the PDF is #97, after the election.

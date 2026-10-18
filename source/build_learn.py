@@ -11,10 +11,12 @@ Rules (see the design page): every candidate in a race gets the same links; when
 we say so; Ballotta never writes about candidates. Office notes describe the office, not the people.
 """
 import json, re, pathlib
+import check_sites                                  # the one broken-link rule (#85)
 HERE = pathlib.Path(__file__).resolve().parent
 key = json.load(open(HERE / 'answer_key.json', encoding='utf-8'))
 lwv = json.load(open(HERE / 'data/lwv_candidates.json', encoding='utf-8'))
 lwvm = json.load(open(HERE / 'data/lwv_measures.json', encoding='utf-8'))
+asked = set()                                      # the guide's measure entries a contest reads (#85)
 
 LWV_URL = 'https://austinvotersguide.org/LWVAA-VG-EN.pdf'
 TRIB = ('Texas Tribune 2026 election coverage', 'Nonpartisan news; doesn’t endorse', 'https://www.texastribune.org/2026-vote/')
@@ -125,9 +127,9 @@ for c in key['contests']:
             e = {'g': 1, 'p': v['page'], 'a': 1 if v['answered'] else 0}
             if v.get('unopposed'): e['u'] = 1  # listed as unopposed: the guide prints no questions for them
             if v.get('site'):
-                # Only a definite "not found" counts as broken; 403/429/503/999 and timeouts here were bot walls
-                # on hosts whose DNS resolves (checked Oct 14), and those pages load in a normal browser.
-                ok = str(v.get('http', '')) not in ('404', '410')
+                # Only a definite failure counts as broken (check_sites.broken: 404/410, or no answer because the name
+                # doesn't resolve or the secure connection fails); bot walls and timeouts stay linked.
+                ok = not check_sites.broken(v.get('http', ''), v.get('curl'))
                 assert 'http' in v, ('site has no link check yet; run: python3 source/check_sites.py', ch, v['site'])
                 url = v['url']
                 if url.startswith('http://') and url[7:].split('/')[0].lower() in HTTPS_OK:
@@ -152,6 +154,7 @@ for c in key['contests']:
         m = re.search(r'Proposition ([A-Z])$', title)
         ent = LWV_ENT.get(c['entity'])
         pg = lwvm.get(ent + '|' + m.group(1)) if (ent and m) else None
+        if ent and m: asked.add(ent + '|' + m.group(1))
         ex = EXTRA.get(title, {})
         d.update({k: v for k, v in ex.items() if k != 'sources'})
         srcs = [link(s) for s in ex.get('sources', [])]
@@ -159,6 +162,10 @@ for c in key['contests']:
         d['src'] = srcs
     out[cid] = d
 
+# Every guide measure must belong to a contest on the ballot: one nothing reads is a Travis entity missing from LWV_ENT
+# (its voters would lose the guide's page) or one parse_lwv.py should leave out (#85).
+unread = sorted(set(lwvm) - asked)
+assert not unread, ('guide measures no contest reads: add the entity to LWV_ENT, or to OUTSIDE_TRAVIS in parse_lwv.py', unread)
 (HERE / 'learn.json').write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
 nc = sum(1 for c in key['contests'] if c['type'] == 'candidate')
 print('learn.json', len(out), 'contests;', sum(1 for v in out.values() if v.get('office')), 'of', nc, 'races with office notes;',

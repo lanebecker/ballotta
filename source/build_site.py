@@ -1,6 +1,8 @@
 """Build the Ballotta site from template-travis.html and the routing data.
 
     python3 source/build_site.py             # index.html: the live site
+    python3 source/build_site.py --check     # CI: rebuilds in memory and compares with what is committed; writes nothing (#81)
+    python3 source/build_site.py --site DIR  # the Pages workflow: after --check passes, copies only the site's files to DIR (#83)
     python3 source/build_site.py --preview   # next/: the same page with the phone layout on (and its Home Screen files); counts nothing
 
 Rebuild rules first if the answer key or district data change:  python3 source/build_rules.py
@@ -333,11 +335,77 @@ def build(preview=False, desk=None, phone=None):
     return html.replace("<!--CSP-->", csp_meta(html, phone), 1)  # last of all: it hashes the finished scripts (#36)
 
 
+# ---- what the site publishes (#83). The Pages workflow uploads exactly these files, so tests/, docs/, source/ and the
+# rest of the repo are never served: everything the build writes, and the files its pages point at.
+STATIC = ("CNAME", "umami.js", "favicon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png",
+          "og.png", "fonts/PublicSans-wght.woff2", "fonts/ZillaSlab-Bold.woff2", "fonts/ZillaSlab-SemiBold.woff2",
+          "fonts/OFL.txt",                       # the fonts' license travels with them (#84)
+          "manifest.webmanifest",                # written only while the phone layout is live; a rollback keeps it for apps
+          "next/manifest.webmanifest")           # the preview's: Home Screen apps added from it may still ask for it
+
+
+def site_files():
+    """After a phone rollback (PHONE_LIVE = False) next/ holds the preview again (`--preview`), and its page and worker
+    must stay published: an installed preview app needs next/sw.js to update or remove itself."""
+    return sorted(set(outputs(False)) | (set() if PHONE_LIVE else set(outputs(True))) | set(STATIC))
+
+
+def refuse_while_mutating():
+    """#79: a mutation run puts mutants on disk for seconds at a time; a build or a site copy made meanwhile would carry one."""
+    if (ROOT / ".mutate-lock").exists():
+        sys.exit("not building: a mutation run holds .mutate-lock (a mutant may be on disk). Wait for it, or see README.md if it was killed.")
+
+
+def site(dest):
+    """Copy the site's files, as committed, into dest (empty or new). Only after check() passes, so a build that has
+    drifted from its sources, or a mutant left behind, is never published."""
+    dest = pathlib.Path(dest)
+    if dest.exists() and any(dest.iterdir()):
+        sys.exit(f"not writing the site: {dest} is not empty")
+    refuse_while_mutating()
+    if bad := check():
+        sys.exit("not writing the site: " + "; ".join(bad))
+    files = site_files()
+    for f in files:
+        (dest / f).parent.mkdir(parents=True, exist_ok=True)
+        (dest / f).write_bytes((ROOT / f).read_bytes())
+    return files
+
+
+def check():
+    """What CI runs (#81): every file the build writes, rebuilt in memory and compared with the committed one (a hand
+    edit or a mutant left behind fails), and both rollback builds, which run every marker check. Writes nothing."""
+    bad = list(check_release.problems(ROOT))
+    built = outputs(False) if PHONE_LIVE else {**outputs(True), **outputs(False)}   # a rollback publishes next/ too: it must be the preview build
+    for path, text in built.items():
+        p = ROOT / path
+        if not p.exists() or p.read_bytes() != text.encode("utf-8"):   # bytes: a CRLF copy is not what the build writes
+            bad.append(f"{path} is not what build_site.py writes: run python3 source/build_site.py" + ("" if PHONE_LIVE or not path.startswith("next/") else " --preview"))
+    for desk, phone in ((False, False), (True, False)):
+        try:
+            build(desk=desk, phone=phone)
+        except (AssertionError, SystemExit) as e:
+            bad.append(f"the rollback build (laptop layout {'on' if desk else 'off'}, phone layout off) fails: {e}")
+    bad += [f"{f} is published but missing" for f in site_files() if not (ROOT / f).is_file()]
+    return bad
+
+
 if __name__ == "__main__":
+    if "--site" in sys.argv[1:]:                  # the Pages workflow: python3 source/build_site.py --site _site (#83)
+        i = sys.argv.index("--site")
+        if i + 1 >= len(sys.argv): sys.exit("--site needs a folder")
+        files = site(sys.argv[i + 1])
+        sys.exit(print(len(files), "files ->", sys.argv[i + 1]) or 0)
+    if "--check" in sys.argv[1:]:
+        bad = check()
+        for x in bad:
+            print("build check:", x)
+        sys.exit(1 if bad else print("build check: every output matches the build, and both rollback builds pass") or 0)
     preview = "--preview" in sys.argv[1:]
     if preview and PHONE_LIVE:
         print("The phone layout is live: the main build writes next/ (a page that sends people on, and the self-removing next/sw.js).")
         sys.exit(0)  # not an error, so `--preview && build_site.py` still builds the live page (Pass 2)
+    refuse_while_mutating()
     if not preview and (bad := check_release.problems(ROOT, check_json=False)):  # VERSION and CHANGELOG.md first
         sys.exit("not building: " + "; ".join(bad))
     for path, text in outputs(preview).items():  # the page, then the files that sit next to it (#36: census.html)

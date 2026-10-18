@@ -1,0 +1,46 @@
+name: Pages
+
+# #83: publish only the site's own files (`build_site.py --site`: the built pages and what they point at), not the
+# whole repo, so tests/, docs/ and source/ are never served. On every push to main, and by hand.
+# `--site` refuses when the committed build has drifted from its sources (the same check as Build check).
+# Until Settings → Pages → Source is "GitHub Actions", Pages publishes the branch itself: this workflow then builds the
+# folder and says so, but deploys nothing, so it can't fail before the switch.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Build the site folder
+        run: python3 source/build_site.py --site _site
+      - name: Where Pages publishes from
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "type=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type)" >> "$GITHUB_OUTPUT"
+      - if: steps.source.outputs.type == 'workflow'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
+        with:
+          path: _site
+      - if: steps.source.outputs.type == 'workflow'
+        id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1
+      - if: steps.source.outputs.type != 'workflow'
+        run: echo "::notice::Pages publishes from the branch (build_type '${{ steps.source.outputs.type }}'), so nothing was deployed. Switch Settings → Pages → Source to GitHub Actions."

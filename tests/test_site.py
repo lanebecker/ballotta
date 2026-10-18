@@ -2,6 +2,9 @@
 
     python3 tests/test_site.py                                    # builds nothing; checks the live page (index.html),
                                                                   # laptop and phone layouts (promoted Oct 17)
+    BALLOTTA_STUB_COUNTY=1 python3 tests/test_site.py             # the county's answers from tests/county_answers.json (#78),
+                                                                  # for when taxmaps is down or slow; county_is_live still asks it
+    BALLOTTA_RECORD_COUNTY=1 python3 tests/test_site.py           # asks the county and saves every answer to that file
 
 Analytics: cloud.umami.is is stubbed so each test can see exactly which events (and which details) would be sent.
 """
@@ -20,9 +23,6 @@ HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(encoding='utf-8'):   # promotion audit #5
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
-# sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
-# Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '3062b02b12757e4368426f620139020e345d2268fd52a7eb9f2ae81685a687e4'  # Oct 18: wave 4 (phone layout follow-ups)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -30,6 +30,36 @@ def stub_tracker(ctx):
     # umami.js would be refused: it goes in before the page's scripts instead and appears when a deferred script would
     # (just before DOMContentLoaded's other listeners), and umami.js itself is never fetched.
     ctx.add_init_script(UMAMI_STUB); ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.abort())
+
+# #78: the county's lookup server (taxmaps) answering slowly or not at all made the whole suite, and both mutation runners,
+# fail for reasons that had nothing to do with the page. BALLOTTA_STUB_COUNTY=1 answers its requests from recorded answers
+# (the mutation runners set it unless told BALLOTTA_STUB_COUNTY=0); BALLOTTA_RECORD_COUNTY=1 records them. Either way
+# county_is_live asks the real server, so a change in its answers still shows up. A test's own route for taxmaps wins.
+COUNTY = re.compile(r'https://taxmaps\.traviscountytx\.gov/.*')
+COUNTY_FILE = ROOT / 'tests/county_answers.json'
+COUNTY_MODE = 'record' if os.environ.get('BALLOTTA_RECORD_COUNTY', '0') not in ('', '0') else 'stub' if os.environ.get('BALLOTTA_STUB_COUNTY', '0') not in ('', '0') else 'live'
+COUNTY_ANSWERS = json.loads(COUNTY_FILE.read_text(encoding='utf-8')) if COUNTY_FILE.exists() else {}
+COUNTY_MISSES = []
+def route_county(ctx, mode=None):
+    mode = mode or COUNTY_MODE
+    if mode == 'live': return
+    def answer(route):
+        url = route.request.url
+        if mode == 'record':
+            try: r = route.fetch(timeout=30000)
+            except Exception: return route.abort()                 # an outage is not an answer worth keeping
+            body = r.text()
+            try: failed = 'error' in json.loads(body)                  # ArcGIS reports a failed query as 200 {"error": …}
+            except ValueError: failed = True
+            if r.ok and not failed and COUNTY_ANSWERS.get(url) != body:   # a fresh answer replaces an old one
+                COUNTY_ANSWERS[url] = body
+                COUNTY_FILE.write_text(json.dumps(COUNTY_ANSWERS, indent=1, sort_keys=True) + '\n', encoding='utf-8')
+            return route.fulfill(response=r, body=body)
+        if url not in COUNTY_ANSWERS:                                # say which, and pass it on (to the real county, unless a test
+            COUNTY_MISSES.append(url); print('no recorded county answer for', url, '(asking the county; BALLOTTA_RECORD_COUNTY=1 records it)', file=sys.stderr, flush=True)
+            return route.fallback()                                  # routed it first): refusing it made any changed request a "kill" (Pass 1)
+        route.fulfill(status=200, headers={'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*'}, body=COUNTY_ANSWERS[url])
+    ctx.route(COUNTY, answer)
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -40,7 +70,7 @@ def serve():
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s
 
-def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, sw=False, ua=None, tz=None):
+def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, sw=False, ua=None, tz=None, county=None):
     # The page's Content-Security-Policy (#36) forbids eval, which Playwright's wait_for_function polls with: tests run
     # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()). The offline copy
     # (sw.js) is blocked unless a test asks (sw=True): a service worker would answer requests the stubs below expect.
@@ -50,6 +80,7 @@ def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, 
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
     ctx.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    route_county(ctx, county)                                  # live unless BALLOTTA_STUB_COUNTY / _RECORD_COUNTY (#78)
     pg = ctx.new_page()
     if TODAY: pg.clock.install(time=TODAY)                     # BALLOTTA_TODAY: the whole suite as of that moment (#64); a test's own clock still wins
     if sent is not None:
@@ -229,6 +260,115 @@ def lookup_wide(pg, street='1000 Guadalupe St', zip_='78701'):
 def cur(pg, cid): return pg.evaluate(f"current('{cid}')")
 
 @test
+def county_is_live(b):
+    # #78: the canary. Whatever BALLOTTA_STUB_COUNTY says, this test asks the real county, and every answer it gets must
+    # be the one recorded in tests/county_answers.json: the stubbed suite is only as good as that file.
+    got = []
+    ctx, pg = new_page(b, wide=True, county='live')
+    pg.on('response', lambda r: got.append(r) if COUNTY.match(r.url) else None)
+    pg.goto(BASE); lookup_wide(pg)
+    rec = json.loads(COUNTY_FILE.read_text(encoding='utf-8'))
+    assert got, 'the lookup asked the county nothing'
+    missing = [r.url for r in got if r.url not in rec]
+    stale = [r.url for r in got if r.url in rec and json.loads(r.text()) != json.loads(rec[r.url])]
+    assert not missing and not stale, ('the county answers differently now: rerun with BALLOTTA_RECORD_COUNTY=1', missing, stale)
+    ctx.close()
+
+@test
+def link_preview_card_is_drawn_from_its_source(b):
+    # #85: og.png had no source. source/og.html draws it (make_icons.py --og), and og.png carries the sha256 of what it
+    # was drawn from (og.html and its fonts), so any change to the source without redrawing fails here, on any machine
+    # (Pass 2: counting pixels missed a colour change and failed on a different font renderer). The picture itself must
+    # still be the source's: a wholly different image would differ in far more than 3% of its pixels.
+    import base64
+    spec = importlib.util.spec_from_file_location('make_icons', ROOT / 'source' / 'make_icons.py')
+    mk = importlib.util.module_from_spec(spec); spec.loader.exec_module(mk)
+    used = {str((ROOT / 'source' / u).resolve().relative_to(ROOT)) for u in re.findall(r'url\(([^)]+)\)', (ROOT / 'source/og.html').read_text(encoding='utf-8'))}
+    assert used and used <= set(mk.OG_FROM), ('og.html uses a file og_source() does not hash: add it to OG_FROM', used - set(mk.OG_FROM))
+    png = (ROOT / 'og.png').read_bytes()
+    assert mk.png_text(png).get('ballotta-source') == mk.og_source(), ('og.png is not drawn from source/og.html as it is now: run python3 source/make_icons.py --og', mk.png_text(png))
+    drawn = mk.og(b)
+    assert mk.png_text(drawn).get('ballotta-source') == mk.og_source()
+    ctx, pg = new_page(b); pg.goto(BASE)
+    off = pg.evaluate("""async ([a, b]) => {
+        const img = async s => { const i = new Image(); i.src = s; await i.decode(); const c = new OffscreenCanvas(1200, 630);
+            const x = c.getContext('2d'); x.drawImage(i, 0, 0); return [i.naturalWidth, i.naturalHeight, x.getImageData(0, 0, 1200, 630).data]; };
+        const [A, B] = [await img(a), await img(b)]; let n = 0;
+        for (let k = 0; k < A[2].length; k += 4) if (Math.max(Math.abs(A[2][k] - B[2][k]), Math.abs(A[2][k+1] - B[2][k+1]), Math.abs(A[2][k+2] - B[2][k+2])) > 40) n++;
+        return [A[0], A[1], B[0], B[1], n];
+    }""", ['data:image/png;base64,' + base64.b64encode(png).decode(), 'data:image/png;base64,' + base64.b64encode(drawn).decode()])
+    ctx.close()
+    assert off[:4] == [1200, 630, 1200, 630], off
+    assert off[4] < 1200 * 630 * 0.03, ('og.png is not the picture source/og.html draws', off[4])
+
+@test
+def the_site_folder_is_the_whole_site(b):
+    # #83: Pages publishes only what `build_site.py --site` copies. Served from that folder alone, both layouts, a lookup,
+    # the offline copy's install and the Home Screen manifest find every file they ask for, and the repo's other files
+    # (tests, docs, sources, the README) aren't there.
+    import subprocess, tempfile
+    out = pathlib.Path(tempfile.mkdtemp()) / 'site'
+    r = subprocess.run([sys.executable, str(ROOT / 'source/build_site.py'), '--site', str(out)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-400:] + r.stderr[-400:]
+    s = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Quiet, directory=str(out)))
+    threading.Thread(target=s.serve_forever, daemon=True).start()
+    site = f'http://127.0.0.1:{s.server_address[1]}/'
+    try:
+        missing, probing = [], []                                                    # the repo-file probes below are meant to 404
+        note = lambda r: missing.append((r.status, r.url)) if r.url.startswith(site) and r.status >= 400 and not probing else None
+        watch = lambda pg: pg.on('response', note)
+        ctx, pg = new_page(b, wide=True, county='stub'); watch(pg)
+        pg.goto(site); lookup_wide(pg); pg.click('#dk-views [data-view="vote"]'); pg.wait_for_timeout(300); ctx.close()
+        ctx, pg = phone_page(b, sw=True, county='stub'); watch(pg)                     # one stub, not two (Pass 3)
+        ctx.on('response', note)                                                     # the offline copy's own requests too
+        pg.goto(site); lookup_phone(pg)
+        pg.wait_for_function('navigator.serviceWorker.controller !== null || document.readyState === "complete"', timeout=15000)
+        icons = pg.evaluate("""async () => { const m = await (await fetch('manifest.webmanifest')).json();
+            return Promise.all(m.icons.map(async i => [i.src, (await fetch(i.src)).status])); }""")
+        markup = re.sub(r'<script>.*?</script>', '', (out / 'index.html').read_text(encoding='utf-8'), flags=re.S)   # the page's own tags, not its scripts' strings
+        named = sorted(set(re.findall(r'(?:href|src)="([\w./-]+)"', markup)))       # umami.js is stubbed above: ask for it here
+        assert 'umami.js' in named and 'favicon.svg' in named, named
+        for u in named + ['next/', 'next/manifest.webmanifest', 'og.png', 'fonts/OFL.txt', 'version.json', 'census.html']:
+            missing += [(st, u) for st in [pg.evaluate('u => fetch(u).then(r => r.status)', u)] if st >= 400]
+        probing.append(1)
+        gone = {u: pg.evaluate('u => fetch(u).then(r => r.status)', u) for u in ('tests/test_site.py', 'README.md', 'source/build_site.py', 'docs/', 'VERSION', 'CHANGELOG.md')}
+        ctx.close()
+        assert not missing, ('the site asks for files the site folder lacks', missing)
+        assert icons and all(st == 200 for _, st in icons), icons
+        assert all(st == 404 for st in gone.values()), ('repo files in the site folder', gone)
+    finally:
+        s.shutdown()
+
+@test
+def county_stub_answers_from_the_file(b):
+    # #78: the stub answers from the recorded file, not the network (a recorded answer altered here shows on the page),
+    # and a request it has no answer for is named and passed to the real county (Pass 1: refusing it made the page
+    # report an outage, so any mutant that changed a request counted as a kill).
+    saved = dict(COUNTY_ANSWERS); COUNTY_ANSWERS.clear(); COUNTY_ANSWERS.update(json.loads(COUNTY_FILE.read_text(encoding='utf-8')))
+    try:
+        q = [u for u in COUNTY_ANSWERS if 'VotingAddresses' in u and 'GUADALUPE' in urllib.parse.unquote_plus(u).upper()]
+        assert q, 'no recorded answer for the courthouse'
+        for u in q:
+            d = json.loads(COUNTY_ANSWERS[u])
+            for f_ in d.get('features', []): f_['attributes']['Precinct'] = 301
+            COUNTY_ANSWERS[u] = json.dumps(d)
+        ctx, pg = new_page(b, wide=True, county='stub')
+        pg.goto(BASE); lookup_wide(pg)
+        assert str(pg.evaluate('lastLookup.precinct')) == '301', pg.evaluate('lastLookup.precinct')
+        ctx.close()
+        ctx, pg = new_page(b, county='live'); n = len(COUNTY_MISSES); passed = []        # live: no stub yet; a stand-in for the county
+        ctx.route(COUNTY, lambda r: (passed.append(r.request.url), r.fulfill(status=200, headers={'access-control-allow-origin': '*'}, body='{"candidates": []}')))
+        ctx.route('https://geocoding.geo.census.gov/**', lambda r: r.abort())           # no match sends the page to the Census: offline here (Pass 3)
+        route_county(ctx, 'stub')                                                       # routed last, so it answers first
+        pg.goto(BASE); pg.fill('#street', '2 Nowhere At All St'); pg.fill('#zip', '78701'); pg.click('#go')
+        pg.wait_for_function("(window.__events || []).some(e => e[0] === 'lookup_failed')", timeout=15000)
+        miss = [u for u in COUNTY_MISSES[n:] if 'Nowhere' in urllib.parse.unquote_plus(u)]
+        assert miss and miss == [u for u in passed if 'Nowhere' in urllib.parse.unquote_plus(u)], ('an unrecorded request is named and passed on, not refused', miss, passed)
+        ctx.close()
+    finally:
+        COUNTY_ANSWERS.clear(); COUNTY_ANSWERS.update(saved)
+
+@test
 def live_build_is_unchanged_until_promotion(b):
     m = build_module()
     assert m.strip_desk('a\n/*DESK*/\nb\n/*/DESK*/\nc\n') == 'a\nc\n'                         # whole-line block
@@ -264,11 +404,9 @@ def live_build_is_unchanged_until_promotion(b):
         assert 'id="dk-app"' not in live and 'DESK' not in live, 'laptop layout leaked into the live build'
     # Every file the main build writes is on disk as written, before and after promotion (promotion audit #2: after
     # it, next/index.html, next/sw.js, sw.js and manifest.webmanifest are the build's too, and a stale or missing one
-    # would ship), and the live page is the one pinned.
+    # would ship). No hash pin (#77): re-pinned with every change, it guarded nothing this comparison doesn't.
     for path, text in m.outputs(False).items():
         assert (ROOT / path).exists() and (ROOT / path).read_bytes() == text.encode('utf-8'), f'{path} on disk is not what build_site.py writes: rebuild, and commit it'
-    got = hashlib.sha256(live.encode('utf-8')).hexdigest()
-    assert got == LIVE_SHA, f'live index.html changed ({got}). Expected only with a deliberate change to the live page: re-pin LIVE_SHA in that commit.'
     if m.PHONE_LIVE:
         assert 'id="ph-bar"' in live and "worker-src 'self'" in live, 'promoted: the live page carries the phone layout'
     else:
@@ -279,7 +417,6 @@ def live_build_is_unchanged_until_promotion(b):
     assert 'id="ph-bar"' in prev and "manifest-src 'self'; worker-src 'self'" in prev and '"name": "Ballotta (preview)"' in m.manifest(True)
     assert 'id="dk-app"' in prev and 'data-domains="preview.invalid"' in prev and 'src="../umami.js"' in prev
     assert (ROOT / 'index.html').read_bytes() == live.encode('utf-8'), 'index.html on disk is not what the build writes (stale, left mutated, or its line endings changed)'
-    if not m.PHONE_LIVE: assert hashlib.sha256((ROOT / 'index.html').read_bytes()).hexdigest() == LIVE_SHA, 'the file on disk differs from the pinned live page'
     assert "url('../fonts/" in prev and '[Preview]' in prev and 'data-domains="preview.invalid"' not in live
 
 @desk_test
@@ -402,7 +539,7 @@ def desk_glance_picks_fit_their_names(b):
 def mud_41_reaches_its_addresses_marked_double_check(b):
     # Lane, Oct 17: Travis County MUD No. 41 goes to the addresses the county codes M41 (precinct 142), at medium
     # confidence ("Double-check") until the Tax Office confirms the code; before, no address reached its 7 contests.
-    rows = [f['attributes'] for f in json.loads((ROOT / 'source/data/combos_temp.json').read_text())['features']]
+    rows = [f['attributes'] for f in json.loads((ROOT / 'source/data/district_combos.json').read_text())['features']]
     m41 = next(r for r in rows if (r.get('MUD') or '').strip() == 'M41')
     other = next(r for r in rows if r.get('Precinct') == 142 and (r.get('MUD') or '').strip() != 'M41')
     ctx, pg = new_page(b); pg.goto(BASE)
@@ -468,7 +605,7 @@ def page_is_built_locked_down(b):
 def tracker_runs_only_as_pinned(b):
     # Issue #68: a changed umami.js (on the server or in transit) never runs; the pinned one does.
     for extra in ('', '\n/* changed */'):
-        ctx = b.new_context(); ctx.route('https://gateway.umami.is/**', lambda r: r.abort()); pg = ctx.new_page()
+        ctx = b.new_context(); route_county(ctx); ctx.route('https://gateway.umami.is/**', lambda r: r.abort()); pg = ctx.new_page()
         js = lambda route, extra=extra.encode(): (lambda r: route.fulfill(response=r, body=r.body() + extra))(route.fetch())
         ctx.route('**/umami.js', lambda route: js(route)); pg.goto(BASE); pg.wait_for_timeout(1200)
         assert pg.evaluate('typeof window.umami') == ('object' if not extra else 'undefined'), extra
@@ -494,7 +631,7 @@ def page_refuses_to_show_in_another_sites_frame(b):
     assert pg.locator('#street').is_visible() and NOJS not in pg.inner_text('body'), 'not framed: shown, without the JavaScript note'
     ctx.close()
     # JavaScript off (Tor Browser's Safest setting, NoScript): the note, with the county's own lookup (Lane, Oct 17).
-    ctx = b.new_context(java_script_enabled=False); pg = ctx.new_page(); pg.goto(BASE)
+    ctx = b.new_context(java_script_enabled=False); route_county(ctx); pg = ctx.new_page(); pg.goto(BASE)
     assert pg.inner_text('body').strip() == NOJS and not pg.locator('#street').is_visible(), pg.inner_text('body')[:300]
     assert pg.get_attribute('.nojs a', 'href') == 'https://votetravis.gov/voter-lookup/'
     ctx.close()
@@ -1144,7 +1281,7 @@ def desk_launch_audit_fixes(b):
     pg.wait_for_selector('#lookupmsg:not(.hidden)'); lookup_wide(pg)
     assert pg.is_hidden('#dk-say'), 'no stale warning once the ballot opens'
     ctx.close()
-    ctx = b.new_context(viewport={'width': 1366, 'height': 1024}, has_touch=True, is_mobile=True)    # #35: a tablet in landscape
+    ctx = b.new_context(viewport={'width': 1366, 'height': 1024}, has_touch=True, is_mobile=True); route_county(ctx)    # #35: a tablet in landscape
     stub_tracker(ctx)
     pg = ctx.new_page(); pg.goto(BASE); lookup_wide(pg)
     assert pg.evaluate("matchMedia('(pointer: coarse)').matches")
@@ -1265,7 +1402,7 @@ def real_tracker_sends_only_listed_events(b):
     for gpc in ('', "Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true })",
                 "Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' })"):
         sent = []
-        ctx = b.new_context(viewport={'width': 400, 'height': 900}, has_touch=live_phone)
+        ctx = b.new_context(viewport={'width': 400, 'height': 900}, has_touch=live_phone); route_county(ctx)
         if gpc: ctx.add_init_script(gpc)
         def page(route):
             r = route.fetch(); body = r.text().replace('data-domains="ballotta.org,www.ballotta.org"', 'data-domains="127.0.0.1"')
@@ -1523,6 +1660,54 @@ def mutation_runner_restores_on_any_signal(b):
         assert f.read_text(encoding='utf-8') == 'MUTANT', 'precondition: the mutant is on disk'
         p.send_signal(sig); p.wait(20)
         assert f.read_text(encoding='utf-8') == 'original', (sig, f.read_text(encoding='utf-8'))
+
+@test
+def mutation_runner_runs_alone(b):
+    # #79: two runners in one clone, or a build while one runs, put mutants on disk that nobody restores. A run takes
+    # .mutate-lock (atomically) and refuses to start while a lock or a half-written *.mutate-tmp is there. A signal
+    # restores the file and then drops the lock; a kill -9 can't restore, so it leaves the lock and the next run stops.
+    # #80: a mutant whose targets can't see the file it changes (a template mutant aimed at browser tests) is refused.
+    import subprocess, tempfile, signal as S
+    head = 'import sys, time, pathlib; sys.argv = ["mutate_desk.py"]; sys.path.insert(0, %r); import mutate_desk as R\nd = pathlib.Path(%r)\n'
+    def child(d, body, wait=True):
+        p = subprocess.Popen([sys.executable, '-c', head % (str(ROOT / 'tests'), str(d)) + body], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if not wait: return p
+        out, err = p.communicate(timeout=60); return p.returncode, out + err
+    d = pathlib.Path(tempfile.mkdtemp())
+    rc, out = child(d, 'R.take_lock(d); print("first", (d / ".mutate-lock").exists()); R.take_lock(d)')
+    assert 'first True' in out and rc != 0 and '.mutate-lock' in out, ('a second run took the lock', rc, out[-600:])
+    rc, out = child(d, 'R.ROOT = d; R.main([])')                                     # main itself checks, before any server starts
+    assert rc != 0 and '.mutate-lock' in out and 'baseline' not in out, ('main ran with a lock in place', rc, out[-600:])
+    (d / '.mutate-lock').unlink(); (d / 'next').mkdir(); (d / 'next/index.html.mutate-tmp').write_text('half')
+    rc, out = child(d, 'R.take_lock(d)')
+    assert rc != 0 and 'index.html.mutate-tmp' in out, ('a half-written file was ignored', rc, out[-600:])
+    (d / 'next/index.html.mutate-tmp').unlink()
+    for sig, kept in ((S.SIGTERM, False), (S.SIGKILL, True)):
+        f = d / 'page.html'; f.write_text('original', encoding='utf-8')
+        p = child(d, 'R.take_lock(d); f = d / "page.html"; R.PENDING.append((f, "original")); R.put(f, "MUTANT"); print("ready", flush=True); time.sleep(60)', wait=False)
+        assert p.stdout.readline().strip() == 'ready', sig
+        p.send_signal(sig); p.wait(20)
+        assert (d / '.mutate-lock').exists() == kept, (sig, 'lock left' if not kept else 'lock dropped with a mutant on disk')
+        assert f.read_text(encoding='utf-8') == ('MUTANT' if kept else 'original'), sig
+    rc, out = child(d, 'R.take_lock(d)')
+    assert rc != 0 and 'compare the whole tree with git' in out, ('after a kill -9 the next run must stop and say how to check', out[-600:])
+    (d / '.mutate-lock').unlink()
+    rc, out = child(d, 'R.take_lock(d); R.PENDING.append((d / "x", "x")); R.drop_lock(); print("held", (d / ".mutate-lock").exists()); '
+                       'R.PENDING.clear(); R.drop_lock(); print("gone", not (d / ".mutate-lock").exists())')
+    assert rc == 0 and 'held True' in out and 'gone True' in out, ('the lock goes only once nothing is pending', out[-600:])
+    (d / '.mutate-lock').write_text('x')                                            # if the #80 check failed, main stops at the lock, not at the real repo
+    rc, out = child(d, 'R.ROOT = d; R.main([("X1", R.TPL, "<title>", "<title>x", ["phone_add_to_home_screen_three_ways"])])')
+    assert rc != 0 and "can't see" in out and 'baseline' not in out, ('a template mutant aimed at a browser test ran', out[-600:])
+    rc, out = child(d, 'R.ROOT = d; R.main([("X2", R.PREV, "<title>", "<title>x", ["no_such_test_named_this"])])')
+    assert rc != 0 and 'no test named no_such_test_named_this' in out, ('a misspelled target ran', out[-600:])
+    rc, out = child(d, 'R.ROOT = d; R.main([("X5", R.PREV, "<title>", "<title>x", ["lookup_wide"])])')   # a helper, not a test (Pass 1)
+    assert rc != 0 and 'no test named lookup_wide' in out, ('a helper ran as a target', out[-600:])
+    rc, out = child(d, 'R.ROOT = d; R.main([("X3", R.PREV, "<title>", "<title>x", ["desk_phone_layout_matches_live_page"])])')
+    assert rc != 0 and "can't see" in out, ('a built-page mutant aimed at a test that builds from the template ran (L9)', out[-600:])
+    rc, out = child(d, 'R.ROOT = d; R.main([("X4", R.BLD, "hashlib.sha256(js.encode(", "hashlib.sha256(js.encode(", ["census_runs_in_a_sandbox"])])')   # a test that runs the build
+    assert rc != 0 and "can't see" not in out and '.mutate-lock' in out, ('a build-script mutant aimed at a test that runs the build was refused', out[-600:])
+    ignored = (ROOT / '.gitignore').read_text(encoding='utf-8').split()
+    assert '*.mutate-tmp' in ignored and '.mutate-lock' in ignored, ignored
 
 
 @desk_test
@@ -1796,8 +1981,8 @@ def backup_card(pg, wide): return pg.locator('#dk-nudge' if wide else '#nudge')
 import urllib.request, time
 PHONE = {'width': 390, 'height': 844}                      # an iPhone 13/14/15's screen in CSS pixels
 
-def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None):
-    ctx, pg = new_page(b, sent, csp=csp, touch=True, size=size or PHONE, sw=sw, ua=ua)
+def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None, county=None):
+    ctx, pg = new_page(b, sent, csp=csp, touch=True, size=size or PHONE, sw=sw, ua=ua, county=county)
     if init: pg.add_init_script(init)
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.__dict__['errs'] = errs
     return ctx, pg

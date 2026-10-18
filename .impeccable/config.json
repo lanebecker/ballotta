@@ -9,7 +9,8 @@
         "files": [
           "source/template-travis.html"
         ],
-        "createdAt": "2026-10-16T15:02:57.787Z"
+        "createdAt": "2026-10-16T15:02:57.787Z",
+        "reason": "Oct 16: the checker's five cramped-padding warnings on this file were measured in a browser (text 10-33px from every edge; it reads base rules, not the phone overrides; docs/plans/2026-10-15-phone-layout.md). Oct 18 (#85): it raises four, section.card and dialog.sheet x3. These findings carry no value and no line, so neither a value nor an inline comment can scope the waiver narrower than the file. Recheck when it changes: detect --no-config source/template-travis.html should list only those four."
       }
     ]
   }

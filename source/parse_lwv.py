@@ -93,7 +93,9 @@ try:
     old = json.load(open(out, encoding='utf-8'))
     for ch, v in res.items():
         o = old.get(ch, {})
-        if v.get('site') and o.get('site') == v['site'] and 'http' in o: v['url'], v['http'] = o['url'], o['http']
+        if v.get('site') and o.get('site') == v['site'] and 'http' in o:
+            v['url'], v['http'] = o['url'], o['http']
+            if 'curl' in o: v['curl'] = o['curl']
 except FileNotFoundError:
     pass
 alltext = ''.join(clean(p.get_text()) for p in doc).replace('\n', '')
@@ -108,13 +110,23 @@ for cid, vs in by_race.items():
     # ...and a sole printed candidate the guide covers is either marked unopposed or has real answers under the name.
     if len(vs) == 1 and ing and not ing[0].get('unopposed'): sole_check.append((cid, ing[0]))
 # Every "Campaign Website" in the guide must be credited to a ballot candidate or belong to a race not on the Travis ballot.
-credited = {re.sub(r'[^a-z0-9]', '', (v.get('site') or '').lower().split('@')[-1]) for v in res.values()}
+# A guide URL can be cut short where its line wraps, so one may be the start of the other; but compared whole (#85: the
+# first 14 characters, "wwwfacebookcom", made one credited Facebook page claim every other), and a bare host only
+# claims the same bare host (facebook.com/a is not facebook.com), or a host it is the cut-off start of.
+def site_key(u):
+    u = re.sub(r'^(https?://)?(www\.)?', '', (u or '').strip().lower()).split('@')[-1].rstrip('/')
+    host, _, path = u.partition('/')
+    return host, re.sub(r'[^a-z0-9]', '', path)
+def same_site(a, b):
+    if a[0] != b[0]:                                       # a host cut at the wrap ("www.janefortexas", no path) is the start of its host
+        return any(not x[1] and y[0].startswith(x[0] + '.') for x, y in ((a, b), (b, a)))
+    if not a[1] or not b[1]: return a[1] == b[1]
+    return a[1].startswith(b[1]) or b[1].startswith(a[1])
+credited = [site_key(v['site']) for v in res.values() if v.get('site')]
 unclaimed = []
 for (pg, col, y, t, bold, bb) in lines:
     m = re.match(r'Campaign Website:\s*(\S+)', t)
-    if m:
-        key_ = re.sub(r'[^a-z0-9]', '', re.sub(r'^https?://', '', m.group(1).lower()).split('@')[-1])
-        if not any(c and (c.startswith(key_[:14]) or key_.startswith(c[:14])) for c in credited): unclaimed.append((pg, m.group(1)))
+    if m and not any(same_site(site_key(m.group(1)), c) for c in credited): unclaimed.append((pg, m.group(1)))
 print('guide sites not credited to a Travis ballot candidate:', unclaimed)
 # Checked by hand against the PDF (Oct 14, 2026): Dyana Limon-Mercado (County Clerk, opposed only by a write-in) answered.
 SOLE_ANSWERED_OK = {'c053'}
@@ -135,5 +147,9 @@ for (pg, col, y, t, bold, bb) in lines:
 # Reading-order artifact: Georgetown ISD's Prop A heading on p.50 follows the end of Del Valle ISD's section; the guide
 # has no Del Valle ISD proposition (checked by hand, Oct 14, 2026).
 meas.pop('DEL VALLE INDEPENDENT SCHOOL DISTRICT|A', None)
+# The guide covers Williamson County too; none of these is on the Travis ballot, so nothing would read them (#85).
+# build_learn.py stops on any other entry it doesn't use, so a Travis entity the guide adds can't go unnoticed.
+OUTSIDE_TRAVIS = {'CITY OF GEORGETOWN', 'CITY OF HUTTO', 'CITY OF TAYLOR', 'GEORGETOWN INDEPENDENT SCHOOL DISTRICT'}
+meas = {k: v for k, v in meas.items() if k.split('|')[0] not in OUTSIDE_TRAVIS}
 json.dump(meas, open(pathlib.Path(out).with_name('lwv_measures.json'), 'w'), indent=1)
 print(meas)

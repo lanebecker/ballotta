@@ -58,9 +58,11 @@ Contests marked **Double-check** aren't confirmed for your address yet. Always c
 - Candidate answers and listed campaign websites: [League of Women Voters of the Austin Area 2026 Voters Guide](https://austinvotersguide.org/LWVAA-VG-EN.pdf), linked as published (page numbers and listed sites parsed from the PDF; Ballotta isn't affiliated with the League)
 - Vote centers: Travis County Clerk's early voting and Election Day lists; positions from the U.S. Census geocoder, Travis County's geocoder and © OpenStreetMap contributors (ODbL)
 - City of Austin Props A–B money split and tax estimate: City of Austin 2026 bond page and staff memo (May 15, 2026)
-- Fonts: Zilla Slab and Public Sans, SIL Open Font License 1.1
+- Fonts: Zilla Slab and Public Sans, SIL Open Font License 1.1 (`fonts/OFL.txt`, which travels with the font files)
 
 Ballotta isn't affiliated with Travis County, the League of Women Voters or any campaign, and it doesn't tell anyone how to vote.
+
+Copyright © 2026 Lane Becker. All rights reserved: the code and text are public to read but aren't open source (the fonts are, under their own license). To report a security or privacy problem, see `SECURITY.md`.
 
 The page is locked down: a Content-Security-Policy (built by `build_site.py` from the hashes of the page's own scripts) lets only its own scripts and files from this site run, lets it talk only to the county map server, the counting service and this site itself (the saved-copy bar's check), and allows frames only from this site. It sends no referrer to any site it asks or links to. GitHub Pages can't send the header that stops other sites from framing a page (`frame-ancestors` works only as a header, not in a meta tag), so the page starts hidden (a style in its head) and its first script shows it only when it isn't in a frame: a frame with scripts turned off shows nothing of it either, and the policy stops any injected script from undoing that. With JavaScript off, a visitor sees only "Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.", with a link to the county's lookup; that note is harmless in a frame too. The page's data (ballot, routing rules, Learn more, vote centers) is written into it so that no text in it can end its script or change how it is read (`script_json`), and the build stops on any campaign site or source link that isn't http(s).
 
@@ -75,23 +77,34 @@ Everything that makes the page lives in `source/`:
 - `learn.json`: per-race "learn more" data and office notes, built by `build_learn.py`
 - `vote_sites.json`: the county's vote center lists, geocoded
 
+Python 3.10 or newer (pdfminer.six and PyMuPDF need it); everything else is pinned in `requirements.txt`:
+
+```
+pip install -r requirements.txt && python3 -m playwright install chromium
+```
+
 ```
 python3 source/ballot/build_answer_key.py           # only when the ballot changes: writes answer_key.json
+python3 source/fetch_combos.py                      # only to refresh the county's district-code combinations (data/district_combos.json, no addresses)
 python3 source/build_rules.py                       # only when the contests or district data change
 python3 source/parse_lwv.py LWVAA-VG-EN.pdf source/answer_key.json source/data/lwv_candidates.json
-python3 source/check_sites.py                       # after any parse: records which listed sites load
+python3 source/check_sites.py                       # after any parse: records which listed sites load (from an ordinary connection: it stops behind a proxy)
 python3 source/build_learn.py
 python3 source/build_site.py                        # writes index.html, census.html, version.json, sw.js, manifest.webmanifest and next/ (checks VERSION and CHANGELOG.md first)
-python3 source/make_icons.py                        # only if the logo changes: the Home Screen icons
+python3 source/build_site.py --check                # writes nothing: fails if a committed output isn't what the build writes, or a rollback build breaks (CI runs it)
+python3 source/make_icons.py                        # only if the logo changes: the Home Screen icons (--og also draws og.png from source/og.html)
 python3 tests/test_pipeline.py                      # the answer key against the ballot PDF, and the release check (no browser)
 python3 tests/test_site.py                          # end-to-end checks (Playwright, live county services) of the live page
-python3 tests/mutate_desk.py                        # mutation check of the tests (slow; restores every file it touches, even when stopped)
+BALLOTTA_STUB_COUNTY=1 python3 tests/test_site.py   # the same with the county's recorded answers (tests/county_answers.json), when it is down or slow
+python3 tests/mutate_desk.py                        # mutation check of the tests (slow; restores every file it touches, even when stopped; one run per clone)
 python3 tests/mutate_phone.py                       # the same for the phone layout's tests
 ```
 
-`parse_lwv.py` prints any listed site it couldn't credit to a candidate, and stops the build if a contested race shows an "unopposed" candidate or if a sole candidate is shown as answering without a hand check. It needs PyMuPDF (`pip install pymupdf`); the tests need Playwright with Chromium (`pip install playwright && playwright install chromium`); `make_icons.py` needs Playwright too.
+The county's lookup server answers most tests. With `BALLOTTA_STUB_COUNTY=1` (the mutation runners' default; `=0` turns it off) they get the answers recorded in `tests/county_answers.json` instead, and one test, `county_is_live`, still asks the county and fails if its answers have changed; `BALLOTTA_RECORD_COUNTY=1 python3 tests/test_site.py` records them again. A mutation runner refuses to start while another holds `.mutate-lock`, or while a half-written `*.mutate-tmp` is there; a run killed with `kill -9` leaves the lock, because a mutant may still be on disk: compare the whole tree with git (`git status`, `git diff`) and put back anything you didn't change yourself (a mutant in `build_site.py` can switch a check off without changing any output, so `--check` alone can't tell), then delete the lock. The build refuses to run while it is there. It also refuses a mutant that names a test unable to see it: the template and `build_site.py` only reach tests that run the build, and a built page only tests that load it.
 
-`build_answer_key.py` turns `source/ballot/parsed.json` into the key. `parsed.json` is a frozen snapshot (#55): `parse_ballot.py` made it from the Sep 30 PDF using per-column text extracted by hand and never committed, so that step can't be rerun; the tests against the corrected PDF below are its check, and building the key straight from the PDF is issue #97, after the election. Its hand fixes live in the script, so a rerun gives the committed key byte for byte, the Oct 14 corrections included: the order of choices in the "vote for up to N" contests is the ballot's, top to bottom, and every measure's text is read straight from the corrected ballot PDF (`source/ballot/bedsheet.pdf`, by `source/ballot/pdf_lines.py`: English only, since the ballot sets Spanish in italic). Both need pdfplumber (`pip install pdfplumber`). `tests/test_pipeline.py` holds the key to the PDF: choice order, measure texts (also checked line by line, apart from the reader that made them), party labels and the count of measures. The key records the PDF it came from by its sha256 (the county's earlier URL for it no longer answers).
+`parse_lwv.py` prints any listed site it couldn't credit to a candidate, and stops the build if a contested race shows an "unopposed" candidate or if a sole candidate is shown as answering without a hand check. It needs PyMuPDF; the tests and `make_icons.py` need Playwright with Chromium (all in `requirements.txt`, above).
+
+`build_answer_key.py` turns `source/ballot/parsed.json` into the key. `parsed.json` is a frozen snapshot (#55): `parse_ballot.py` made it from the Sep 30 PDF using per-column text extracted by hand and never committed, so that step can't be rerun; the tests against the corrected PDF below are its check, and building the key straight from the PDF is issue #97, after the election. Its hand fixes live in the script, so a rerun gives the committed key byte for byte, the Oct 14 corrections included: the order of choices in the "vote for up to N" contests is the ballot's, top to bottom, and every measure's text is read straight from the corrected ballot PDF (`source/ballot/bedsheet.pdf`, by `source/ballot/pdf_lines.py`: English only, since the ballot sets Spanish in italic). Both need pdfplumber (in `requirements.txt`). `tests/test_pipeline.py` holds the key to the PDF: choice order, measure texts (also checked line by line, apart from the reader that made them), party labels and the count of measures. The key records the PDF it came from by its sha256 (the county's earlier URL for it no longer answers).
 
 Keep and Share links store picks by each choice's position in its list. The Oct 17 fix put ten lists in ballot order, but links keep counting those ten in the old order, through the page's `REORDERED` table, both when a link is made and when it is read: an old link still means what it meant, and a copy of the page from before the fix (a phone's offline copy, a tab left open) reads a new link right. Never reorder a list again without the same care.
 
@@ -105,6 +118,10 @@ Keep and Share links store picks by each choice's position in its list. The Oct 
 - **To cut a release:** rename `[Unreleased]` to `## [x.y.z] — YYYY-MM-DD`, put a fresh `## [Unreleased]` with `_Nothing yet._` above it, set `VERSION` to `x.y.z`, run `python3 source/build_site.py`, and commit and push all of it together. A visitor-facing change (a fix, a wording change, a data correction) is a PATCH, and so is adjusting an existing layout (a column's width, a title's spacing); a new feature, a new layout or a layout redesign is a MINOR; a change that breaks Keep or Share links people already have, or Ballotta's promises about privacy, is a MAJOR. (1.0.0 is the one exception: it marks the phone layout going live, a milestone, and breaks nothing.)
 - **What checks it:** `source/check_release.py` (VERSION is semver; CHANGELOG.md opens with `[Unreleased]` and its newest release, dated, is VERSION; releases run newest first; `version.json` agrees). The main build (`python3 source/build_site.py`) refuses to run without it, `tests/test_pipeline.py` runs it, and the GitHub workflow **Release check** runs it on every push to `main` and every pull request. When a push changes `VERSION` on `main`, the workflow **Release tag** tags the pushed commit (the tip of that push) `v<VERSION>`, and warns if `CHANGELOG.md` didn't change in the same push. So push a release's `VERSION` and `CHANGELOG.md` together, as its last commit.
 - **History:** the releases before 1.0.0 were numbered on Oct 17, 2026 from the commit history, one per milestone, and each is tagged `v<version>` at the last commit of that milestone.
+
+## What the site publishes
+
+Only the site's own files are published (#83): the files `build_site.py` writes and the ones its pages point at (the icons, the fonts and their license, the tracker copy, the link-preview card), listed as `STATIC` in `source/build_site.py`. The **Pages** workflow runs `python3 source/build_site.py --site _site`, which copies exactly those files once the build check passes, and deploys that folder; `tests/`, `docs/`, `source/` and the rest of the repo are not served. A new file the page needs goes on that list, or the test that serves the folder alone (`the_site_folder_is_the_whole_site`) fails. Until Settings → Pages → Source is set to **GitHub Actions**, Pages publishes the branch itself and the workflow deploys nothing.
 
 ## Custom domain (ballotta.org)
 

@@ -1,0 +1,34 @@
+name: Build check
+
+# Push to main is deploy (GitHub Pages), so nothing should reach it that the build doesn't make (#81). This rebuilds
+# every output in memory and compares it with what's committed (a hand edit or a mutant left behind fails), runs both
+# rollback builds (every marker check), and runs tests/test_pipeline.py: the answer key against the ballot PDF, and
+# the release check. No browser and no county server: under a minute.
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The committed build is what the build writes
+        run: python3 source/build_site.py --check
+      - name: The PDF libraries the pipeline tests use (pinned in requirements.txt)
+        run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
+      - name: The answer key against the ballot PDF, and the release check
+        run: python3 tests/test_pipeline.py

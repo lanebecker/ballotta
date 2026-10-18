@@ -1,12 +1,13 @@
 """Mutation-kill check for the laptop-layout tests: every mutant must turn at least one named test RED.
 Files are restored from an in-memory copy in a finally block (never git).
 Run from the repo root after both builds:  python3 <this file> [first last]   (a slice of the list, e.g. 0 10)"""
-import os, sys, pathlib, signal
+import os, re, sys, pathlib, signal
 SIGS = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
 PENDING = []                                               # (file, original text) while a mutant may be on disk
 def _stop(sig, _frame):                                    # Ctrl-C, a kill or a hang-up: put the original back, then exit (#41);
     for s_ in SIGS: signal.signal(s_, signal.SIG_IGN)     # a second signal can't interrupt the restore
     for f_, t_ in PENDING: put(f_, t_)
+    PENDING.clear(); drop_lock()                           # every file is whole again: the lock can go (#79)
     sys.exit(128 + sig)
 for s_ in SIGS: signal.signal(s_, _stop)
 def put(f, text):                                          # write whole or not at all: never a half-written page; a signal
@@ -15,9 +16,26 @@ def put(f, text):                                          # write whole or not 
         tmp = f.with_name(f.name + '.mutate-tmp'); tmp.write_text(text, encoding='utf-8'); os.replace(tmp, f)
     finally:
         signal.pthread_sigmask(signal.SIG_SETMASK, old)
+LOCK = []                                                  # the lock this run holds (#79)
+def take_lock(root):
+    """#79: one runner per clone. Refuse while another run's lock, or a half-written *.mutate-tmp, is there: either means
+    a mutant may be on disk that nobody will restore (a second runner, or a kill -9 mid-run). Made with O_EXCL, so two
+    runs starting together can't both get it."""
+    root = pathlib.Path(root); lock = root / '.mutate-lock'
+    left = [str(t.relative_to(root)) for t in root.rglob('*.mutate-tmp') if '.git' not in t.parts]
+    how = ('a mutant may still be on disk: compare the whole tree with git (git status, git diff; build_site.py --check '
+           'misses a mutant that switches a check off) and put back what you did not change, then delete ')
+    if left: raise SystemExit(f'half-written {left}: {how}them')
+    try: fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError: raise SystemExit(f'{lock} is there: another run is going, or one was killed and {how}{lock.name}')
+    os.write(fd, str(os.getpid()).encode()); os.close(fd); LOCK[:] = [lock]
+def drop_lock():
+    if LOCK and not PENDING:                               # never while a mutant may still be on disk
+        LOCK.pop().unlink(missing_ok=True)
 ROOT = pathlib.Path.cwd()
 LIVE = '\nDESK_LIVE = True\n' in (ROOT / 'source/build_site.py').read_text(encoding='utf-8')     # the setting's own line, not the comment
 os.environ['BALLOTTA_PAGE'] = os.environ.get('BALLOTTA_MUTATE_PAGE') or ('index.html' if LIVE else 'next/index.html')   # mutate_phone.py sets its own page
+os.environ.setdefault('BALLOTTA_STUB_COUNTY', '1')   # recorded county answers (#78): a slow county is not a kill; =0 asks the real one
 sys.path.insert(0, str(ROOT / 'tests'))
 import test_site as T
 from playwright.sync_api import sync_playwright
@@ -87,7 +105,7 @@ M = [
  ('L6 paper does not overlap the band', PREV, "  body:not(.dk-app-on) .wrap{margin-top:-96px;padding-top:0}\n", "", ['laptop_and_phone_landing_plum_band_and_faq']),
  ('L7 side column on the plum', PREV, ".dk-steps,body.dk-friend #start{margin-top:112px}", ".dk-steps,body.dk-friend #start{margin-top:0}", ['laptop_and_phone_landing_plum_band_and_faq']),
  ('L8 FAQ hidden', PREV, "  body:not(.dk-app-on) .dk-faq{display:flex}\n", "", ['laptop_and_phone_landing_plum_band_and_faq']),
- ('L9 FAQ on phones', PREV, ".dk-back,.dk-hero,.dk-faq{display:none}", ".dk-back,.dk-hero{display:none}", ['laptop_and_phone_landing_plum_band_and_faq', 'desk_phone_layout_matches_live_page']),
+ ('L9 FAQ on phones', PREV, ".dk-back,.dk-hero,.dk-faq{display:none}", ".dk-back,.dk-hero{display:none}", ['laptop_and_phone_landing_plum_band_and_faq']),   # not desk_phone_layout_matches_live_page: it builds from the template (#80)
  ('L10 band shown in the app', PREV, "on the plum bar */\n  body:not(.dk-app-on) .dk-hero{display:flex}", "on the plum bar */\n  .dk-hero{display:flex}", ['laptop_and_phone_landing_plum_band_and_faq']),
  ('L11 Share my picks vanishes on plum', PREV, "  body:not(.dk-app-on) .dk-btn.pri{background:var(--gold);border-color:var(--gold);color:var(--ink)}", "", ['laptop_and_phone_landing_plum_band_and_faq']),
  ('L12 address dark on plum', PREV, "  body:not(.dk-app-on) .dk-loc,body:not(.dk-app-on) .dk-loc b{color:var(--ground)}\n", "", ['laptop_and_phone_landing_plum_band_and_faq']),
@@ -366,7 +384,7 @@ M = [
  ('E37 a mutant leaves the page CSP stale', MD_SELF, "else None\n    if m and '<!--' not in m.group(0):", "else None\n    if False:", ['mutation_runner_judges_mutants_honestly']),
  ('G1 the page is not hidden from the start', PREV, '<style id="frame-guard">body>:not(noscript){display:none!important}', '<style id="frame-guard">', ['page_refuses_to_show_in_another_sites_frame']),
  ('G2 the page never shows', PREV, 'if (guard) guard.remove();', '', ['page_refuses_to_show_in_another_sites_frame']),
- ('G3 the tracker tag carries no pin', BLD, ' integrity="{sri}"', '', ['tracker_runs_only_as_pinned', 'page_is_built_locked_down']),
+ ('G3 the tracker tag carries no pin', BLD, ' integrity="{sri}"', '', ['page_is_built_locked_down']),            # not tracker_runs_only_as_pinned: it loads the built page (#80)
  ('G4 the build takes any umami.js', BLD, '!= UMAMI_SHA256:\n        sys.exit', '!= UMAMI_SHA256 and False:\n        sys.exit', ['page_is_built_locked_down']),
  ('G5 a tag passes the firewall', PREV, "'referrer', 'name'];", "'referrer', 'tag', 'name'];", ['privacy_firewall_drops_anything_unlisted']),
  ('G6 any title passes', PREV, "else if (k === 'title') out.title = TITLE;", "else if (k === 'title') out.title = v;", ['privacy_firewall_drops_anything_unlisted']),
@@ -394,7 +412,7 @@ M = [
  ('H10 the precinct table is not joined', PREV, '  const t = DATA.tlc[String(rec.Precinct)] || {};', '  const t = {};', ['an_excluded_district_does_not_get_the_contest']),
  ('H11 the Census frame may load anything', BLD, 'content="default-src \\\'none\\\'; script-src \' + sha(CENSUS_JS)', 'content="default-src *; script-src \' + sha(CENSUS_JS)', ['census_runs_in_a_sandbox']),
  ('H12 the CSP hashes only the first script', BLD, '    hashes = " ".join(sha(s) for s in re.findall(r"<script>(.*?)</script>", html, re.S))', '    hashes = " ".join(sha(s) for s in re.findall(r"<script>(.*?)</script>", html, re.S)[:1])', ['page_is_built_locked_down']),
- ('H13 the CSP hash is of other bytes', BLD, 'hashlib.sha256(js.encode("utf-8")).digest()', 'hashlib.sha256(js.strip().encode("utf-8")).digest()', ['phone_page_is_locked_down', 'census_runs_in_a_sandbox']),
+ ('H13 the CSP hash is of other bytes', BLD, 'hashlib.sha256(js.encode("utf-8")).digest()', 'hashlib.sha256(js.strip().encode("utf-8")).digest()', ['census_runs_in_a_sandbox']),            # not phone_page_is_locked_down: it reads the built page (#80)
  ('I1 the Census answer is taken from any origin', PREV, " || e.origin !== 'null') return;", ') return;', ['census_answers_only_from_its_sandboxed_frame']),
  ('I2 the data goes in raw', BLD, 'data = script_json({', 'data = json.dumps({', ['page_data_cannot_break_out_of_its_script']),
  ('I3 a "<" in the data is left as it is', BLD, '.replace("<", "\\\\u003c")', '', ['page_data_cannot_break_out_of_its_script']),
@@ -404,6 +422,18 @@ M = [
  ('I7 counting on the old address too', BLD, 'UMAMI_DOMAINS = "ballotta.org,www.ballotta.org"', 'UMAMI_DOMAINS = "ballotta.org,www.ballotta.org,lanebecker.github.io"', ['page_is_built_locked_down']),
  ('E38 every built file gets the page CSP', MD_SELF, 'if f.resolve() == PREV.resolve() else None\n    if m and', "if f.suffix == '.html' else None\n    if m and", ['mutation_runner_judges_mutants_honestly']),
  ('E39 phone-ness read after the mutant', MD_SELF, 'csp_meta(rest, \'id="ph-bar"\' in text)', 'csp_meta(rest, \'id="ph-bar"\' in out)', ['mutation_runner_judges_mutants_honestly']),
+ ('W5a two runs can both take the lock', MD_SELF, 'os.O_CREAT | os.O_EXCL | os.O_WRONLY)\n', 'os.O_CREAT | os.O_WRONLY)\n', ['mutation_runner_runs_alone']),
+ ('W5b a half-written file is ignored', MD_SELF, "    if left: raise SystemExit(f'half-written {left}: {how}them')\n", '', ['mutation_runner_runs_alone']),
+ ('W5c a signal leaves the lock', MD_SELF, '    PENDING.clear(); drop_lock()                           # every file is whole again: the lock can go (#79)\n', '    PENDING.clear()\n', ['mutation_runner_runs_alone']),
+ ('W5d the lock goes with a mutant pending', MD_SELF, '    if LOCK and not PENDING:                               # never while a mutant may still be on disk\n', '    if LOCK:\n', ['mutation_runner_runs_alone']),
+ ('W5e main runs without the lock', MD_SELF, '    take_lock(ROOT)                                                  # one run per clone (#79)\n', '', ['mutation_runner_runs_alone']),
+ ('W5f the refusal says nothing of how to check', MD_SELF, "    how = ('a mutant may still be on disk: compare the whole tree with git (git status, git diff; build_site.py --check '\n", "    how = ('a mutant may still be on disk: '\n", ['mutation_runner_runs_alone']),
+ ('W5g main skips the target check', MD_SELF, '    assert not bad, bad\n', '', ['mutation_runner_runs_alone']),
+ ('W5h template mutants pass with browser targets', MD_SELF, '        if f in (TPL, BLD): sees = lambda s: calls(s, builds)\n', '        if False: sees = lambda s: calls(s, builds)\n', ['mutation_runner_runs_alone']),
+ ('W5i a misspelled target passes', MD_SELF, "            if t not in fns or t not in registered: bad.append(f'{name}: no test named {t}')\n", '            if t not in fns or t not in registered: continue\n', ['mutation_runner_runs_alone']),
+ ('W5j a built-page mutant passes with a build-only target', MD_SELF, "            sees = lambda s, n=f.name: not calls(s, builds) or any(k in s for k in ('BASE', 'PAGE', n))\n", '            sees = lambda s, n=f.name: True\n', ['mutation_runner_runs_alone']),
+ ('W5l comments count', MD_SELF, ' for t in toks if t.type != tokenize.COMMENT)\n', ' for t in toks)\n', ['mutation_runner_runs_alone']),
+ ('W5m a helper passes as a target', MD_SELF, '            if t not in fns or t not in registered: bad.append(f\'{name}: no test named {t}\')\n', '            if t not in fns: bad.append(f\'{name}: no test named {t}\')\n', ['mutation_runner_runs_alone']),
  ('W1 Next names the contest already open', PREV, "return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }", 'return nx; }', ['desk_next_never_points_at_the_open_contest']),
  ('W2 Next never goes on in order', PREV, 'const nx = upNext() || inOrder();', 'const nx = upNext();', ['desk_next_never_points_at_the_open_contest']),
  ('W3 no in-order label', PREV, 'if (io) return \'<span class="dk-nt">Next: \'', 'if (false) return \'<span class="dk-nt">Next: \'', ['desk_next_never_points_at_the_open_contest']),
@@ -478,11 +508,46 @@ def run_targets(b, tests):
                 killed.append(tn + ':' + type(e).__name__ + (' x2' if type(e).__name__ == 'TimeoutError' else '')); break
     return killed
 
+def target_problems(M):
+    """#80: every test a mutant names must be able to see it, or the list promises a check that never happens (L9 named
+    desk_phone_layout_matches_live_page, which builds its pages in memory from the template and never sees index.html).
+    The template and build_site.py are seen only by a test that runs the build (build_module()); a built file
+    (index.html, sw.js…) by any test except one that runs the build and never touches the file on disk (BASE, PAGE or
+    the file's name). Comments don't count: a test that mentions index.html in one doesn't read it. It reads the tests'
+    code, so it is a heuristic: it catches a list naming a build-only test for a page mutant (or the reverse), not
+    every test that can't see its mutant; the mutant's kill is still the proof. A target must be a test, not a helper."""
+    import inspect, io, tokenize, types
+    def code(fn):
+        try: toks = tokenize.generate_tokens(io.StringIO(inspect.getsource(fn)).readline)
+        except (OSError, TypeError): return ''
+        return ' '.join(t.string for t in toks if t.type != tokenize.COMMENT)
+    calls = lambda src, names: bool(names) and re.search(r'\b(' + '|'.join(sorted(names)) + r')\s*\(', src)
+    fns = {n: code(v) for n, v in vars(T).items() if isinstance(v, types.FunctionType) and v.__module__ == T.__name__}
+    registered = {f.__name__ for f in T.TESTS}
+    builds = {'build_module'}                              # no test reaches the build through a helper (Oct 18); one that did would be refused, loudly
+    bad = []
+    for name, f, a, z, tests in M:
+        if f in (TPL, BLD): sees = lambda s: calls(s, builds)
+        elif f == PREV or f.suffix in ('.html', '.js') and f.parent in (ROOT, ROOT / 'next'):
+            sees = lambda s, n=f.name: not calls(s, builds) or any(k in s for k in ('BASE', 'PAGE', n))
+        else: sees = lambda s: True                          # the runner itself, the README, data files: read by their own tests
+        for t in tests:
+            if t not in fns or t not in registered: bad.append(f'{name}: no test named {t}')
+            elif not sees(fns[t]): bad.append(f"{name}: {t} can't see a change to {os.path.relpath(f, ROOT)}")
+    return bad
+
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
+    bad = target_problems(M)                                         # a mutant no target can see is a free pass (#80)
+    assert not bad, bad
     for name, f, a, z, tests in M:                                   # a stale anchor fails in a second, not after the baseline (audit #27)
         assert f.read_text(encoding='utf-8').count(a) == 1, (name, 'anchor found', f.read_text(encoding='utf-8').count(a), 'times in', f.name)
-    srv = T.serve(); res = []
+    take_lock(ROOT)                                                  # one run per clone (#79)
+    try:
+        srv = T.serve()
+    except BaseException:
+        drop_lock(); raise
+    res = []
     try:
         with sync_playwright() as p:
             b = p.chromium.launch()
@@ -496,8 +561,11 @@ def main(M):
                 PENDING.append((f, orig))                            # from here until the restore, a stop signal restores first (#41)
                 try:
                     put(f, mutate(f, orig, a, z))
+                    asked = len(T.COUNTY_MISSES)
                     killed = run_targets(b, tests)
-                    res.append((name, 'KILLED' if killed else 'SURVIVED', ','.join(killed)))
+                    live = len(T.COUNTY_MISSES) - asked              # the mutant made requests the recording doesn't hold (Pass 2):
+                    res.append((name, ('KILLED' + ('-LIVE' if live else '')) if killed else 'SURVIVED', ','.join(killed)   # the real county decided,
+                                + (f' ({live} live county requests: a county outage would look like this kill)' if live and killed else '')))   # so say so
                 finally:
                     put(f, orig); PENDING.clear()
                 # A kill counts only if the same tests pass again on the restored file (a service hiccup fails both).
@@ -507,8 +575,9 @@ def main(M):
                 print(*res[-1], flush=True)
             b.close()
     finally:
-        srv.shutdown()
-    print(sum(r[1] == 'KILLED' for r in res), 'of', len(res), 'mutants killed')
+        srv.shutdown(); drop_lock()
+    live = sum(r[1] == 'KILLED-LIVE' for r in res)          # not in the count: during a county outage they'd look the same (Pass 3)
+    print(sum(r[1] == 'KILLED' for r in res), 'of', len(res), 'mutants killed', *([f'(and {live} killed with live county requests: rerun those with the county up)'] if live else []))
 
 if __name__ == '__main__':                                       # importing the runner (its own test does) starts nothing (#41)
     main(M)

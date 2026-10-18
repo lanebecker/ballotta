@@ -13,7 +13,7 @@
 7. Release bookkeeping (source/check_release.py): VERSION, CHANGELOG.md's newest release and version.json agree, and
    the check refuses each kind of drift.
 """
-import json, pathlib, re, subprocess, sys, tempfile
+import json, os, pathlib, re, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'source/ballot')); sys.path.insert(0, str(ROOT / 'source'))
@@ -146,6 +146,200 @@ def release_check_refuses_drift():
             if bool(check_release.problems(d)) != refused: wrong.append((name, check_release.problems(d)))
     assert not wrong, wrong
     assert check_release.key('1.2.10') > check_release.key('1.2.9') > check_release.key('1.2.9-rc1')
+
+@test
+def build_check_catches_drift_and_broken_markers():
+    # #81: `build_site.py --check` (what CI runs) rebuilds in memory, writes nothing, and fails when a committed output
+    # differs from the build (a hand edit, a left-behind mutant) or when a rollback build's markers don't pair up.
+    import shutil
+    run = lambda root: subprocess.run([sys.executable, str(root / 'source/build_site.py'), '--check'], capture_output=True, text=True, cwd=str(root))
+    r = run(ROOT); assert r.returncode == 0, ('the committed build is out of date', r.stdout[-600:], r.stderr[-600:])
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 'b'
+        shutil.copytree(ROOT, d, ignore=shutil.ignore_patterns('.git', 'tests', '__pycache__', '*.pdf'))
+        files = lambda: {p: p.read_bytes() for p in d.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
+        before = files()
+        assert run(d).returncode == 0
+        assert files() == before, '--check wrote something'
+        page = d / 'index.html'; page.write_text(page.read_text(encoding='utf-8').replace('<title>', '<title> ', 1), encoding='utf-8')
+        r = run(d); assert r.returncode != 0 and 'index.html' in r.stdout + r.stderr, ('a changed index.html passed', r.stdout[-400:])
+        page.write_bytes(before[page])
+        tpl = d / 'source/template-travis.html'; s = tpl.read_text(encoding='utf-8')
+        tpl.write_text(s.replace('<!--/DESK-->', '', 1), encoding='utf-8')
+        r = run(d); assert r.returncode != 0 and 'DESK' in r.stdout + r.stderr, ('an unpaired marker passed', r.stdout[-400:])
+
+@test
+def site_folder_holds_only_the_site():
+    # #83: Pages publishes the folder `build_site.py --site` writes: every built file and the files the pages point at,
+    # nothing else (no tests/, docs/, source/), and nothing at all when the build check fails.
+    import shutil
+    sys.path.insert(0, str(ROOT / 'source')); import build_site
+    want = set(build_site.site_files())
+    assert {'index.html', 'census.html', 'sw.js', 'version.json', 'fonts/OFL.txt', 'umami.js'} <= want, want
+    assert not [f for f in want if f.split('/')[0] in ('source', 'tests', 'docs', '.github') or f.endswith(('.md', '.py', '.pdf'))], want
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d); out = d / 'site'
+        r = subprocess.run([sys.executable, str(ROOT / 'source/build_site.py'), '--site', str(out)], capture_output=True, text=True)
+        assert r.returncode == 0, r.stdout[-400:] + r.stderr[-400:]
+        got = {str(p.relative_to(out)) for p in out.rglob('*') if p.is_file()}
+        assert got == want, (got ^ want)
+        assert all((out / f).read_bytes() == (ROOT / f).read_bytes() for f in got)
+        r = subprocess.run([sys.executable, str(ROOT / 'source/build_site.py'), '--site', str(out)], capture_output=True, text=True)
+        assert r.returncode != 0 and 'not empty' in r.stdout + r.stderr, ('wrote into a folder that already held files', r.stderr[-300:])
+        repo = d / 'repo'; shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns('.git', 'tests', '__pycache__', '*.pdf'))
+        (repo / 'index.html').write_text((repo / 'index.html').read_text(encoding='utf-8') + ' ', encoding='utf-8')
+        r = subprocess.run([sys.executable, str(repo / 'source/build_site.py'), '--site', str(d / 'bad')], capture_output=True, text=True)
+        assert r.returncode != 0 and not (d / 'bad').exists() and 'index.html' in r.stdout + r.stderr, ('a drifted build was published', r.stdout[-300:], r.stderr[-300:])
+        (repo / 'index.html').write_bytes((ROOT / 'index.html').read_bytes()); (repo / 'og.png').unlink()
+        r = subprocess.run([sys.executable, str(repo / 'source/build_site.py'), '--site', str(d / 'bad2')], capture_output=True, text=True)
+        assert r.returncode != 0 and 'og.png is published but missing' in r.stdout + r.stderr and not (d / 'bad2').exists(), ('a missing file was not caught by the check', r.stderr[-300:])
+        (repo / 'og.png').write_bytes((ROOT / 'og.png').read_bytes())
+        run = lambda *a: subprocess.run([sys.executable, str(repo / 'source/build_site.py'), *a], capture_output=True, text=True, cwd=str(repo))
+        cen = repo / 'census.html'; cen.write_bytes(cen.read_bytes().replace(b'\n', b'\r\n'))       # same text, other bytes
+        r = run('--check'); assert r.returncode != 0 and 'census.html' in r.stdout, ('a CRLF copy passed the check', r.stdout[-300:])
+        cen.write_bytes((ROOT / 'census.html').read_bytes())
+        (repo / '.mutate-lock').write_text('1')                                                      # #79: no build while a mutation run holds the lock
+        for args in ((), ('--site', str(d / 'bad3'))):
+            r = run(*args); assert r.returncode != 0 and '.mutate-lock' in r.stderr and not (d / 'bad3').exists(), (args, r.stderr[-300:])
+        (repo / '.mutate-lock').unlink()
+        bs = repo / 'source/build_site.py'; src = bs.read_text(encoding='utf-8'); assert src.count('\nPHONE_LIVE = True\n') == 1
+        bs.write_text(src.replace('\nPHONE_LIVE = True\n', '\nPHONE_LIVE = False\n', 1), encoding='utf-8')
+        r = run(); assert r.returncode == 0, r.stderr[-300:]
+        r = run('--site', str(d / 'stale'))                                                           # the rollback without --preview: next/ is still the hand-off page
+        assert r.returncode != 0 and 'next/index.html' in r.stderr and not (d / 'stale').exists(), ('a rollback published the old next/', r.stderr[-300:])
+        for args in (('--preview',), ('--site', str(d / 'rollback'))):                                # a phone rollback, as the README says
+            r = run(*args); assert r.returncode == 0, (args, r.stdout[-300:], r.stderr[-300:])
+        got = {str(x.relative_to(d / 'rollback')) for x in (d / 'rollback').rglob('*') if x.is_file()}
+        assert {'next/index.html', 'next/sw.js', 'next/manifest.webmanifest', 'manifest.webmanifest', 'sw.js', 'index.html'} <= got, sorted(got)
+
+
+@test
+def every_early_site_is_spelled_as_on_election_day():
+    # #85: all 45 early voting sites are Election Day sites too, but three were spelled differently ("Confrence Room",
+    # "1201 E Runberg Ln", "5800 Mcneil Dr"). Name, room, street and city now match their Election Day row exactly.
+    d = json.loads((ROOT / 'source/vote_sites.json').read_text(encoding='utf-8'))
+    eday = {tuple(r[:4]) for r in d['eday']}
+    odd = [r[:4] for r in d['early'] if tuple(r[:4]) not in eday]
+    assert len(d['early']) == 45 and not odd, odd
+    typos = re.compile(r'Confrence|Runberg|Mcneil')
+    assert not [r[:4] for k in ('early', 'eday') for r in d[k] if typos.search(' '.join(map(str, r[:4])))]
+
+
+@test
+def every_browser_context_gets_the_county_stub():
+    # #78, Pass 1: a context made outside new_page() (a tablet, JavaScript off) skipped route_county(), so with
+    # BALLOTTA_STUB_COUNTY=1 its lookups still went to the live county. Every context the browser suite makes must route
+    # it, on that same context, in code (Pass 2: comments don't count).
+    import io, tokenize
+    raw = (ROOT / 'tests/test_site.py').read_text(encoding='utf-8')
+    lines = raw.splitlines()
+    for t in tokenize.generate_tokens(io.StringIO(raw).readline):          # blank every comment, keep the line numbers
+        if t.type == tokenize.COMMENT:
+            r, c = t.start; lines[r - 1] = lines[r - 1][:c]
+    code = '\n'.join(lines)
+    np = code[code.index('def new_page('):code.index('\n    return ctx, pg', code.index('def new_page('))]
+    assert re.search(r'^    ctx = browser\.new_' + r'context\(', np, re.M) and re.search(r'^    route_county\(ctx, county\)', np, re.M), 'new_page() no longer routes the county'
+    made = [l.strip() for l in lines if '.new_' + 'context(' in l and not l.strip().startswith('ctx = browser.new_' + 'context(viewport=size or')]
+    bare = [l for l in made if not re.match(r'(\w+) = \w+\.new_' + r'context\(.*;\s*route_county\(\1\)', l)]
+    assert len(made) >= 4 and not bare, bare
+
+
+@test
+def guide_sites_are_compared_whole():
+    # #85: parse_lwv.py reports guide sites it couldn't credit to a ballot candidate. It compared the first 14 characters,
+    # so one credited Facebook page claimed every other; a URL cut short at a line wrap must still match its site.
+    src = (ROOT / 'source/parse_lwv.py').read_text(encoding='utf-8')
+    ns = {'re': re}; exec(src[src.index('def site_key'):src.index('credited = ')], ns)
+    k, same = ns['site_key'], ns['same_site']
+    cases = {('www.facebook.com/alice', 'www.facebook.com/bob'): False, ('facebook.com/alice', 'https://www.facebook.com/bob'): False, ('facebook.com/alice', 'facebook.com'): False,
+             ('www.facebook.com/alice', 'https://facebook.com/alice/'): True, ('www.jeffbowenforaustincitycouncil', 'jeffbowenforaustincitycouncil.com'): True,
+             ('janeforcouncil.com/about-jane-and-her', 'https://janeforcouncil.com/about-jane-and-her-plan'): True,
+             ('jane.com', 'janeforcouncil.com'): False, ('jane', 'janeforcouncil.com'): False, ('Tishflores.com', 'tishflores.com/'): True}
+    wrong = [(a, b) for (a, b), want in cases.items() if same(k(a), k(b)) != want or same(k(b), k(a)) != want]
+    assert not wrong, wrong
+
+
+@test
+def every_guide_measure_belongs_to_a_contest():
+    # #85: the guide's Williamson County measures went unread. parse_lwv.py leaves them out, and build_learn.py stops on
+    # any guide measure no contest reads (a Travis entity missing from LWV_ENT would lose its voters the guide's page).
+    import shutil
+    m = json.loads((ROOT / 'source/data/lwv_measures.json').read_text(encoding='utf-8'))
+    assert not [x for x in m if x.split('|')[0] in ('CITY OF GEORGETOWN', 'CITY OF HUTTO', 'CITY OF TAYLOR', 'GEORGETOWN INDEPENDENT SCHOOL DISTRICT')], m
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__'))
+        run = lambda: subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d))
+        r = run(); assert r.returncode == 0, r.stderr[-600:]
+        assert (d / 'learn.json').read_bytes() == (ROOT / 'source/learn.json').read_bytes(), 'learn.json is not what build_learn.py makes'
+        (d / 'data/lwv_measures.json').write_text(json.dumps(dict(m, **{'CITY OF ROUND ROCK|A': 9})), encoding='utf-8')
+        r = run(); assert r.returncode != 0 and 'CITY OF ROUND ROCK|A' in r.stderr, ('an unread guide measure passed', r.stderr[-400:])
+
+
+@test
+def a_site_is_broken_only_when_it_surely_is():
+    # #85: check_sites.py took "no answer" as working, so a site whose name doesn't resolve, or whose secure connection
+    # fails (Okey Anyiam's, Oct 17), stayed linked. Now curl's exit code counts (6, 35); bot walls and timeouts don't; a
+    # break is recorded only if it repeats; and build_learn.py unlinks by the same rule.
+    import importlib, shutil
+    cs = importlib.import_module('check_sites')
+    rule = {('404', None): True, ('410', None): True, ('000', 6): True, ('000', 35): True, ('000', 28): False, ('000', None): False, ('000', 60): True,
+            ('403', None): False, ('429', None): False, ('503', None): False, ('200', None): False, ('301', 35): True, ('200', 0): False}
+    assert {k: cs.broken(*k) for k in rule} == rule, {k: cs.broken(*k) for k in rule}
+    def fake(seq):
+        it = iter(seq); calls = []
+        def c(url): calls.append(url); return next(it)
+        return c, calls
+    real = cs.curl
+    try:
+        cs.curl, calls = fake([('000', 35), ('000', 35), ('200', 0)])        # broken, then fine on the retry: fine
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[2] == '200' and len(calls) == 3, calls
+        cs.curl, calls = fake([('000', 35), ('000', 35), ('000', 35), ('000', 35)])
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[2:] == ('000', 35)
+        cs.curl, calls = fake([('000', 28), ('000', 28)])                    # a timeout: no retry, stays linked
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[2:] == ('000', 28) and len(calls) == 2
+        cs.curl, calls = fake([('000', 35), ('301', 35)] * 2)                # https fails; http redirects into the same failure
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '000', 35), calls
+        cs.curl, calls = fake([('000', 35), ('000', 56)] * 2)                # https fails; http fails some other way: https's counts
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '000', 35), calls
+        cs.curl, calls = fake([('000', 28), ('200', 0)])                     # https too slow, http answers: the http link
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('http://x.org', '200', 0) and calls == ['https://x.org', 'http://x.org']
+        cs.curl, calls = fake([('403', 0)])                                  # a bot wall over https: no http try
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '403', 0) and len(calls) == 1
+        for late in (56, 92, 28):                                            # https answered, then the page broke off: keep https (Pass 2)
+            cs.curl, calls = fake([('200', late)])
+            assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '200', late) and len(calls) == 1, (late, calls)
+        cs.curl, calls = fake([('000', 28), ('301', 28)])                    # http redirects to the https that didn't answer: keep https (Pass 3)
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '000', 28)
+        cs.curl, calls = fake([('403', 0)])
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '403', 0) and len(calls) == 1
+    finally:
+        cs.curl = real
+    runs = []                                                                # an incomplete chain is asked again without curl's check;
+    class P:                                                                 # any other refused certificate is not (Pass 3)
+        def __init__(s, rc, err, out='200'): s.returncode, s.stderr, s.stdout = rc, err, out
+    real_run = cs.subprocess.run
+    try:
+        for err, want in (('curl: (60) SSL certificate problem: unable to get local issuer certificate', ('200', 0)),
+                          ('curl: (60) SSL certificate problem: certificate has expired', ('000', 60)),
+                          ('curl: (60) SSL: no alternative certificate subject name matches target host name', ('000', 60))):
+            runs.clear()
+            cs.subprocess.run = lambda args, **k: (runs.append(args), P(0, '') if '-k' in args else P(60, err, ''))[1]
+            assert cs.curl('https://x.org') == want and (('-k' in runs[-1]) == (want[1] == 0)), (err, runs)
+    finally:
+        cs.subprocess.run = real_run
+    assert cs.proxied({'HTTPS_PROXY': 'http://p:1'}) == ['HTTPS_PROXY'] and cs.proxied({'https_proxy': ''}) == [] and cs.proxied({}) == []
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__'))
+        before = (d / 'data/lwv_candidates.json').read_bytes()
+        r = subprocess.run([sys.executable, str(d / 'check_sites.py')], capture_output=True, text=True, env=dict(os.environ, HTTPS_PROXY='http://127.0.0.1:9'))
+        assert r.returncode != 0 and 'proxy' in r.stderr and (d / 'data/lwv_candidates.json').read_bytes() == before, ('checked links behind a proxy', r.stderr[-300:])
+        lwv = json.loads((d / 'data/lwv_candidates.json').read_text(encoding='utf-8'))
+        lwv['Okey Anyiam (DEM)'].update(http='000', curl=35)
+        (d / 'data/lwv_candidates.json').write_text(json.dumps(lwv), encoding='utf-8')
+        r = subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d)); assert r.returncode == 0, r.stderr[-600:]
+        e = json.loads((d / 'learn.json').read_text(encoding='utf-8'))[lwv['Okey Anyiam (DEM)']['contest']]['cands']['Okey Anyiam']
+        assert e.get('s') is None and e.get('sx') == 1, e
+
 
 if __name__ == '__main__':
     failed = 0

@@ -1825,14 +1825,6 @@
   "contest": "c116",
   "in_guide": false
  },
- "Carrington Saathoff": {
-  "contest": "c154",
-  "in_guide": false
- },
- "Ryan Sullivan": {
-  "contest": "c154",
-  "in_guide": false
- },
  "Grant Ballew": {
   "contest": "c154",
   "in_guide": false
@@ -1841,16 +1833,16 @@
   "contest": "c154",
   "in_guide": false
  },
- "William Waller": {
+ "Carrington Saathoff": {
   "contest": "c154",
   "in_guide": false
  },
- "Nicodemus Abowd": {
-  "contest": "c168",
+ "Ryan Sullivan": {
+  "contest": "c154",
   "in_guide": false
  },
- "Denis Fletcher": {
-  "contest": "c168",
+ "William Waller": {
+  "contest": "c154",
   "in_guide": false
  },
  "Jeff Markey": {
@@ -1861,16 +1853,16 @@
   "contest": "c168",
   "in_guide": false
  },
- "Barry Marotz": {
+ "Nicodemus Abowd": {
   "contest": "c168",
   "in_guide": false
  },
- "Daniel McElrath": {
-  "contest": "c176",
+ "Denis Fletcher": {
+  "contest": "c168",
   "in_guide": false
  },
- "Chase Nixon": {
-  "contest": "c176",
+ "Barry Marotz": {
+  "contest": "c168",
   "in_guide": false
  },
  "Jacob Clark": {
@@ -1878,6 +1870,14 @@
   "in_guide": false
  },
  "Ross Hamilton": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Daniel McElrath": {
+  "contest": "c176",
+  "in_guide": false
+ },
+ "Chase Nixon": {
   "contest": "c176",
   "in_guide": false
  },
@@ -1897,14 +1897,6 @@
   "contest": "c178",
   "in_guide": false
  },
- "Scott Moser": {
-  "contest": "c179",
-  "in_guide": false
- },
- "Brenda Vrabel": {
-  "contest": "c179",
-  "in_guide": false
- },
  "R. Lee Hill": {
   "contest": "c179",
   "in_guide": false
@@ -1913,12 +1905,12 @@
   "contest": "c179",
   "in_guide": false
  },
- "Felicity Maxwell": {
-  "contest": "c192",
+ "Scott Moser": {
+  "contest": "c179",
   "in_guide": false
  },
- "Casey Paulson": {
-  "contest": "c192",
+ "Brenda Vrabel": {
+  "contest": "c179",
   "in_guide": false
  },
  "Mickey Jamail": {
@@ -1929,16 +1921,16 @@
   "contest": "c192",
   "in_guide": false
  },
- "Ryan Puzycki": {
+ "Felicity Maxwell": {
   "contest": "c192",
   "in_guide": false
  },
- "Jason Nobbe": {
-  "contest": "c199",
+ "Casey Paulson": {
+  "contest": "c192",
   "in_guide": false
  },
- "Kelly Schill": {
-  "contest": "c199",
+ "Ryan Puzycki": {
+  "contest": "c192",
   "in_guide": false
  },
  "Ashtyn Bogue": {
@@ -1949,16 +1941,16 @@
   "contest": "c199",
   "in_guide": false
  },
- "Jared Williams": {
+ "Jason Nobbe": {
   "contest": "c199",
   "in_guide": false
  },
- "Beth Jones": {
-  "contest": "c202",
+ "Kelly Schill": {
+  "contest": "c199",
   "in_guide": false
  },
- "Stephen Bodnarchuk Jr.": {
-  "contest": "c202",
+ "Jared Williams": {
+  "contest": "c199",
   "in_guide": false
  },
  "Hanoi Avila": {
@@ -1966,6 +1958,14 @@
   "in_guide": false
  },
  "David Flores": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Beth Jones": {
+  "contest": "c202",
+  "in_guide": false
+ },
+ "Stephen Bodnarchuk Jr.": {
   "contest": "c202",
   "in_guide": false
  },
@@ -1981,14 +1981,6 @@
   "contest": "c202",
   "in_guide": false
  },
- "Richard Kenyon": {
-  "contest": "c203",
-  "in_guide": false
- },
- "Travis Wright": {
-  "contest": "c203",
-  "in_guide": false
- },
  "Rick Shute": {
   "contest": "c203",
   "in_guide": false
@@ -1997,12 +1989,12 @@
   "contest": "c203",
   "in_guide": false
  },
- "Elicia Michaud": {
-  "contest": "c204",
+ "Richard Kenyon": {
+  "contest": "c203",
   "in_guide": false
  },
- "Larry Harlan": {
-  "contest": "c204",
+ "Travis Wright": {
+  "contest": "c203",
   "in_guide": false
  },
  "Phil Han": {
@@ -2013,16 +2005,16 @@
   "contest": "c204",
   "in_guide": false
  },
- "Ryan Carretta": {
+ "Elicia Michaud": {
   "contest": "c204",
   "in_guide": false
  },
- "Rudolf J. Valenti": {
-  "contest": "c214",
+ "Larry Harlan": {
+  "contest": "c204",
   "in_guide": false
  },
- "Paul Wadehra": {
-  "contest": "c214",
+ "Ryan Carretta": {
+  "contest": "c204",
   "in_guide": false
  },
  "Philip Waters": {
@@ -2030,6 +2022,14 @@
   "in_guide": false
  },
  "Abigail Joffrain": {
+  "contest": "c214",
+  "in_guide": false
+ },
+ "Rudolf J. Valenti": {
+  "contest": "c214",
+  "in_guide": false
+ },
+ "Paul Wadehra": {
   "contest": "c214",
   "in_guide": false
  },
