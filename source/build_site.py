@@ -176,7 +176,7 @@ SW_JS = (
     "// A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy=\"offline\">,\n"
     "// \"slow\" or \"error\". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).\n"
     "const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');\n"
-    "  return new Response(t.replace(/^(\\s*(?:<!--(?:>|->|(?:(?!-->)[\\s\\S])*-->)\\s*)*(?:<!doctype[^>]*>\\s*)?(?:<!--(?:>|->|(?:(?!-->)[\\s\\S])*-->)\\s*)*<html)(?=[\\s>])/i, '$1 data-copy=\"' + why + '\"'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
+    "  return new Response(t.replace(/^(\\s*(?:<!--(?:-?>|(?!-?>)(?:(?!-->)[\\s\\S])*-->)\\s*)*(?:<!doctype[^>]*>\\s*)?(?:<!--(?:-?>|(?!-?>)(?:(?!-->)[\\s\\S])*-->)\\s*)*<html)(?=[\\s>])/i, '$1 data-copy=\"' + why + '\"'), { status: res.status, statusText: res.statusText, headers: h }); });\n")
 SW_OFF_JS = (
     "// Built by source/build_site.py: removes Ballotta's offline copy from this browser. It takes the open pages over first,\n"
     "// so the old copy can't keep filling its cache, then deletes its caches (only Ballotta's), then itself.\n"

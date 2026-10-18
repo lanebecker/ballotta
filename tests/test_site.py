@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '33a28106f999e7f012ff23131d12db17622ea0f9473702e94f48a420bf2fe0d2'  # Oct 18: wave 4 (phone layout follow-ups)
+LIVE_SHA = '3062b02b12757e4368426f620139020e345d2268fd52a7eb9f2ae81685a687e4'  # Oct 18: wave 4 (phone layout follow-ups)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -2680,8 +2680,9 @@ def offline_copy_marks_any_html_tag(b):
     assert out.count('data-copy') == 1 and out.index('data-copy') < out.index('<script>'), out
     out = run('<!--> <!doctype html>\n<html lang="en"><body><!-- a --><html>x')   # Pass 2: an abrupt comment; only the real tag
     assert out.count('data-copy') == 1 and out.index('data-copy') < out.index('<body>'), out
-    ms = pg.evaluate("([s, h]) => { const f = (0, eval)('(() => { ' + s + '; return said; })()'); const t = performance.now(); return f(new Response(h), 'slow').then(() => performance.now() - t); }", [said, '<!-- a -->' * 24 + '<body>x'])
-    assert ms < 200, ('comments before a page that has no <html> took', ms)   # Pass 2: no runaway backtracking
+    for junk in ('<!-- a -->' * 24, '<!-->' * 30, '<!--->' * 30):              # Pass 2, 3: no runaway backtracking, abrupt comments included
+        ms = pg.evaluate("([s, h]) => { const f = (0, eval)('(() => { ' + s + '; return said; })()'); const t = performance.now(); return f(new Response(h), 'slow').then(() => performance.now() - t); }", [said, junk + '<body>x'])
+        assert ms < 200, ('comments before a page that has no <html> took', junk[:6], ms)
     ctx.close()
 
 @phone_test
@@ -2712,6 +2713,9 @@ def phone_saved_copy_bar_follows_the_site(b):
         seen(); pg.wait_for_timeout(1500); assert visible(), 'the site still answers with an error: the bar stays'
         Flip.fail = {}; pg.evaluate("window.dispatchEvent(new Event('online'))"); poll(pg, back, 10)   # the phone saying it's online asks too
         pg.evaluate("window.dispatchEvent(new Event('offline'))"); assert "isn’t answering" in bar.inner_text(), ('offline: the bar takes its word back', bar.inner_text())
+        Flip.slow = {'/' + PAGE: 1}; pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(300)    # Pass 3: a check in flight when the phone goes offline
+        pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(1500); Flip.slow = {}
+        assert "isn’t answering" in bar.inner_text(), ('an answer that left before "offline" said the site was back', bar.inner_text())
         pg.evaluate("window.dispatchEvent(new Event('online'))"); poll(pg, back, 10)
         Flip.fail = {'/' + PAGE: 503}; seen(); pg.wait_for_timeout(1500)      # Pass 2: the site stops answering again: the bar says so again
         assert "isn’t answering" in bar.inner_text() and pg.inner_text('#ph-saved-go') == 'Try again', bar.inner_text()

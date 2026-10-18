@@ -2662,7 +2662,7 @@ const phone = (() => {
     // every 20 seconds, with a HEAD request the offline copy never answers, one at a time. Only an answer within 3.5 seconds
     // counts: a reload goes through the copy's 4-second rule, so a slower line would only land on the copy again. If the site
     // stops answering again, the bar says so again (Wave 4 Pass 2).
-    let busy = false;
+    let busy = false, gen = 0;
     const back = (on) => {
       if (on === siteBack) return;
       siteBack = on;
@@ -2670,18 +2670,18 @@ const phone = (() => {
       $('ph-saved-go').textContent = on ? 'Reload' : 'Try again';
       if (on) $('ph-saved').querySelector('b + span').textContent = ''; else savedSay();
     };
+    // The 3.5-second timer decides: whichever comes first, the answer or the timer, ends the check, and a check that
+    // "offline" overtook counts for nothing (Pass 3).
     const check = () => {
       if (busy || document.visibilityState === 'hidden') return;
+      const my = ++gen, ac = typeof AbortController === 'function' ? new AbortController() : null;
       busy = true;
-      const ac = typeof AbortController === 'function' ? new AbortController() : null, t0 = Date.now(), t = setTimeout(() => { if (ac) ac.abort(); }, 3500);
-      const done = () => { clearTimeout(t); busy = false; };
-      try {
-        fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: ac ? ac.signal : undefined })
-          .then((r) => back(r.ok && Date.now() - t0 < 3500), () => back(false)).then(done, done);
-      } catch (e) { done(); }
+      const end = (on) => { if (my !== gen) return; gen++; clearTimeout(t); busy = false; back(on); };
+      const t = setTimeout(() => { if (ac) ac.abort(); end(false); }, 3500);
+      try { fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: ac ? ac.signal : undefined }).then((r) => end(r.ok), () => end(false)); } catch (e) { end(false); }
     };
     document.addEventListener('visibilitychange', check); window.addEventListener('online', check); setInterval(check, 20000);
-    window.addEventListener('offline', () => back(false));
+    window.addEventListener('offline', () => { gen++; busy = false; back(false); });
     $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
     savedSay();
   }

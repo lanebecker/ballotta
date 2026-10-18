@@ -34,4 +34,4 @@ self.addEventListener('fetch', (e) => {
 // A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy="offline">,
 // "slow" or "error". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).
 const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');
-  return new Response(t.replace(/^(\s*(?:<!--(?:>|->|(?:(?!-->)[\s\S])*-->)\s*)*(?:<!doctype[^>]*>\s*)?(?:<!--(?:>|->|(?:(?!-->)[\s\S])*-->)\s*)*<html)(?=[\s>])/i, '$1 data-copy="' + why + '"'), { status: res.status, statusText: res.statusText, headers: h }); });
+  return new Response(t.replace(/^(\s*(?:<!--(?:-?>|(?!-?>)(?:(?!-->)[\s\S])*-->)\s*)*(?:<!doctype[^>]*>\s*)?(?:<!--(?:-?>|(?!-?>)(?:(?!-->)[\s\S])*-->)\s*)*<html)(?=[\s>])/i, '$1 data-copy="' + why + '"'), { status: res.status, statusText: res.statusText, headers: h }); });
