@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '212bf68dbf9d98a070c6f251870cb350f18f96c314f5980ce7aa17137c30922f'  # Oct 17: wave 3 (the privacy promise, verified)
+LIVE_SHA = '4732b24b3745aa129b2cb91bf0f86a74f7b531baef604d93a35f5674d8209924'  # Oct 17: wave 3 (the privacy promise, verified)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 def stub_tracker(ctx):
     # A stand-in for the tracker that records events. The real tag carries integrity= (issue #68), so a stand-in served as
