@@ -49,7 +49,7 @@ M = [
  ('P76 any cache on the site answers offline', SW, 'await caches.open(CACHE).then((c) => c.match(key));', 'await caches.match(key);', ['phone_offline_copy_after_one_visit']),
  ('P34 no manifest', PREV, '<link rel="manifest" href="manifest.webmanifest">\n', '', ['phone_offline_copy_after_one_visit']),
  ('P35 phone code on laptops', TPL, '.ph-only,.ph-faq{display:none}', '.ph-faq{display:none}', ['laptop_unchanged_by_the_phone_code']),
- ('P36 phone layout in the live build', BLD, '    if not phone:\n        html = strip_phone(html)\n', '', ['live_build_is_unchanged_until_promotion']),
+ ('P36 phone layout in the live build', BLD, '    if not phone:\n        html = strip_phone(html)\n', '', ['promotion_hands_the_preview_on']),
  ('P37 preview CSP blocks the manifest', BLD, 'PHONE_CSP = "; manifest-src \'self\'; worker-src \'self\'"', 'PHONE_CSP = ""', ['live_build_is_unchanged_until_promotion']),
  ('P38 the paper sits below the band', PREV, 'body:not(.dk-app-on) .wrap{margin-top:-64px', 'body:not(.dk-app-on) .wrap{margin-top:0', ['phone_landing_band_form_and_faq']),
  ('P39 header buttons too small to tap', PREV, '.dk-btn{width:44px;height:44px', '.dk-btn{width:32px;height:32px', ['phone_landing_band_form_and_faq']),

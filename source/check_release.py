@@ -9,8 +9,9 @@
 4. version.json, which build_site.py writes next to the page so anyone can ask the live site what it runs, is
    {"version": VERSION}.
 
-build_site.py runs these before it writes anything, the test suite runs them (tests/test_pipeline.py), and the
-"Release check" workflow runs them on every push. Stdlib only.
+The main build (build_site.py, not --preview) runs these before it writes anything, the test suite runs them
+(tests/test_pipeline.py), and the "Release check" workflow runs them on every push to main and every pull request.
+Stdlib only.
 """
 import json, pathlib, re, sys
 

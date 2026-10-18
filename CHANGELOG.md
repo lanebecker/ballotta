@@ -1,14 +1,14 @@
 # Changelog
 
-All notable changes to Ballotta (https://ballotta.org) are recorded here.
+All notable changes to Ballotta (https://ballotta.org) are recorded here, newest first.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-Versions follow [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), plus a "Tests" section where the checks
+changed. Versions follow [Semantic Versioning](https://semver.org/) as the README's "Versioning" section applies it.
 
 `VERSION` is the one source of truth for the current version; the live site reports it at
-https://ballotta.org/version.json. To cut a release, see "Versioning" in the README. Releases before 1.0.0 were
-numbered on Oct 17, 2026, from the commit history; each is tagged at the last commit of its day's work. Issue numbers
-are GitHub issues; "audit #N" is a finding in `docs/audits/2026-10-17-cold-audit.md`.
+https://ballotta.org/version.json. Releases before 1.0.0 were numbered on Oct 17, 2026, from the commit history, one
+per milestone; each is tagged `v<version>` at the last commit of that milestone. Issue numbers are GitHub issues;
+"audit #N" is a finding in `docs/audits/2026-10-17-cold-audit.md`.
 
 ---
 
@@ -19,7 +19,8 @@ _Nothing yet._
 ## [1.0.0] — 2026-10-17
 
 **Phones get the new layout.** The phone layout that was previewed at ballotta.org/next/ is now the main page, for
-everyone, two days before early voting starts.
+everyone, two days before early voting starts. 1.0.0 marks that milestone; it is not a breaking change: every Keep
+and Share link people already have still opens.
 
 ### Added
 - **The phone layout on ballotta.org.** Narrower than 1024px, the page is the laptop's app folded up for a phone: a
@@ -28,11 +29,12 @@ everyone, two days before early voting starts.
   "← Previous" and "Next undecided →".
 - **Add to Home Screen.** Android shows the browser's own prompt; on an iPhone, steps that name and draw Safari's own
   buttons, a private picks link to carry your picks into the Home Screen app, and "Paste my picks link" there.
-- **An offline copy for phones.** The page keeps a copy of itself and opens it when there's no connection (or the
-  network takes more than 4 seconds), with a bar that says so and "Try again". It keeps the page from its first
-  install, so it opens offline before a second visit. Laptops never get it.
-- **Versioning.** `VERSION`, this changelog, `version.json` on the live site, release tags, and a check that keeps them
-  in step (`source/check_release.py`, run by the build, the tests and a GitHub workflow).
+- **An offline copy for phones and tablets.** The page keeps a copy of itself and opens it when there's no
+  connection (or the network takes more than 4 seconds), with a bar that says so and "Try again". It keeps the page
+  from its first install, so it opens offline before a second visit; that first download gives up after 8 seconds on
+  a slow line. Laptops never get it, and turning the phone layout off again removes it from phones.
+- **Versioning.** `VERSION`, this changelog, `version.json` on the live site, release tags, and a check that keeps
+  them in step (`source/check_release.py`, run by the build, the tests and a GitHub workflow).
 
 ### Changed
 - **ballotta.org/next/ now sends people to the main page**, with any Keep or Share link made on the preview, and
@@ -43,36 +45,38 @@ everyone, two days before early voting starts.
   Compare tap, which the phone layout doesn't have.
 - **Crib sheet print options survive a window narrowed below 1024px**, since a phone now shows them too.
 
+### Removed
+- **The old phone page** (every contest on one long page, with its Compare button).
+
 ### Fixed
 - **The shared link stays on screen after "Share link".** Since Oct 14 the link just copied vanished at once, and
   where copying fails, so did the selected link you were meant to copy by hand.
-- **The offline copy's first download gives up after 8 seconds** on a slow line, instead of holding up the copy (and
-  any update behind it).
-- **A rollback removes the offline copy.** Turning the phone layout off again now writes a `sw.js` that removes
-  itself and its copies from phones.
+
+### Known issues
+- The "Slow connection" bar doesn't clear on its own (issue #73), and a server error that arrives within 4 seconds is
+  shown instead of the kept copy (issue #74).
 
 ### Tests
-- The 31 tests that only ran on the old phone page are retired; 34 ports run on the live page (audit #29). Five
-  laptop mutants that promotion made unreachable or redundant are retired; every other mutant is re-anchored.
+- The 31 tests that only ran on the old phone page are retired; 34 ports run on the live page (audit #29). The 117
+  laptop mutants that named those tests now name the ports, six are re-anchored on the laptop's own copy of their
+  line, and five that promotion made unreachable or redundant are retired.
 
-## [0.6.1] — 2026-10-17
+## [0.6.3] — 2026-10-17
 
 ### Changed
 - **Travis County MUD No. 41 reaches its voters.** Its 7 contests go to the addresses the county codes `M41`
   (precinct 142), marked "Double-check" until the Tax Office confirms the code (Lane's call; issue #56).
+- **"The county's wait-times map fills in once voting starts Oct 19"** now shows on the laptop's Where to vote view,
+  as the old phone page always said.
 
-### Added
-- **"The county's wait-times map fills in once voting starts Oct 19"** on the laptop's Where to vote view, as the
-  old phone page always said.
-
-## [0.6.0] — 2026-10-17
+## [0.6.2] — 2026-10-17
 
 **What's on the ballot is the ballot** (cold audit wave 1).
 
 ### Fixed
-- **Ten "vote for up to N" contests list their candidates in the ballot's order** (MUDs, an MMD, a WCID and a library
-  district: c154, c168, c176, c179, c192, c199, c202, c203, c204, c214; audit #1). Keep and Share links still count
-  those ten in the old order, so every link, old or new, means the same candidates to every version of the page.
+- **Ten "vote for up to N" contests list their candidates in the ballot's order** (MUDs, an MMD, two WCIDs and a
+  library district: c154, c168, c176, c179, c192, c199, c202, c203, c204, c214; audit #1). Keep and Share links still
+  count those ten in the old order, so every link, old or new, means the same candidates to every version of the page.
 - **37 measures no longer end in a stray Spanish caption** ("… Distrito de Austin Community"); every measure's text
   is now read straight from the county's corrected ballot PDF, English only (audit #2).
 
@@ -87,7 +91,7 @@ everyone, two days before early voting starts.
 - `tests/test_pipeline.py`: the key against the PDF (choice order, measure texts, line by line; party labels; the
   count of measures).
 
-## [0.5.1] — 2026-10-17
+## [0.6.1] — 2026-10-17
 
 ### Changed
 - **Laptop: At a glance's pick column fits every name on the ballot**, and its title matches the other views' size.
@@ -95,40 +99,46 @@ everyone, two days before early voting starts.
   ballot choices".
 - **Every view's title sits the same distance below its small line**, as Decide's does.
 
-### Added
-- **The cold audit of Oct 17** (`docs/audits/2026-10-17-cold-audit.md`): 47 findings in six waves.
-
-## [0.5.0] — 2026-10-16
+## [0.6.0] — 2026-10-16
 
 ### Added
-- **A preview of the phone layout at ballotta.org/next/** (the live page unchanged): the laptop app folded up for a
-  phone, Add to Home Screen and an offline copy with a kill switch (round G); Home Screen steps that name Safari's own
-  buttons, and a bar that says when you're looking at the saved copy (round H); "Your ballot" as the top bar's title,
-  "← Previous" and "Next undecided →" at the bottom (round I).
+- **A preview of the phone layout at ballotta.org/next/** (ballotta.org itself unchanged): the laptop app folded up
+  for a phone, Add to Home Screen and an offline copy with a kill switch; Home Screen steps that name Safari's own
+  buttons, and a bar that says when you're looking at the saved copy; "Your ballot" as the top bar's title, with
+  "← Previous" and "Next undecided →" at the bottom.
 
-## [0.4.1] — 2026-10-15
-
-**Issues rounds A, B and C.**
+## [0.5.0] — 2026-10-15
 
 ### Security
 - **The page is locked down** (#36): a Content-Security-Policy built from the hashes of the page's own scripts, no
   referrer to any site, and the Census geocoder in a sandboxed frame (`census.html`) that hands back only a point.
 
+### Added
+- **A one-time card after the 5th pick (and at 25) suggests a backup link** (#48), and at the first pick the page asks
+  the browser to keep its data (#49).
+- **"Clear everything on this device" in the phone page's footer** whenever anything is stored (#42).
+- **The laptop's "Print…" opens the Crib sheet view.**
+
 ### Fixed
 - Saved picks, reasons, share names and generations are checked when read, so junk can't break Keep or Share
   (#20, #44); share names fold look-alike letters and party nicknames (#21, #43); a pick past "vote for up to N" is
-  refused with a note that says why (#33); a tab left open past midnight moves to the new day (#34, #47); laptop
-  announcements are queued so none is cut off (#45); and smaller fixes (#22–#24, #32, #46).
-
-### Added
-- A one-time card after the 5th pick (and at 25) suggests a backup link (#48); at the first pick, the page asks the
-  browser to keep its data (#49).
+  refused with a note that says why (#33); a tab left open past midnight moves to the new day (#34, #47); laptop moves
+  and announcements are spoken in order, none cut off (#39, #45); a new ballot clears an older link's notice (#40);
+  and smaller fixes (#22–#24, #32, #46).
 
 ## [0.4.0] — 2026-10-15
 
+### Changed
+- **Usage counts grow to 25 named events behind an allow-list firewall that fails closed**: no address, no picks, no
+  candidate names, no query strings or #links. Do Not Track and Global Privacy Control now turn counting off
+  entirely, page views included.
+
 ### Added
-- **Private usage counts (Umami).** 25 named events behind an allow-list firewall that fails closed: no address, no
-  picks, no candidate names, no query strings or #links. Do Not Track and Global Privacy Control send nothing at all.
+- **"Clear everything on this device"** next to Clear my picks (and in the laptop menu) removes every Ballotta key
+  and reloads other open tabs.
+
+### Fixed
+- A lookup no longer hangs when the county server fails after the Census fallback.
 
 ## [0.3.0] — 2026-10-15
 
@@ -141,9 +151,10 @@ everyone, two days before early voting starts.
 ## [0.2.1] — 2026-10-14
 
 ### Changed
-- **The site moves to ballotta.org** (the old lanebecker.github.io address redirects there).
-- **Keep and Share links are short and safe to paste into chat apps** (`#k2…`/`#s2…`, half as long; Messages was
-  cutting the old ones); older links still open (#19).
+- **The site moves to ballotta.org** (the old lanebecker.github.io address redirects there). Picks saved in a browser
+  at the old address stay there; a Keep link carries them over.
+- **Keep and Share links are short and safe to paste into chat apps** (`#k2…`/`#s2…`, about half as long; Messages
+  was cutting the old ones); older links still open (#19).
 
 ## [0.2.0] — 2026-10-14
 
@@ -155,7 +166,10 @@ everyone, two days before early voting starts.
   wait times and ID rules.
 - **Keep my picks** (a private link to yourself) and **Share my picks** (a link for a friend, with what to include),
   a friend view and compare.
-- Anonymous counts of a few actions; the About box points at the county's Voter Lookup.
+- Anonymous counts of a few actions (Umami); the About box points at the county's Voter Lookup.
+
+### Changed
+- **The ballot follows the county's corrected consolidated ballot** (posted Oct 14).
 
 ## [0.1.0] — 2026-10-13
 

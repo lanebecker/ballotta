@@ -1993,6 +1993,7 @@ def promotion_hands_the_preview_on(b):
     finally: m.PHONE_LIVE = live_now
     assert m.SW_NEXT not in pre['next/index.html'] and m.SW_NEXT not in back['index.html'], 'only the promoted main page does'
     assert back['sw.js'] == m.sw_off_js(False), 'a rollback must remove the offline copy phones kept since promotion'
+    assert 'id="ph-bar"' not in back['index.html'] and 'PHONE' not in back['index.html'] and 'rel="manifest"' not in back['index.html'], 'a rollback brings back the old phone page, with no phone code'
     moved = post['next/index.html']
     assert '<link rel="manifest"' not in moved and 'sw.register' not in moved and m.sha(m.MOVED_JS) in moved, 'next/ can no longer be installed'
     before = {'/next/index.html': pre['next/index.html'], '/next/': pre['next/index.html'], '/next/sw.js': pre['next/sw.js']}
