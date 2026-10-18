@@ -1104,8 +1104,8 @@ async function lookup() {
     let recs = (d.features || []).map(f => f.attributes);
     if (unit && recs.length > 1) {
       const bare = (v) => String(v || '').toUpperCase().trim().replace(/^(?:(?:APT|UNIT|STE)(?=[\s.#\d-]|$)\.?|#)[\s#-]*/, '');  // "Apt #3", "APT3", "Unit-3", "#3" are all 3 (Pass 1)
-      const u = bare(unit);
-      const byUnit = recs.filter(r => bare(r.Unit) === u);
+      const u = bare(unit);  // a lone '#', 'APT' or 'Ste.' is no unit: the picker asks (Pass 2)
+      const byUnit = u ? recs.filter(r => bare(r.Unit) === u) : [];
       if (byUnit.length) recs = byUnit;
     }
     const pt = cand.location ? { x: cand.location.x, y: cand.location.y } : null;
@@ -1206,10 +1206,12 @@ function listFromStored(st) {
   // A Double-check contest says why, as the live lookup did: the rule's own note, else the district line, else the generic line (#62).
   // A ballot saved before Pass 1 has no list of line-flagged contests: on a near-a-line ballot, a contest whose own rule
   // isn't uncertain was flagged by the line.
+  // A rule is uncertain as a whole (conf) or by one of its clauses (_conf: Austin's limited-purpose residents) (Pass 2).
   const ln = Array.isArray(st.ln) ? new Set(st.ln) : null, rule = (id) => DATA.rules[id] || {};
-  const line = (id) => ln ? ln.has(num(id)) : st.mode === 'nearby-mixed' && rule(id).conf !== 'medium';
+  const unsure = (id) => rule(id).conf === 'medium' || (rule(id).clauses || []).some(c => c && c._conf === 'medium');
+  const line = (id) => ln ? ln.has(num(id)) : st.mode === 'nearby-mixed' && !unsure(id);
   const why = (id) => line(id) ? 'Your address is near a district line, so this contest may or may not be on your ballot.'
-    : (rule(id).conf === 'medium' && rule(id).note) || 'Not confirmed for your address. Check your official ballot.';
+    : rule(id).note || 'Not confirmed for your address. Check your official ballot.';
   return cleanBallot(st.b).map(n => { const id = cidOf(Math.abs(n)); const c = BYID[id]; return c ? { c, conf: n < 0 ? 'medium' : 'high', note: n < 0 ? why(id) : '' } : null; }).filter(Boolean).sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
 }
 // A precinct is a precinct number and a point is two numbers in Texas, whatever a link or storage says (#63).
@@ -1544,10 +1546,12 @@ let keepPrep = null, keeping = false;  // { p: Promise<url>, url }; keeping igno
 // A link past ~8,000 characters (long reasons in Chinese, Japanese, Korean or emoji can make one of 50 KB or more) gets
 // cut by Messages and email, and past 40,000 this page refuses it: the sheet says so and offers the link without the
 // reasons (#65). The picks are always in it.
-const KEEP_LONG = 8000, KEEP_MAX = 40000;  // KEEP_MAX: unpackFrag's own limit
+const KEEP_LONG = 8000;
+// The page's own limits (unpackFrag): a v2 link's body (after '#k2') up to 40,000 characters, an old-style one ('#k=') up to 200,000.
+function keepTooLong(u) { const f = String(u).split('#')[1] || ''; return f[1] === '=' ? f.length > 200000 : f.length - 2 > 40000; }
 let keepNoWhy = false;
 function prepKeep() { const k = { url: null }; k.p = keepURL(keepNoWhy).then(u => { k.url = u; $('keep-long').classList.toggle('hidden', keepNoWhy || u.length <= KEEP_LONG);
-    $('keep-long-why').textContent = u.length > KEEP_MAX ? 'This link is too long to open, because of your reasons.' : 'This link is long because of your reasons, and some apps cut long links short.'; return u; }); keepPrep = k; return k; }
+    $('keep-long-why').textContent = keepTooLong(u) ? 'This link is too long to open, because of your reasons.' : 'This link is long because of your reasons, and some apps cut long links short.'; return u; }); keepPrep = k; return k; }
 function openKeep() {  // Keep my picks, from either layout (#38)
   keepNoWhy = false; $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.add('hidden');
   prepKeep();

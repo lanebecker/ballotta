@@ -349,7 +349,10 @@ M = [
  ('E23 an empty Precinct label', PREV, "(lastLookup.precinct ? '<b>Precinct ' + esc(String(lastLookup.precinct)) + '</b>' : '<b>Your ballot</b>')", "'<b>Precinct ' + esc(String(lastLookup.precinct || '')) + '</b>'", ['desk_header_has_no_empty_precinct']),
  ('E24 APT3 and STE-200 kept in the street', PREV, "(?:(?:UNIT|APT|STE)(?=[\\s.#\\d-])\\.?[\\s#-]*\\S|#)", "(?:(?:UNIT|APT|STE)\\s+\\S|#)", ['lookup_keeps_street_names_that_start_like_a_unit']),
  ('E25 a typed unit matched the old way', PREV, "const u = bare(unit);", "const u = unit.toUpperCase().replace(/^(APT|UNIT|STE|#)\\s*/, '');", ['lookup_keeps_street_names_that_start_like_a_unit']),
- ('E26 a link too long to open called merely long', PREV, "u.length > KEEP_MAX ? 'This link is too long to open", "false ? 'This link is too long to open", ['a_keep_link_too_long_to_open_says_so']),
+ ('E26 a link too long to open called merely long', PREV, "keepTooLong(u) ? 'This link is too long to open", "false ? 'This link is too long to open", ['a_keep_link_too_long_to_open_says_so']),
+ ('E27 a clause uncertainty is ignored after a reload', PREV, "    : rule(id).note || 'Not confirmed", "    : (rule(id).conf === 'medium' && rule(id).note) || 'Not confirmed", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E28 a lone # picks the no-unit address', PREV, "const byUnit = u ? recs.filter(r => bare(r.Unit) === u) : [];", "const byUnit = recs.filter(r => bare(r.Unit) === u);", ['lookup_keeps_street_names_that_start_like_a_unit']),
+ ('E29 too long measured on the whole address', PREV, "return f[1] === '=' ? f.length > 200000 : f.length - 2 > 40000; }", "return String(u).length > 40000; }", ['too_long_to_open_means_what_the_page_refuses']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

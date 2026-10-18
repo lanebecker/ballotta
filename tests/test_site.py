@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '7a1a6ba03019140503766778a9552542c6ae44efc4f2215424e0a092e1aa1492'  # Oct 17: wave 2 (look-ups and dates)
+LIVE_SHA = 'fb13f09a6afd0d78a9906c0e1fd6d7a2f9e3bbef9bee82172c32edc821a6db49'  # Oct 17: wave 2 (look-ups and dates)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -482,6 +482,12 @@ def lookup_keeps_street_names_that_start_like_a_unit(b):
     assert not wrong, wrong
     # The unit typed in the form finds the county's unit, however it's written (Pass 1).
     recs = [dict(COUNTY_REC, Address='10 MAIN ST', Unit=un, CodeCat=cc) for un, cc in (('3', 'A'), ('4', 'B'))]
+    two = [dict(COUNTY_REC, Address='10 MAIN ST', Unit=un, CodeCat=cc) for un, cc in (('', 'A'), ('3', 'B'))]
+    for typed in ('#', 'APT', 'Ste.'):                                                            # no unit really typed: ask (Pass 2)
+        stub_county(pg, [['findAddressCandidates', 0, candidate('10 MAIN ST')], ['VotingAddresses', 0, {'features': [{'attributes': r} for r in two]}]])
+        pg.evaluate("(u) => { document.getElementById('street').value = '10 MAIN ST'; document.getElementById('zip').value = '78757'; document.getElementById('unit').value = u; lookup(); }", typed)
+        pg.wait_for_timeout(400)
+        assert not pg.evaluate("document.getElementById('units').classList.contains('hidden')"), (typed, 'picked the no-unit address without asking')
     for typed in ('Apt #3', 'APT3', 'Unit-3', '#3', '3', 'ste. 3'):
         stub_county(pg, [['findAddressCandidates', 0, candidate('10 MAIN ST')], ['VotingAddresses', 0, {'features': [{'attributes': r} for r in recs]}]])
         pg.evaluate("(u) => { document.getElementById('street').value = '10 MAIN ST'; document.getElementById('zip').value = '78757'; document.getElementById('unit').value = u; lookup(); }", typed)
@@ -533,6 +539,14 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70], mode: 'nearby-mixed', at: 0, pt: null }))"); pg.reload()
     pg.wait_for_selector('body.dk-app-on')
     assert 'district line' in pg.evaluate("ballot.find(x => x.c.id === 'c070').note"), 'a contest marked near a district line says so after a reload'
+    # Pass 2: an Austin limited-purpose address (Muni C11): its city propositions are uncertain by one clause of their
+    # rule, and keep that clause's note after a reload, not the generic line.
+    stub_county(pg, [['findAddressCandidates', 0, candidate('5 LIMITED ST')], ['VotingAddresses', 0, {'features': [{'attributes': dict(COUNTY_REC, Muni='C11', CodeCat='300P03G10J05L49N14C11CA9S01T45ACC')}]}]])
+    pg.evaluate("() => { document.getElementById('street').value = '5 LIMITED ST'; document.getElementById('zip').value = '78757'; lookup(); }")
+    pg.wait_for_function("(window.__events || []).filter(e => e[0] === 'ballot_found').length >= 1", timeout=10000)
+    lp = pg.evaluate("(ballot.find(x => x.c.id === 'c071') || {}).note")
+    pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    assert lp and 'limited-purpose' in lp and pg.evaluate("ballot.find(x => x.c.id === 'c071').note") == lp, (lp, pg.evaluate("ballot.find(x => x.c.id === 'c071').note"))
     # Pass 1: an address near the Austin city line: the city's propositions are flagged by the line, and say so after a
     # reload too (their rule carries a different note, about limited-purpose residents).
     # (MUD 41's own rule is uncertain too, so only a record of which contests the line flagged keeps its note right.)
@@ -645,6 +659,15 @@ def the_page_works_without_time_zone_support(b):
         pg.goto(BASE); saved_ballot(pg, [70, 71]); pg.wait_for_selector('body.dk-app-on')
         assert errs == [] and pg.evaluate('period') in ('early', 'eday'), (kill[:40], errs)
         ctx.close()
+
+@test
+def too_long_to_open_means_what_the_page_refuses(b):
+    # #65, Pass 2: "too long to open" is exactly what unpackFrag refuses, for both link forms, measured on the fragment.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    base = 'https://ballotta.org/#'
+    for frag, refused in (('k2' + 'A' * 40000, False), ('k2' + 'A' * 40001, True), ('k=' + 'A' * 199998, False), ('k=' + 'A' * 199999, True)):
+        assert pg.evaluate('u => keepTooLong(u)', base + frag) == refused, (frag[:2], len(frag), refused)
+    ctx.close()
 
 @desk_test
 def desk_header_has_no_empty_precinct(b):
