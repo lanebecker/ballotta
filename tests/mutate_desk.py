@@ -359,7 +359,34 @@ M = [
  ('E33 an exact lookup records no flags', PREV, "  const ln = list.filter(x => x.line).map(x => num(x.c.id));", "  const ln = undefined;", ['a_restored_ballot_keeps_each_contests_own_caveat']),
  ('E34 a matched-how note shown where the line could have added it', PREV, "rule(id).conf === 'medium' && (st.mode === 'exact' || st.mode === 'nearby') ?", "rule(id).conf === 'medium' ?", ['a_restored_ballot_keeps_each_contests_own_caveat']),
  ('E35 a Keep link takes another tab\'s line list', PREV, "st = got && Array.isArray(got.b) && sig(cleanBallot(got.b)) === sig(b) ? got : null;", "st = got;", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E36 a timeout kills at once', MD_SELF, "                if type(e).__name__ == 'TimeoutError' and attempt == 1: continue\n", "", ['mutation_runner_judges_mutants_honestly']),
+ ('E37 a mutant leaves the page CSP stale', MD_SELF, "else None\n    if m and '<!--' not in m.group(0):", "else None\n    if False:", ['mutation_runner_judges_mutants_honestly']),
 ]
+CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
+def mutate(f, text, a, z):
+    """The file's text with the mutant in. On a built page (one carrying the page's CSP meta), the policy's script hashes
+    are recomputed the way build_site.py computes them, so a test run under the page's own policy fails for what the
+    mutant changed, not because the policy then refuses the whole script (cold audit #26, #70)."""
+    out = text.replace(a, z)
+    m = CSP_META.search(out) if f.suffix == '.html' else None
+    if m and '<!--' not in m.group(0):
+        rest = out[:m.start()] + out[m.end():]
+        out = out[:m.start()] + T.build_module().csp_meta(rest, 'id="ph-bar"' in out) + out[m.end():]
+    return out
+
+def run_targets(b, tests):
+    """The tests that fail under the mutant, as name:Error. A Playwright timeout counts only if it happens twice in a row:
+    a slow county answer is not a kill (cold audit #27, #71)."""
+    killed = []
+    for tn in tests:
+        for attempt in (1, 2):
+            try:
+                getattr(T, tn)(b); break
+            except Exception as e:
+                if type(e).__name__ == 'TimeoutError' and attempt == 1: continue
+                killed.append(tn + ':' + type(e).__name__ + (' x2' if type(e).__name__ == 'TimeoutError' else '')); break
+    return killed
+
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
     for name, f, a, z, tests in M:                                   # a stale anchor fails in a second, not after the baseline (audit #27)
@@ -377,11 +404,8 @@ def main(M):
                 assert orig.count(a) == 1, (name, 'anchor found', orig.count(a), 'times')
                 PENDING.append((f, orig))                            # from here until the restore, a stop signal restores first (#41)
                 try:
-                    put(f, orig.replace(a, z))
-                    killed = []
-                    for tn in tests:
-                        try: getattr(T, tn)(b)
-                        except Exception as e: killed.append(tn + ':' + type(e).__name__)   # AssertionError, or a Playwright timeout
+                    put(f, mutate(f, orig, a, z))
+                    killed = run_targets(b, tests)
                     res.append((name, 'KILLED' if killed else 'SURVIVED', ','.join(killed)))
                 finally:
                     put(f, orig); PENDING.clear()

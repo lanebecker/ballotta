@@ -1342,6 +1342,39 @@ def desk_moves_are_announced(b):
 
 
 @test
+def mutation_runner_judges_mutants_honestly(b):
+    # Cold audit #26 (#70): a mutant written into a built page leaves its Content-Security-Policy hashes stale, so a test
+    # run under the page's own policy failed because the whole script was refused, not because of the mutant. The runner
+    # now recomputes them: the unmutated page round-trips exactly, a mutated script gets its own hash.
+    # Cold audit #27 (#71): a Playwright timeout counted as a kill; now a timeout counts only if it happens again.
+    import subprocess
+    code = r"""
+import sys, json, re, types; sys.argv = ['mutate_desk.py']; sys.path.insert(0, %r); import mutate_desk as R
+page = R.PREV.read_text(encoding='utf-8')
+same = R.mutate(R.PREV, page, '<title>', '<title>') == page
+src = re.search(r'<script>(.*?)</script>', page, re.S).group(1)
+mut = R.mutate(R.PREV, page, src, src + ' ')
+meta = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', mut).group(1)
+hashed = R.T.build_module().sha(src + ' ') in meta and R.T.build_module().sha(src) not in meta
+calls = {}
+def fake(name, plan):
+    def f(b):
+        n = calls[name] = calls.get(name, 0) + 1
+        e = plan[n - 1] if n <= len(plan) else None
+        if e: raise e
+    setattr(R.T, name, f)
+class TimeoutError(Exception): pass
+fake('once', [TimeoutError('slow')]); fake('twice', [TimeoutError('slow'), TimeoutError('slow')]); fake('fails', [AssertionError('no')]); fake('fine', [])
+print(json.dumps({'same': same, 'hashed': hashed, 'once': R.run_targets(None, ['once']), 'twice': R.run_targets(None, ['twice']),
+                  'fails': R.run_targets(None, ['fails']), 'fine': R.run_targets(None, ['fine'])}))
+""" % str(ROOT / 'tests')
+    r = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, cwd=str(ROOT), timeout=120)
+    assert r.returncode == 0, r.stderr[-1500:]
+    got = json.loads(r.stdout.strip().splitlines()[-1])
+    assert got['same'] and got['hashed'], ('the page CSP after a mutant', got)
+    assert got['once'] == [] and got['twice'] == ['twice:TimeoutError x2'] and got['fails'] == ['fails:AssertionError'] and got['fine'] == [], got
+
+@test
 def mutation_runner_restores_on_any_signal(b):
     # #41: Ctrl-C, a kill or a hang-up while a mutant is on disk always puts the original back before exiting.
     import subprocess, tempfile, signal as S
