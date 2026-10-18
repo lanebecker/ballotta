@@ -98,7 +98,10 @@ M = [
  ('P90 Try again does nothing', PREV, "  $('ph-saved-go').addEventListener('click', () => location.reload());\n", '', ['phone_saved_copy_says_so']),
  ('P91 the bar outlives the network coming back', PREV, "$('ph-saved').classList.add('hidden'); document.documentElement", 'document.documentElement', ['phone_saved_copy_says_so']),
  ('P92 the bar promises picks with no ballot', PREV, "ballot.length || cleanBallot((LS.get('ballotta.ballot', null) || {}).b).length ? 'Your picks are all here.'", "true ? 'Your picks are all here.'", ['phone_saved_copy_says_so']),
- ('P93 a saved ballot is told to look up an address', PREV, "ballot.length || cleanBallot((LS.get('ballotta.ballot', null) || {}).b).length ?", 'ballot.length ?', ['phone_saved_copy_says_so']),
+ # P93 (a saved ballot is told to look up an address) retired Oct 17, equivalent (issue #70's honest rerun): start()
+ # restores the saved ballot in the same script task, right after the bar's first sentence, so the mutant's wrong
+ # sentence is replaced before any paint or announcement; its earlier "kill" was the stale page CSP. The line stays as
+ # a guard in case start() ever runs later.
  ('P94 Try again reachable behind the open sheet', PREV, "['dk-hdr', 'ph-saved', 'dk-desk', 'ph-bar']", "['dk-hdr', 'dk-desk', 'ph-bar']", ['phone_saved_copy_says_so']),
  ('P95 the steps never move on after the copy', PREV, "$('ph-i-ok').classList.remove('hidden'); $('ph-i-icon').classList.add('ph-now'); }", "$('ph-i-ok').classList.remove('hidden'); }", ['phone_home_screen_steps_name_the_right_buttons']),
  ('P96 a new look keeps the old step', PREV, "    $('ph-i-ios').querySelectorAll('li').forEach(li => li.classList.remove('ph-now'));\n", '', ['phone_home_screen_steps_name_the_right_buttons']),

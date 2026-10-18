@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-Qdhzfy/yTdJmGqZtVArFHZvM8FCJpfzNGCpl2NuRrHU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-pHSYI0sfTwsw3I923Qpwx74orxRZI42UFHsKucQdheU=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-7QmwsPPBPQN01vil/ZLocEWvRj6iO9yaj2wmV6ENsKQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="Ballotta">
 <!--/PHONE-->
 <script>
+if (top !== self) document.documentElement.hidden = true;   /* framed by any page: show nothing (GitHub Pages can't send frame-ancestors; issue #69) */
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
    (#s2… / older #s=) payload out of the address bar so the fragment can never be read by a script, logged,
    or copied by accident. */
@@ -26,7 +27,7 @@
   }
 })();
 </script>
-<script>window.ballottaBeforeSend = () => null;</script><script defer src="umami.js" data-website-id="51b98962-382e-4070-bbd0-f43aba4143ae" data-domains="ballotta.org,www.ballotta.org,lanebecker.github.io" data-exclude-search="true" data-exclude-hash="true" data-do-not-track="true" data-before-send="ballottaBeforeSend" data-performance="true"></script>
+<script>window.ballottaBeforeSend = () => null;</script><script defer src="umami.js" integrity="sha256-kah212dkb9W3cBtvq/l/ipmuU7lOfltY1GW60eXXY+A=" data-website-id="51b98962-382e-4070-bbd0-f43aba4143ae" data-domains="ballotta.org,www.ballotta.org" data-exclude-search="true" data-exclude-hash="true" data-do-not-track="true" data-before-send="ballottaBeforeSend" data-performance="true"></script>
 <title>Ballotta · What's on your ballot? (Travis County test)</title>
 <meta name="description" content="See exactly what's on your November 3, 2026 ballot in Travis County, make your picks with private notes, and print a crib sheet to take to the polls.">
 <meta name="robots" content="noindex">
@@ -1012,16 +1013,30 @@ function clean(name, data) {
 }
 const NO_COUNT = (() => { try { return navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1'; } catch (e) { return false; } })();
 // The tracker calls this with every payload it is about to send. Only page views, events and page-speed reports
-// pass, rebuilt from a fixed list of text fields (the page address without ?query or #fragment, the referrer as its site only): no distinct id, no
-// identify data, nothing a future tracker might add. A stand-in defined before the tracker tag drops everything
-// until this one exists, so if this script failed to run, nothing would be sent (build_site.py).
-const TOP = ['website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'tag', 'name'];
+// pass, rebuilt from a fixed list of fields, none of them free text (issues #50, #67): the page's own address only (/ or
+// /index.html, without ?query or #fragment; a payload for any other path is dropped whole), the referrer as its site only,
+// the page's title as it was at load, this page's own hostname, and website, screen and language only in their own shapes.
+// No tag, no distinct id, no identify data, nothing a future tracker might add. A stand-in defined before the tracker tag
+// drops everything until this one exists, so if this script failed to run, nothing would be sent (build_site.py).
+const TOP = ['website', 'hostname', 'screen', 'language', 'title', 'url', 'referrer', 'name'];
 const SPEED = ['ttfb', 'fcp', 'lcp', 'cls', 'inp', 'duration'];
+const TITLE = document.title, PAGE_PATHS = ['/', '/index.html'];
+const SHAPE = { website: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, screen: /^\d{1,5}x\d{1,5}$/, language: /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*(?:@[a-z]+)?$/ };
 const siteOf = (r) => { try { const u = new URL(r); return u.host ? u.protocol + '//' + u.host : ''; } catch (e) { return ''; } };  // a referrer becomes just its site (or app)
+const pathOf = (u) => { try { return new URL(u, location.href).pathname; } catch (e) { return null; } };
 window.ballottaBeforeSend = (type, p) => {
   if (NO_COUNT || !p || typeof p !== 'object' || (type !== 'event' && type !== 'performance')) return null;
   const out = {};
-  TOP.forEach(k => { if (typeof p[k] === 'string') out[k] = k === 'url' ? p[k].split(/[?#]/)[0] : k === 'referrer' ? siteOf(p[k]) : p[k]; });
+  for (const k of TOP) {
+    const v = p[k];
+    if (typeof v !== 'string') continue;
+    if (k === 'url') { if (!PAGE_PATHS.includes(pathOf(v))) return null; out.url = v.split(/[?#]/)[0]; }
+    else if (k === 'referrer') out.referrer = siteOf(v);
+    else if (k === 'title') out.title = TITLE;
+    else if (k === 'hostname') { if (v === location.hostname) out.hostname = v; }
+    else if (SHAPE[k]) { if (SHAPE[k].test(v)) out[k] = v; }
+    else out[k] = v;                                             // name: checked against EVENTS below
+  }
   if (type === 'performance') SPEED.forEach(k => { if (typeof p[k] === 'number') out[k] = p[k]; });
   if (out.name !== undefined) { const d = clean(out.name, p.data); if (!d) return null; out.data = d; }  // page views carry no details
   return out;
@@ -1131,7 +1146,7 @@ function censusPoint(street, zip) {
     let t = 0;
     const done = (v) => { clearTimeout(t); window.removeEventListener('message', on); f.remove(); resolve(v); };
     function on(e) {
-      if (e.source !== f.contentWindow) return;
+      if (e.source !== f.contentWindow || e.origin !== 'null') return;  // from that frame, and still sandboxed (#85)
       if (e.data === 'unreachable') return done('unreachable');  // the Census didn't answer: not "address not found" (#59)
       const d = e.data, ok = d && typeof d === 'object' && Number.isFinite(d.x) && Number.isFinite(d.y) && d.x > -107 && d.x < -93 && d.y > 25 && d.y < 37 && typeof d.label === 'string';
       done(ok ? { x: d.x, y: d.y, label: d.label.slice(0, 200) } : null);

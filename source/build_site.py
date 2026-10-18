@@ -16,7 +16,10 @@ BASE_URL = "https://ballotta.org/"
 # Umami Cloud website ID (anonymous, cookieless counts). Empty string = no analytics script at all.
 UMAMI_ID = "51b98962-382e-4070-bbd0-f43aba4143ae"
 # Hostnames whose visits count; anything else (local test runs, previews) is ignored by the tracker.
-UMAMI_DOMAINS = "ballotta.org,www.ballotta.org,lanebecker.github.io"
+UMAMI_DOMAINS = "ballotta.org,www.ballotta.org"   # lanebecker.github.io/ballotta redirects to ballotta.org (#85)
+# The pinned tracker's sha256 (issue #68): the build refuses a different umami.js, and the tag's integrity= makes
+# browsers refuse one too. To update the tracker, review the new copy, then change this, the README and the test.
+UMAMI_SHA256 = "91a876d767646fd5b7701b6fabf97f8a99ae53b94e7e5b58d465bad1e5d763e0"
 # The laptop layout (1024px and wider) is marked in the template: /*DESK*/ ... /*/DESK*/ in CSS and JS,
 # <!--DESK--> ... <!--/DESK--> in HTML. Until Lane approves the preview at ballotta.org/next/, the live build
 # removes every marked block, so index.html stays byte-for-byte what it was. Promotion: set DESK_LIVE = True.
@@ -78,6 +81,14 @@ def strip_phone(html):
 # goes only to the county map server and the counting service; frames only from this site (the Census sandbox).
 PAGE_CSP = ("default-src 'none'; script-src 'self' {hashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
             "connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'")
+
+
+def script_json(obj):
+    """obj as a JavaScript literal that can sit inside an inline <script> (#85): no "</" (ends the script), no "<!--"
+    (changes how the script is parsed), no U+2028/U+2029 (line ends in older JavaScript). Every "<" is written \\u003c,
+    which reads back as the same text."""
+    return (json.dumps(obj, ensure_ascii=False).replace("<", "\\u003c")
+            .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
 
 
 def sha(js):
@@ -262,8 +273,12 @@ def build(preview=False, desk=None, phone=None):
                 for c in key["contests"]]
     learn = json.load(open(HERE / "learn.json", encoding="utf-8"))      # built by build_learn.py
     sites = json.load(open(HERE / "vote_sites.json", encoding="utf-8"))  # Travis County Clerk site lists, geocoded
-    data = json.dumps({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites}, ensure_ascii=False)
-    data = data.replace("</", "<\\/")  # never let data close the inline <script>
+    # Every campaign site and source link must be http(s): the page links them as they are (#85).
+    links = [e.get("s") for c in learn.values() for e in (c.get("cands") or {}).values()] + [x.get("u") for c in learn.values() for x in c.get("src") or []]
+    bad = [u for u in links if u and not re.match(r"https?://", u)]
+    if bad:
+        sys.exit(f"learn.json has links that are not http(s): {bad[:5]}")
+    data = script_json({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites})
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
     desk = desk if desk is not None else (preview or DESK_LIVE)
     phone = phone if phone is not None else (preview or PHONE_LIVE)
@@ -287,7 +302,10 @@ def build(preview=False, desk=None, phone=None):
     # Analytics: no URL search or #fragment is ever sent (the fragment is also stripped before this script loads).
     # The tracker is a pinned copy of https://cloud.umami.is/script.js (umami.js, fetched 2026-10-14) served from this
     # site, so a change on Umami's side can never run new code on this page. It still reports to gateway.umami.is.
-    analytics = (f'<script defer src="umami.js" data-website-id="{UMAMI_ID}" '
+    if UMAMI_ID and hashlib.sha256((ROOT / 'umami.js').read_bytes()).hexdigest() != UMAMI_SHA256:
+        sys.exit('umami.js is not the pinned copy (UMAMI_SHA256): review the new copy before changing the pin')
+    sri = 'sha256-' + base64.b64encode(bytes.fromhex(UMAMI_SHA256)).decode()
+    analytics = (f'<script defer src="umami.js" integrity="{sri}" data-website-id="{UMAMI_ID}" '
                  f'data-domains="{UMAMI_DOMAINS}" data-exclude-search="true" data-exclude-hash="true" '
                  # The privacy firewall in the page checks every payload; Do Not Track is honoured twice (here and there);
                  # page-speed measurements (load time, responsiveness) carry no personal data (Lane, Oct 15).

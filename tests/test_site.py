@@ -22,8 +22,13 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = '45cd78ea971a5839e3e83e4488e14c9f1ad743333da80005d0063470b73c5944'  # Oct 17: wave 2 (look-ups and dates)
-UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
+LIVE_SHA = '212bf68dbf9d98a070c6f251870cb350f18f96c314f5980ce7aa17137c30922f'  # Oct 17: wave 3 (the privacy promise, verified)
+UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
+def stub_tracker(ctx):
+    # A stand-in for the tracker that records events. The real tag carries integrity= (issue #68), so a stand-in served as
+    # umami.js would be refused: it goes in before the page's scripts instead and appears when a deferred script would
+    # (just before DOMContentLoaded's other listeners), and umami.js itself is never fetched.
+    ctx.add_init_script(UMAMI_STUB); ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.abort())
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -40,7 +45,7 @@ def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, 
     # (sw.js) is blocked unless a test asks (sw=True): a service worker would answer requests the stubs below expect.
     ctx = browser.new_context(viewport=size or ({'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}), permissions=['clipboard-read', 'clipboard-write'],
                               bypass_csp=not csp, has_touch=touch, service_workers='allow' if sw else 'block', **({'user_agent': ua} if ua else {}), **({'timezone_id': tz} if tz else {}))
-    ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
+    stub_tracker(ctx)
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
     ctx.route('https://fonts.googleapis.com/**', lambda r: r.abort())
@@ -90,6 +95,32 @@ def hostile_share_payload_is_escaped(b):
     ctx, pg = new_page(b); pg.goto(BASE + '#s=' + s); pg.wait_for_selector('#friend:not(.hidden)')
     assert pg.locator('#friend img').count() == 0 and pg.locator('#friend script').count() == 0
     t = pg.inner_text('#friend'); assert 'shared 1 pick' in t and '<script>x</script>' in t, t
+    assert pg.evaluate('s => esc(s)', '&<>"\'') == '&amp;&lt;&gt;&quot;&#39;', 'esc() escapes all five, for attributes too (#72)'
+    ctx.close()
+
+@test
+def link_decoding_guards_hold(b):
+    # Issue #72: the guards around opening a link, each pinned. A link that inflates past 500 KB is refused; a payload
+    # in another version of the format is "damaged", not read; and when two links arrive at once, the newer one wins
+    # however their decoding finishes.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    big = pg.evaluate("async () => { const f = await packFrag('k', { v: 1, z: 'a'.repeat(2000000) }); return [f.length, await unpackFrag(f)]; }")
+    assert big[0] < 40000 and big[1] is None, ('a short link that inflates to 2 MB opened', big[0])
+    assert pg.evaluate("async () => (await unpackFrag(await packFrag('k', { v: 1, z: 'a'.repeat(400000) }))).z.length") == 400000, 'the probe itself: 400 KB still opens'
+    ctx.close()
+    ctx, pg = new_page(b); pg.goto(link('s', {'v': 2, 'n': 'Al', 'c': 'abcd2349', 'g': 1, 'p': {'70': 0}}))
+    expect(pg.locator('#lookupmsg')).to_contain_text('damaged'); assert pg.locator('#friend.hidden').count() == 1, 'a version-2 payload was read'
+    ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE)
+    pg.evaluate("""async () => {
+        const real = unpackFrag; window.__gates = [];
+        window.unpackFrag = (f) => new Promise(ok => window.__gates.push(() => real(f).then(ok)));
+        const older = await packFrag('s', { v: 1, n: 'Olga', c: 'abcd2401', g: 1, p: { 70: 0 } }), newer = await packFrag('s', { v: 1, n: 'Nina', c: 'abcd2402', g: 1, p: { 70: 0 } });
+        handleIncoming(older, true); handleIncoming(newer, true);
+    }""")
+    pg.evaluate('window.__gates[1]()'); pg.wait_for_selector('#friend:not(.hidden)'); pg.wait_for_timeout(300)
+    pg.evaluate('window.__gates[0]()'); pg.wait_for_timeout(600)
+    t = pg.inner_text('#friend'); assert 'Nina' in t and 'Olga' not in t, ('the older link, decoded last, replaced the newer', t)
     ctx.close()
 
 @test
@@ -415,6 +446,45 @@ def page_is_built_locked_down(b):
     srcs = pol['script-src'].split()
     assert srcs[0] == "'self'" and all(x.startswith("'sha256-") for x in srcs[1:]) and len(srcs) == 1 + html.count('<script>'), srcs
     assert '<meta name="referrer" content="no-referrer">' in html and html.index('name="referrer"') < html.index('<script')
+    # Issue #68: the tracker is pinned by its sha256: here, in build_site.py, on the tag (the browser refuses any other
+    # copy: tracker_runs_only_as_pinned) and in the README.
+    pin = '91a876d767646fd5b7701b6fabf97f8a99ae53b94e7e5b58d465bad1e5d763e0'
+    assert __import__('hashlib').sha256((ROOT / 'umami.js').read_bytes()).hexdigest() == pin, 'umami.js changed: review the new copy, then update the pin here, in build_site.py and in the README'
+    assert build_module().UMAMI_SHA256 == pin and pin in (ROOT / 'README.md').read_text(encoding='utf-8')
+    sri = 'sha256-' + __import__('base64').b64encode(bytes.fromhex(pin)).decode()
+    assert f'src="umami.js" integrity="{sri}"' in html, 'the tag carries the pin'
+    assert 'data-domains="ballotta.org,www.ballotta.org"' in html, 'counting only on ballotta.org (lanebecker.github.io redirects there; #85)'
+    m = build_module(); m.UMAMI_SHA256 = '0' * 64
+    try: m.build(); raise AssertionError('the build used a umami.js that is not the pinned copy')
+    except SystemExit as e: assert 'pinned' in str(e), e
+    # Issue #69: GitHub Pages can't send frame-ancestors, so the page's first script hides it when it's framed.
+    assert re.search(r'<script>\s*if \(top !== self\) document\.documentElement\.hidden = true;', html), 'the frame check runs first'
+
+@test
+def tracker_runs_only_as_pinned(b):
+    # Issue #68: a changed umami.js (on the server or in transit) never runs; the pinned one does.
+    for extra in ('', '\n/* changed */'):
+        ctx = b.new_context(); ctx.route('https://gateway.umami.is/**', lambda r: r.abort()); pg = ctx.new_page()
+        js = lambda route, extra=extra.encode(): (lambda r: route.fulfill(response=r, body=r.body() + extra))(route.fetch())
+        ctx.route('**/umami.js', lambda route: js(route)); pg.goto(BASE); pg.wait_for_timeout(1200)
+        assert pg.evaluate('typeof window.umami') == ('object' if not extra else 'undefined'), extra
+        ctx.close()
+
+@test
+def page_refuses_to_show_in_another_sites_frame(b):
+    # Issue #69: framed by another site, the page shows nothing (so it can't be dressed up to trick a visitor).
+    # The framer is another origin (localhost, not 127.0.0.1) on the same test server: Chrome won't let a stubbed page,
+    # which it counts as public, frame a loopback address at all.
+    ctx, pg = new_page(b); pg.goto(f'http://localhost:{PORT}/census.html')
+    pg.evaluate("u => new Promise(ok => { const f = document.createElement('iframe'); f.src = u; f.width = 400; f.height = 800; f.onload = ok; document.body.appendChild(f); })", BASE)
+    fr = [f for f in pg.frames if f != pg.main_frame][0]
+    assert fr.url == BASE, fr.url
+    assert fr.evaluate('document.documentElement.hidden') is True and fr.evaluate('getComputedStyle(document.documentElement).display') == 'none'
+    assert not fr.locator('#street').is_visible()
+    ctx.close()
+    ctx, pg = new_page(b); pg.goto(BASE)
+    assert pg.evaluate('document.documentElement.hidden') is False and pg.locator('#street').is_visible(), 'not framed: shown'
+    ctx.close()
 
 @desk_test
 def desk_extra_pick_is_explained(b):
@@ -460,6 +530,18 @@ def stub_county(pg, answers):
         if (m[2] === 'error') throw new Error('HTTP 503'); return JSON.parse(JSON.stringify(m[2])); }; }""", answers)
 def candidate(address, zip_='78757', score=100): return {'candidates': [{'address': f'{address}, AUSTIN, {zip_}', 'score': score, 'location': {'x': -97.72, 'y': 30.36}}]}
 def county_where(pg): return [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query).get('where', [''])[0] for u in pg.evaluate('window.__county') if 'VotingAddresses' in u]
+
+@test
+def an_excluded_district_does_not_get_the_contest(b):
+    # Issue #72: ballot routing, which every ballot rests on, gets a test of its own. A "field!" excludes (ESD No. 9
+    # votes on c206 except its part coded E09A), and the precinct table supplies the U.S. and Texas House districts.
+    ctx, pg = new_page(b); pg.goto(BASE)
+    ids = lambda rec: pg.evaluate('r => route(r).map(x => x.c.id)', rec)
+    base = ids(COUNTY_REC)
+    assert 'c002' in base and 'c026' in base, ('precinct 300 votes in U.S. House G10 and Texas House L49, from the precinct table', base)
+    assert 'c206' not in base and 'c206' in ids(dict(COUNTY_REC, ESD='E09'))
+    assert 'c206' not in ids(dict(COUNTY_REC, ESD='E09', Temp='E09A')), 'the E09A part of ESD No. 9 is outside the contest'
+    ctx.close()
 
 @test
 def lookup_keeps_street_names_that_start_like_a_unit(b):
@@ -1043,7 +1125,7 @@ def desk_launch_audit_fixes(b):
     assert pg.is_hidden('#dk-say'), 'no stale warning once the ballot opens'
     ctx.close()
     ctx = b.new_context(viewport={'width': 1366, 'height': 1024}, has_touch=True, is_mobile=True)    # #35: a tablet in landscape
-    ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
+    stub_tracker(ctx)
     pg = ctx.new_page(); pg.goto(BASE); lookup_wide(pg)
     assert pg.evaluate("matchMedia('(pointer: coarse)').matches")
     assert pg.locator('.kbd:visible').count() == 0, 'no keyboard hints on a touch screen'
@@ -1094,11 +1176,26 @@ def privacy_firewall_drops_anything_unlisted(b):
     assert bs({'name': 'lookup_failed', 'data': {'reason': '1000 Guadalupe St'}})['data'] == {}, 'a value off the list is dropped'
     assert bs({'name': 'progress', 'data': {'at': {'x': 1}}})['data'] == {}, 'objects are never values'
     assert bs({'name': 'share_created', 'data': {'sections': ['federal']}})['data'] == {}, 'arrays are never values'
-    assert bs({'url': '/', 'title': 'Ballotta'}) == {'url': '/', 'title': 'Ballotta'}, 'page views pass'
+    title = pg.evaluate('document.title')
+    assert bs({'url': '/', 'title': 'Ballotta'}) == {'url': '/', 'title': title}, 'page views pass, titled only with the page\'s own title'
+    # Issues #50, #67: no free text in any field, and no page address but the page's own.
+    assert bs({'url': '/', 'tag': 'Precinct 123'}) == {'url': '/'}, 'no tag'
+    pg.evaluate("document.title = 'Precinct 300'")
+    assert bs({'url': '/', 'title': 'Precinct 300'})['title'] == title, 'a changed title is never sent'
+    ok = {'website': '3f2504e0-4f89-41d3-9a0c-0305e82c3301', 'hostname': pg.evaluate('location.hostname'), 'screen': '390x844', 'language': 'en-US', 'url': 'https://ballotta.org/index.html'}
+    assert bs(dict(ok)) == ok, 'the tracker\'s ordinary fields pass'
+    for k, v in (('website', 'Precinct 300'), ('hostname', '1000 Guadalupe St'), ('screen', '78701'), ('language', 'Qadri for Council')):
+        assert k not in bs(dict(ok, **{k: v})), (k, v)
+    assert bs({'url': '/300'}) is None, 'a path other than the page\'s own, while the page is at /'
+    pg.evaluate("history.pushState(null, '', '/300')")
+    for u in ('/300', 'https://ballotta.org/300?x=1', 'https://ballotta.org/c070/', '/next/300'):
+        assert bs({'url': u}) is None and bs({'url': u, 'name': 'faq_seen', 'data': {}}) is None, ('only the page\'s own address', u)
+    assert bs({'url': pg.evaluate('location.href')}) is None, 'not even after the page itself moves'
+    pg.evaluate("history.replaceState(null, '', '/')")
     # Verification pass: payloads without a name, other payload types and extra fields can't carry anything either.
     assert bs({'url': '/', 'data': {'street': '1000 Guadalupe St'}, 'precinct': '300'}) == {'url': '/'}, 'a page view carries no details'
     odd = {'url': '/?addr=1000+Guadalupe#k=x', 'referrer': 'https://forum.example/thread/1000-guadalupe-st?q=1', 'title': {'street': 'x'}, 'tag': ['78701'], 'website': 'w'}
-    assert bs(odd) == {'url': '/', 'referrer': 'https://forum.example', 'website': 'w'}, 'only text fields; no query or fragment; a referrer is just its site'
+    assert bs(odd) == {'url': '/', 'referrer': 'https://forum.example'}, 'only text fields in their shapes; no query or fragment; a referrer is just its site'
     assert bs({'url': '/', 'referrer': 'not a url'}) == {'url': '/', 'referrer': ''}
     assert bs({'referrer': 'android-app://com.google.android.googlequicksearchbox/'}) == {'referrer': 'android-app://com.google.android.googlequicksearchbox'}, 'an app referrer keeps its name'
     assert bs({'referrer': 'about:blank'}) == {'referrer': ''} and bs({'referrer': 'file:///x'}) == {'referrer': ''}, 'never the string "null"'
@@ -1141,13 +1238,15 @@ def real_tracker_sends_only_listed_events(b):
         ctx = b.new_context(viewport={'width': 400, 'height': 900}, has_touch=live_phone)
         if gpc: ctx.add_init_script(gpc)
         def page(route):
-            r = route.fetch(); body = r.text().replace('data-domains="ballotta.org,www.ballotta.org,lanebecker.github.io"', 'data-domains="127.0.0.1"')
+            r = route.fetch(); body = r.text().replace('data-domains="ballotta.org,www.ballotta.org"', 'data-domains="127.0.0.1"')
             route.fulfill(response=r, body=body)
         ctx.route(re.compile(r'.*/index\.html$|.*:%d/$' % PORT), page)
         ctx.route('https://gateway.umami.is/**', lambda r: (sent.append(r.request.post_data_json), r.fulfill(status=200, content_type='application/json', body='{}')))
         pg = ctx.new_page(); pg.goto(f'http://127.0.0.1:{PORT}/index.html')
         if live_phone: lookup_phone(pg); pb_go(pg, 'c070'); pb_line(pg, 'Qadri').click(); pg.wait_for_timeout(1500)   # promoted: the phone layout
         else: lookup(pg); pick(pg, 'c070', 'Qadri'); pg.wait_for_timeout(1500)
+        title = pg.evaluate('document.title')
+        pg.evaluate("document.title = 'Precinct 300'; history.pushState(null, '', '/300')"); pg.wait_for_timeout(800)   # issue #67: the tracker counts a new path
         pg.evaluate("Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange'))")
         pg.wait_for_timeout(1500)                                                                 # the tracker sends its page-speed report on hide
         if gpc:
@@ -1164,7 +1263,8 @@ def real_tracker_sends_only_listed_events(b):
                 assert pl.get('name') is not None or 'data' not in pl, p
                 assert pl.get('name') is None or pl['name'] in names_ok, p
                 assert '#' not in pl.get('url', '') and '?' not in pl.get('url', ''), p
-                assert not re.search(r'Guadalupe|78701|Precinct|Qadri', blob), blob
+                assert not re.search(r'Guadalupe|78701|Precinct|Qadri|/300', blob), blob
+                assert pl.get('title', title) == title and 'tag' not in pl, p
         ctx.close()
 
 
@@ -1324,7 +1424,7 @@ def build_inserts_data_last(b):
     m.json = types.SimpleNamespace(load=json.load, dumps=lambda *a, **k: odd)
     for preview in (False, True):
         html = m.build(preview=preview)
-        assert 'const DATA = ' + odd + ';' in html, preview
+        assert 'const DATA = ' + odd.replace('<', '\\u003c') + ';' in html, preview   # every "<" is escaped since #85
 
 @desk_test
 def desk_moves_are_announced(b):
@@ -1431,6 +1531,50 @@ def lookup_strict(pg, wide=False):
 
 CSP_WATCH = "window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.effectiveDirective + ' ' + e.blockedURI));"
 
+
+@test
+def page_data_cannot_break_out_of_its_script(b):
+    # #85 (audit #38): the build writes the page's data inside a script, so no string in it may end the script ("</"),
+    # open an HTML comment ("<!--" changes how the script is read) or end a line of JavaScript (U+2028, U+2029); and
+    # every campaign site and source link must be http(s), never javascript: or data:.
+    import types
+    m = build_module()
+    nasty = {'n': '</script><script>alert(1)</script><!--     x'}
+    out = m.script_json(nasty)
+    assert not re.search('</|<!--|[  ]', out), out
+    ctx, pg = new_page(b); pg.goto(BASE)
+    assert pg.evaluate('() => (' + out + ')') == nasty, 'the data still reads back exactly'
+    ctx.close()
+    def shim(edit):
+        J = types.ModuleType('json'); J.__dict__.update(json.__dict__)
+        def load(f, **k):
+            d = json.load(f, **k)
+            if str(getattr(f, 'name', '')).endswith('learn.json'): edit(d)
+            return d
+        J.load = load; return J
+    m = build_module(); m.json = shim(lambda d: d['c001'].update(office=d['c001']['office'] + ' </script><!--  '))
+    html = m.build(); i = html.index('const DATA = '); data = html[i:html.index('\n', i)]
+    assert '</' not in data and '<!--' not in data and ' ' not in data, 'the page\'s data goes in through script_json'
+    for edit in (lambda d: d['c001']['cands']['Ken Paxton'].update(s='javascript:alert(1)'), lambda d: d['c001']['src'][0].update(u='data:text/html,x')):
+        m = build_module(); m.json = shim(edit)
+        try: m.build(); raise AssertionError('the build accepted a link that is not http(s)')
+        except SystemExit as e: assert 'http' in str(e), e
+
+@test
+def census_answers_only_from_its_sandboxed_frame(b):
+    # #85 (audit #38): the page takes the Census point only from its own frame (e.source) and only from the sandbox,
+    # whose origin is "null" (e.origin), so a message dressed up as the frame's from any real origin is ignored.
+    ctx, pg = new_page(b)
+    ctx.route(re.compile(r'https://geocoding\.geo\.census\.gov/.*'), lambda r: None)       # the Census never answers
+    pg.goto(BASE); pg.evaluate("() => { window.__cp = 'pending'; censusPoint('1 Main St', '78701').then(v => { window.__cp = v; }); }")   # not awaited
+    pg.wait_for_selector('iframe[title="Census address lookup"]', state='attached')
+    send = "([o, d]) => window.dispatchEvent(new MessageEvent('message', { data: d, origin: o, source: document.querySelector('iframe[title=\"Census address lookup\"]').contentWindow }))"
+    pt = {'x': -97.74, 'y': 30.27, 'label': 'FORGED'}
+    pg.evaluate(send, ['https://evil.example', pt]); pg.wait_for_timeout(300)
+    assert pg.evaluate('window.__cp') == 'pending', 'an answer from a real origin is ignored'
+    pg.evaluate(send, ['null', pt]); pg.wait_for_timeout(300)
+    assert pg.evaluate('window.__cp') == pt, ('the probe itself works: the sandbox\'s answer is taken', pg.evaluate('window.__cp'))
+    ctx.close()
 
 @test
 def census_runs_in_a_sandbox(b):
