@@ -14,6 +14,12 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.1.2] — 2026-10-18
+
+**Phone layout follow-ups** (cold audit wave 4).
+
 ### Fixed
 - **On the laptop, "Next" never points at the contest already open** (#53). When it's the only undecided one, Next goes
   on in ballot order ("Next: …"), and from the last contest to At a glance ("Last contest · see At a glance").
@@ -51,6 +57,8 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
   are retired: the bar no longer goes on its own.
 - The offline copy's install guards are tested (#54): a redirected page and a download cut off midway are never kept;
   the test server learns 301s and stalls.
+- Three remediation-audit passes, converged; the first two found two real bugs this wave had introduced (a 404 masked by
+  the saved copy; picks deleted by an older copy of the page) and one loop ("back" when Reload would still get the copy).
 
 ## [1.1.1] — 2026-10-17
 
