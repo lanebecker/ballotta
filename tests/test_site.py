@@ -2050,6 +2050,8 @@ def offline_copy_install_never_waits_on_a_slow_line(b):
         poll(pg, "navigator.serviceWorker.getRegistration().then(g => !!(g && g.active))", 20)
         assert time.time() - t0 < 15, ('the install waited on the slow page', time.time() - t0)
         assert pg.evaluate(f"caches.open('ballotta-1').then(c => c.match('{base}next/')).then(r => !r)"), 'a page that never arrived was kept'
+        assert '/next/' in Flip.hits, 'the install never asked for next/: the slow line was never tried'
+        assert pg.evaluate(f"caches.open('ballotta-1').then(c => c.match('{base}')).then(r => !!r)"), 'giving up on next/ lost the page itself'
     finally:
         Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}; ctx.close(); srv.shutdown(); srv.server_close()
 
