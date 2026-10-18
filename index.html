@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-0rHYTGuxJDep62aytvEQkDx5XGxNCtAGP0VmTvRaexM='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-RwOM19R0Fzw4Hnc53PoI0EjxiUP7eHax0JiK6MTDTOs='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -866,8 +866,8 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <div class="handle" aria-hidden="true"></div>
   <div class="sheethead"><h2 id="dkh" style="font-size:26px">Keep your picks</h2><button type="button" class="x" data-close>Close</button></div>
   <p class="lead" id="keepcount"></p>
-  <div class="warnbox hidden" id="keep-long" role="status" style="flex-direction:column;align-items:flex-start;gap:8px"><span>This link is long because of your reasons, and some apps cut long links short.</span><button class="btn secondary small" type="button" id="keep-nowhy">Leave my reasons out</button></div>
-  <p class="note hidden" id="keep-nowhy-done" role="status">Your reasons are left out of this link. All your picks are in it.</p>
+  <div class="warnbox hidden" id="keep-long" role="status" style="flex-direction:column;align-items:flex-start;gap:8px"><span id="keep-long-why">This link is long because of your reasons, and some apps cut long links short.</span><button class="btn secondary small" type="button" id="keep-nowhy">Leave my reasons out</button></div>
+  <div class="note hidden" id="keep-nowhy-done" role="status">Your reasons are left out of this link. All your picks are in it.</div>
   <button class="btn" type="button" id="keep-send">Text or email it to myself</button>
   <button class="btn secondary" type="button" id="keep-copy">Copy link</button>
   <p class="linkout hidden" id="keep-out"></p>
@@ -1097,14 +1097,15 @@ async function lookup() {
       return await nearby(pt, pt.label, stale);  // awaited, so a county outage here shows its message (it used to hang)
     }
     // A unit marker is a whole word with something after it, or a '#': "2505 STECK AVE" and "555 UNITY DR" stay whole (#57).
-    const addr = cand.address.split(',')[0].toUpperCase().replace(/\s+(?:(?:UNIT|APT|STE)\s+\S|#).*$/, '');
+    const addr = cand.address.split(',')[0].toUpperCase().replace(/\s+(?:(?:UNIT|APT|STE)(?=[\s.#\d-])\.?[\s#-]*\S|#).*$/, '');
     let where = "Address = '" + q(addr) + "' AND ZIP = " + Number(zip);
     let d = await getJSON(SVC + 'VotingAddresses/VA/MapServer/0/query?' + new URLSearchParams({ where, outFields: FIELDS, returnGeometry: 'false', f: 'json' }));
     if (stale()) return;
     let recs = (d.features || []).map(f => f.attributes);
     if (unit && recs.length > 1) {
-      const u = unit.toUpperCase().replace(/^(APT|UNIT|STE|#)\s*/, '');
-      const byUnit = recs.filter(r => String(r.Unit || '').toUpperCase().replace(/^(APT|UNIT|STE|#)\s*/, '') === u);
+      const bare = (v) => String(v || '').toUpperCase().trim().replace(/^(?:(?:APT|UNIT|STE)(?=[\s.#\d-]|$)\.?|#)[\s#-]*/, '');  // "Apt #3", "APT3", "Unit-3", "#3" are all 3 (Pass 1)
+      const u = bare(unit);
+      const byUnit = recs.filter(r => bare(r.Unit) === u);
       if (byUnit.length) recs = byUnit;
     }
     const pt = cand.location ? { x: cand.location.x, y: cand.location.y } : null;
@@ -1180,14 +1181,15 @@ function render(rec, mode, label, neighbors, pt) {
     const sets = neighbors.map(n => new Set(route(n).map(x => x.c.id)));
     const all = new Set(); sets.forEach(s => s.forEach(id => all.add(id)));
     const mine = new Set(list.map(b => b.c.id));
-    list.forEach(b => { if (!sets.every(s => s.has(b.c.id))) { b.conf = 'medium'; b.note = 'Your address is near a district line, so this contest may or may not be on your ballot.'; } });
-    all.forEach(id => { if (!mine.has(id)) list.push({ c: BYID[id], conf: 'medium', note: 'Your address is near a district line, so this contest may be on your ballot.' }); });
+    list.forEach(b => { if (!sets.every(s => s.has(b.c.id))) { b.conf = 'medium'; b.line = true; b.note = 'Your address is near a district line, so this contest may or may not be on your ballot.'; } });
+    all.forEach(id => { if (!mine.has(id)) list.push({ c: BYID[id], conf: 'medium', line: true, note: 'Your address is near a district line, so this contest may be on your ballot.' }); });
     list.sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
   }
   const before = ballot.map(b => b.c.id).join(','), after = list.map(b => b.c.id).join(',');
   here = pt ? [Math.round(pt.x * 1000) / 1000, Math.round(pt.y * 1000) / 1000] : null;
   const where = label.replace(/, AUSTIN, TX/i, ', Austin') + ' · Precinct ' + rec.Precinct + ' · Nov 3, 2026';
-  LS.set('ballotta.ballot', { pr: String(rec.Precinct), b: list.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), mode, at: Date.now(), pt: here });
+  const ln = neighbors ? list.filter(x => x.line).map(x => num(x.c.id)) : undefined;  // which contests the district line flagged (#62, Pass 1)
+  LS.set('ballotta.ballot', { pr: String(rec.Precinct), b: list.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), mode, at: Date.now(), pt: here, ...(ln ? { ln } : {}) });
   // Counted before the ballot shows, so a progress milestone the new ballot triggers comes after ballot_found.
   track('ballot_found', { match: { exact: 'exact', nearby: 'nearby', 'nearby-mixed': 'near a line' }[mode] || mode });
   if (before && before !== after) track('address_changed');  // came back and looked up an address with a different ballot
@@ -1202,7 +1204,12 @@ function cleanBallot(b) {
 }
 function listFromStored(st) {
   // A Double-check contest says why, as the live lookup did: the rule's own note, else the district line, else the generic line (#62).
-  const why = (id) => (DATA.rules[id] && DATA.rules[id].note) || (st.mode === 'nearby-mixed' ? 'Your address is near a district line, so this contest may or may not be on your ballot.' : 'Not confirmed for your address. Check your official ballot.');
+  // A ballot saved before Pass 1 has no list of line-flagged contests: on a near-a-line ballot, a contest whose own rule
+  // isn't uncertain was flagged by the line.
+  const ln = Array.isArray(st.ln) ? new Set(st.ln) : null, rule = (id) => DATA.rules[id] || {};
+  const line = (id) => ln ? ln.has(num(id)) : st.mode === 'nearby-mixed' && rule(id).conf !== 'medium';
+  const why = (id) => line(id) ? 'Your address is near a district line, so this contest may or may not be on your ballot.'
+    : (rule(id).conf === 'medium' && rule(id).note) || 'Not confirmed for your address. Check your official ballot.';
   return cleanBallot(st.b).map(n => { const id = cidOf(Math.abs(n)); const c = BYID[id]; return c ? { c, conf: n < 0 ? 'medium' : 'high', note: n < 0 ? why(id) : '' } : null; }).filter(Boolean).sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
 }
 // A precinct is a precinct number and a point is two numbers in Texas, whatever a link or storage says (#63).
@@ -1353,8 +1360,9 @@ $('withwhy').addEventListener('change', renderCrib);
 // the new day (#34). A voting period the visitor picked stays picked.
 // Today in Travis County, whatever the visitor's clock says (#61): a Date whose own fields read Austin's wall clock, so
 // comparisons with new Date(2026, 9, 19) and toDateString() mean Austin's dates.
-const CT = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' });
-const today = () => { const p = {}; CT.formatToParts(new Date()).forEach(x => { p[x.type] = +x.value; }); return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second); };
+let ctFmt = null;
+const CT = () => ctFmt || (ctFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' }));
+const today = () => { try { const p = {}; CT().formatToParts(new Date()).forEach(x => { p[x.type] = +x.value; }); return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second); } catch (e) { return new Date(); } };  // a browser without time zones keeps its own clock (Pass 1)
 const defaultPeriod = () => { const d = today(); return (d.getFullYear() > 2026 || (d.getMonth() === 9 && d.getDate() > 30) || d.getMonth() > 9) ? 'eday' : 'early'; };
 let period = defaultPeriod(), periodChosen = false;
 let showAll = false;
@@ -1536,9 +1544,10 @@ let keepPrep = null, keeping = false;  // { p: Promise<url>, url }; keeping igno
 // A link past ~8,000 characters (long reasons in Chinese, Japanese, Korean or emoji can make one of 50 KB or more) gets
 // cut by Messages and email, and past 40,000 this page refuses it: the sheet says so and offers the link without the
 // reasons (#65). The picks are always in it.
-const KEEP_LONG = 8000;
+const KEEP_LONG = 8000, KEEP_MAX = 40000;  // KEEP_MAX: unpackFrag's own limit
 let keepNoWhy = false;
-function prepKeep() { const k = { url: null }; k.p = keepURL(keepNoWhy).then(u => { k.url = u; $('keep-long').classList.toggle('hidden', keepNoWhy || u.length <= KEEP_LONG); return u; }); keepPrep = k; return k; }
+function prepKeep() { const k = { url: null }; k.p = keepURL(keepNoWhy).then(u => { k.url = u; $('keep-long').classList.toggle('hidden', keepNoWhy || u.length <= KEEP_LONG);
+    $('keep-long-why').textContent = u.length > KEEP_MAX ? 'This link is too long to open, because of your reasons.' : 'This link is long because of your reasons, and some apps cut long links short.'; return u; }); keepPrep = k; return k; }
 function openKeep() {  // Keep my picks, from either layout (#38)
   keepNoWhy = false; $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.add('hidden');
   prepKeep();
@@ -1621,7 +1630,7 @@ function openRestore(o) {
   $('restorewarn').innerHTML = (mine ? 'This device already has <b>' + mine + ' pick' + (mine === 1 ? '' : 's') + '</b>. Loading will replace its picks and reasons.' : 'Your picks and reasons will be saved in this browser.') + other;
   $('d-restore').showModal();
 }
-$('d-restore').addEventListener('close', () => SS.del('ballotta.incoming'));  // answered either way (#66)
+$('d-restore').addEventListener('close', () => { const v = SS.get('ballotta.incoming'); if (typeof v === 'string' && v[0] === 'k') SS.del('ballotta.incoming'); });  // answered either way; a friend's link that came meanwhile stays (#66, Pass 1)
 $('restore-go').addEventListener('click', () => {
   const o = incomingKeep; if (!o) return;
   const { P, W } = unpackPicks(o);
@@ -1925,7 +1934,7 @@ const desk = (() => {
   function header() {
     const n = ballot.length;
     $('dk-share').classList.toggle('hidden', !n);
-    $('dk-loc').innerHTML = n ? '<b>Precinct ' + esc(String(lastLookup.precinct || '')) + '</b>' + (ui.addr ? ' · ' + esc(ui.addr) : '') + ' · <button type="button" class="dk-link" id="dk-change">change</button>' : 'Travis County · Nov 3, 2026 election';
+    $('dk-loc').innerHTML = n ? (lastLookup.precinct ? '<b>Precinct ' + esc(String(lastLookup.precinct)) + '</b>' : '<b>Your ballot</b>') + (ui.addr ? ' · ' + esc(ui.addr) : '') + ' · <button type="button" class="dk-link" id="dk-change">change</button>' : 'Travis County · Nov 3, 2026 election';
     if (n) $('dk-change').addEventListener('click', toLanding);
     $('dk-when').textContent = whenLine();
   }

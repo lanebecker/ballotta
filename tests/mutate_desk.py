@@ -342,6 +342,14 @@ M = [
  ('E16 no Election Day note before Nov 3', PREV, "before = eday ? t < new Date(2026, 10, 3) :", "before = eday ? false :", ['the_wait_times_note_says_when_each_map_fills_in']),
  ('E17 a long Keep link goes unremarked', PREV, "keepNoWhy || u.length <= KEEP_LONG", "keepNoWhy || true", ['a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out']),
  ('E18 leaving the reasons out does nothing', PREV, "k.p = keepURL(keepNoWhy).then(", "k.p = keepURL().then(", ['a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out']),
+ ('E19 which contests the line flagged is not kept', PREV, "pt: here, ...(ln ? { ln } : {}) });", "pt: here });", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E20 a line-flagged contest is not marked', PREV, "b.conf = 'medium'; b.line = true; b.note", "b.conf = 'medium'; b.note", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E21 answering the Keep question drops any link', PREV, "if (typeof v === 'string' && v[0] === 'k') SS.del", "if (true) SS.del", ['a_reload_before_answering_keeps_the_keep_link']),
+ ('E22 no time zones takes the page down', PREV, "catch (e) { return new Date(); } };  // a browser without time zones", "catch (e) { throw e; } };  // a browser without time zones", ['the_page_works_without_time_zone_support']),
+ ('E23 an empty Precinct label', PREV, "(lastLookup.precinct ? '<b>Precinct ' + esc(String(lastLookup.precinct)) + '</b>' : '<b>Your ballot</b>')", "'<b>Precinct ' + esc(String(lastLookup.precinct || '')) + '</b>'", ['desk_header_has_no_empty_precinct']),
+ ('E24 APT3 and STE-200 kept in the street', PREV, "(?:(?:UNIT|APT|STE)(?=[\\s.#\\d-])\\.?[\\s#-]*\\S|#)", "(?:(?:UNIT|APT|STE)\\s+\\S|#)", ['lookup_keeps_street_names_that_start_like_a_unit']),
+ ('E25 a typed unit matched the old way', PREV, "const u = bare(unit);", "const u = unit.toUpperCase().replace(/^(APT|UNIT|STE|#)\\s*/, '');", ['lookup_keeps_street_names_that_start_like_a_unit']),
+ ('E26 a link too long to open called merely long', PREV, "u.length > KEEP_MAX ? 'This link is too long to open", "false ? 'This link is too long to open", ['a_keep_link_too_long_to_open_says_so']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'c8d8e8d17e39ea9b3c9a1dbae025662aa7484a3960e1dab1f12d1459c4ebd1b1'  # Oct 17: wave 2 (look-ups and dates)
+LIVE_SHA = '7a1a6ba03019140503766778a9552542c6ae44efc4f2215424e0a092e1aa1492'  # Oct 17: wave 2 (look-ups and dates)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -468,7 +468,8 @@ def lookup_keeps_street_names_that_start_like_a_unit(b):
     import time
     cases = {'2505 STECK AVE': '2505 STECK AVE', '555 UNITY DR': '555 UNITY DR', '123 STEVENS RD': '123 STEVENS RD', '4 STEINER RANCH BLVD': '4 STEINER RANCH BLVD',
              '9 APTOS LN': '9 APTOS LN', '2505 STECK AVE UNIT 5': '2505 STECK AVE', '10 MAIN ST APT 3B': '10 MAIN ST', '10 MAIN ST STE 200': '10 MAIN ST',
-             '10 MAIN ST # 4': '10 MAIN ST', '10 MAIN ST #4': '10 MAIN ST'}
+             '10 MAIN ST # 4': '10 MAIN ST', '10 MAIN ST #4': '10 MAIN ST', '10 MAIN ST APT3': '10 MAIN ST', '10 MAIN ST UNIT#5': '10 MAIN ST',
+             '10 MAIN ST STE-200': '10 MAIN ST', '10 MAIN ST UNIT-B': '10 MAIN ST', '10 MAIN ST APT. 4': '10 MAIN ST'}
     ctx, pg = new_page(b, wide=True); pg.goto(BASE); wrong = []
     for typed, asked in cases.items():
         rec = dict(COUNTY_REC, Address=asked, ZIP=78757)
@@ -479,6 +480,13 @@ def lookup_keeps_street_names_that_start_like_a_unit(b):
         w = county_where(pg)
         if not w or f"Address = '{asked}'" not in w[0]: wrong.append((typed, w))
     assert not wrong, wrong
+    # The unit typed in the form finds the county's unit, however it's written (Pass 1).
+    recs = [dict(COUNTY_REC, Address='10 MAIN ST', Unit=un, CodeCat=cc) for un, cc in (('3', 'A'), ('4', 'B'))]
+    for typed in ('Apt #3', 'APT3', 'Unit-3', '#3', '3', 'ste. 3'):
+        stub_county(pg, [['findAddressCandidates', 0, candidate('10 MAIN ST')], ['VotingAddresses', 0, {'features': [{'attributes': r} for r in recs]}]])
+        pg.evaluate("(u) => { document.getElementById('street').value = '10 MAIN ST'; document.getElementById('zip').value = '78757'; document.getElementById('unit').value = u; lookup(); }", typed)
+        pg.wait_for_timeout(400)
+        assert pg.evaluate("document.getElementById('units').classList.contains('hidden')"), (typed, 'asked which unit though one was typed')
     ctx.close()
 
 @test
@@ -525,6 +533,18 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70], mode: 'nearby-mixed', at: 0, pt: null }))"); pg.reload()
     pg.wait_for_selector('body.dk-app-on')
     assert 'district line' in pg.evaluate("ballot.find(x => x.c.id === 'c070').note"), 'a contest marked near a district line says so after a reload'
+    # Pass 1: an address near the Austin city line: the city's propositions are flagged by the line, and say so after a
+    # reload too (their rule carries a different note, about limited-purpose residents).
+    # (MUD 41's own rule is uncertain too, so only a record of which contests the line flagged keeps its note right.)
+    near = [dict(COUNTY_REC, MUD='M41', CodeCat='300P03G10J05L49N14C10CA9S01T45ACCM41', LongitudeX=-97.7201, LatitudeY=30.3601),
+            dict(COUNTY_REC, Muni='', MuniSMD='', CodeCat='300P03G10J05L49N14S01T45ACC', LongitudeX=-97.7202, LatitudeY=30.3602)]
+    stub_county(pg, [['findAddressCandidates', 0, candidate('7 EDGE ST')], ['Address+%3D', 0, {'features': []}], ['geometry=', 0, {'features': [{'attributes': r} for r in near]}]])
+    pg.evaluate("() => { document.getElementById('street').value = '7 EDGE ST'; document.getElementById('zip').value = '78757'; lookup(); }")
+    pg.wait_for_function("(window.__events || []).filter(e => e[0] === 'ballot_found').length >= 1", timeout=10000)
+    live = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
+    pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    after = pg.evaluate("Object.fromEntries(ballot.filter(x => ['c071', 'c193'].includes(x.c.id)).map(x => [x.c.id, x.note]))")
+    assert set(live) == {'c071', 'c193'} and all('district line' in v for v in live.values()) and after == live, (live, after)
     ctx.close()
 
 @test
@@ -553,6 +573,14 @@ def a_reload_before_answering_keeps_the_keep_link(b):
         pg.click('#d-restore [data-close]'); pg.reload(); pg.wait_for_timeout(1500)
         assert not pg.is_visible('#d-restore'), 'asked again after the visitor said no'
         ctx.close()
+    # Pass 1: a friend's link that arrives while the question is open is not dropped when it's answered.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]')
+    pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2349', 'g': 1, 'p': {'70': 0}}))
+    pg.wait_for_function("!!friend", timeout=5000); pg.click('#d-restore [data-close]')
+    assert (pg.evaluate("sessionStorage.getItem('ballotta.incoming')") or '').startswith('s'), 'answering the Keep question dropped the friend\'s link'
+    pg.reload(); pg.wait_for_timeout(1500); assert pg.evaluate("!!friend") and not pg.is_visible('#d-restore')
+    ctx.close()
 
 @test
 def a_census_outage_is_not_a_wrong_address(b):
@@ -606,6 +634,37 @@ def a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out(b):
     o = pg.evaluate("unpackFrag(keepPrep.url.split('#')[1])")
     assert not o.get('w') and len(o['p']) == pg.evaluate("ballot.filter(x => current(x.c.id).length).length"), 'the picks go, the reasons stay'
     assert pg.is_visible('#keep-nowhy-done') and not pg.is_visible('#keep-long')
+    ctx.close()
+
+@test
+def the_page_works_without_time_zone_support(b):
+    # #61, Pass 1: a browser without formatToParts or the America/Chicago zone falls back to its own clock; the page runs.
+    for kill in ("Intl.DateTimeFormat.prototype.formatToParts = undefined;",
+                 "const D = Intl.DateTimeFormat; Intl.DateTimeFormat = function (l, o) { if (o && o.timeZone) throw new RangeError('Invalid time zone'); return D(l, o); };"):
+        ctx, pg = new_page(b, wide=True); pg.add_init_script(kill); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(BASE); saved_ballot(pg, [70, 71]); pg.wait_for_selector('body.dk-app-on')
+        assert errs == [] and pg.evaluate('period') in ('early', 'eday'), (kill[:40], errs)
+        ctx.close()
+
+@desk_test
+def desk_header_has_no_empty_precinct(b):
+    # #63, Pass 1: a saved ballot whose precinct didn't pass the check shows no "Precinct" label with nothing after it.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    for pr in ('', 'abc'):
+        pg.evaluate("p => localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: p, b: [1, 70], mode: 'saved', at: 0, pt: null }))", pr); pg.reload()
+        pg.wait_for_selector('body.dk-app-on')
+        assert 'Precinct' not in pg.inner_text('#dk-loc'), (pr, pg.inner_text('#dk-loc'))
+    ctx.close()
+
+@test
+def a_keep_link_too_long_to_open_says_so(b):
+    # #65, Pass 1: past 40,000 characters this page itself refuses the link, so the sheet says it won't open.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, list(range(1, 73))); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("""() => { ballot.forEach((x, i) => { const o = optionsOf(x.c); if (o.length) pick(x.c.id, o[0]);
+        let s = i * 7919 + 17; whys[x.c.id] = Array.from({ length: 600 }, () => { s = (s * 1103515245 + 12345) % 2147483648; return String.fromCodePoint(0x1F300 + (s >>> 8) % 0x2FF); }).join(''); }); }""")
+    pg.evaluate('openKeep()'); pg.wait_for_function("keepPrep && keepPrep.url")
+    assert pg.evaluate('keepPrep.url.length') > 40000 and pg.evaluate("unpackFrag(keepPrep.url.split('#')[1])") is None, pg.evaluate('keepPrep.url.length')
+    assert 'too long to open' in pg.inner_text('#keep-long'), pg.inner_text('#keep-long')
     ctx.close()
 
 # The ten "vote for up to N" lists in the order every page before Oct 17 had them (git show b0e514f:source/answer_key.json).
@@ -1318,7 +1377,7 @@ def census_runs_in_a_sandbox(b):
                "try { top.location.hash = '#pwned'; } catch (e) {}")
     looper = "location.href = 'census.html?again';"                                                       # reloads the frame (Pass 1)
     for body, reason in ((hostile, 'no_voters_nearby'),                                                  # a point came back
-                         (looper, 'not_found'),
+                         (looper, 'census_unreachable'),                                    # never answers: unreachable, not a wrong address (#59)
                          ('cb({"result":{"addressMatches":[{"coordinates":{"x":"-97.7; alert(1)","y":30.27},"matchedAddress":"x"}]}})', 'not_found'),
                          ('cb({"result":{"addressMatches":[{"coordinates":{"x":2.35,"y":48.85},"matchedAddress":"PARIS"}]}})', 'not_found')):
         ctx, pg = new_page(b, csp=True); refs = []
