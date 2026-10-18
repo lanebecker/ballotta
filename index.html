@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-ohFpftHfIU5ebVGBOOg97UWKPThL1zLsaFvBvZJjGlU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-oVEIXI87XNRzeu08RkyRDBDADyJ6QataYTDAK8+dTNI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -955,9 +955,6 @@ let ballot = [];  // [{c, conf, note}]
 let here = null;  // [lon, lat] of the looked-up address, kept on this device only
 let lastLookup = { mode: '', precinct: '', total: 0 };
 const BYID = Object.fromEntries(DATA.contests.map(c => [c.id, c]));
-// Picks and reasons read from this device keep only contests and choices on today's ballot (#76).
-picks = Object.fromEntries(Object.entries(picks).filter(([k]) => BYID[k]).map(([k, v]) => [k, v[0] === '__skip' ? (v.length === 1 ? v : []) : v.filter(x => optionsOf(BYID[k]).includes(x))]).filter(([, v]) => v.length));
-whys = Object.fromEntries(Object.entries(whys).filter(([k]) => BYID[k]));
 const ORDER = Object.fromEntries(DATA.contests.map((c, i) => [c.id, i]));
 const num = (cid) => parseInt(cid.slice(1), 10);
 const cidOf = (n) => 'c' + String(n).padStart(3, '0');
@@ -1272,7 +1269,14 @@ function showBallot(list, meta) {
 }
 function chev() { return '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'; }
 const ARROW = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E7FA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg>';
-function current(cid) { const v = picks[cid]; return Array.isArray(v) ? v : (v ? [v] : []); }
+// Only contests and choices on today's ballot count (#76), filtered as they're read: what's stored is never trimmed, so a
+// copy of the page from another build can't delete picks it doesn't know (Wave 4 Pass 1).
+function current(cid) {
+  const c = BYID[cid], v = picks[cid], a = Array.isArray(v) ? v : (v ? [v] : []);
+  if (!c) return [];
+  if (a[0] === '__skip') return a.length === 1 ? a : [];
+  const o = optionsOf(c); return a.filter(x => o.includes(x));
+}
 function summaryHTML(cid) {
   const v = current(cid);
   if (!v.length) return '<span class="und">Undecided</span>';
@@ -1663,7 +1667,7 @@ function openRestore(o) {
   const nb = cb.length, np = Object.keys(P).filter(id => inB.has(id) && P[id][0] !== '__skip').length;
   const when = o.at ? new Date(o.at * 1000).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
   $('restoresum').innerHTML = '<div class="bar"><span>Picks</span><b>' + np + (nb ? ' of ' + nb + ' contests' : '') + '</b></div><div class="bar"><span>Reasons</span><b>' + Object.keys(W).length + '</b></div>' + (when ? '<div class="bar"><span>Saved</span><b>' + esc(when) + '</b></div>' : '') + (cleanPr(o.pr) ? '<div class="bar"><span>Ballot</span><b>Precinct ' + esc(cleanPr(o.pr)) + '</b></div>' : '');
-  const mine = Object.values(picks).filter(v => (Array.isArray(v) ? v : [v]).length).length;
+  const mine = Object.keys(picks).filter(k => current(k).length).length;
   const cur = LS.get('ballotta.ballot', null), lp = cleanPr(o.pr);
   const other = cur && cur.pr && lp && String(cur.pr) !== lp ? ' The link is for <b>Precinct ' + esc(lp) + '</b>; this device has your ballot for <b>Precinct ' + esc(cleanPr(cur.pr)) + '</b>, which it will also replace.' : '';
   $('restorewarn').innerHTML = (mine ? 'This device already has <b>' + mine + ' pick' + (mine === 1 ? '' : 's') + '</b>. Loading will replace its picks and reasons.' : 'Your picks and reasons will be saved in this browser.') + other;
@@ -2170,7 +2174,7 @@ const desk = (() => {
     // Usually 0.12° wide; wider just enough that the five numbered centers all fit, for an outlying address (#76).
     const W = 560, H = 520, pad = 24, k = H / W * Math.cos(here[1] * Math.PI / 180);
     const fit = all.slice(0, 5).reduce((m, s) => Math.max(m, 2 * Math.abs(s.pt[0] - here[0]) / (1 - 2 * pad / W), 2 * Math.abs(s.pt[1] - here[1]) / k / (1 - 2 * pad / H)), 0);
-    const sx = Math.min(0.6, Math.max(0.12, fit)), sy = sx * k;
+    const sx = Math.min(1.5, Math.max(0.12, fit)), sy = sx * k;
     const X = (lon) => (lon - here[0] + sx / 2) / sx * W, Y = (lat) => (here[1] + sy / 2 - lat) / sy * H;
     const inView = (p) => X(p[0]) >= 8 && X(p[0]) <= W - 8 && Y(p[1]) >= 8 && Y(p[1]) <= H - 8;
     let g = '';
@@ -2377,7 +2381,7 @@ const phone = (() => {
   const NARROW = window.matchMedia('(max-width: 1023.98px)'), D = desk.ph, cls = document.body.classList;
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const iOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null, installed = false;
+  let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null, installed = false, siteBack = false;
   setTimeout(() => { booting = false; });  // a ballot already saved on this phone opens where the browser left the page
 
   /* ----- after every laptop render: the title, the bottom bar, the fold, the map fold ----- */
@@ -2395,7 +2399,7 @@ const phone = (() => {
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
   function savedSay() {
-    if ($('ph-saved').classList.contains('hidden')) return;
+    if ($('ph-saved').classList.contains('hidden') || siteBack) return;
     $('ph-saved').querySelector('b + span').textContent = ballot.length || cleanBallot((LS.get('ballotta.ballot', null) || {}).b).length ? 'Your picks are all here.' : 'Looking up an address needs a connection.';
   }
   function after() {
@@ -2649,18 +2653,24 @@ const phone = (() => {
   // The kept copy says so (Lane, B4): sw.js marks a page it answered from this phone's copy, offline or after 4 seconds
   // with no answer. Try again reloads; the bar goes when the network comes back.
   const copy = document.documentElement.dataset.copy;
-  const savedGone = () => { $('ph-saved').classList.add('hidden'); document.documentElement.classList.remove('ph-saved-on'); };
   if (copy === 'offline' || copy === 'slow' || copy === 'error') {
     $('ph-saved').querySelector('b').textContent = (copy === 'slow' ? 'Slow connection' : copy === 'error' ? 'Ballotta isn’t answering' : 'No connection') + ', so this is the copy saved on your phone.';
-    // The bar goes once the site answers again (#73): a slow line or a server error never fires "online". Checked when the
-    // page comes back into view and every 20 seconds, with a HEAD request the offline copy never answers.
-    const check = () => { if (document.visibilityState !== 'hidden' && !$('ph-saved').classList.contains('hidden')) fetch(location.href, { method: 'HEAD', cache: 'no-store' }).then((r) => { if (r.ok) savedGone(); }).catch(() => {}); };
-    document.addEventListener('visibilitychange', check); setInterval(check, 20000);
+    // Once the site answers again (#73), the bar says so and offers the newer page; it never reloads by itself, so nothing
+    // half-typed is lost (Lane, Oct 18). Checked when the page comes back into view, when the phone says it's online, and
+    // every 20 seconds, with a HEAD request the offline copy never answers; one at a time, given up after 8 seconds.
+    let busy = false;
+    const back = () => { siteBack = true; $('ph-saved').querySelector('b').textContent = 'Ballotta is back.'; $('ph-saved').querySelector('b + span').textContent = ''; $('ph-saved-go').textContent = 'Reload'; };
+    const check = () => {
+      if (busy || siteBack || document.visibilityState === 'hidden') return;
+      busy = true;
+      fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined })
+        .then((r) => { if (r.ok) back(); }).catch(() => {}).finally(() => { busy = false; });
+    };
+    document.addEventListener('visibilitychange', check); window.addEventListener('online', check); setInterval(check, 20000);
     $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
     savedSay();
   }
   $('ph-saved-go').addEventListener('click', () => location.reload());
-  window.addEventListener('online', savedGone);
   try {  // the offline copy: phones and tablets only (C1)
     if ('serviceWorker' in navigator) {
       const sw = navigator.serviceWorker;

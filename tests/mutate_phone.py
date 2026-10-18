@@ -27,7 +27,7 @@ M = [
  ('P12 Next undecided with nothing left', PREV, "nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : 'Crib sheet →'", "'Next undecided →'", ['phone_next_undecided_then_the_crib_sheet']),
  ('P13 the bar button stays on the crib sheet', PREV, "$('ph-next').classList.toggle('hidden', !nx && D.ui.view === 'crib');", "$('ph-next').classList.toggle('hidden', false);", ['phone_next_undecided_then_the_crib_sheet']),
  ('P14 the menu button opens the laptop dropdown', PREV, "    e.stopPropagation(); e.preventDefault(); $('ph-menu').showModal();\n", '', ['phone_menu_is_a_sheet']),
- ('P15 no Home Screen item', PREV, "      else if (!standalone()) item('home', '<b>Add to your Home Screen</b><small>Opens like an app, and keeps your picks longer</small>');\n", '', ['phone_menu_is_a_sheet']),
+ ('P15 no Home Screen item', PREV, "      else if (!standalone() && !installed) item('home', '<b>Add to your Home Screen</b><small>Opens like an app, and keeps your picks longer</small>');\n", '', ['phone_menu_is_a_sheet']),
  ('P16 the menu button still says "menu"', PREV, "h.setAttribute('aria-haspopup', 'dialog'); h.removeAttribute('aria-expanded');", "h.setAttribute('aria-haspopup', 'menu'); h.removeAttribute('aria-expanded');", ['phone_menu_is_a_sheet']),
  ('P17 the FAQ folds are empty', PREV, "d.append(s, q.querySelector('p').cloneNode(true));", 'd.append(s);', ['phone_landing_band_form_and_faq']),
  ('P18 Android never gets its button', PREV, "$('ph-i-add').classList.toggle('hidden', !bip);", "$('ph-i-add').classList.toggle('hidden', true);", ['phone_add_to_home_screen_three_ways']),
@@ -91,12 +91,13 @@ M = [
  ('P74 mismatched markers accepted', BLD, "        assert a.startswith('/*') == z.startswith('/*') and", "        assert True or a.startswith('/*') == z.startswith('/*') and", ['live_build_is_unchanged_until_promotion']),
  ('P75 the preview and the live page share a cache', BLD, "    return 'ballotta-next-' if preview else 'ballotta-'", "    return 'ballotta-'", ['phone_offline_kill_switch_and_promotion']),
  ('P85 a Tab out of the page leaves the flag set', PREV, " setTimeout(() => { tabbed = false; }); }", " }", ['phone_taps_land_where_they_were_aimed']),
- ('P86 the kept copy never says so', SW, '      return page ? said(kept.clone(), first).catch(() => kept) : kept;', '      return kept;', ['phone_saved_copy_says_so']),
+ ('P86 the kept copy never says so', SW, "      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : kept;", '      return kept;', ['phone_saved_copy_says_so']),
  ('P87 a slow network called no connection', SW, "setTimeout(ok, 4000, 'slow')", "setTimeout(ok, 4000, 'offline')", ['phone_saved_copy_says_so']),
- ('P88 a fresh page marked as the kept copy', SW, "      if (typeof first !== 'string') return first;", "      if (typeof first !== 'string') return r.mode === 'navigate' ? said(first, 'slow') : first;", ['phone_saved_copy_says_so']),
+ ('P88 a fresh page marked as the kept copy', SW, "      if (typeof first !== 'string' && !bad) return first;", "      if (typeof first !== 'string' && !bad) return r.mode === 'navigate' ? said(first, 'slow') : first;", ['phone_saved_copy_says_so']),
  ('P89 the bar never shows', PREV, "$('ph-saved').classList.remove('hidden'); ", '', ['phone_saved_copy_says_so']),
  ('P90 Try again does nothing', PREV, "  $('ph-saved-go').addEventListener('click', () => location.reload());\n", '', ['phone_saved_copy_says_so']),
- ('P91 the bar outlives the network coming back', PREV, "$('ph-saved').classList.add('hidden'); document.documentElement", 'document.documentElement', ['phone_saved_copy_says_so']),
+ # P91 (the bar outlives the network coming back) retired Oct 18: the bar no longer goes on its own. Once the site answers it says "Ballotta is back."
+ # with Reload (Lane, Wave 4 Pass 1), pinned by W7, Y2-Y4 in tests/mutate_desk.py.
  ('P92 the bar promises picks with no ballot', PREV, "ballot.length || cleanBallot((LS.get('ballotta.ballot', null) || {}).b).length ? 'Your picks are all here.'", "true ? 'Your picks are all here.'", ['phone_saved_copy_says_so']),
  # P93 (a saved ballot is told to look up an address) retired Oct 17, equivalent (issue #70's honest rerun): start()
  # restores the saved ballot in the same script task, right after the bar's first sentence, so the mutant's wrong
@@ -123,7 +124,8 @@ M = [
  ("P112 scrolled, the bar hides under the laptop's top bar", PREV, '.ph-saved{position:sticky;top:56px;', '.ph-saved{position:sticky;top:0;', ['phone_saved_copy_says_so']),
  ("P113 an app's Safari view gets no way out", PREV, "    $('ph-i-else').classList.toggle('hidden', !safari);", '', ['phone_home_screen_steps_name_the_right_buttons']),
  ('P114 the laptop rail never makes room', PREV, " document.documentElement.classList.add('ph-saved-on');", '', ['phone_saved_copy_says_so']),
- ('P115 the rail keeps room after the network is back', PREV, " document.documentElement.classList.remove('ph-saved-on');", '', ['phone_saved_copy_says_so']),
+ # P115 (the rail keeps room after the network is back) retired Oct 18: the bar no longer goes on its own. Once the site answers it says "Ballotta is back."
+ # with Reload (Lane, Wave 4 Pass 1), pinned by W7, Y2-Y4 in tests/mutate_desk.py.
  ('P116 Opera is told about Safari', PREV, '|OPX\\/', '', ['phone_home_screen_steps_name_the_right_buttons']),
  ("P117 the laptop bar clips Try again's focus ring", PREV, 'height:44px;padding:0 24px;white-space:nowrap}', 'height:44px;padding:0 24px;white-space:nowrap;overflow:hidden}', ['phone_saved_copy_says_so']),
  ('P118 Try again overhangs the laptop bar', PREV, '  .ph-saved button{min-height:42px;flex:none}\n', '', ['phone_saved_copy_says_so']),

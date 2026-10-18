@@ -17,10 +17,12 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 ### Fixed
 - **On the laptop, "Next" never points at the contest already open** (#53). When it's the only undecided one, Next goes
   on in ballot order ("Next: …"), and from the last contest to At a glance ("Last contest · see At a glance").
-- **A server error no longer beats the copy saved on a phone** (#74): an error that arrives within 4 seconds (a deploy,
-  a proxy) opens the kept page with the bar "Ballotta isn’t answering, so this is the copy saved on your phone."
-- **The saved-copy bar goes once the site answers again** (#73), not only when the phone reports it's back online,
-  which a slow line never does. The page checks when it comes back into view and every 20 seconds.
+- **A server error no longer beats the copy saved on a phone** (#74): a 5xx that arrives within 4 seconds (a deploy,
+  a proxy) opens the kept page with the bar "Ballotta isn’t answering, so this is the copy saved on your phone." A 404
+  is shown as it is, so a page that's really gone is never masked by its copy.
+- **The saved-copy bar says when the site is back** (#73): once the site answers again, it reads "Ballotta is back."
+  with Reload (Lane), where before it stayed until Try again on a slow line and vanished on "online" even when the site
+  didn't answer. The page checks when it comes back into view, when the phone says it's online, and every 20 seconds.
 - **The offline copy marks its page by the page's own opening tag**, whatever attributes it carries, so a template
   change can't quietly hide the saved-copy bar (#75); `/` and `/index.html` are one kept copy (#76).
 - **The map shows all five closest vote centers from an outlying address** (#76): from Manor, Webberville, Lago Vista
@@ -30,8 +32,9 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 - Smaller (#76): the map fold stays open when the vote view redraws; after an Android install, the tab stops offering
   "Add to your Home Screen"; a measure with nothing behind its fold shows no fold; a tablet that loads in landscape
   gets the offline copy once it's turned upright; Next from another view counts as opening a contest, as Back does;
-  a share link with no readable picks isn't counted as opened; an open comparison follows a new friend's link; picks
-  and reasons read from the device keep only contests and choices on today's ballot.
+  a share link with no readable picks isn't counted as opened; an open comparison follows a new friend's link; only
+  contests and choices on today's ballot count as picks (filtered as they're read: what's stored is never trimmed, so
+  an older copy of the page can't delete picks it doesn't know).
 
 ### Security
 - **The page may now ask its own site** (`connect-src 'self'`), for the saved-copy bar's check: a `HEAD` request, which
@@ -41,6 +44,9 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 - The share-name mutants are settled (#94): "X-GOP", "J/RNC" and "GOP_X" are now tested (blocked only by one line);
   R19 targets a test with a 9 in it; R8 is equivalent (6,916 generated names) and retired with its reason. #52 was
   already fixed and tested in 1.1.0.
+- 19 older mutants whose lines waves 2–4 rewrote are re-anchored to the same behavior (a full mutation run would have
+  stopped at the first); the Census check's test now also sends a sandboxed answer from the wrong window. P91 and P115
+  are retired: the bar no longer goes on its own.
 - The offline copy's install guards are tested (#54): a redirected page and a download cut off midway are never kept;
   the test server learns 301s and stalls.
 

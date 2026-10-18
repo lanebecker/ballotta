@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'ee1792e72da0b02f4620eb498d46c80038248a45055986d3d279f3e83e0a70ae'  # Oct 18: wave 4 (phone layout follow-ups)
+LIVE_SHA = '50074ab7c6c479dfb8bfd9fdee234b6cf4320c6898ff64f02f8310c92a0f95de'  # Oct 18: wave 4 (phone layout follow-ups)
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
 NOJS = 'Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the Travis County Voter Lookup.'
 def stub_tracker(ctx):
@@ -1605,6 +1605,8 @@ def census_answers_only_from_its_sandboxed_frame(b):
     pg.wait_for_selector('iframe[title="Census address lookup"]', state='attached')
     send = "([o, d]) => window.dispatchEvent(new MessageEvent('message', { data: d, origin: o, source: document.querySelector('iframe[title=\"Census address lookup\"]').contentWindow }))"
     pt = {'x': -97.74, 'y': 30.27, 'label': 'FORGED'}
+    pg.evaluate("d => window.dispatchEvent(new MessageEvent('message', { data: d, origin: 'null', source: window }))", pt); pg.wait_for_timeout(300)
+    assert pg.evaluate('window.__cp') == 'pending', 'a sandboxed answer from another window is ignored'
     pg.evaluate(send, ['https://evil.example', pt]); pg.wait_for_timeout(300)
     assert pg.evaluate('window.__cp') == 'pending', 'an answer from a real origin is ignored'
     pg.evaluate(send, ['null', pt]); pg.wait_for_timeout(300)
@@ -2060,12 +2062,14 @@ def phone_add_to_home_screen_three_ways(b):
     pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click(); pg.wait_for_selector('#ph-install[open]')
     expect(pg.locator('#ph-i-add')).to_be_visible(); expect(pg.locator('#ph-i-ios')).to_be_hidden(); expect(pg.locator('#ph-i-other')).to_be_hidden()
     pg.click('#ph-i-add'); pg.wait_for_function("!document.getElementById('ph-install').open")
+    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click()
+    expect(pg.locator('#ph-i-other')).to_be_visible(); expect(pg.locator('#ph-i-add')).to_be_hidden()   # the prompt is used up, nothing installed yet: say where to look
+    pg.click('#ph-install [data-close]')
     pg.evaluate("window.dispatchEvent(new Event('appinstalled'))")
     assert pg.evaluate('window.__prompted') == 1
     hs = [e[1] for e in events(pg) if e[0] == 'home_screen']
-    assert hs == [{'action': 'opened', 'from': 'menu', 'layout': 'phone'}, {'action': 'prompted', 'layout': 'phone'}, {'action': 'added', 'layout': 'phone'}], hs
-    pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click()
-    expect(pg.locator('#ph-i-other')).to_be_visible(); expect(pg.locator('#ph-i-add')).to_be_hidden()   # the prompt is used up: say where to look
+    assert hs == [{'action': 'opened', 'from': 'menu', 'layout': 'phone'}, {'action': 'prompted', 'layout': 'phone'}, {'action': 'opened', 'from': 'menu', 'layout': 'phone'}, {'action': 'added', 'layout': 'phone'}], hs
+    pg.click('#dk-help'); assert 'Add to your Home Screen' not in pg.inner_text('#ph-mitems'), 'installed: no longer offered (#76)'
     ctx.close()
     ctx, pg = phone_page(b, ua=IPHONE_UA); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
     pg.click('#dk-help'); pg.locator('#ph-mitems button', has_text='Add to your Home Screen').click()
@@ -2267,10 +2271,8 @@ def phone_saved_copy_says_so(b):
         pg.evaluate('window.scrollTo(0, 400)'); assert pg.evaluate("(() => { const r = document.getElementById('ph-saved').getBoundingClientRect(), a = document.querySelector('.dk-rail').getBoundingClientRect(); return r.top >= document.getElementById('dk-hdr').getBoundingClientRect().bottom - 1 && r.bottom <= a.top + 1; })()"), 'scrolled, the bar hides under the top bar or over the rail'
         pg.evaluate('window.scrollTo(0, 0)')
         pg.set_viewport_size(PHONE); pg.wait_for_timeout(200); assert bar.is_visible(), 'back on the phone layout, the bar must show again'
-        pg.evaluate("window.dispatchEvent(new Event('online'))"); assert bar.is_hidden(), 'the network came back but the bar stayed'
-        pg.set_viewport_size({'width': 1180, 'height': 820}); pg.wait_for_timeout(200)
-        assert pg.evaluate("getComputedStyle(document.querySelector('.dk-rail')).top") == '56px', 'the rail kept room for a bar that is gone'
-        pg.set_viewport_size(PHONE); pg.wait_for_timeout(200)
+        pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1500)   # the phone says it's online, the site doesn't answer (Wave 4 Pass 1)
+        assert bar.is_visible() and 'No connection' in bar.inner_text(), ('the bar claimed the site was back', bar.inner_text())
         assert pg.evaluate('window.__csp') == [] and pg.errs == [], (pg.evaluate('window.__csp'), pg.errs)
     finally:
         ctx.close()
@@ -2503,7 +2505,7 @@ def phone_offline_kill_switch_and_promotion(b):
     ctx, pg = phone_page(b, sw=True)
     try:
         pg.goto(url); assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])')
-        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, f"caches.open('{mine}').then(c => c.match(location.href)).then(r => !!r)", 15)   # a copy kept, not just a cache made (Pass 2)
+        poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, f"caches.open('{mine}').then(c => c.match(location.href.replace(/index\\.html$/, ''))).then(r => !!r)", 15)   # a copy kept, not just a cache made (Pass 2)
         m.OFFLINE = False; page = m.build(preview=pv, phone=True); m.OFFLINE = True
         Flip.swap = {'/' + PAGE: page.encode('utf-8'), '/' + folder + 'sw.js': m.sw_off_js(pv).encode('utf-8')}
         pg.reload(); poll(pg, "navigator.serviceWorker.getRegistrations().then(r => r.length === 0)", 15)
@@ -2670,7 +2672,8 @@ def offline_copy_marks_any_html_tag(b):
     said = src[src.index('const said = '):]
     ctx, pg = new_page(b); pg.goto(BASE)
     run = lambda html: pg.evaluate("([s, h]) => (0, eval)('(() => { ' + s + '; return said; })()')(new Response(h, { headers: { 'content-type': 'text/html' } }), 'slow').then(r => r.text())", [said, html])
-    for html in ('<!doctype html>\n<html lang="en">x', '<!doctype html>\n<html lang="en" class="phone">x', '<!DOCTYPE html><HTML LANG="en">x', '<html lang="en-US" dir="ltr">x'):
+    for html in ('<!doctype html>\n<html lang="en">x', '<!doctype html>\n<html lang="en" class="phone">x', '<!DOCTYPE html><HTML LANG="en">x', '<html lang="en-US" dir="ltr">x',
+                 '<!-- built by build_site.py -->\n<!doctype html>\n<html lang="en">x', '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">\n<html>x'):   # Pass 1
         out = run(html)
         assert out.count('data-copy="slow"') == 1 and out.endswith('x'), (html, out)
     out = run('<!doctype html>\n<html lang="en"><script>const s = "<html>";</script>')
@@ -2690,15 +2693,24 @@ def phone_saved_copy_bar_follows_the_site(b):
         pg.goto(url); poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
         Flip.slow = {'/' + PAGE: 7}; pg.reload(timeout=20000); Flip.slow = {}
         assert visible() and 'Slow connection' in bar.inner_text()
-        seen(); poll(pg, "document.getElementById('ph-saved').classList.contains('hidden')", 10)
+        back = "document.querySelector('#ph-saved b').textContent === 'Ballotta is back.' && document.getElementById('ph-saved-go').textContent === 'Reload'"
+        seen(); poll(pg, back, 10)                                         # Lane (Oct 18): the bar offers the newer page, never reloads by itself
+        assert visible() and pg.get_attribute('html', 'data-copy') == 'slow' and 'copy saved' not in bar.inner_text(), bar.inner_text()
+        pg.evaluate('desk.render()'); assert bar.inner_text().replace('\n', ' ').split() == ['Ballotta', 'is', 'back.', 'Reload'], ('a redraw brought old words back', bar.inner_text())
+        with pg.expect_navigation(timeout=20000): pg.click('#ph-saved-go')
+        poll(pg, "document.readyState === 'complete'"); assert pg.get_attribute('html', 'data-copy') is None and not visible(), 'Reload got the fresh page'
+        Flip.gone = {'/' + PAGE}; pg.reload(timeout=20000)                # Pass 1: a page that's really gone is never masked by the copy
+        assert pg.get_attribute('html', 'data-copy') is None and pg.locator('#street').count() == 0, 'a 404 was hidden behind the kept copy'
+        Flip.gone = set(); pg.goto(url); poll(pg, "document.readyState === 'complete'")
         Flip.fail = {'/' + PAGE: 503}; pg.reload(timeout=20000)
         assert pg.get_attribute('html', 'data-copy') == 'error' and pg.locator('#start h1').is_visible(), ('a 503 was shown, not the kept page', pg.content()[:200])
         assert visible() and "isn’t answering" in bar.inner_text() and 'copy saved on your phone' in bar.inner_text(), bar.inner_text()
         seen(); pg.wait_for_timeout(1500); assert visible(), 'the site still answers with an error: the bar stays'
-        Flip.fail = {}; seen(); poll(pg, "document.getElementById('ph-saved').classList.contains('hidden')", 10)
+        Flip.fail = {}; pg.evaluate("window.dispatchEvent(new Event('online'))"); poll(pg, back, 10)   # the phone saying it's online asks too
         srv.shutdown(); srv.server_close(); up = False
         pg.reload(timeout=20000); assert visible() and 'No connection' in bar.inner_text()
-        seen(); pg.wait_for_timeout(1500); assert visible(), 'no connection: the bar stays'
+        seen(); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1500)
+        assert visible() and 'No connection' in bar.inner_text(), 'no site: the bar stays as it was'
         assert pg.evaluate('window.__csp') == [], pg.evaluate('window.__csp')
     finally:
         Flip.swap, Flip.gone, Flip.fail, Flip.slow = {}, set(), {}, {}
@@ -2794,9 +2806,13 @@ def stored_picks_only_for_this_ballot(b):
         localStorage.setItem('ballotta.picks', JSON.stringify({ c999: ['X'], c070: ['Not a candidate'], c071: [o, 'Bogus'], c001: ['__skip'], c006: ['__skip', 'X'] }));
         localStorage.setItem('ballotta.whys', JSON.stringify({ c999: 'old', c071: 'kept' })); }""")
     pg.reload()
-    got = pg.evaluate('[picks, whys]')
-    assert got[0] == {'c071': [pg.evaluate('optionsOf(BYID.c071)[0]')], 'c001': ['__skip']}, got
-    assert got[1] == {'c071': 'kept'}, got
+    o = pg.evaluate('optionsOf(BYID.c071)[0]')
+    got = pg.evaluate("['c999', 'c070', 'c071', 'c001', 'c006'].map(id => current(id))")
+    assert got == [[], [], [o], ['__skip'], []], got
+    # Pass 1: read through a filter, never deleted: a pick saved now keeps everything another version of the page stored.
+    saved_ballot(pg, [1, 81]); pg.wait_for_selector('body.dk-app-on'); pg.evaluate("desk.ph.go('c081')"); pg.locator('#dk-paper .dk-line').first.click()
+    kept = pg.evaluate("JSON.parse(localStorage.getItem('ballotta.picks'))")
+    assert kept.get('c999') == ['X'] and kept.get('c070') == ['Not a candidate'] and 'c081' in kept, kept
     ctx.close()
 
 @phone_test
@@ -2813,7 +2829,7 @@ def phone_candidate_links_are_full_size_targets(b):
 def the_map_shows_all_five_closest_centers(b):
     # #76: from an outlying address (Webberville), the five numbered centers were mostly off the map, while its label
     # promised them. The map now widens just enough to fit all five; closer in, it keeps its usual scale.
-    for pt, wide in (([-97.50, 30.24], True), ([-97.7431, 30.2747], False)):
+    for pt, wide in (([-97.50, 30.24], True), ([-98.10, 30.55], True), ([-97.7431, 30.2747], False)):   # Pass 1: far northwest too
         ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70], pt=pt); pg.wait_for_selector('body.dk-app-on')
         pg.evaluate("desk.ph.setView('vote')"); pg.wait_for_selector('#dk-map')
         assert pg.locator('#dk-map .top').count() == 5, (pt, pg.locator('#dk-map .top').count())
