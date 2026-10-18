@@ -18,7 +18,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'eb98e230c30e05a664e6c77a1afa583ee73259f893318fbbe6134ca494411bf4'  # Oct 17: promoted: the phone layout is the live page (Lane)
+LIVE_SHA = 'f62cafc7d90eb6aaff775fc4d2dc230db87c1f287865d853c7c94b7eb79eb9fa'  # Oct 17: promoted (Lane); the shared link stays on screen
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -376,6 +376,24 @@ def mud_41_reaches_its_addresses_marked_double_check(b):
     assert pg.evaluate("r => route(r).some(x => x.c.entity === 'Travis County MUD No. 41')", other) is False, 'MUD 41 reached an address outside M41'
     assert "can't be placed on a map" not in pg.content(), 'the page still says MUD 41 cannot be placed'
     ctx.close()
+
+@test
+def shared_link_stays_on_screen_after_sharing(b):
+    # Found Oct 17 (a flaky phone test): after Share link copied the link, the handler packed a fresh link code with
+    # prepShare(), which hides the link "so an older one never sits next to new choices", so the link just shown
+    # vanished at once; where copying fails, the selected link the voter was to copy by hand vanished too.
+    for wide, clip in ((False, True), (True, True), (False, False)):
+        ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.goto(BASE); saved_ballot(pg, [70, 71])
+        pg.evaluate("() => { pick('c070', optionsOf(BYID.c070)[0]); }")
+        if not clip: pg.evaluate("() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.reject(new Error('no')) } }); }")
+        pg.evaluate("openShare()"); pg.fill('#sharename', 'Lane'); pg.click('#share-go')
+        pg.wait_for_function("(window.__events || []).some(e => e[0] === 'share_created')", timeout=10000); pg.wait_for_timeout(300)
+        assert pg.is_visible('#share-out') and '#s2' in pg.inner_text('#share-out'), ('wide' if wide else 'phone', 'clipboard' if clip else 'no clipboard', 'the shared link vanished')
+        if not clip: assert pg.evaluate("getSelection().toString()") == pg.inner_text('#share-out'), 'the link to copy by hand is not selected'
+        pg.fill('#sharename', 'Lane B'); pg.dispatch_event('#sharename', 'input'); pg.dispatch_event('#sharename', 'change')
+        pg.evaluate("document.querySelector('#sharesecs input').click()")       # new choices: the old link goes
+        assert not pg.is_visible('#share-out'), 'an older link stayed next to new choices'
+        ctx.close()
 
 # The ten "vote for up to N" lists in the order every page before Oct 17 had them (git show b0e514f:source/answer_key.json).
 PRE_FIX_ORDER = {

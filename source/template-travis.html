@@ -1630,11 +1630,11 @@ function updateShareSum() {
   prepShare();
 }
 let sharePrep = null;  // the link for the sheet's current choices, packed ahead of the tap
-function prepShare() {
+function prepShare(keepShown) {  // keepShown: right after a share, the link just shown stays (Oct 17)
   const ids = chosenIds(), name = $('sharename').value.trim().slice(0, 30), withWhy = $('sharewhy').checked;
   const pk = packPicks(ids, false, withWhy), g0 = LS.get('ballotta.gen', 1), gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1, code = rand8();  // a whole number or 1 (#44)
   const st = { ids, name, withWhy, pk, gen, code, url: null };
-  $('share-out').classList.add('hidden');  // never leave an older link on screen next to new choices
+  if (!keepShown) $('share-out').classList.add('hidden');  // never leave an older link on screen next to new choices
   st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = baseURL() + '#' + f));
   sharePrep = st; return st;
 }
@@ -1664,7 +1664,7 @@ $('share-go').addEventListener('click', async () => {
   try { via = await handOff(url, {}, $('share-out'), $('share-go')); } finally { sharing = false; }
   if (!via) return;
   LS.set('ballotta.name', name);
-  prepShare();  // a fresh link code for any further share from this sheet
+  prepShare(true);  // a fresh link code for any further share from this sheet; the link just shared stays on screen
   if (!LS.get('ballotta.gen', null)) LS.set('ballotta.gen', gen);  // your place in a chain is fixed by your first share or first friend link
   const n = ids.length;
   track('share_created', { sections: [...document.querySelectorAll('#sharesecs input:checked')].map(i => i.dataset.k).join(','), reasons: withWhy && Object.keys(pk.w).length ? 'yes' : 'no', picks: n <= 5 ? '1-5' : n <= 15 ? '6-15' : '16+', via, generation: gen, link: code });

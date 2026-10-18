@@ -327,6 +327,8 @@ M = [
  ('D64 the worker keeps nothing at install', BLD, "keep = \"['./']\" if preview else \"['./', 'next/']\"", "keep = \"[]\"", ['promotion_hands_the_preview_on']),
  ('D65 the install waits as long as the line', BLD, "setTimeout(() => stop.abort(), 8000)", "setTimeout(() => {}, 8000)", ['offline_copy_install_never_waits_on_a_slow_line']),
  ('D66 a rollback leaves the offline copy on phones', BLD, '        out["sw.js"] = sw_off_js(False)', '        pass', ['promotion_hands_the_preview_on']),
+ ('D67 the shared link vanishes once shared', PREV, "  prepShare(true);  // a fresh link code", "  prepShare();  // a fresh link code", ['shared_link_stays_on_screen_after_sharing']),
+ ('D68 an older link stays next to new choices', PREV, "  if (!keepShown) $('share-out').classList.add('hidden');", "  if (false) $('share-out').classList.add('hidden');", ['shared_link_stays_on_screen_after_sharing']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
