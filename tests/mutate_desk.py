@@ -355,8 +355,10 @@ M = [
  ('E29 too long measured on the whole address', PREV, "return f[1] === '=' ? f.length > 200000 : f.length - 2 > 40000; }", "return String(u).length > 40000; }", ['too_long_to_open_means_what_the_page_refuses']),
  ('E30 a Keep link leaves the line flags behind', PREV, ", ...(st && Array.isArray(st.ln) ? { ln: st.ln } : {}) });", " });", ['a_restored_ballot_keeps_each_contests_own_caveat']),
  ('E31 a restored Keep link ignores the line flags', PREV, "  if (Array.isArray(o.ln)) { const flagged", "  if (false) { const flagged", ['a_restored_ballot_keeps_each_contests_own_caveat']),
- ('E32 without the flags a clause guesses a reason', PREV, "    : rule(id).conf === 'medium' ? rule(id).note || GENERIC : line(id) ? LINE : GENERIC;", "    : line(id) ? LINE : rule(id).note || GENERIC;", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E32 without the flags a clause guesses a reason', PREV, "? rule(id).note || GENERIC : line(id) ? LINE : GENERIC;  // a rule's note", "? rule(id).note || GENERIC : line(id) ? LINE : rule(id).note || GENERIC;  // a rule's note", ['a_restored_ballot_keeps_each_contests_own_caveat']),
  ('E33 an exact lookup records no flags', PREV, "  const ln = list.filter(x => x.line).map(x => num(x.c.id));", "  const ln = undefined;", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E34 a matched-how note shown where the line could have added it', PREV, "rule(id).conf === 'medium' && (st.mode === 'exact' || st.mode === 'nearby') ?", "rule(id).conf === 'medium' ?", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E35 a Keep link takes another tab\'s line list', PREV, "st = got && Array.isArray(got.b) && sig(cleanBallot(got.b)) === sig(b) ? got : null;", "st = got;", ['a_restored_ballot_keeps_each_contests_own_caveat']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take

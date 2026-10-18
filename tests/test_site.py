@@ -22,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'cee3502dc612a3bec35a571161ed27b070e507a4eba0bf31478cb074cd0b2f70'  # Oct 17: wave 2 (look-ups and dates)
+LIVE_SHA = '45cd78ea971a5839e3e83e4488e14c9f1ad743333da80005d0063470b73c5944'  # Oct 17: wave 2 (look-ups and dates)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -533,7 +533,9 @@ def dates_follow_central_time_wherever_the_visitor_is(b):
 def a_restored_ballot_keeps_each_contests_own_caveat(b):
     # #62 (audit #11): after a reload or a Keep link, a contest marked "Double-check" says why, as the live lookup did
     # (the rule's own note), not only the generic line.
-    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, -193, -194]); pg.wait_for_selector('body.dk-app-on')
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '142', b: [1, -193, -194], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload()
+    pg.wait_for_selector('body.dk-app-on')
     notes = pg.evaluate("Object.fromEntries(ballot.map(x => [x.c.id, x.note]))")
     assert 'M41' in notes['c193'] and 'M41' in notes['c194'] and notes['c001'] == '', notes
     pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70], mode: 'nearby-mixed', at: 0, pt: null }))"); pg.reload()
@@ -566,12 +568,20 @@ def a_restored_ballot_keeps_each_contests_own_caveat(b):
     # Without that record (a ballot saved before it existed, a Keep link from an older page): a contest uncertain only by
     # one clause of its rule gets the generic line, never a specific reason that may be false; one whose whole rule is
     # uncertain keeps the rule's note; near a line, a contest whose rule is sure says the line.
-    for mode in ('nearby-mixed', 'saved'):
+    # (Pass 4: a rule's note says how the address was matched, so without the list it shows only on a ballot from an
+    # exact or nearby match, where the line can't have added the contest.)
+    for mode in ('nearby-mixed', 'saved', 'exact'):
         pg.evaluate("m => localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70, -71, -193], mode: m, at: 0, pt: null }))", mode); pg.reload()
         pg.wait_for_selector('body.dk-app-on')
         n = pg.evaluate("Object.fromEntries(ballot.filter(x => x.conf === 'medium').map(x => [x.c.id, x.note]))")
-        assert n['c071'].startswith('Not confirmed') and 'M41' in n['c193'], (mode, n)
+        assert n['c071'].startswith('Not confirmed') and (('M41' in n['c193']) if mode == 'exact' else n['c193'].startswith('Not confirmed')), (mode, n)
         assert ('district line' in n['c070']) == (mode == 'nearby-mixed'), (mode, n)
+    # Pass 4: another tab's lookup changes what's stored; this tab's Keep link then carries neither its line list nor its precinct.
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -193], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload()
+    pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '301', b: [1, -70, -193], mode: 'nearby-mixed', at: 0, pt: null, ln: [70, 193] }))")
+    o = pg.evaluate("keepURL().then(u => unpackFrag(u.split('#')[1]))")
+    assert 'ln' not in o and o['pr'] != '301' and o['b'] == [1, -193], o
     ctx.close()
 
 @test
