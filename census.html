@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ctXddP2xhTvGHX5o5QsoOerU8cUar0qHhkPwHd0SmUI=' https://geocoding.geo.census.gov; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-VKM0CHAoBZYFE9neMn3WCVqtyIUVgF24FkAx9HYK3ZA=' https://geocoding.geo.census.gov; base-uri 'none'; form-action 'none'">
 <title>Census address lookup</title></head><body>
 <script>// Built by source/build_site.py; don't edit census.html. Ballotta's page sends one address;
 // this frame (sandboxed: no access to the page or its storage) loads the JSONP reply and passes back only a point.
@@ -14,7 +14,7 @@ window.addEventListener('message', function on(e) {
   };
   var s = document.createElement('script');
   s.src = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?' + new URLSearchParams({ address: e.data, benchmark: 'Public_AR_Current', format: 'jsonp', callback: 'cb' });
-  s.onerror = function () { parent.postMessage(null, '*'); };
+  s.onerror = function () { parent.postMessage('unreachable', '*'); };  // the page says so, not "not found" (#59)
   document.head.appendChild(s);
 });
 </script>

@@ -239,7 +239,7 @@ CENSUS_JS = (
     "  };\n"
     "  var s = document.createElement('script');\n"
     "  s.src = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?' + new URLSearchParams({ address: e.data, benchmark: 'Public_AR_Current', format: 'jsonp', callback: 'cb' });\n"
-    "  s.onerror = function () { parent.postMessage(null, '*'); };\n"
+    "  s.onerror = function () { parent.postMessage('unreachable', '*'); };  // the page says so, not \"not found\" (#59)\n"
     "  document.head.appendChild(s);\n"
     "});\n")
 

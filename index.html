@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-03VJ9k631s11fftwypfJsLvtQ8QpAyCYHgQSkvFePhg='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-MtcdrpnMtlifFl6xOdK6ecs97YJGn64VlHQ0QZnR49s=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-0rHYTGuxJDep62aytvEQkDx5XGxNCtAGP0VmTvRaexM='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -866,6 +866,8 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <div class="handle" aria-hidden="true"></div>
   <div class="sheethead"><h2 id="dkh" style="font-size:26px">Keep your picks</h2><button type="button" class="x" data-close>Close</button></div>
   <p class="lead" id="keepcount"></p>
+  <div class="warnbox hidden" id="keep-long" role="status" style="flex-direction:column;align-items:flex-start;gap:8px"><span>This link is long because of your reasons, and some apps cut long links short.</span><button class="btn secondary small" type="button" id="keep-nowhy">Leave my reasons out</button></div>
+  <p class="note hidden" id="keep-nowhy-done" role="status">Your reasons are left out of this link. All your picks are in it.</p>
   <button class="btn" type="button" id="keep-send">Text or email it to myself</button>
   <button class="btn secondary" type="button" id="keep-copy">Copy link</button>
   <p class="linkout hidden" id="keep-out"></p>
@@ -965,7 +967,7 @@ const GEN = (v) => /^[1-9][0-9]?$/.test(v), CODE = (v) => /^[a-z0-9]{1,8}$/.test
 const SECTION_KEYS = ['federal', 'state', 'county', 'city', 'school', 'special'];  // the share sheet's sections
 const EVENTS = {
   lookup_started: {},
-  lookup_failed: { reason: ONE_OF('no_street', 'bad_zip', 'not_found', 'no_voters_nearby', 'county_unreachable') },
+  lookup_failed: { reason: ONE_OF('no_street', 'bad_zip', 'not_found', 'no_voters_nearby', 'county_unreachable', 'census_unreachable') },
   units_asked: {},
   ballot_found: { match: ONE_OF('exact', 'nearby', 'near a line') },
   address_changed: {},
@@ -1073,7 +1075,9 @@ function profileKey(rec) { return (rec.CodeCat || '') + '|' + (rec.Temp || '').t
 /* ---------- lookup ---------- */
 $('go').addEventListener('click', lookup);
 ['street', 'unit', 'zip'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); }));
+let lookupSeq = 0;  // two lookups at once (Enter twice, a quick ZIP fix): only the newest one's answer is used (#58)
 async function lookup() {
+  const my = ++lookupSeq, stale = () => my !== lookupSeq;
   const street = $('street').value.trim(), unit = $('unit').value.trim(), zip = $('zip').value.trim();
   $('units').className = 'unit hidden';
   if (!street) { show('bad', 'Enter your street address.'); track('lookup_failed', { reason: 'no_street' }); return; }
@@ -1082,16 +1086,21 @@ async function lookup() {
   show('warn', 'Finding your address in Travis County’s records…');
   try {
     const g = await getJSON(SVC + 'AdMas_wPrecinctFraction/GeocodeServer/findAddressCandidates?' + new URLSearchParams({ SingleLine: street + ', ' + zip, outFields: 'Addr_type,Precinct', maxLocations: '3', outSR: '4326', f: 'json' }));
+    if (stale()) return;
     const cand = (g.candidates || []).filter(c => c.address.indexOf(zip) !== -1).sort((a, b) => b.score - a.score)[0];
     if (!cand || cand.score < 80) {
       // Not a registered voting address in the county file: place it with the free Census geocoder, then use nearby addresses
       const pt = await censusPoint(street, zip);
+      if (stale()) return;
+      if (pt === 'unreachable') { show('bad', 'We couldn’t reach the U.S. Census address finder just now. Check your connection and try again in a minute.'); track('lookup_failed', { reason: 'census_unreachable' }); return; }  // not the voter's address (#59)
       if (!pt) { show('bad', 'We couldn’t find that address. Check the spelling and ZIP. Only Travis County addresses are supported.'); track('lookup_failed', { reason: 'not_found' }); return; }
-      return await nearby(pt, pt.label);  // awaited, so a county outage here shows its message (it used to hang)
+      return await nearby(pt, pt.label, stale);  // awaited, so a county outage here shows its message (it used to hang)
     }
-    const addr = cand.address.split(',')[0].toUpperCase().replace(/\s+(UNIT|APT|STE|#).*$/, '');
+    // A unit marker is a whole word with something after it, or a '#': "2505 STECK AVE" and "555 UNITY DR" stay whole (#57).
+    const addr = cand.address.split(',')[0].toUpperCase().replace(/\s+(?:(?:UNIT|APT|STE)\s+\S|#).*$/, '');
     let where = "Address = '" + q(addr) + "' AND ZIP = " + Number(zip);
     let d = await getJSON(SVC + 'VotingAddresses/VA/MapServer/0/query?' + new URLSearchParams({ where, outFields: FIELDS, returnGeometry: 'false', f: 'json' }));
+    if (stale()) return;
     let recs = (d.features || []).map(f => f.attributes);
     if (unit && recs.length > 1) {
       const u = unit.toUpperCase().replace(/^(APT|UNIT|STE|#)\s*/, '');
@@ -1105,8 +1114,9 @@ async function lookup() {
       if (keys.length === 1) { hideStatus(); render(recs[0], 'exact', cand.address, null, pt); return; }
       hideStatus(); chooseUnit(profiles, cand.address, pt); return;
     }
-    return await nearby(cand.location, cand.address);
+    return await nearby(cand.location, cand.address, stale);
   } catch (e) {
+    if (stale()) return;
     show('bad', 'We couldn’t reach Travis County’s map server just now (' + e.message + '). Check your connection and try again in a minute.');
     track('lookup_failed', { reason: 'county_unreachable' });
   }
@@ -1121,19 +1131,21 @@ function censusPoint(street, zip) {
     const done = (v) => { clearTimeout(t); window.removeEventListener('message', on); f.remove(); resolve(v); };
     function on(e) {
       if (e.source !== f.contentWindow) return;
+      if (e.data === 'unreachable') return done('unreachable');  // the Census didn't answer: not "address not found" (#59)
       const d = e.data, ok = d && typeof d === 'object' && Number.isFinite(d.x) && Number.isFinite(d.y) && d.x > -107 && d.x < -93 && d.y > 25 && d.y < 37 && typeof d.label === 'string';
       done(ok ? { x: d.x, y: d.y, label: d.label.slice(0, 200) } : null);
     }
     window.addEventListener('message', on);
-    t = setTimeout(() => done(null), 8000);
+    t = setTimeout(() => done('unreachable'), 8000);  // 8 seconds without an answer: unreachable, not not-found (#59)
     f.setAttribute('sandbox', 'allow-scripts'); f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.hidden = true; f.title = 'Census address lookup';
     f.addEventListener('load', () => f.contentWindow.postMessage((street + ', TX ' + zip).slice(0, 200), '*'), { once: true });  // once: a reloading frame can't loop (Pass 1)
     f.src = 'census.html';
     document.body.appendChild(f);
   });
 }
-async function nearby(p, label) {
+async function nearby(p, label, stale) {
   const d = await getJSON(SVC + 'VotingAddresses/VA/MapServer/0/query?' + new URLSearchParams({ geometry: p.x + ',' + p.y, geometryType: 'esriGeometryPoint', inSR: '4326', distance: '120', units: 'esriSRUnit_Meter', spatialRel: 'esriSpatialRelIntersects', outFields: FIELDS + ',LongitudeX,LatitudeY', returnGeometry: 'false', f: 'json' }));
+  if (stale && stale()) return;
   const near = (d.features || []).map(f => f.attributes);
   if (!near.length) { show('bad', 'We placed that address on the map, but there are no registered voting addresses near it. Check with the Travis County Tax Office.'); track('lookup_failed', { reason: 'no_voters_nearby' }); return; }
   const dist = r => Math.hypot((r.LongitudeX - p.x) * 96000, (r.LatitudeY - p.y) * 111000);
@@ -1189,11 +1201,17 @@ function cleanBallot(b) {
   return b.filter(n => { if (!Number.isInteger(n)) return false; const a = Math.abs(n); if (seen.has(a) || !BYID[cidOf(a)]) return false; seen.add(a); return true; });
 }
 function listFromStored(st) {
-  return cleanBallot(st.b).map(n => { const id = cidOf(Math.abs(n)); const c = BYID[id]; return c ? { c, conf: n < 0 ? 'medium' : 'high', note: n < 0 ? 'Not confirmed for your address. Check your official ballot.' : '' } : null; }).filter(Boolean).sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
+  // A Double-check contest says why, as the live lookup did: the rule's own note, else the district line, else the generic line (#62).
+  const why = (id) => (DATA.rules[id] && DATA.rules[id].note) || (st.mode === 'nearby-mixed' ? 'Your address is near a district line, so this contest may or may not be on your ballot.' : 'Not confirmed for your address. Check your official ballot.');
+  return cleanBallot(st.b).map(n => { const id = cidOf(Math.abs(n)); const c = BYID[id]; return c ? { c, conf: n < 0 ? 'medium' : 'high', note: n < 0 ? why(id) : '' } : null; }).filter(Boolean).sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
 }
+// A precinct is a precinct number and a point is two numbers in Texas, whatever a link or storage says (#63).
+function cleanPr(v) { const s = String(v == null ? '' : v); return /^\d{1,4}$/.test(s) ? s : ''; }
+function cleanPt(p) { return Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) && p[0] > -107 && p[0] < -93 && p[1] > 25 && p[1] < 37 ? p : null; }
 function renderStored(st, why) {
-  here = Array.isArray(st.pt) ? st.pt : null;
-  showBallot(listFromStored(st), { mode: st.mode || 'saved', precinct: st.pr, where: 'Precinct ' + st.pr + ' · Nov 3, 2026 · ' + why });
+  here = cleanPt(st.pt);
+  const pr = cleanPr(st.pr);
+  showBallot(listFromStored(st), { mode: st.mode || 'saved', precinct: pr, where: (pr ? 'Precinct ' + pr + ' · ' : '') + 'Nov 3, 2026 · ' + why });
 }
 function showBallot(list, meta) {
   ballot = list;
@@ -1333,7 +1351,10 @@ $('withwhy').addEventListener('change', renderCrib);
 /* ---------- where and when to vote ---------- */
 // Today's date is read whenever something is drawn, never once at load: a tab left open past midnight moves on to
 // the new day (#34). A voting period the visitor picked stays picked.
-const today = () => new Date();
+// Today in Travis County, whatever the visitor's clock says (#61): a Date whose own fields read Austin's wall clock, so
+// comparisons with new Date(2026, 9, 19) and toDateString() mean Austin's dates.
+const CT = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' });
+const today = () => { const p = {}; CT.formatToParts(new Date()).forEach(x => { p[x.type] = +x.value; }); return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second); };
 const defaultPeriod = () => { const d = today(); return (d.getFullYear() > 2026 || (d.getMonth() === 9 && d.getDate() > 30) || d.getMonth() > 9) ? 'eday' : 'early'; };
 let period = defaultPeriod(), periodChosen = false;
 let showAll = false;
@@ -1369,9 +1390,11 @@ function renderVote() {
   waitsNote();
 }
 function waitsNote() {  // the county's wait-times map is empty until voting starts: say so on both layouts (#29 ports)
-  const before = today() < new Date(2026, 9, 19);
-  $('waitsnote').textContent = 'Travis County map' + (before ? ' · fills in once voting starts Oct 19' : '');
-  const n = document.getElementById('dk-waitsnote'); if (n) { n.textContent = before ? 'The county’s wait-times map fills in once voting starts Oct 19.' : ''; n.hidden = !before; }
+  // The county's map is empty until that period's voting starts: early voting Oct 19, Election Day Nov 3 (#60).
+  const t = today(), eday = period === 'eday', before = eday ? t < new Date(2026, 10, 3) : t < new Date(2026, 9, 19);
+  const when = eday ? 'on Election Day, Nov 3' : 'once voting starts Oct 19';
+  $('waitsnote').textContent = 'Travis County map' + (before ? ' · fills in ' + when : '');
+  const n = document.getElementById('dk-waitsnote'); if (n) { n.textContent = before ? 'The county’s wait-times map fills in ' + when + '.' : ''; n.hidden = !before; }
 }
 // Outbound links: count the kind of link and the race's level, never which race or which candidate.
 const KIND_BY_HOST = [[/(^|\.)austinvotersguide\.org$/, 'league_guide'], [/\.gov$/, 'official'],
@@ -1504,14 +1527,20 @@ document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e =
 }));
 
 /* ---------- keep (send to myself) ---------- */
-async function keepURL() {
-  const ids = ballot.map(b => b.c.id), pk = packPicks(ids, true, true);
+async function keepURL(noWhy) {
+  const ids = ballot.map(b => b.c.id), pk = packPicks(ids, true, !noWhy);
   const st = LS.get('ballotta.ballot', null);
   return baseURL() + '#' + await packFrag('k', { v: 1, at: Math.floor(Date.now() / 1000), pr: st ? st.pr : String(lastLookup.precinct || ''), b: ballot.map(x => x.conf === 'medium' ? -num(x.c.id) : num(x.c.id)), p: pk.p, w: pk.w });
 }
 let keepPrep = null, keeping = false;  // { p: Promise<url>, url }; keeping ignores a second tap mid-share
-function prepKeep() { const k = { url: null }; k.p = keepURL().then(u => (k.url = u)); keepPrep = k; return k; }
+// A link past ~8,000 characters (long reasons in Chinese, Japanese, Korean or emoji can make one of 50 KB or more) gets
+// cut by Messages and email, and past 40,000 this page refuses it: the sheet says so and offers the link without the
+// reasons (#65). The picks are always in it.
+const KEEP_LONG = 8000;
+let keepNoWhy = false;
+function prepKeep() { const k = { url: null }; k.p = keepURL(keepNoWhy).then(u => { k.url = u; $('keep-long').classList.toggle('hidden', keepNoWhy || u.length <= KEEP_LONG); return u; }); keepPrep = k; return k; }
 function openKeep() {  // Keep my picks, from either layout (#38)
+  keepNoWhy = false; $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.add('hidden');
   prepKeep();
   const ids = ballot.map(b => b.c.id), n = countPicks(ids), r = countWhys(ids);
   $('keepcount').textContent = 'Your ' + n + ' pick' + (n === 1 ? '' : 's') + ' and ' + r + ' reason' + (r === 1 ? '' : 's') + ' live only in this browser. Send yourself a private link to pick up on your phone or laptop. No account needed.';
@@ -1530,6 +1559,7 @@ $('keep-send').addEventListener('click', async () => {
   } finally { keeping = false; }
   if (via) { track('keep_created', { via }); nudgeKept(); }
 });
+$('keep-nowhy').addEventListener('click', () => { keepNoWhy = true; $('keep-out').classList.add('hidden'); $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.remove('hidden'); prepKeep(); $('keep-send').focus(); });
 $('keep-copy').addEventListener('click', async () => { const k = keepPrep || prepKeep(); const via = await copyLink(k.url || await k.p, $('keep-out'), $('keep-copy')); if (via) { track('keep_created', { via }); nudgeKept(); } });
 
 /* ---------- backup nudge (#48) and persistent storage (#49) ---------- */
@@ -1584,19 +1614,20 @@ function openRestore(o) {
   const cb = cleanBallot(o.b), inB = new Set(cb.map(n => cidOf(Math.abs(n))));
   const nb = cb.length, np = Object.keys(P).filter(id => inB.has(id) && P[id][0] !== '__skip').length;
   const when = o.at ? new Date(o.at * 1000).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-  $('restoresum').innerHTML = '<div class="bar"><span>Picks</span><b>' + np + (nb ? ' of ' + nb + ' contests' : '') + '</b></div><div class="bar"><span>Reasons</span><b>' + Object.keys(W).length + '</b></div>' + (when ? '<div class="bar"><span>Saved</span><b>' + esc(when) + '</b></div>' : '') + (o.pr ? '<div class="bar"><span>Ballot</span><b>Precinct ' + esc(String(o.pr).slice(0, 6)) + '</b></div>' : '');
+  $('restoresum').innerHTML = '<div class="bar"><span>Picks</span><b>' + np + (nb ? ' of ' + nb + ' contests' : '') + '</b></div><div class="bar"><span>Reasons</span><b>' + Object.keys(W).length + '</b></div>' + (when ? '<div class="bar"><span>Saved</span><b>' + esc(when) + '</b></div>' : '') + (cleanPr(o.pr) ? '<div class="bar"><span>Ballot</span><b>Precinct ' + esc(cleanPr(o.pr)) + '</b></div>' : '');
   const mine = Object.values(picks).filter(v => (Array.isArray(v) ? v : [v]).length).length;
-  const cur = LS.get('ballotta.ballot', null), lp = String(o.pr || '').slice(0, 6);
-  const other = cur && cur.pr && lp && String(cur.pr) !== lp ? ' The link is for <b>Precinct ' + esc(lp) + '</b>; this device has your ballot for <b>Precinct ' + esc(String(cur.pr).slice(0, 6)) + '</b>, which it will also replace.' : '';
+  const cur = LS.get('ballotta.ballot', null), lp = cleanPr(o.pr);
+  const other = cur && cur.pr && lp && String(cur.pr) !== lp ? ' The link is for <b>Precinct ' + esc(lp) + '</b>; this device has your ballot for <b>Precinct ' + esc(cleanPr(cur.pr)) + '</b>, which it will also replace.' : '';
   $('restorewarn').innerHTML = (mine ? 'This device already has <b>' + mine + ' pick' + (mine === 1 ? '' : 's') + '</b>. Loading will replace its picks and reasons.' : 'Your picks and reasons will be saved in this browser.') + other;
   $('d-restore').showModal();
 }
+$('d-restore').addEventListener('close', () => SS.del('ballotta.incoming'));  // answered either way (#66)
 $('restore-go').addEventListener('click', () => {
   const o = incomingKeep; if (!o) return;
   const { P, W } = unpackPicks(o);
   picks = P; whys = W; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys);
   const prev = LS.get('ballotta.ballot', null);
-  const st = { pr: String(o.pr || '').slice(0, 6), b: cleanBallot(o.b), mode: 'saved', at: Date.now(), pt: prev && prev.pr === String(o.pr) ? prev.pt : null };
+  const pr = cleanPr(o.pr), st = { pr, b: cleanBallot(o.b), mode: 'saved', at: Date.now(), pt: prev && pr && prev.pr === pr ? cleanPt(prev.pt) : null };
   LS.set('ballotta.ballot', st); renderStored(st, 'loaded from your saved link');
   $('d-restore').close();
   incomingKeep = null;
@@ -2599,7 +2630,7 @@ async function handleIncoming(inc, fresh) {
   if (o === TOO_OLD) { track('link_damaged', { kind: 'too_old' }); return say('This browser is too old to open that link. Update your phone’s software, or open the link in a current browser such as Chrome, Firefox or Safari.'); }
   if (!o || typeof o !== 'object' || o.v !== 1) { track('link_damaged', { kind: 'damaged' }); return damaged(); }
   try {
-    if (inc[0] === 'k') { SS.del('ballotta.incoming'); if (fresh) openRestore(o); }
+    if (inc[0] === 'k') openRestore(o);  // asked again after a reload until it's answered: the dialog's close drops the link (#66)
     else openFriend(o, fresh);
   } catch (e) { track('link_damaged', { kind: 'damaged' }); damaged(); }
 }

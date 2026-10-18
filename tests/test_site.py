@@ -11,6 +11,10 @@ from playwright.sync_api import sync_playwright, expect
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PORT = int(os.environ.get('BALLOTTA_PORT', '8765'))
 PAGE = os.environ.get('BALLOTTA_PAGE', 'index.html')
+# Run the suite as of another moment, e.g. BALLOTTA_TODAY=2026-11-01T12:00:00-05:00 (#64: several views change with the
+# date: early voting from Oct 19, Election Day lists from Oct 31). Every page from new_page()/phone_page() gets it.
+import datetime as _dt
+TODAY = _dt.datetime.fromisoformat(os.environ['BALLOTTA_TODAY']) if os.environ.get('BALLOTTA_TODAY') else None
 BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
@@ -18,7 +22,7 @@ if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 # sha256 of the live index.html, re-pinned in every commit that deliberately changes the live page. Earlier: the phone layout must not change it until
 # Lane promotes the preview. A data rebuild (ballot or League data) changes it legitimately: re-pin it in that commit.
-LIVE_SHA = 'f62cafc7d90eb6aaff775fc4d2dc230db87c1f287865d853c7c94b7eb79eb9fa'  # Oct 17: promoted (Lane); the shared link stays on screen
+LIVE_SHA = 'c8d8e8d17e39ea9b3c9a1dbae025662aa7484a3960e1dab1f12d1459c4ebd1b1'  # Oct 17: wave 2 (look-ups and dates)
 UMAMI_STUB = "window.__events=[];window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};"
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -30,17 +34,18 @@ def serve():
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s
 
-def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, sw=False, ua=None):
+def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, sw=False, ua=None, tz=None):
     # The page's Content-Security-Policy (#36) forbids eval, which Playwright's wait_for_function polls with: tests run
     # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()). The offline copy
     # (sw.js) is blocked unless a test asks (sw=True): a service worker would answer requests the stubs below expect.
     ctx = browser.new_context(viewport=size or ({'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}), permissions=['clipboard-read', 'clipboard-write'],
-                              bypass_csp=not csp, has_touch=touch, service_workers='allow' if sw else 'block', **({'user_agent': ua} if ua else {}))
+                              bypass_csp=not csp, has_touch=touch, service_workers='allow' if sw else 'block', **({'user_agent': ua} if ua else {}), **({'timezone_id': tz} if tz else {}))
     ctx.route(re.compile(r'.*/umami\.js$'), lambda r: r.fulfill(status=200, content_type='application/javascript', body=UMAMI_STUB))
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
     ctx.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     pg = ctx.new_page()
+    if TODAY: pg.clock.install(time=TODAY)                     # BALLOTTA_TODAY: the whole suite as of that moment (#64); a test's own clock still wins
     if sent is not None:
         pg.on('request', lambda req: sent.append(req.url))
     return ctx, pg
@@ -443,6 +448,166 @@ def a_good_link_clears_a_damaged_links_notice(b):
         assert pg.evaluate("document.getElementById('dk-say').classList.contains('hidden')"), ('wide' if wide else 'phone', 'the damaged link\'s notice outlived a good link')
         ctx.close()
 
+# ---------- wave 2 (cold audit, Oct 17): look-ups and dates ----------
+# A stand-in for Travis County's map server: getJSON() is the page's one door to it, so a test can answer instead.
+# answers: [[url substring, delay ms, JSON body | 'error'], ...]; the first match wins; every URL asked is kept in window.__county.
+COUNTY_REC = {'Address': '1000 GUADALUPE ST', 'Unit': '', 'ZIP': 78701, 'Precinct': 300, 'Commissioner': 'P03', 'Congressional': 'G10', 'JPConstable': 'J05',
+              'Legislative': 'L49', 'Senate': 'N14', 'Muni': 'C10', 'MuniSMD': 'CA9', 'ISD': 'S01', 'ISDSMD': 'T45', 'College': 'ACC', 'MUD': '', 'ESD': '',
+              'ESD2': '', 'Library': '', 'WCID': '', 'Temp': '', 'CodeCat': '300P03G10J05L49N14C10CA9S01T45ACC'}
+def stub_county(pg, answers):
+    pg.evaluate("""a => { window.__county = []; getJSON = async (url) => { window.__county.push(url); const m = a.find(x => url.includes(x[0]));
+        if (!m) throw new Error('no stub for ' + url); if (m[1]) await new Promise(r => setTimeout(r, m[1]));
+        if (m[2] === 'error') throw new Error('HTTP 503'); return JSON.parse(JSON.stringify(m[2])); }; }""", answers)
+def candidate(address, zip_='78757', score=100): return {'candidates': [{'address': f'{address}, AUSTIN, {zip_}', 'score': score, 'location': {'x': -97.72, 'y': 30.36}}]}
+def county_where(pg): return [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query).get('where', [''])[0] for u in pg.evaluate('window.__county') if 'VotingAddresses' in u]
+
+@test
+def lookup_keeps_street_names_that_start_like_a_unit(b):
+    # #57 (audit #6): the unit strip took any word starting UNIT/APT/STE, so "2505 STECK AVE" was asked as "2505" and an
+    # exact match fell to "nearby". A unit marker is a whole word with something after it; "#" is one on its own.
+    import time
+    cases = {'2505 STECK AVE': '2505 STECK AVE', '555 UNITY DR': '555 UNITY DR', '123 STEVENS RD': '123 STEVENS RD', '4 STEINER RANCH BLVD': '4 STEINER RANCH BLVD',
+             '9 APTOS LN': '9 APTOS LN', '2505 STECK AVE UNIT 5': '2505 STECK AVE', '10 MAIN ST APT 3B': '10 MAIN ST', '10 MAIN ST STE 200': '10 MAIN ST',
+             '10 MAIN ST # 4': '10 MAIN ST', '10 MAIN ST #4': '10 MAIN ST'}
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); wrong = []
+    for typed, asked in cases.items():
+        rec = dict(COUNTY_REC, Address=asked, ZIP=78757)
+        stub_county(pg, [['findAddressCandidates', 0, candidate(typed)], ['VotingAddresses', 0, {'features': [{'attributes': rec}]}]])
+        pg.evaluate("(s) => { document.getElementById('street').value = s; document.getElementById('zip').value = '78757'; lookup(); }", typed)
+        end = time.time() + 5
+        while not county_where(pg) and time.time() < end: pg.wait_for_timeout(50)
+        w = county_where(pg)
+        if not w or f"Address = '{asked}'" not in w[0]: wrong.append((typed, w))
+    assert not wrong, wrong
+    ctx.close()
+
+@test
+def a_newer_lookup_wins_over_a_slower_older_one(b):
+    # #58 (audit #7): two lookups at once (Enter twice, a ZIP corrected quickly): the later one's ballot stands, whatever
+    # order the county answers in; only one ballot is found and stored; a superseded lookup asks the county nothing more.
+    a, z = dict(COUNTY_REC, Address='1 SLOW ST', Precinct=300), dict(COUNTY_REC, Address='2 FAST ST', Precinct=301)
+    for slow_step, gap in (('find', 0), ('records', 300)):     # the older one still finding the address / already fetching its records
+        ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+        stub_county(pg, [['SingleLine=1+SLOW', 1500 if slow_step == 'find' else 0, candidate('1 SLOW ST')], ['SingleLine=2+FAST', 0, candidate('2 FAST ST')],
+                         ["Address+%3D+%271+SLOW", 1500 if slow_step == 'records' else 0, {'features': [{'attributes': a}]}], ["Address+%3D+%272+FAST", 0, {'features': [{'attributes': z}]}]])
+        pg.evaluate("() => { document.getElementById('zip').value = '78757'; document.getElementById('street').value = '1 SLOW ST'; lookup(); }")
+        pg.wait_for_timeout(gap)
+        pg.evaluate("() => { document.getElementById('street').value = '2 FAST ST'; lookup(); }")
+        pg.wait_for_timeout(2500)
+        assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.ballot')).pr") == '301', (slow_step, 'the older, slower lookup overwrote the newer one')
+        assert names(pg).count('ballot_found') == 1, (slow_step, names(pg))
+        if slow_step == 'find':
+            assert not [w for w in county_where(pg) if 'SLOW' in w], 'a superseded lookup still asked the county for its records'
+        ctx.close()
+
+@test
+def dates_follow_central_time_wherever_the_visitor_is(b):
+    # #61 (audit #10): early voting starts Oct 19 and Election Day lists take over Oct 31 in Travis County, whatever the
+    # visitor's own clock says: a phone in Tokyo or Los Angeles sees what Austin sees at that moment.
+    import datetime as dt
+    for tz, when, want_period, note in (('Asia/Tokyo', '2026-10-18T20:00:00-05:00', 'early', True),       # Oct 19 in Tokyo, still Oct 18 in Austin
+                                         ('America/Los_Angeles', '2026-10-31T00:30:00-05:00', 'eday', None)):   # Oct 30 in LA, Oct 31 in Austin
+        ctx, pg = new_page(b, wide=True, tz=tz); pg.clock.install(time=dt.datetime.fromisoformat(when)); pg.goto(BASE)
+        saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('body.dk-app-on')
+        assert pg.evaluate('period') == want_period, (tz, when, pg.evaluate('period'))
+        if note is not None:
+            pg.click('#dk-views [data-view="vote"]')
+            assert ('fills in once voting starts Oct 19' in pg.inner_text('#dk-paper')) == note, (tz, 'the wait-times note follows the visitor\'s clock')
+        ctx.close()
+
+@test
+def a_restored_ballot_keeps_each_contests_own_caveat(b):
+    # #62 (audit #11): after a reload or a Keep link, a contest marked "Double-check" says why, as the live lookup did
+    # (the rule's own note), not only the generic line.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, -193, -194]); pg.wait_for_selector('body.dk-app-on')
+    notes = pg.evaluate("Object.fromEntries(ballot.map(x => [x.c.id, x.note]))")
+    assert 'M41' in notes['c193'] and 'M41' in notes['c194'] and notes['c001'] == '', notes
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -70], mode: 'nearby-mixed', at: 0, pt: null }))"); pg.reload()
+    pg.wait_for_selector('body.dk-app-on')
+    assert 'district line' in pg.evaluate("ballot.find(x => x.c.id === 'c070').note"), 'a contest marked near a district line says so after a reload'
+    ctx.close()
+
+@test
+def precinct_and_point_from_a_link_or_storage_are_checked(b):
+    # #63 (audit #12): a Keep link's precinct must be a precinct number (it shows in the header and the feedback email),
+    # and a stored point must be two numbers in Texas (distances and the vote-center order use it).
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    for pr in ('‮123', '<b>1', '12 34', 'abc', '1234567'):
+        fresh_goto(pg, link('k', {'v': 1, 'pr': pr, 'b': [1, 70], 'p': {'70': 0}}))
+        pg.wait_for_selector('#d-restore[open]'); pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
+        got = pg.evaluate("JSON.parse(localStorage.getItem('ballotta.ballot')).pr")
+        assert re.fullmatch(r'\d{1,4}', got or '0') and pr not in pg.inner_text('body'), (pr, got)
+    for pt, kept in ((['x', 'y'], False), ([1e9, 1e9], False), ([-97.743], False), ([-97.743, 30.272], True), ([-74.0, 40.7], False)):
+        saved_ballot(pg, [1, 70], pt); pg.wait_for_selector('body.dk-app-on')
+        assert (pg.evaluate('here') is not None) == kept, (pt, pg.evaluate('here'))
+        pg.click('#dk-views [data-view="vote"]'); assert 'NaN' not in pg.inner_text('#dk-paper'), pt
+    ctx.close()
+
+@test
+def a_reload_before_answering_keeps_the_keep_link(b):
+    # #66 (audit #25): reloading with "Load your saved picks?" unanswered asks again; the link is dropped only once answered.
+    for wide in ((True, False) if HAS_PHONE else (True,)):
+        ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.goto(BASE)
+        fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]')
+        pg.reload(); pg.wait_for_selector('#d-restore[open]', timeout=5000)
+        pg.click('#d-restore [data-close]'); pg.reload(); pg.wait_for_timeout(1500)
+        assert not pg.is_visible('#d-restore'), 'asked again after the visitor said no'
+        ctx.close()
+
+@test
+def a_census_outage_is_not_a_wrong_address(b):
+    # #59 (audit #8): when the county has no match and the Census geocoder is down or too slow, the voter is told the
+    # Census couldn't be reached (and it's counted that way), not that their address is wrong.
+    frame = build_module().census_page()                         # the frame as build_site.py writes it now (so a change there counts)
+    for how in ('down', 'silent'):
+        ctx, pg = new_page(b, wide=True)
+        ctx.route('**/census.html', lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=frame))
+        if how == 'down': ctx.route('https://geocoding.geo.census.gov/**', lambda r: r.abort())
+        else: ctx.route('https://geocoding.geo.census.gov/**', lambda r: None)                 # never answers
+        pg.goto(BASE); stub_county(pg, [['findAddressCandidates', 0, {'candidates': []}]])
+        pg.evaluate("() => { document.getElementById('street').value = '12 NOWHERE LN'; document.getElementById('zip').value = '78701'; lookup(); }")
+        pg.wait_for_function("(window.__events || []).some(e => e[0] === 'lookup_failed')", timeout=15000)
+        msg = pg.inner_text('#status')
+        assert 'U.S. Census address finder' in msg and 'couldn’t find that address' not in msg, (how, msg)
+        assert ['lookup_failed', {'reason': 'census_unreachable', 'layout': 'laptop'}] in events(pg), (how, events(pg))
+        ctx.close()
+
+@test
+def the_wait_times_note_says_when_each_map_fills_in(b):
+    # #60 (audit #9): from Oct 31 the page opens on Election Day, whose wait-times map is empty until Nov 3: the note
+    # says so, on both layouts; on Nov 3 it goes.
+    import datetime as dt
+    for when, want in (('2026-10-31T10:00:00-05:00', 'fills in on Election Day, Nov 3'), ('2026-11-02T18:00:00-05:00', 'fills in on Election Day, Nov 3'),
+                       ('2026-11-03T08:00:00-06:00', None), ('2026-10-18T12:00:00-05:00', 'fills in once voting starts Oct 19')):
+        for wide in ((True, False) if HAS_PHONE else (True,)):
+            ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.clock.install(time=dt.datetime.fromisoformat(when)); pg.goto(BASE)
+            saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('body.dk-app-on')
+            if wide: pg.click('#dk-views [data-view="vote"]')
+            else: pg.click('#ph-list'); pg.click('#dk-views [data-view="vote"]')
+            text = pg.inner_text('#dk-paper')
+            assert (want in text) if want else ('fills in' not in text), (when, 'laptop' if wide else 'phone', text[:300])
+            ctx.close()
+
+@test
+def a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out(b):
+    # #65 (audit #24): long reasons in Han script (or emoji) make a Keep link far past what Messages and email carry and
+    # what this page itself accepts; the Keep sheet says so and offers the link without the reasons. Short ones say nothing.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, list(range(1, 73)))
+    pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("() => { pick('c070', optionsOf(BYID.c070)[0]); whys.c070 = 'Short.'; }")
+    pg.evaluate('openKeep()'); pg.wait_for_function("keepPrep && keepPrep.url")
+    assert not pg.is_visible('#keep-long'), 'a short link was called long'
+    pg.click('#d-keep [data-close]')
+    pg.evaluate("""() => { ballot.forEach((x, i) => { const o = optionsOf(x.c); if (o.length) pick(x.c.id, o[0]);
+        whys[x.c.id] = Array.from({ length: 600 }, (_, k) => String.fromCodePoint(0x4E00 + ((i * 600 + k) * 7919) % 20000)).join(''); }); }""")
+    pg.evaluate('openKeep()'); pg.wait_for_function("keepPrep && keepPrep.url")
+    assert pg.evaluate('keepPrep.url.length') > 8000 and pg.is_visible('#keep-long'), pg.evaluate('keepPrep.url.length')
+    pg.click('#keep-nowhy'); pg.wait_for_function("keepPrep && keepPrep.url && keepPrep.url.length < 8000")
+    o = pg.evaluate("unpackFrag(keepPrep.url.split('#')[1])")
+    assert not o.get('w') and len(o['p']) == pg.evaluate("ballot.filter(x => current(x.c.id).length).length"), 'the picks go, the reasons stay'
+    assert pg.is_visible('#keep-nowhy-done') and not pg.is_visible('#keep-long')
+    ctx.close()
+
 # The ten "vote for up to N" lists in the order every page before Oct 17 had them (git show b0e514f:source/answer_key.json).
 PRE_FIX_ORDER = {
     154: ['Carrington Saathoff', 'Ryan Sullivan', 'Grant Ballew', 'John Berry', 'William Waller'],
@@ -525,6 +690,7 @@ def desk_where_to_vote_list_and_private_map(b):
     d = [float(re.search(r'([\d.]+) mi', r.inner_text()).group(1)) for r in rows.all()]
     assert d == sorted(d) and d[0] < 1, d
     assert pg.locator('#dk-map .top').count() == 5 and 'Austin Recreation Center' in pg.inner_text('#dk-sites')
+    pg.click('[data-period="early"]')                                                          # from Oct 31 the view opens on Election Day (#64)
     pg.click('#dk-all'); assert pg.locator('#dk-sites .dk-site').count() == 45
     pg.click('[data-period="eday"]'); assert pg.locator('#dk-sites .dk-site').count() == 201
     assert 'Election%20Day' in pg.locator('#dk-paper a.btn').get_attribute('href')

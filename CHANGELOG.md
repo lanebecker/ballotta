@@ -14,7 +14,29 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **Street names that start like a unit are looked up whole** ("2505 Steck Ave", "555 Unity Dr", "Stevens Rd", "Steiner
+  Ranch Blvd" were asked as just the number, so an exact match fell back to "nearby") (#57).
+- **Two lookups at once no longer race:** the newer address's ballot stands, whatever order the county answers in, and
+  a superseded lookup stops asking (#58).
+- **A Census outage is no longer reported as a wrong address:** the page says it couldn't reach the U.S. Census address
+  finder, and counts it as `census_unreachable` (#59).
+- **Dates follow Austin's clock**, not the visitor's: early voting, Election Day lists and the wait-times note change
+  on Travis County's dates wherever the phone is (#61).
+- **A ballot reopened from this device or a Keep link keeps each "Double-check" contest's own reason** (the county code,
+  the district line), as the first lookup showed (#62).
+- **A precinct or map point from a link or storage is checked:** only a precinct number shows, and only a point in
+  Texas is used for distances (#63).
+- **Reloading before answering "Load your saved picks?" asks again** instead of dropping the link (#66).
+
+### Added
+- **From Oct 31 to Nov 2 the wait-times note says the county's Election Day map fills in on Nov 3** (#60).
+- **A Keep link too long for chat apps says so**, with "Leave my reasons out": long reasons in Chinese, Japanese,
+  Korean or emoji can make a link of 100 KB or more (#65).
+
+### Tests
+- `BALLOTTA_TODAY` runs the whole suite as of another moment; as of Nov 1 one test failed and is fixed (#64). A stand-in
+  for the county's map server (`stub_county`) lets lookup tests run without it.
 
 ## [1.0.0] — 2026-10-17
 

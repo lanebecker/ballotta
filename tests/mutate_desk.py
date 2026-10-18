@@ -323,6 +323,25 @@ M = [
  ('D66 a rollback leaves the offline copy on phones', BLD, '        out["sw.js"] = sw_off_js(False)', '        pass', ['promotion_hands_the_preview_on']),
  ('D67 the shared link vanishes once shared', PREV, "  prepShare(true);  // a fresh link code", "  prepShare();  // a fresh link code", ['shared_link_stays_on_screen_after_sharing']),
  ('D68 an older link stays next to new choices', PREV, "  if (!keepShown) $('share-out').classList.add('hidden');", "  if (false) $('share-out').classList.add('hidden');", ['shared_link_stays_on_screen_after_sharing']),
+ # wave 2 (cold audit, Oct 17)
+ ('E1 a street name that starts like a unit is cut', PREV, "replace(/\\s+(?:(?:UNIT|APT|STE)\\s+\\S|#).*$/, '')", "replace(/\\s+(UNIT|APT|STE|#).*$/, '')", ['lookup_keeps_street_names_that_start_like_a_unit']),
+ ('E2 a # unit is kept', PREV, "(?:(?:UNIT|APT|STE)\\s+\\S|#).*$/", "(?:(?:UNIT|APT|STE)\\s+\\S).*$/", ['lookup_keeps_street_names_that_start_like_a_unit']),
+ ('E3 an older lookup still lands its answer', PREV, "    if (stale()) return;\n    let recs = ", "    let recs = ", ['a_newer_lookup_wins_over_a_slower_older_one']),
+ ('E4 an older lookup still counts its address', PREV, "    if (stale()) return;\n    const cand = ", "    const cand = ", ['a_newer_lookup_wins_over_a_slower_older_one']),
+ ('E5 dates follow the visitor clock', PREV, "timeZone: 'America/Chicago', year:", "timeZone: 'UTC', year:", ['dates_follow_central_time_wherever_the_visitor_is']),
+ ('E6 a restored ballot loses the rule note', PREV, "const why = (id) => (DATA.rules[id] && DATA.rules[id].note) || ", "const why = (id) => ", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E7 a restored ballot forgets the district line', PREV, "(st.mode === 'nearby-mixed' ? 'Your address is near", "(false ? 'Your address is near", ['a_restored_ballot_keeps_each_contests_own_caveat']),
+ ('E8 any text passes as a precinct', PREV, "return /^\\d{1,4}$/.test(s) ? s : ''; }", "return /^.{0,6}$/.test(s) ? s : ''; }", ['precinct_and_point_from_a_link_or_storage_are_checked']),
+ ('E9 any numbers pass as a point', PREV, " && p[0] > -107 && p[0] < -93 && p[1] > 25 && p[1] < 37 ? p : null; }", " ? p : null; }", ['precinct_and_point_from_a_link_or_storage_are_checked']),
+ ('E10 a reload drops an unanswered Keep link', PREV, "    if (inc[0] === 'k') openRestore(o);", "    if (inc[0] === 'k') { SS.del('ballotta.incoming'); if (fresh) openRestore(o); }", ['a_reload_before_answering_keeps_the_keep_link']),
+ ('E11 a refused Keep link is asked again', PREV, "$('d-restore').addEventListener('close', () => SS.del('ballotta.incoming'));", "", ['a_reload_before_answering_keeps_the_keep_link']),
+ ('E12 a Census outage reads as a wrong address', PREV, "      if (pt === 'unreachable') { show(", "      if (false) { show(", ['a_census_outage_is_not_a_wrong_address']),
+ ('E13 a silent Census reads as not found', PREV, "t = setTimeout(() => done('unreachable'), 8000);", "t = setTimeout(() => done(null), 8000);", ['a_census_outage_is_not_a_wrong_address']),
+ ('E14 the Census frame reports an outage as not found', BLD, "parent.postMessage('unreachable', '*'); };", "parent.postMessage(null, '*'); };", ['a_census_outage_is_not_a_wrong_address']),
+ ('E15 census_unreachable not on the list', PREV, ", 'county_unreachable', 'census_unreachable') },", ", 'county_unreachable') },", ['a_census_outage_is_not_a_wrong_address']),
+ ('E16 no Election Day note before Nov 3', PREV, "before = eday ? t < new Date(2026, 10, 3) :", "before = eday ? false :", ['the_wait_times_note_says_when_each_map_fills_in']),
+ ('E17 a long Keep link goes unremarked', PREV, "keepNoWhy || u.length <= KEEP_LONG", "keepNoWhy || true", ['a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out']),
+ ('E18 leaving the reasons out does nothing', PREV, "k.p = keepURL(keepNoWhy).then(", "k.p = keepURL().then(", ['a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out']),
 ]
 def main(M):
     if len(sys.argv) > 2: M = M[int(sys.argv[1]):int(sys.argv[2])]   # run the list in slices if a shell caps how long a command may take
