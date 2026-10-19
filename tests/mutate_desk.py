@@ -332,7 +332,7 @@ M = [
  ('D54 one list\'s table wrong (c179)', PREV, 'c179: [2, 3, 0, 1]', 'c179: [3, 2, 1, 0]', ['links_keep_the_old_order_for_the_ten_reordered_lists']),
  ('D55 links written through the table the wrong way round', PREV, "back && back.indexOf(i) >= 0 ? back.indexOf(i) : i", "back && back[i] !== undefined ? back[i] : i", ['links_keep_the_old_order_for_the_ten_reordered_lists']),
  ('D56 promotion leaves the preview page at next/', BLD, '"next/sw.js": sw_off_js(True), "next/index.html": moved_page()})', '"next/sw.js": sw_off_js(True)})', ['promotion_hands_the_preview_on']),
- ('D57 next/ drops a link made on the preview', BLD, "location.replace(new URL('../', location.href).href + location.hash)", "location.replace(new URL('../', location.href).href)", ['promotion_hands_the_preview_on']),
+ ('D57 next/ drops a link made on the preview', BLD, "const go = () => location.replace(new URL('../', location.href).href + location.hash)", "const go = () => location.replace(new URL('../', location.href).href)", ['promotion_hands_the_preview_on']),
  ('D58 the promoted page leaves the preview copy', BLD, "        if not preview:   # the main page with the phone layout", "        if False:   # the main page with the phone layout", ['promotion_hands_the_preview_on']),
  ('D59 the promoted page updates its own worker instead', BLD, "sw.getRegistration('next/').then((g) => g && g.scope === new URL('next/', location.href)", "sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href)", ['promotion_hands_the_preview_on']),
  ('D60 MUD 41 routed to M41 again', PREV, '"c193": {"clauses": null, "conf": "unrouted"', '"c193": {"clauses": [{"MUD": ["M41"]}, {"Temp": ["M41"]}], "conf": "medium"', ['mud_41_reaches_no_address_until_its_code_is_confirmed']),
@@ -340,7 +340,7 @@ M = [
  ('D61a the unplaced district not named', PREV, "; one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet.", ".", ['mud_41_reaches_no_address_until_its_code_is_confirmed']),
  ('D62 next/ updates whatever worker it finds', BLD, "g && g.scope === new URL('./', location.href).href && g.update()),", "g && g.update()),", ['promotion_hands_the_preview_on']),
  ('D63 the main page updates its own worker for next/', BLD, "g && g.scope === new URL('next/', location.href).href && g.update()", "g && g.update()", ['promotion_hands_the_preview_on']),
- ('D64 the worker keeps nothing at install', BLD, "keep = \"['./']\" if preview else \"['./', 'next/']\"", "keep = \"[]\"", ['promotion_hands_the_preview_on']),
+ ('D64 the worker keeps nothing at install', BLD, "keep = \"['./']\" if preview else \"['./', 'next/', 'picks/']\"", "keep = \"[]\"", ['promotion_hands_the_preview_on']),
  ('D65 the install waits as long as the line', BLD, "setTimeout(() => stop.abort(), 8000)", "setTimeout(() => {}, 8000)", ['offline_copy_install_never_waits_on_a_slow_line', 'offline_copy_install_skips_redirects_and_cut_downloads']),
  ('D66 a rollback leaves the offline copy on phones', BLD, '        out["sw.js"] = sw_off_js(False)', '        pass', ['promotion_hands_the_preview_on']),
  ('D67 the shared link vanishes once shared', PREV, "  prepShare(true);  // a fresh link code", "  prepShare();  // a fresh link code", ['shared_link_stays_on_screen_after_sharing']),
@@ -547,6 +547,12 @@ M = [
  ('W2l Next forgets what it left on its own moves', PREV, '    if (!goingOn) left = null;', '    left = null;', ['next_keeps_going_past_a_contest_left_undecided']),
  ('W2m Clear my picks keeps a contest left', PREV, "else if (a === 'clear') { left = null; clearPicks();", "else if (a === 'clear') { clearPicks();", ['next_keeps_going_past_a_contest_left_undecided']),
  ('W2n any other move keeps a contest left', PREV, '    if (!goingOn) left = null;', '', ['next_keeps_going_past_a_contest_left_undecided']),
+ ('W3a a share link goes to the page itself', PREV, "st.url = location.origin + '/picks/#' + f", "st.url = baseURL() + '#' + f", ['a_share_link_has_its_own_card']),
+ ('W3b the share hand-off drops the picks', ROOT / 'picks/index.html', "new URL('../', location.href).href + location.hash);", "new URL('../', location.href).href);", ['a_share_link_has_its_own_card']),
+ ('W3d a share link shows the generic card', ROOT / 'picks/index.html', 'content="https://ballotta.org/og-picks.png"', 'content="https://ballotta.org/og.png"', ['a_share_link_has_its_own_card']),
+ ('W3e a share link titled as the site', ROOT / 'picks/index.html', '<title>My picks for Nov 3 · Ballotta</title>', '<title>Ballotta</title>', ['a_share_link_has_its_own_card']),
+ ('W3f the offline copy does not keep picks/', ROOT / 'sw.js', "['./', 'next/', 'picks/'].map", "['./', 'next/'].map", ['a_share_link_opens_from_the_offline_copy']),
+ ('W3g the share page points unfurlers at the site', ROOT / 'picks/index.html', '<meta property="og:url" content="https://ballotta.org/picks/">', '<link rel="canonical" href="https://ballotta.org/">', ['a_share_link_has_its_own_card']),
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
 def mutate(f, text, a, z):

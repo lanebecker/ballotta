@@ -280,26 +280,65 @@ def link_preview_card_is_drawn_from_its_source(b):
     # was drawn from (og.html and its fonts), so any change to the source without redrawing fails here, on any machine
     # (Pass 2: counting pixels missed a colour change and failed on a different font renderer). The picture itself must
     # still be the source's: a wholly different image would differ in far more than 3% of its pixels.
+    # Since 1.2.0 the same holds for the share card, og-picks.png, drawn from source/og-picks.html.
     import base64
     spec = importlib.util.spec_from_file_location('make_icons', ROOT / 'source' / 'make_icons.py')
     mk = importlib.util.module_from_spec(spec); spec.loader.exec_module(mk)
-    used = {str((ROOT / 'source' / u).resolve().relative_to(ROOT)) for u in re.findall(r'url\(([^)]+)\)', (ROOT / 'source/og.html').read_text(encoding='utf-8'))}
-    assert used and used <= set(mk.OG_FROM), ('og.html uses a file og_source() does not hash: add it to OG_FROM', used - set(mk.OG_FROM))
-    png = (ROOT / 'og.png').read_bytes()
-    assert mk.png_text(png).get('ballotta-source') == mk.og_source(), ('og.png is not drawn from source/og.html as it is now: run python3 source/make_icons.py --og', mk.png_text(png))
-    drawn = mk.og(b)
-    assert mk.png_text(drawn).get('ballotta-source') == mk.og_source()
-    ctx, pg = new_page(b); pg.goto(BASE)
-    off = pg.evaluate("""async ([a, b]) => {
-        const img = async s => { const i = new Image(); i.src = s; await i.decode(); const c = new OffscreenCanvas(1200, 630);
-            const x = c.getContext('2d'); x.drawImage(i, 0, 0); return [i.naturalWidth, i.naturalHeight, x.getImageData(0, 0, 1200, 630).data]; };
-        const [A, B] = [await img(a), await img(b)]; let n = 0;
-        for (let k = 0; k < A[2].length; k += 4) if (Math.max(Math.abs(A[2][k] - B[2][k]), Math.abs(A[2][k+1] - B[2][k+1]), Math.abs(A[2][k+2] - B[2][k+2])) > 40) n++;
-        return [A[0], A[1], B[0], B[1], n];
-    }""", ['data:image/png;base64,' + base64.b64encode(png).decode(), 'data:image/png;base64,' + base64.b64encode(drawn).decode()])
+    assert set(mk.CARDS) == {'og.png', 'og-picks.png'}, mk.CARDS
+    for card, src in mk.CARDS.items():
+        used = {str((ROOT / 'source' / u).resolve().relative_to(ROOT)) for u in re.findall(r'url\(([^)]+)\)', (ROOT / src).read_text(encoding='utf-8'))}
+        assert used and used <= set(mk.og_from(src)), (src, 'uses a file og_source() does not hash', used - set(mk.og_from(src)))
+        png = (ROOT / card).read_bytes()
+        assert mk.png_text(png).get('ballotta-source') == mk.og_source(src), (f'{card} is not drawn from {src} as it is now: run python3 source/make_icons.py --og', mk.png_text(png))
+        drawn = mk.og(b, src)
+        assert mk.png_text(drawn).get('ballotta-source') == mk.og_source(src)
+        ctx, pg = new_page(b); pg.goto(BASE)
+        off = pg.evaluate("""async ([a, b]) => {
+            const img = async s => { const i = new Image(); i.src = s; await i.decode(); const c = new OffscreenCanvas(1200, 630);
+                const x = c.getContext('2d'); x.drawImage(i, 0, 0); return [i.naturalWidth, i.naturalHeight, x.getImageData(0, 0, 1200, 630).data]; };
+            const [A, B] = [await img(a), await img(b)]; let n = 0;
+            for (let k = 0; k < A[2].length; k += 4) if (Math.max(Math.abs(A[2][k] - B[2][k]), Math.abs(A[2][k+1] - B[2][k+1]), Math.abs(A[2][k+2] - B[2][k+2])) > 40) n++;
+            return [A[0], A[1], B[0], B[1], n];
+        }""", ['data:image/png;base64,' + base64.b64encode(png).decode(), 'data:image/png;base64,' + base64.b64encode(drawn).decode()])
+        ctx.close()
+        assert off[:4] == [1200, 630, 1200, 630], (card, off)
+        assert off[4] < 1200 * 630 * 0.03, (f'{card} is not the picture {src} draws', off[4])
+    a, b2 = (ROOT / 'og.png').read_bytes(), (ROOT / 'og-picks.png').read_bytes()
+    assert a != b2, 'the share card is the generic card'
+
+@test
+def a_share_link_has_its_own_card(b):
+    # Lane, Oct 18: a Share my picks link pasted into Messages or WhatsApp showed the generic Ballotta card. Share links now
+    # go to ballotta.org/picks/, a page with the share card (option B, Lane's choice: "Here's how I'm voting") that hands
+    # the picks straight on to the page itself. The picks still travel only after the #, which no server ever sees, and
+    # the hand-off replaces its own history entry. Keep links and the site keep the generic card.
+    html = (ROOT / 'picks/index.html').read_text(encoding='utf-8')
+    meta = dict(re.findall(r'<meta (?:property|name)="([^"]+)" content="([^"]*)"', html))
+    assert meta.get('og:title') == 'My picks for Nov 3 · Ballotta' and re.search(r'<title>My picks for Nov 3 · Ballotta</title>', html), meta
+    assert meta.get('og:description') == 'My Travis County picks for Nov 3. Open to see them next to your own ballot.', meta
+    assert meta.get('og:image') == 'https://ballotta.org/og-picks.png' and meta.get('twitter:card') == 'summary_large_image', meta
+    assert meta.get('robots') == 'noindex' and meta.get('referrer') == 'no-referrer', meta
+    assert meta.get('og:url') == 'https://ballotta.org/picks/' and 'rel="canonical"' not in html, ('an unfurler following the canonical would show the generic card', meta)
+    assert 'umami' not in html and 'gateway' not in html, 'the hand-off page counts nothing'
+    csp = re.search(r'http-equiv="Content-Security-Policy" content="([^"]+)"', html).group(1)
+    assert "default-src 'none'" in csp and "script-src 'sha256-" in csp and 'unsafe' not in csp, csp
+    main = (ROOT / 'index.html').read_text(encoding='utf-8')
+    assert 'content="https://ballotta.org/og.png"' in main, 'the site keeps the generic card'
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("pick('c070', optionsOf(BYID.c070)[0])")
+    pg.evaluate("openShare()"); pg.fill('#sharename', 'Lane'); pg.click('#share-go'); pg.wait_for_selector('#share-out:not(.hidden)')
+    url = pg.evaluate('sharePrep.url') or pg.inner_text('#share-out').strip()
+    origin = BASE.split('/' + PAGE)[0]
+    assert re.fullmatch(re.escape(origin) + r'/picks/#s2[A-Za-z0-9_-]+', url), url
+    keep = pg.evaluate('keepURL()')
+    assert '/picks/' not in keep, 'a Keep link went to the share card'
     ctx.close()
-    assert off[:4] == [1200, 630, 1200, 630], off
-    assert off[4] < 1200 * 630 * 0.03, ('og.png is not the picture source/og.html draws', off[4])
+    ctx, pg = new_page(b, wide=True); pg.goto('about:blank'); pg.goto(url)
+    pg.wait_for_function("!!window.friend", timeout=10000)
+    assert pg.evaluate('location.pathname') in ('/', '/' + PAGE) and pg.evaluate('location.hash') == '', pg.url
+    assert pg.evaluate("friend.name") == 'Lane'
+    assert pg.evaluate('history.length') == 2, ('the hand-off stayed in the history', pg.evaluate('history.length'))   # about:blank, then the page
+    ctx.close()
 
 @test
 def the_site_folder_is_the_whole_site(b):
@@ -328,7 +367,7 @@ def the_site_folder_is_the_whole_site(b):
         markup = re.sub(r'<script>.*?</script>', '', (out / 'index.html').read_text(encoding='utf-8'), flags=re.S)   # the page's own tags, not its scripts' strings
         named = sorted(set(re.findall(r'(?:href|src)="([\w./-]+)"', markup)))       # umami.js is stubbed above: ask for it here
         assert 'umami.js' in named and 'favicon.svg' in named, named
-        for u in named + ['next/', 'next/manifest.webmanifest', 'og.png', 'fonts/OFL.txt', 'version.json', 'census.html']:
+        for u in named + ['next/', 'next/manifest.webmanifest', 'og.png', 'og-picks.png', 'picks/', 'fonts/OFL.txt', 'version.json', 'census.html']:
             missing += [(st, u) for st in [pg.evaluate('u => fetch(u).then(r => r.status)', u)] if st >= 400]
         probing.append(1)
         gone = {u: pg.evaluate('u => fetch(u).then(r => r.status)', u) for u in ('tests/test_site.py', 'README.md', 'source/build_site.py', 'docs/', 'VERSION', 'CHANGELOG.md')}
@@ -2813,6 +2852,28 @@ def own_server():                                           # a spare port of th
     s = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Flip, directory=str(ROOT)))
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s, f'http://127.0.0.1:{s.server_address[1]}/{PAGE}'
+
+@phone_test
+def a_share_link_opens_from_the_offline_copy(b):
+    # 1.2.0, Pass 1: share links go to picks/, which the offline copy kept only once a share link had been opened online.
+    # A phone with the copy, in line with no signal, opening its first share link got the browser's own error, where a
+    # 1.1.7 link (to the page itself) opened from the copy. The copy now keeps picks/ from the start, as it does the page.
+    Flip.swap, Flip.gone, Flip.fail, Flip.slow, Flip.gzip = {}, set(), {}, {}, False; srv, url = own_server()
+    site = url.rsplit('/', 1)[0]
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("pick('c070', optionsOf(BYID.c070)[0])")
+    pg.evaluate("openShare()"); pg.fill('#sharename', 'Lane'); pg.click('#share-go'); pg.wait_for_selector('#share-out:not(.hidden)')
+    frag = pg.evaluate('sharePrep.url').split('#', 1)[1]; ctx.close()
+    ctx, pg = phone_page(b, sw=True)
+    try:
+        pg.goto(url); poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, "document.readyState === 'complete'")
+        pg.wait_for_timeout(1500)                                            # the install's own fetches settle
+        Flip.fail = {'/picks/': 503, '/': 503, '/' + PAGE: 503}                 # no answer from the site, as with no signal
+        pg.goto('about:blank'); pg.goto(site + '/picks/#' + frag)
+        poll(pg, '!!window.friend', 10)
+        assert pg.evaluate('friend.name') == 'Lane' and pg.get_attribute('html', 'data-copy') == 'error', (pg.url, pg.get_attribute('html', 'data-copy'))
+    finally:
+        Flip.fail = {}; ctx.close(); srv.shutdown()
 
 @phone_test
 def phone_offline_copy_after_one_visit(b):

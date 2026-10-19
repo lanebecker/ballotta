@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Ballotta share-link preview</title>
+<!-- The source of og-picks.png (1200x630), the card a Share my picks link shows (ballotta.org/picks/): python3 source/make_icons.py --og.
+     Option B, Lane's choice (Oct 18). og.html's layout and colours, with a ballot slip for the dots. A test keeps the two in step. -->
+<style>
+@font-face{font-family:"Zilla Slab";font-weight:600;src:url(../fonts/ZillaSlab-SemiBold.woff2) format("woff2")}
+@font-face{font-family:"Zilla Slab";font-weight:700;src:url(../fonts/ZillaSlab-Bold.woff2) format("woff2")}
+@font-face{font-family:"Public Sans";font-weight:100 900;src:url(../fonts/PublicSans-wght.woff2) format("woff2")}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;background:#FFF9F1;color:#241A2E}
+.logo{position:absolute;left:72px;top:72px;display:flex;align-items:center;gap:15px}
+.logo svg{width:56px;height:68px;display:block}
+.logo b{font:600 52.3px/1 "Zilla Slab";letter-spacing:-0.005em;position:relative;top:-1px}
+h1{position:absolute;left:72px;top:168px;font:700 84px/1.0 "Zilla Slab";width:640px}
+p{position:absolute;left:72px;top:364px;font:400 28px/1.4 "Public Sans";color:#3D3248;width:640px}
+.pill{position:absolute;left:72px;top:470px;height:54px;padding:0 21px 0 21px;border:1px solid #E7DDD0;border-radius:27px;background:#fff;display:flex;align-items:center;gap:13px;font:600 24px/1 "Public Sans"}
+.pill i{width:12px;height:12px;border-radius:50%;background:#E9A92A}
+.plum{position:absolute;left:780px;top:0;width:300px;height:630px;background:#4B2A6B}
+.dot{position:absolute;width:52px;height:52px;border-radius:50%;background:#E9A92A}
+.sun{position:absolute;left:1050px;top:-150px;width:300px;height:300px;border-radius:50%;background:#E9A92A}
+.night{position:absolute;left:1104px;top:380px;width:120px;height:280px;border-radius:16px;background:#241A2E}
+.slip{position:absolute;left:836px;top:118px;width:300px;padding:26px 26px 30px;background:#fff;border-radius:18px;box-shadow:0 18px 40px rgba(36,26,46,.28);transform:rotate(-4deg)}
+.slip .sh{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #241A2E;padding-bottom:12px;margin-bottom:16px}
+.slip .sh b{font:700 30px/1 "Zilla Slab"}.slip .sh span{font:600 17px/1 "Public Sans";color:#6B5F78}
+.slip .row{display:flex;align-items:center;gap:16px;height:46px}
+.slip .ov{width:34px;height:22px;border-radius:50%;border:3px solid #4B2A6B;flex:none}
+.slip .ov.on{background:#4B2A6B}
+.slip .ln{height:12px;border-radius:6px;background:#E7DDD0}
+</style></head><body>
+<div class="logo"><svg viewBox="0 0 86 104" aria-hidden="true"><circle cx="43" cy="22" r="18" fill="#E9A92A"/><path d="M8 52 C8 86 26 98 43 98 C60 98 78 86 78 52" fill="none" stroke="#4B2A6B" stroke-width="6" stroke-linecap="round"/><path d="M2 52 H84" stroke="#4B2A6B" stroke-width="6" stroke-linecap="round"/></svg><b>Ballotta</b></div>
+<h1>Here's how<br>I'm voting</h1>
+<p>My Travis County picks for Nov 3. Open to<br>see them next to your own ballot.</p>
+<div class="pill"><i></i>Election Day · Nov 3, 2026</div>
+<div class="plum"></div>
+<div class="sun"></div>
+<div class="night"></div>
+<div class="slip"><div class="sh"><b>My ballot</b><span>Nov 3, 2026</span></div>
+<div class="row"><span class="ov on"></span><span class="ln" style="width:170px"></span></div>
+<div class="row"><span class="ov"></span><span class="ln" style="width:140px"></span></div>
+<div class="row"><span class="ov on"></span><span class="ln" style="width:190px"></span></div>
+<div class="row"><span class="ov on"></span><span class="ln" style="width:120px"></span></div>
+<div class="row"><span class="ov"></span><span class="ln" style="width:160px"></span></div>
+<div class="row"><span class="ov on"></span><span class="ln" style="width:150px"></span></div>
+</div>
+</body></html>

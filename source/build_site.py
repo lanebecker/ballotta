@@ -133,7 +133,7 @@ def cache_prefix(preview):
 
 
 def sw_js(preview):
-    keep = "['./']" if preview else "['./', 'next/']"
+    keep = "['./']" if preview else "['./', 'next/', 'picks/']"   # picks/: where share links go, so the first one opens offline too (1.2.0, Pass 1)
     return SW_JS.replace("'ballotta-1'", "'" + cache_prefix(preview) + "1'").replace("PREFIX", cache_prefix(preview)).replace("KEEP.map", keep + ".map")
 
 
@@ -219,6 +219,34 @@ def moved_page():
             '<p>The new Ballotta is now at <a href="../">ballotta.org</a>.</p>\n'
             '<script>' + MOVED_JS + '</script>\n</body></html>\n')
 
+# ---- The share card (Lane, Oct 18). A Share my picks link goes to ballotta.org/picks/#s2…: this page, whose own preview
+# card (og-picks.png, from source/og-picks.html) and title say it's someone's picks, hands the #fragment straight on to
+# the page itself, replacing its own history entry. The picks travel only after the #, which no server ever sees, so
+# the card can't carry a name or a pick: it is the same for everyone. No tracker here.
+PICKS_JS = "location.replace(new URL('../', location.href).href + location.hash);\n"
+PICKS_TITLE = "My picks for Nov 3 · Ballotta"
+PICKS_DESC = "My Travis County picks for Nov 3. Open to see them next to your own ballot."
+
+
+def picks_page():
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n'
+            '<meta name="robots" content="noindex">\n'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src ' + sha(PICKS_JS)
+            + '; base-uri \'none\'; form-action \'none\'">\n'
+            '<title>' + PICKS_TITLE + '</title>\n'
+            '<meta property="og:title" content="' + PICKS_TITLE + '">\n'
+            '<meta property="og:description" content="' + PICKS_DESC + '">\n'
+            '<meta property="og:image" content="' + BASE_URL + 'og-picks.png">\n'
+            '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
+            '<meta property="og:url" content="' + BASE_URL + 'picks/">\n'   # its own: a canonical pointing at the site would
+            '<meta property="og:type" content="website">\n'                 # send some unfurlers (Facebook, WhatsApp) to the generic card
+            '<meta name="twitter:card" content="summary_large_image"></head>\n'
+            '<body>\n'
+            '<p>Opening the shared picks on <a href="../">ballotta.org</a>…</p>\n'
+            '<script>' + PICKS_JS + '</script>\n</body></html>\n')
+
+
 # next/manifest.webmanifest is left as it is: once no page links it, nothing can install from it, and a Home Screen
 # app installed from the preview opens next/, which sends it on. Rewriting its start_url or scope could merge the two
 # apps' identities on Android.
@@ -232,7 +260,8 @@ def outputs(preview):
                 "next/sw.js": sw_js(True) if OFFLINE else sw_off_js(True)}
     out = {"index.html": build(False), "census.html": census_page(),
            # What the live site runs (ballotta.org/version.json; the README's badge reads it). VERSION is the one source.
-           "version.json": json.dumps({"version": check_release.version(ROOT)}) + "\n"}
+           "version.json": json.dumps({"version": check_release.version(ROOT)}) + "\n",
+           "picks/index.html": picks_page()}   # where Share my picks links go: their own card (Lane, Oct 18)
     if PHONE_LIVE:
         out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False),
                     "next/sw.js": sw_off_js(True), "next/index.html": moved_page()})
@@ -339,7 +368,7 @@ def build(preview=False, desk=None, phone=None):
 # ---- what the site publishes (#83). The Pages workflow uploads exactly these files, so tests/, docs/, source/ and the
 # rest of the repo are never served: everything the build writes, and the files its pages point at.
 STATIC = ("CNAME", "umami.js", "favicon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png",
-          "og.png", "fonts/PublicSans-wght.woff2", "fonts/ZillaSlab-Bold.woff2", "fonts/ZillaSlab-SemiBold.woff2",
+          "og.png", "og-picks.png", "fonts/PublicSans-wght.woff2", "fonts/ZillaSlab-Bold.woff2", "fonts/ZillaSlab-SemiBold.woff2",
           "fonts/OFL.txt",                       # the fonts' license travels with them (#84)
           "manifest.webmanifest",                # written only while the phone layout is live; a rollback keeps it for apps
           "next/manifest.webmanifest")           # the preview's: Home Screen apps added from it may still ask for it

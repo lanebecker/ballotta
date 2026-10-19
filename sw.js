@@ -3,7 +3,7 @@ const CACHE = 'ballotta-1';
 // The page keeps a copy of itself from the start, so it opens offline before its next visit, and so does a Home
 // Screen app that installed the preview, whose next/ now sends it on to ./ (promotion audit #3). Nothing fails if it can't,
 // and a slow line never holds the install up for more than 8 seconds (no-cache: a 304 when the page hasn't changed).
-self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => Promise.all(['./', 'next/'].map((u) => {
+self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => Promise.all(['./', 'next/', 'picks/'].map((u) => {
   const at = new URL(u, location.href).href, stop = new AbortController(), t = setTimeout(() => stop.abort(), 8000);
   return fetch(at, { cache: 'no-cache', signal: stop.signal }).then((res) => res.ok && res.type === 'basic' && !res.redirected && c.put(at, res))
     .catch(() => {}).finally(() => clearTimeout(t)); })))); });

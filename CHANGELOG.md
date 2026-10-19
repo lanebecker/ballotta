@@ -16,6 +16,26 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.2.0] — 2026-10-18
+
+### Added
+- **A share link has its own card** (Lane, Oct 18). Pasted into Messages, WhatsApp or anywhere else, a Share my picks
+  link showed the generic Ballotta card. It now goes to `ballotta.org/picks/`, whose preview says "Here's how I'm
+  voting": "My Travis County picks for Nov 3. Open to see them next to your own ballot.", with a ballot slip in place of
+  the dots, titled "My picks for Nov 3 · Ballotta" (option B, Lane's choice). That page hands the picks straight on to
+  Ballotta, replacing its own history entry, and counts nothing. The card is the same for everyone: the picks and the
+  name still travel only after the `#`, which no server sees. The offline copy keeps `picks/` from the start, so a share
+  link opens on a phone with no signal as before. Share links made before still open; Keep links and the site keep the
+  generic card.
+
+### Tests
+- `a_share_link_has_its_own_card`, `a_share_link_opens_from_the_offline_copy`; `link_preview_card_is_drawn_from_its_source` covers both cards;
+  `the_site_folder_is_the_whole_site` asks for `picks/` and `og-picks.png`.
+- Mutants W3a, W3b and W3d–W3g (W3c, the hand-off with `location.assign`, is equivalent in Chromium, which
+  replaces a page that moves on while loading); D57 re-anchored.
+- Remediation audit: Pass 1 (picks/ kept offline from the start; the share page names its own address, `og:url`,
+  instead of pointing at the site, which some unfurlers follow to the generic card).
+
 ## [1.1.7] — 2026-10-18
 
 **The small bugs filed so far** (round-2 wave 2's voter-facing items, brought forward), and the bump check.

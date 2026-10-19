@@ -19,7 +19,7 @@ Each race links to neutral sources: every candidate gets the same two slots (the
 ### Links: keep your picks, share with a friend
 
 - **Keep** (`#k=…`) packs your ballot's contest list, precinct, picks and reasons into the link's `#` fragment, to send to yourself. Opening it asks before replacing anything; only "Load my picks" or "Not now" answers, so a tap outside the question or Escape keeps the link and a reload asks again. A link too long for this page to open (over 40,000 characters, from long reasons) can't be sent or copied from Keep my picks until the reasons are left out; the Add to Home Screen steps' "Copy my picks link" copies the picks only then, and says so: "✓ Copied (picks only: your reasons made the link too long)" (#129). The crib sheet and At a glance show a reason's first 600 characters, then "…" (#126).
-- **Share** (`#s=…`) packs only the sections you choose (all on by default), optionally your reasons, a first name, a random 8-character link code and a generation number.
+- **Share** (`#s=…`) packs only the sections you choose (all on by default), optionally your reasons, a first name, a random 8-character link code and a generation number. Since 1.2.0 a share link goes to `ballotta.org/picks/#s2…`: a tiny page (`picks/index.html`, written by the build) whose link preview is the share card, "Here's how I'm voting" (`og-picks.png`, drawn from `source/og-picks.html`; Lane, Oct 18), and which hands the picks straight on to the page itself, replacing its own history entry. The card is the same for everyone: the picks and the name travel only after the `#`, which no server (and so no chat app's preview) ever sees. Share links made before then still open; Keep links and the site keep the generic card.
 - Browsers never send the fragment to servers. A script at the top of the page also removes it from the address bar before anything else runs, including analytics.
 
 ### Laptop layout
@@ -92,7 +92,7 @@ python3 source/check_sites.py                       # after any parse, and after
 python3 source/build_learn.py
 python3 source/build_site.py                        # writes index.html, census.html, version.json, sw.js, manifest.webmanifest and next/ (checks VERSION and CHANGELOG.md first)
 python3 source/build_site.py --check                # writes nothing: fails if a committed output isn't what the build writes, or a rollback build breaks (CI runs it)
-python3 source/make_icons.py                        # only if the logo changes: the Home Screen icons (--og also draws og.png from source/og.html)
+python3 source/make_icons.py                        # only if the logo changes: the Home Screen icons (--og also draws the link-preview cards: og.png from source/og.html, og-picks.png from source/og-picks.html)
 python3 tests/test_pipeline.py                      # the answer key against the ballot PDF, and the release check (no browser)
 python3 tests/test_site.py                          # end-to-end checks (Playwright, live county services) of the live page
 BALLOTTA_STUB_COUNTY=1 python3 tests/test_site.py   # the same with the county's recorded answers (tests/county_answers.json), when it is down or slow

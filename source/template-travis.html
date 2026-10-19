@@ -1769,7 +1769,9 @@ function prepShare(keepShown) {  // keepShown: right after a share, the link jus
   const pk = packPicks(ids, false, withWhy), g0 = LS.get('ballotta.gen', 1), gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1, code = rand8();  // a whole number or 1 (#44)
   const st = { ids, name, withWhy, pk, gen, code, url: null };
   if (!keepShown) $('share-out').classList.add('hidden');  // never leave an older link on screen next to new choices
-  st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = baseURL() + '#' + f));
+  // A Share link goes to ballotta.org/picks/, whose preview card says it's someone's picks, and which hands the picks
+  // straight on to this page (Lane, Oct 18). Keep links stay on the page itself.
+  st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = location.origin + '/picks/#' + f));
   sharePrep = st; return st;
 }
 $('sharename').addEventListener('input', () => prepShare());  // a new name: the link just shared goes (#98; the event itself would have read as keepShown)
