@@ -466,6 +466,16 @@
    "entity": "Courts"
   },
   {
+   "title": "County Judge",
+   "type": "candidate",
+   "choices": [
+    "Andy Brown (DEM)"
+   ],
+   "id": "c044",
+   "level": "County",
+   "entity": "Travis County"
+  },
+  {
    "title": "Judge, County Court at Law No. 1",
    "type": "candidate",
    "choices": [
@@ -484,16 +494,6 @@
    "id": "c043",
    "level": "Courts",
    "entity": "Courts"
-  },
-  {
-   "title": "County Judge",
-   "type": "candidate",
-   "choices": [
-    "Andy Brown (DEM)"
-   ],
-   "id": "c044",
-   "level": "County",
-   "entity": "Travis County"
   },
   {
    "title": "Judge, County Court at Law No. 2",

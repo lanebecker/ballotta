@@ -202,6 +202,14 @@ for (ptitle, ptext), it in zip(pdf_measures, key_measures):
         print(f"{it['id']} text from the PDF (parsed: …{pdf_lines.norm(it['text'])[-40:]!r})", file=sys.stderr)
     it["text"] = ptext
 
+# Ballot order within a level (round-2 audit #26, #123): the page lists each level's contests in this list's order, and the
+# parse read "County Judge" after "Judge, County Court at Law No. 1", which the ballot prints after it. Moved in the list
+# only: ids stay as they were, since Keep and Share links carry them (tests/test_pipeline.py checks the order).
+for title, before in [("County Judge", "Judge, County Court at Law No. 1")]:
+    k = next(i for i, it in enumerate(final) if it["title"] == title)
+    item = final.pop(k)
+    final.insert(next(i for i, it in enumerate(final) if it["title"] == before), item)
+
 key = {
     "election": "Travis County Joint General and Special Elections, November 3, 2026",
     # The county's corrected bedsheet ballot (Oct 14), as kept in this repo: the URL it was first noted under no longer

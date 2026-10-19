@@ -16,6 +16,49 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.1.6] — 2026-10-18
+
+**Round-2 cold audit, wave 1** (early voting, week 1): what a voter could lose or be misled by.
+
+### Added
+- **A page left open learns of a newer release** (round-2 #7, #105). A Home Screen app resumed, or a tab left open,
+  never reloads by itself, so it kept the page it opened with. When it comes back into view, and every 10 minutes while
+  in view, never more often, it asks for `version.json` past every cache; a newer release brings the bar "A newer
+  Ballotta is available." with Reload (Lane's words). It never reloads by itself, and an older copy kept offline says
+  nothing. This is what carries every later fix to phones already in use.
+- **Paste my picks link in an iPad's Home Screen app held sideways** (round-2 #14, #112): the laptop layout's menu had
+  no way to bring picks in from Safari.
+
+### Fixed
+- **An unknown precinct no longer drops US Rep, State Senator and State Rep** (round-2 #8, #106). For a precinct the
+  Legislative Council table doesn't list (one the county adds or renumbers, or none), they come from the county's own
+  district fields, marked Double-check: "Matched from the county’s district record for your address; your precinct is
+  new to us. Check your official ballot." (Lane's words), after a reload too.
+- **County Judge comes before the County Courts at Law**, as on the ballot (round-2 #26, #123). Moved in the list
+  only: contest ids, and so every Keep and Share link, are unchanged.
+- **A refused share name leaves the name kept from before alone** (round-2 #9, #107); a box emptied on purpose still
+  clears it.
+- **A stray tap outside "Load your saved picks?", or Escape, keeps the link** (round-2 #10, #108; Lane): only "Load my
+  picks" and "Not now" answer it, and a reload asks again.
+- **A Keep link too long for this page to open can't be sent or copied from Keep my picks** (round-2 #11, #109) until
+  the reasons are left out; focus then moves to the send button once it can be used. (The Add to Home Screen steps' own
+  "Copy my picks link" doesn't check yet: #129.)
+- **Framed, or with its first script stopped, the page says "Open ballotta.org directly."** (round-2 #13, #111; Lane's
+  words), a link, instead of showing a blank page. With JavaScript off it still shows only the JavaScript note.
+- **A second Keep link while "Load your saved picks?" is open isn't called damaged** on older browsers (Chrome < 114,
+  Safari < 17) (round-2 #15, #113).
+
+### Tests
+- `a_page_left_open_learns_of_a_newer_release`, `an_unknown_precinct_still_gets_its_federal_and_state_contests`,
+  `a_stray_tap_keeps_the_keep_link`, `a_second_keep_link_while_asked_is_not_called_damaged`,
+  `an_ipad_home_screen_app_held_sideways_can_paste_picks`; `a_refused_share_name_is_said_to_the_sender`,
+  `a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out` and `page_refuses_to_show_in_another_sites_frame`
+  extended. Pipeline: `contests_within_a_level_are_in_ballot_order` (for every candidate contest whose title is a line
+  of the ballot).
+- Mutants W1a–W1s (laptop runner) and P146–P157 with P150b (phone runner); H10, Y4, P89 and P114 re-anchored.
+- Remediation audit: Pass 1 (focus lost after "Leave my reasons out"; #129 and #130 filed), Pass 2 (an overtaken
+  Keep pack could move focus into a reopened sheet; it now touches nothing).
+
 ## [1.1.5] — 2026-10-18
 
 **Round-2 cold audit, wave 0** (`docs/audits/2026-10-18-cold-audit.md`, "round-2 #N"): what had to be right before

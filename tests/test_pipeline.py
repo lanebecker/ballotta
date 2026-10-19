@@ -59,6 +59,24 @@ def every_choice_list_is_in_ballot_order():
 
 
 @test
+def contests_within_a_level_are_in_ballot_order():
+    # Round-2 audit #26 (#123): the page shows each level's contests in the key's order, and "County Judge" came after
+    # "Judge, County Court at Law No. 1", which the ballot prints after it. Every candidate contest whose title is a line
+    # of the ballot must follow the ballot within its level. US Rep, State Senator and State Rep districts are left out:
+    # no voter gets two of one (build_rules.py stops otherwise), and the ballot doesn't list them by number.
+    first = {}
+    for i, l in enumerate(L): first.setdefault(l['text'].strip(), i)
+    one_each = re.compile(r'^(United States Representative|State Senator|State Representative), District')
+    at, levels = {}, {}
+    for c in KEY['contests']:
+        t = re.sub(r'\s*\(vote for up to \d\)$', '', c['title'])
+        if c['type'] != 'candidate' or one_each.match(t) or t not in first: continue
+        at[c['id']] = first[t]; levels.setdefault(c['level'], []).append(c['id'])
+    assert len(at) >= 30 and 'c044' in at and 'c042' in at, (len(at), 'too few contest titles found on the ballot')
+    wrong = {lv: ids for lv, ids in levels.items() if ids != sorted(ids, key=at.get)}
+    assert not wrong, ('contests out of ballot order within their level', {lv: [(i, at[i]) for i in ids] for lv, ids in wrong.items()})
+
+@test
 def every_measure_text_is_the_ballots_english():
     pdf = pdf_lines.measures(L)
     key = [c for c in KEY['contests'] if c['type'] == 'measure']

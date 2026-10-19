@@ -13,7 +13,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ballotta">
 <!--/PHONE-->
-<style id="frame-guard">body>:not(noscript){display:none!important}.nojs{max-width:34em;margin:48px auto;padding:0 16px;font:17px/1.5 system-ui,-apple-system,sans-serif;color:#241A2E}.nojs a{color:#4B2A6B}</style>
+<style id="frame-guard">body>:not(noscript){display:none!important}.framed{display:block!important}.nojs{max-width:34em;margin:48px auto;padding:0 16px;font:17px/1.5 system-ui,-apple-system,sans-serif;color:#241A2E}.nojs a{color:#4B2A6B}</style>
+<noscript><style>.framed{display:none!important}</style></noscript>
 <script>
 if (top === self) { var guard = document.getElementById('frame-guard'); if (guard) guard.remove(); }   /* the page stays hidden until here, and in any frame, even one with scripts off, where only the JavaScript note shows (GitHub Pages can't send frame-ancestors; issue #69); never throws, so the scrub below always runs */
 /* Runs before anything else (including analytics): move a saved-picks (#k2… / older #k=) or shared-picks
@@ -687,6 +688,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 </style>
 </head>
 <body>
+<p class="nojs framed" hidden><a href="https://ballotta.org/" target="_blank" rel="noopener">Open ballotta.org directly.</a></p><!-- shown only where the frame guard stays: in another site's frame, or where the first script was stopped (round-2 #13, #111; Lane) -->
 <noscript><p class="nojs">Ballotta needs JavaScript to look up your ballot. Turn it on for ballotta.org, or use the <a href="https://votetravis.gov/voter-lookup/">Travis County Voter Lookup</a>.</p></noscript>
 <!--DESK-->
 <header class="dk-hdr" id="dk-hdr">
@@ -1073,8 +1075,16 @@ async function getJSON(url) {
 function q(s) { return String(s).replace(/'/g, "''"); }
 
 /* ---------- routing ---------- */
+// An address whose precinct the Legislative Council table doesn't list (one the county added or renumbered after the
+// build, or none at all) takes its US Rep, State Senator and State Rep from the county's own district fields, marked
+// Double-check, instead of silently losing them (round-2 #8, #106; the two agree for every precinct the table lists).
+const COUNTY_DISTRICTS = { CD: 'Congressional', HD: 'Legislative', SD: 'Senate' };
+const COUNTY_NOTE = 'Matched from the county’s district record for your address; your precinct is new to us. Check your official ballot.';
+function knownPrecinct(p) { return p != null && p !== '' && Object.prototype.hasOwnProperty.call(DATA.tlc, String(p)); }
+function byDistrict(rule) { return !!(rule && rule.clauses && rule.clauses.some(cl => cl && Object.keys(cl).some(k => k in COUNTY_DISTRICTS))); }
 function enrich(rec) {
-  const t = DATA.tlc[String(rec.Precinct)] || {};
+  if (knownPrecinct(rec.Precinct)) return Object.assign({}, rec, DATA.tlc[String(rec.Precinct)]);
+  const t = {}; for (const k in COUNTY_DISTRICTS) t[k] = String(rec[COUNTY_DISTRICTS[k]] == null ? '' : rec[COUNTY_DISTRICTS[k]]).trim();
   return Object.assign({}, rec, t);
 }
 function applies(rule, rec) {
@@ -1092,8 +1102,11 @@ function applies(rule, rec) {
   return null;
 }
 function route(rec) {
-  const r = enrich(rec);
-  return DATA.contests.map(c => { const conf = applies(DATA.rules[c.id], r); return conf ? { c, conf, note: DATA.rules[c.id].note } : null; }).filter(Boolean);
+  const r = enrich(rec), guessed = !knownPrecinct(rec.Precinct);
+  return DATA.contests.map(c => {
+    const rule = DATA.rules[c.id], conf = applies(rule, r);
+    return !conf ? null : guessed && byDistrict(rule) ? { c, conf: 'medium', note: COUNTY_NOTE } : { c, conf, note: rule.note };
+  }).filter(Boolean);
 }
 function profileKey(rec) { return (rec.CodeCat || '') + '|' + (rec.Temp || '').trim(); }
 
@@ -1241,7 +1254,10 @@ function listFromStored(st) {
   const LINE = 'Your address is near a district line, so this contest may or may not be on your ballot.', GENERIC = 'Not confirmed for your address. Check your official ballot.';
   // With the list, the reason is known. Without it, a specific reason only when it can't be false: a rule uncertain as a
   // whole keeps its note; one uncertain by a clause (Austin's limited-purpose residents) gets the generic line (Pass 3).
-  const why = (id) => ln ? (ln.has(num(id)) ? LINE : rule(id).note || GENERIC)
+  // A precinct the table doesn't list: its federal and state contests came from the county's own fields (#106).
+  const pr = cleanPr(st.pr), county = (id) => pr !== '' && !knownPrecinct(pr) && byDistrict(rule(id));
+  const why = (id) => ln ? (ln.has(num(id)) ? LINE : county(id) ? COUNTY_NOTE : rule(id).note || GENERIC)
+    : county(id) && (st.mode === 'exact' || st.mode === 'nearby') ? COUNTY_NOTE
     : rule(id).conf === 'medium' && (st.mode === 'exact' || st.mode === 'nearby') ? rule(id).note || GENERIC : line(id) ? LINE : GENERIC;  // a rule's note says how the address was matched: only where the line can't have added the contest (Pass 4)
   return cleanBallot(st.b).map(n => { const id = cidOf(Math.abs(n)); const c = BYID[id]; return c ? { c, conf: n < 0 ? 'medium' : 'high', note: n < 0 ? why(id) : '' } : null; }).filter(Boolean).sort((a, b) => ORDER[a.c.id] - ORDER[b.c.id]);
 }
@@ -1606,7 +1622,11 @@ const KEEP_LONG = 8000;
 // The page's own limits (unpackFrag): a v2 link's body (after '#k2') up to 40,000 characters, an old-style one ('#k=') up to 200,000.
 function keepTooLong(u) { const f = String(u).split('#')[1] || ''; return f[1] === '=' ? f.length > 200000 : f.length - 2 > 40000; }
 let keepNoWhy = false;
-function prepKeep() { const k = { url: null }; k.p = keepURL(keepNoWhy).then(u => { k.url = u; $('keep-long').classList.toggle('hidden', keepNoWhy || u.length <= KEEP_LONG);
+// A link this page itself couldn't open is never sent or copied, until the reasons are left out (round-2 #11, #109).
+const unopenable = (u) => !keepNoWhy && keepTooLong(u);
+function prepKeep() { const k = { url: null }; k.p = keepURL(keepNoWhy).then(u => { k.url = u; if (keepPrep !== k) return u;  // an older prep, overtaken: it touches nothing on screen (Pass 2)
+    $('keep-long').classList.toggle('hidden', keepNoWhy || u.length <= KEEP_LONG);
+    $('keep-send').disabled = $('keep-copy').disabled = unopenable(u);
     $('keep-long-why').textContent = keepTooLong(u) ? 'This link is too long to open, because of your reasons.' : 'This link is long because of your reasons, and some apps cut long links short.'; return u; }); keepPrep = k; return k; }
 function openKeep() {  // Keep my picks, from either layout (#38)
   keepNoWhy = false; $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.add('hidden');
@@ -1620,6 +1640,7 @@ $('a-keep').addEventListener('click', openKeep);
 $('keep-send').addEventListener('click', async () => {
   if (keeping) return;
   const k = keepPrep || prepKeep(), url = k.url || await k.p;
+  if (unopenable(url)) return;
   let via = null;
   keeping = true;
   try {
@@ -1628,8 +1649,11 @@ $('keep-send').addEventListener('click', async () => {
   } finally { keeping = false; }
   if (via) { track('keep_created', { via }); nudgeKept(); }
 });
-$('keep-nowhy').addEventListener('click', () => { keepNoWhy = true; $('keep-out').classList.add('hidden'); $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.remove('hidden'); prepKeep(); $('keep-send').focus(); });
-$('keep-copy').addEventListener('click', async () => { const k = keepPrep || prepKeep(); const via = await copyLink(k.url || await k.p, $('keep-out'), $('keep-copy')); if (via) { track('keep_created', { via }); nudgeKept(); } });
+$('keep-nowhy').addEventListener('click', () => { keepNoWhy = true; $('keep-out').classList.add('hidden'); $('keep-long').classList.add('hidden'); $('keep-nowhy-done').classList.remove('hidden');
+  const k = prepKeep(); k.p.then(() => { if (keepPrep === k && $('d-keep').open) $('keep-send').focus(); });  // once the link without reasons is ready: until then the button may be disabled (Pass 1); not into a later opening (Pass 2)
+});
+$('keep-copy').addEventListener('click', async () => { const k = keepPrep || prepKeep(), url = k.url || await k.p; if (unopenable(url)) return;
+  const via = await copyLink(url, $('keep-out'), $('keep-copy')); if (via) { track('keep_created', { via }); nudgeKept(); } });
 
 /* ---------- backup nudge (#48) and persistent storage (#49) ---------- */
 // After the 5th pick, and once more at 25 if no link was ever kept, a card suggests a backup link: picks live only in
@@ -1688,9 +1712,12 @@ function openRestore(o) {
   const cur = LS.get('ballotta.ballot', null), lp = cleanPr(o.pr);
   const other = cur && cur.pr && lp && String(cur.pr) !== lp ? ' The link is for <b>Precinct ' + esc(lp) + '</b>; this device has your ballot for <b>Precinct ' + esc(cleanPr(cur.pr)) + '</b>, which it will also replace.' : '';
   $('restorewarn').innerHTML = (mine ? 'This device already has <b>' + mine + ' pick' + (mine === 1 ? '' : 's') + '</b>. Loading will replace its picks and reasons.' : 'Your picks and reasons will be saved in this browser.') + other;
-  $('d-restore').showModal();
+  if (!$('d-restore').open) $('d-restore').showModal();  // a second Keep link while asked: older browsers refuse showModal() on an open dialog (round-2 #15, #113)
 }
-$('d-restore').addEventListener('close', () => { const v = SS.get('ballotta.incoming'); if (typeof v === 'string' && v[0] === 'k') SS.del('ballotta.incoming'); });  // answered either way; a friend's link that came meanwhile stays (#66, Pass 1)
+// Answered only by its two buttons: a tap outside the sheet or Escape closes it but keeps the link, so a reload asks
+// again (round-2 #10, #108; Lane). A friend's link that came meanwhile stays (#66, Pass 1).
+const restoreAnswered = () => { const v = SS.get('ballotta.incoming'); if (typeof v === 'string' && v[0] === 'k') SS.del('ballotta.incoming'); };
+$('d-restore').querySelector('[data-close]').addEventListener('click', restoreAnswered);
 $('restore-go').addEventListener('click', () => {
   const o = incomingKeep; if (!o) return;
   const { P, W } = unpackPicks(o);
@@ -1699,7 +1726,7 @@ $('restore-go').addEventListener('click', () => {
   const pr = cleanPr(o.pr), b = cleanBallot(o.b), st = { pr, b, mode: 'saved', at: Date.now(), pt: prev && pr && prev.pr === pr ? cleanPt(prev.pt) : null };
   if (Array.isArray(o.ln)) { const flagged = new Set(b.filter(n => n < 0).map(n => -n)); st.ln = [...new Set(o.ln.filter(n => Number.isInteger(n) && flagged.has(n)))]; }  // only this ballot's Double-check contests (Pass 3)
   LS.set('ballotta.ballot', st); renderStored(st, 'loaded from your saved link');
-  $('d-restore').close();
+  restoreAnswered(); $('d-restore').close();
   incomingKeep = null;
   track('keep_restored', {}); nudgeKept();
   $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1775,7 +1802,7 @@ $('share-go').addEventListener('click', async () => {
   let via;
   try { via = await handOff(url, {}, $('share-out'), $('share-go')); } finally { sharing = false; }
   if (!via) return;
-  LS.set('ballotta.name', name);
+  if (name || !$('sharename').value.trim()) LS.set('ballotta.name', name);  // a refused name leaves the kept one alone; an emptied box clears it (round-2 #9, #107)
   prepShare(true);  // a fresh link code for any further share from this sheet; the link just shared stays on screen
   if (!LS.get('ballotta.gen', null)) LS.set('ballotta.gen', gen);  // your place in a chain is fixed by your first share or first friend link
   const n = ids.length;
@@ -2468,7 +2495,7 @@ const phone = (() => {
   const NARROW = window.matchMedia('(max-width: 1023.98px)'), D = desk.ph, cls = document.body.classList;
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const iOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null, installed = false, siteBack = false;
+  let foldOpen = false, lastKey = '', booting = true, listFrom = null, bip = null, installed = false, siteBack = false, newer = false;
   setTimeout(() => { booting = false; });  // a ballot already saved on this phone opens where the browser left the page
 
   /* ----- after every laptop render: the title, the bottom bar, the fold, the map fold ----- */
@@ -2486,7 +2513,7 @@ const phone = (() => {
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
   function savedSay() {
-    if ($('ph-saved').classList.contains('hidden') || siteBack) return;
+    if ($('ph-saved').classList.contains('hidden') || siteBack || newer) return;
     $('ph-saved').querySelector('b + span').textContent = ballot.length || cleanBallot((LS.get('ballotta.ballot', null) || {}).b).length ? 'Your picks are all here.' : 'Looking up an address needs a connection.';
   }
   function after() {
@@ -2602,11 +2629,20 @@ const phone = (() => {
     const item = (key, html, bad) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.ph = key; b.innerHTML = html; if (bad) b.className = 'bad'; box.append(b); };
     [...$('dk-menu').children].forEach(el => {
       if (el.tagName === 'HR') { box.append(document.createElement('hr')); return; }
+      if (el.dataset.paste) return;  // the iPad's laptop-width item: added below for this sheet
       item(el.dataset.help, el.innerHTML, el.classList.contains('bad'));
       if (el.dataset.help !== 'address') return;
       if (standalone() && iOS()) item('paste', '<b>Paste my picks link</b><small>Bring picks from Safari or another device</small>');
       else if (!standalone() && !installed) item('home', '<b>Add to your Home Screen</b><small>Opens like an app, and keeps your picks longer</small>');
     });
+  }
+  // An iPad's Home Screen app held sideways gets the laptop layout, whose menu had no way to bring picks in from Safari
+  // (round-2 #14, #112): the same item, after Change address.
+  if (standalone() && iOS()) {
+    const pb = document.createElement('button'); pb.type = 'button'; pb.setAttribute('role', 'menuitem'); pb.dataset.paste = '1';
+    pb.innerHTML = '<b>Paste my picks link</b><small>Bring picks from Safari or another device</small>';
+    $('dk-menu').querySelector('[data-help="address"]').after(pb);
+    pb.addEventListener('click', () => { $('dk-menu').classList.add('hidden'); $('dk-help').setAttribute('aria-expanded', 'false'); $('dk-help').focus(); paste(); });
   }
   menuItems();
   $('ph-mitems').addEventListener('click', (e) => {
@@ -2771,6 +2807,33 @@ const phone = (() => {
     $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
     savedSay();
   }
+  // A page left open learns of a newer release (round-2 #7, #105): a Home Screen app resumed, or a tab left open, never
+  // reloads by itself. When the page comes back into view, and every 10 minutes while it's in view, never more often, it
+  // asks for version.json past every cache (the offline copy keys by path, so the query never makes it keep more copies).
+  // Only a newer release counts, so an older copy kept offline says nothing; a page that is itself the kept copy has its
+  // own bar. The bar offers Reload; it never reloads by itself, so nothing half-typed is lost.
+  const NEWER_EVERY = 10 * 60 * 1000, num3 = (v) => String(v).split('.').map(Number);
+  const isNewer = (a, b) => {
+    const x = num3(a), y = num3(b);
+    if (x.length !== 3 || !x.every(Number.isInteger)) return false;
+    for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+    return false;
+  };
+  let newerAsked = Date.now();
+  const askNewer = () => {
+    if (newer || copy === 'offline' || copy === 'slow' || copy === 'error' || document.visibilityState === 'hidden' || Date.now() - newerAsked < NEWER_EVERY) return;
+    newerAsked = Date.now();
+    fetch('version.json?' + newerAsked, { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).then((j) => {
+      if (newer || !j || !isNewer(j.version, DATA.version)) return;
+      newer = true;
+      $('ph-saved').querySelector('b').textContent = 'A newer Ballotta is available.';
+      $('ph-saved').querySelector('b + span').textContent = '';
+      $('ph-saved-go').textContent = 'Reload';
+      $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
+    }).catch(() => {});
+  };
+  document.addEventListener('visibilitychange', askNewer); window.addEventListener('focus', askNewer); window.addEventListener('pageshow', askNewer);
+  setInterval(askNewer, 60 * 1000);  // looks every minute; asks at most every 10
   $('ph-saved-go').addEventListener('click', () => location.reload());
   try {  // the offline copy: phones and tablets only (C1)
     if ('serviceWorker' in navigator) {

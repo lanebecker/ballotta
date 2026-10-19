@@ -284,7 +284,8 @@ def build(preview=False, desk=None, phone=None):
     bad = [u for u in links if u and not re.match(r"https?://", u)]
     if bad:
         sys.exit(f"learn.json has links that are not http(s): {bad[:5]}")
-    data = script_json({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites})
+    data = script_json({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites,
+                        "version": check_release.version(ROOT)})   # a page left open compares it with version.json (#105)
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
     desk = desk if desk is not None else (preview or DESK_LIVE)
     phone = phone if phone is not None else (preview or PHONE_LIVE)

@@ -94,7 +94,7 @@ M = [
  ('P86 the kept copy never says so', SW, "      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : kept;", '      return kept;', ['phone_saved_copy_says_so']),
  ('P87 a slow network called no connection', SW, "setTimeout(ok, 4000, 'slow')", "setTimeout(ok, 4000, 'offline')", ['phone_saved_copy_says_so']),
  ('P88 a fresh page marked as the kept copy', SW, "      if (typeof first !== 'string' && !bad) return first;", "      if (typeof first !== 'string' && !bad) return r.mode === 'navigate' ? said(first, 'slow') : first;", ['phone_saved_copy_says_so']),
- ('P89 the bar never shows', PREV, "$('ph-saved').classList.remove('hidden'); ", '', ['phone_saved_copy_says_so']),
+ ('P89 the bar never shows', PREV, "    $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');\n    savedSay();", "    document.documentElement.classList.add('ph-saved-on');\n    savedSay();", ['phone_saved_copy_says_so']),
  ('P90 Try again does nothing', PREV, "  $('ph-saved-go').addEventListener('click', () => location.reload());\n", '', ['phone_saved_copy_says_so']),
  # P91 (the bar outlives the network coming back) retired Oct 18: the bar no longer goes on its own. Once the site answers it says "Ballotta is back."
  # with Reload (Lane, Wave 4 Pass 1), pinned by W7, Y2-Y4 in tests/mutate_desk.py.
@@ -123,7 +123,7 @@ M = [
  ('P111 the bar prints on the crib sheet', PREV, '@media print{.ph-saved{display:none !important}}', '', ['phone_saved_copy_says_so']),
  ("P112 scrolled, the bar hides under the laptop's top bar", PREV, '.ph-saved{position:sticky;top:56px;', '.ph-saved{position:sticky;top:0;', ['phone_saved_copy_says_so']),
  ("P113 an app's Safari view gets no way out", PREV, "    $('ph-i-else').classList.toggle('hidden', !safari);", '', ['phone_home_screen_steps_name_the_right_buttons']),
- ('P114 the laptop rail never makes room', PREV, " document.documentElement.classList.add('ph-saved-on');", '', ['phone_saved_copy_says_so']),
+ ('P114 the laptop rail never makes room', PREV, "    $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');\n    savedSay();", "    $('ph-saved').classList.remove('hidden');\n    savedSay();", ['phone_saved_copy_says_so']),
  # P115 (the rail keeps room after the network is back) retired Oct 18: the bar no longer goes on its own. Once the site answers it says "Ballotta is back."
  # with Reload (Lane, Wave 4 Pass 1), pinned by W7, Y2-Y4 in tests/mutate_desk.py.
  ('P116 Opera is told about Safari', PREV, '|OPX\\/', '', ['phone_home_screen_steps_name_the_right_buttons']),
@@ -156,6 +156,19 @@ M = [
  ('P143 the warning is left off screen', PREV, "if (shown) shown.scrollIntoView({ block: 'center' });", "", ['phone_print_in_a_home_screen_app_says_how']),
  ('P144 a screen reader is not told', PREV, "<p class=\"note\"' + (cantPrint() ? ' id=\"dk-noprint\" role=\"status\"' : '') + '>'", "<p class=\"note\"' + (cantPrint() ? ' id=\"dk-noprint\"' : '') + '>'", ['phone_print_in_a_home_screen_app_says_how']),
  ('P145 a second tap finds nothing', PREV, "const notes = [...document.querySelectorAll('#noprint, #dk-noprint')];", "const notes = [...document.querySelectorAll('#noprint, [data-act=\"print\"] + .note')];", ['phone_print_in_a_home_screen_app_says_how']),
+ ('P146 the newer-page check hits the caches', PREV, "fetch('version.json?' + newerAsked, { cache: 'no-store' })", "fetch('version.json', { cache: 'no-store' })", ['a_page_left_open_learns_of_a_newer_release']),
+ ('P147 the newer-page check unthrottled', PREV, ' || Date.now() - newerAsked < NEWER_EVERY) return;', ') return;', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P148 an older release counts as newer', PREV, '    for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];', '    for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return true;', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P149 a newer release reloads by itself', PREV, '      newer = true;\n', '      newer = true; location.reload();\n', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P150 a page in view never asks', PREV, '  setInterval(askNewer, 60 * 1000);', '', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P151 it keeps asking after it knows', PREV, "    if (newer || copy === 'offline'", "    if (copy === 'offline'", ['a_page_left_open_learns_of_a_newer_release']),
+ ('P152 a page out of view asks', PREV, " || document.visibilityState === 'hidden' || Date.now() - newerAsked", ' || Date.now() - newerAsked', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P153 the bar never shows', PREV, "      $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');\n    }).catch(() => {});", '    }).catch(() => {});', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P154 no paste item on an iPad held sideways', PREV, '  if (standalone() && iOS()) {\n    const pb', '  if (false) {\n    const pb', ['an_ipad_home_screen_app_held_sideways_can_paste_picks']),
+ ('P155 the phone sheet copies the iPad item', PREV, '      if (el.dataset.paste) return;', '', ['an_ipad_home_screen_app_held_sideways_can_paste_picks']),
+ ('P156 the menu stays open over the paste sheet', PREV, "$('dk-menu').classList.add('hidden'); $('dk-help').setAttribute('aria-expanded', 'false'); $('dk-help').focus(); paste();", 'paste();', ['an_ipad_home_screen_app_held_sideways_can_paste_picks']),
+ ('P150b the page in view asks only every 10 minutes', PREV, '  setInterval(askNewer, 60 * 1000);', '  setInterval(askNewer, NEWER_EVERY);', ['a_page_left_open_learns_of_a_newer_release']),
+ ('P157 focus lost when the paste sheet closes', PREV, "$('dk-help').setAttribute('aria-expanded', 'false'); $('dk-help').focus(); paste();", "$('dk-help').setAttribute('aria-expanded', 'false'); paste();", ['an_ipad_home_screen_app_held_sideways_can_paste_picks']),
 ]
 if __name__ == '__main__':
     R.main(M)

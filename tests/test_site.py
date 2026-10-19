@@ -707,9 +707,10 @@ def page_is_built_locked_down(b):
     try: m.build(); raise AssertionError('the build used a umami.js that is not the pinned copy')
     except SystemExit as e: assert 'pinned' in str(e), e
     # Issue #69: GitHub Pages can't send frame-ancestors, so the page's first script hides it when it's framed.
-    g = '<style id="frame-guard">body>:not(noscript){display:none!important}'
+    g = '<style id="frame-guard">body>:not(noscript){display:none!important}.framed{display:block!important}'
     assert html.count(g) == 1 and html.index(g) < html.index('<script'), 'hidden from the start (Pass 1)'
-    assert html.count('<noscript>') == 1 and html.index('<noscript>') > html.index('<body>'), 'one JavaScript note, in the body'
+    assert html.count('<noscript>') == 2 and html.index('<noscript><style>.framed{display:none!important}</style></noscript>') < html.index('<body>') < html.rindex('<noscript>'), \
+        'one JavaScript note, in the body; with JavaScript off, no framed line (round-2 #13)'
     assert re.search(r"<script>\s*if \(top === self\) \{ var guard = document\.getElementById\('frame-guard'\); if \(guard\) guard\.remove\(\); \}", html), 'only the first script shows it, and only when not framed'
 
 @test
@@ -729,22 +730,25 @@ def page_refuses_to_show_in_another_sites_frame(b):
     # which it counts as public, frame a loopback address at all.
     # Hidden until the page's own script shows it, so a frame with scripts turned off (sandbox) shows nothing of the page
     # either (Pass 1), only the JavaScript note, which is harmless anywhere (Lane, Oct 17).
-    for sandbox, shown in ((None, ''), ('', NOJS), ('allow-forms allow-popups', NOJS), ('allow-scripts', '')):
+    # Round-2 audit #13 (#111): where scripts run, the frame shows one line, a link (Lane's words), not a blank.
+    FRAMED = 'Open ballotta.org directly.'
+    for sandbox, shown in ((None, FRAMED), ('', NOJS), ('allow-forms allow-popups', NOJS), ('allow-scripts', FRAMED)):
         ctx, pg = new_page(b); pg.goto(f'http://localhost:{PORT}/census.html')
         pg.evaluate("([u, s]) => new Promise(ok => { const f = document.createElement('iframe'); if (s !== null) f.setAttribute('sandbox', s); f.src = u; f.width = 400; f.height = 800; f.onload = ok; document.body.appendChild(f); })", [BASE, sandbox])
         fr = [f for f in pg.frames if f != pg.main_frame][0]
         assert fr.url == BASE, (sandbox, fr.url)
         assert fr.inner_text('body').strip() == shown and not fr.locator('#street').is_visible(), ('shown in a frame', sandbox, fr.inner_text('body')[:200])
         seen = fr.evaluate("[...document.querySelectorAll('body *')].filter(e => e.checkVisibility() && !e.closest('noscript')).map(e => e.tagName + (e.id ? '#' + e.id : ''))")
-        assert seen == [], ('visible in a frame, text or not (Pass 3)', sandbox, seen[:10])
+        assert seen == ([] if shown == NOJS else ['P', 'A']), ('visible in a frame, text or not (Pass 3)', sandbox, seen[:10])
+        if shown == FRAMED: assert fr.get_attribute('.framed a', 'href') == 'https://ballotta.org/' and fr.get_attribute('.framed a', 'target') == '_blank'
         ctx.close()
     ctx, pg = new_page(b); pg.goto(BASE)
-    assert pg.locator('#street').is_visible() and NOJS not in pg.inner_text('body'), 'not framed: shown, without the JavaScript note'
+    assert pg.locator('#street').is_visible() and NOJS not in pg.inner_text('body') and 'ballotta.org directly' not in pg.inner_text('body'), 'not framed: shown, without either note'
     ctx.close()
     # JavaScript off (Tor Browser's Safest setting, NoScript): the note, with the county's own lookup (Lane, Oct 17).
     ctx = b.new_context(java_script_enabled=False); route_county(ctx); pg = ctx.new_page(); pg.goto(BASE)
     assert pg.inner_text('body').strip() == NOJS and not pg.locator('#street').is_visible(), pg.inner_text('body')[:300]
-    assert pg.get_attribute('.nojs a', 'href') == 'https://votetravis.gov/voter-lookup/'
+    assert pg.get_attribute('.nojs:not(.framed) a', 'href') == 'https://votetravis.gov/voter-lookup/'
     ctx.close()
     # Pass 2: the guard can never take the first script's link scrub down with it, even if its style were missing.
     ctx, pg = new_page(b)
@@ -880,6 +884,39 @@ def dates_follow_central_time_wherever_the_visitor_is(b):
         ctx.close()
 
 @test
+def an_unknown_precinct_still_gets_its_federal_and_state_contests(b):
+    # Round-2 audit #8 (#106): an address whose precinct the Legislative Council table doesn't list (one the county adds
+    # or renumbers before Nov 3, or none) lost its US Rep, State Senator and State Rep without a word. They now come from
+    # the county's own district fields, marked Double-check with their own note (Lane's words), after a reload too.
+    NOTE = 'Matched from the county’s district record for your address; your precinct is new to us. Check your official ballot.'
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    ids = lambda: pg.evaluate("ballot.map(x => x.c.id)")
+    def look(rec, street):
+        stub_county(pg, [['findAddressCandidates', 0, candidate(street)], ['VotingAddresses', 0, {'features': [{'attributes': rec}]}]])
+        pg.evaluate("s => { document.getElementById('street').value = s; document.getElementById('zip').value = '78757'; lookup(); }", street)
+        pg.wait_for_function("s => (window.__events || []).filter(e => e[0] === 'ballot_found').length >= s", arg=look.n, timeout=10000); look.n += 1
+        return pg.evaluate("Object.fromEntries(ballot.map(x => [x.c.id, [x.conf, x.note || '']]))")
+    look.n = 1
+    known = look(COUNTY_REC, '1 KNOWN ST')
+    by_district = pg.evaluate("ballot.filter(x => (DATA.rules[x.c.id].clauses || []).some(cl => 'CD' in cl || 'HD' in cl || 'SD' in cl)).map(x => x.c.id)")
+    assert 'c002' in by_district and 'c026' in by_district and all(known[i][0] == 'high' for i in by_district), (by_district, known)
+    for pr in (None, 9999):   # with no precinct at all, a reload can't tell why, so it says the generic line; 9999 is kept
+        new = look(dict(COUNTY_REC, Precinct=pr), f'{pr or 2} NEW ST')
+        assert set(new) == set(known), (pr, 'contests differ', set(known) ^ set(new))
+        assert all(new[i] == ['medium', NOTE] for i in by_district), (pr, {i: new[i] for i in by_district})
+        assert all(new[i] == known[i] for i in new if i not in by_district), (pr, 'other contests changed')
+    pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    after = pg.evaluate("Object.fromEntries(ballot.map(x => [x.c.id, [x.conf, x.note || '']]))")
+    assert all(after[i] == ['medium', NOTE] for i in by_district), ('after a reload', {i: after[i] for i in by_district})
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '9999', b: [1, -2, -26], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    assert pg.evaluate("ballot.find(x => x.c.id === 'c002').note") == NOTE
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '9999', b: [1, -2, -26], mode: 'exact', at: 0, pt: null }))"); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    assert pg.evaluate("ballot.find(x => x.c.id === 'c002').note") == NOTE, 'a ballot saved without the line list'
+    pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, -2, -26], mode: 'exact', at: 0, pt: null, ln: [] }))"); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    assert pg.evaluate("ballot.find(x => x.c.id === 'c002').note") != NOTE, 'a known precinct got the county note'
+    ctx.close()
+
+@test
 def a_restored_ballot_keeps_each_contests_own_caveat(b):
     # #62 (audit #11): after a reload or a Keep link, a contest marked "Double-check" says why, as the live lookup did
     # (the rule's own note), not only the generic line.
@@ -951,6 +988,40 @@ def precinct_and_point_from_a_link_or_storage_are_checked(b):
     ctx.close()
 
 @test
+def a_stray_tap_keeps_the_keep_link(b):
+    # Round-2 audit #10 (#108): a tap outside "Load your saved picks?" or Escape closed it and dropped the link for good.
+    # Only "Load my picks" and "Not now" answer it now (Lane): a stray close keeps the link, and a reload asks again.
+    for wide in ((True, False) if HAS_PHONE else (True,)):
+        for how in ('escape', 'backdrop'):
+            ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.goto(BASE)
+            fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]')
+            if how == 'escape': pg.keyboard.press('Escape')
+            else: pg.mouse.click(3, 3)
+            pg.wait_for_function("!document.getElementById('d-restore').open", timeout=3000); pg.wait_for_timeout(200)
+            assert pg.evaluate("(sessionStorage.getItem('ballotta.incoming') || '')[0]") == 'k', (wide, how, 'the link was dropped')
+            pg.reload(); pg.wait_for_selector('#d-restore[open]', timeout=5000)
+            if how == 'backdrop':   # "Load my picks" answers it: loaded, and not asked again
+                pg.click('#restore-go'); pg.wait_for_selector('body.dk-app-on')
+                assert pg.evaluate("sessionStorage.getItem('ballotta.incoming')") is None, 'Load my picks left the link waiting'
+                pg.reload(); pg.wait_for_timeout(1500); assert not pg.is_visible('#d-restore'), 'asked again after loading'
+            ctx.close()
+
+@test
+def a_second_keep_link_while_asked_is_not_called_damaged(b):
+    # Round-2 audit #15 (#113): a second Keep link arriving while "Load your saved picks?" is open called showModal() on an
+    # open dialog, which older browsers (Chrome < 114, Safari < 17) refuse; the page then said the link was damaged.
+    ctx, pg = new_page(b, wide=True)
+    pg.add_init_script("""(() => { const s = HTMLDialogElement.prototype.showModal; HTMLDialogElement.prototype.showModal = function () {
+        if (this.open) throw new DOMException('already open', 'InvalidStateError'); return s.call(this); }; })()""")   # as those browsers do
+    pg.goto(BASE)
+    fresh_goto(pg, link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]')
+    pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('k', {'v': 1, 'pr': '300', 'b': [1, 70, 71], 'p': {'70': 0, '71': 0}}))
+    pg.wait_for_function("document.getElementById('restoresum').textContent.includes('of 3')", timeout=5000)
+    assert 'link_damaged' not in names(pg), events(pg)[-3:]
+    assert pg.evaluate("document.getElementById('d-restore').open")
+    ctx.close()
+
+@test
 def a_reload_before_answering_keeps_the_keep_link(b):
     # #66 (audit #25): reloading with "Load your saved picks?" unanswered asks again; the link is dropped only once answered.
     for wide in ((True, False) if HAS_PHONE else (True,)):
@@ -1019,10 +1090,25 @@ def a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out(b):
         whys[x.c.id] = Array.from({ length: 600 }, (_, k) => String.fromCodePoint(0x4E00 + ((i * 600 + k) * 7919) % 20000)).join(''); }); }""")
     pg.evaluate('openKeep()'); pg.wait_for_function("keepPrep && keepPrep.url")
     assert pg.evaluate('keepPrep.url.length') > 8000 and pg.is_visible('#keep-long'), pg.evaluate('keepPrep.url.length')
-    pg.click('#keep-nowhy'); pg.wait_for_function("keepPrep && keepPrep.url && keepPrep.url.length < 8000")
+    # Round-2 audit #11 (#109): a link this page itself couldn't open can't be sent or copied, until the reasons are left out.
+    assert pg.evaluate('keepTooLong(keepPrep.url)') and pg.is_disabled('#keep-send') and pg.is_disabled('#keep-copy'), 'an unopenable link was offered'
+    pg.evaluate("$('keep-send').disabled = false; $('keep-send').click(); $('keep-copy').disabled = false; $('keep-copy').click()"); pg.wait_for_timeout(300)   # and a tap that gets through sends nothing
+    assert 'keep_created' not in names(pg) and pg.url.startswith(BASE), 'an unopenable link was sent'
+    pg.evaluate("$('d-keep').close(); keepPrep = null; openKeep()"); pg.wait_for_function("keepPrep && keepPrep.url && $('keep-send').disabled")   # as opened, nothing bypassed
+    pg.evaluate("$('keep-nowhy').focus(); $('keep-nowhy').click()"); pg.wait_for_function("keepPrep && keepPrep.url && keepPrep.url.length < 8000")
+    assert not pg.is_disabled('#keep-send') and not pg.is_disabled('#keep-copy')
+    pg.wait_for_timeout(300)
+    assert pg.evaluate('document.activeElement.id') == 'keep-send', ('Pass 1: focus lost while the send button waited', pg.evaluate('document.activeElement.tagName'))
     o = pg.evaluate("unpackFrag(keepPrep.url.split('#')[1])")
     assert not o.get('w') and len(o['p']) == pg.evaluate("ballot.filter(x => current(x.c.id).length).length"), 'the picks go, the reasons stay'
     assert pg.is_visible('#keep-nowhy-done') and not pg.is_visible('#keep-long')
+    # Pass 2: closed and reopened before the link without reasons is ready, the old pack touches nothing: no focus jump, and
+    # the reopened sheet keeps its own warning and its disabled buttons.
+    pg.evaluate("$('d-keep').close(); keepPrep = null; openKeep()"); pg.wait_for_function("keepPrep && keepPrep.url && $('keep-send').disabled")
+    pg.evaluate("() => { const real = keepURL; window.keepURL = (nw) => nw ? new Promise(r => setTimeout(r, 800)).then(() => real(nw)) : real(nw); }")
+    pg.evaluate("$('keep-nowhy').click(); $('d-keep').close(); openKeep()"); pg.wait_for_timeout(1500)
+    assert pg.evaluate("document.activeElement.id") != 'keep-send' and pg.is_visible('#keep-long') and pg.is_disabled('#keep-send'), \
+        ('an overtaken pack changed the reopened sheet', pg.evaluate("document.activeElement.id"), pg.is_visible('#keep-long'), pg.is_disabled('#keep-send'))
     ctx.close()
 
 @test
@@ -1666,6 +1752,13 @@ def a_refused_share_name_is_said_to_the_sender(b):
     assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya'
     pg.fill('#sharename', 'Travis GOP'); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
     assert pg.evaluate("localStorage.getItem('ballotta.name')") in (None, '""'), 'a refused name was kept for next time'
+    # Round-2 audit #9 (#107): a refused name leaves the name kept from before alone; a box emptied on purpose clears it.
+    pg.fill('#sharename', 'Maya'); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
+    assert pg.evaluate("localStorage.getItem('ballotta.name')") == '"Maya"', pg.evaluate("localStorage.getItem('ballotta.name')")
+    pg.fill('#sharename', 'Travis GOP'); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
+    assert pg.evaluate("localStorage.getItem('ballotta.name')") == '"Maya"', ('a refused name wiped the kept one', pg.evaluate("localStorage.getItem('ballotta.name')"))
+    pg.fill('#sharename', ''); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
+    assert pg.evaluate("localStorage.getItem('ballotta.name')") == '""', 'an emptied box kept the old name'
     pg.evaluate(r"document.getElementById('sharename').value = 'a'.repeat(29) + '\u{1F600}\u{1F600}'; prepShare()")
     got = pg.evaluate('sharePrep.name')
     assert got == 'a' * 29 + '\U0001F600' and len(got.encode('utf-16-le')) == 62, ('cut inside a character', [hex(ord(c)) for c in got[-2:]])
@@ -2432,6 +2525,51 @@ def phone_add_to_home_screen_three_ways(b):
 STANDALONE = "Object.defineProperty(navigator, 'standalone', { configurable: true, get: () => true });"
 
 @phone_test
+def a_page_left_open_learns_of_a_newer_release(b):
+    # Round-2 audit #7 (#105): a Home Screen app resumed, or a tab left open, never reloads by itself, so it kept a fixed
+    # page forever. When it comes back into view, or every 10 minutes while in view (never more often), it asks for
+    # version.json past every cache; a newer release brings the bar "A newer Ballotta is available." with Reload (Lane's
+    # words). It never reloads by itself. The same release, an older one (a kept copy), or no answer bring nothing.
+    import datetime as dt
+    for wide in (False, True):
+        for live, want in (('9.9.9', True), (None, False), ('0.0.1', False), ('fail', False)):
+            ctx, pg = (new_page(b, wide=True) if wide else phone_page(b))
+            hits = []
+            def answer(route, _req=None, live=live):   # Playwright passes (route, request) to a two-argument handler
+                hits.append(route.request.url)
+                if live == 'fail': return route.abort()
+                v = live or json.loads((ROOT / 'version.json').read_text())['version']
+                route.fulfill(status=200, content_type='application/json', body=json.dumps({'version': v}))
+            ctx.route('**/version.json*', answer)
+            pg.clock.install(time=dt.datetime(2026, 10, 20, 12, 0)); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+            pg.evaluate("window.__stay = 1; document.dispatchEvent(new Event('visibilitychange')); window.dispatchEvent(new Event('focus'))")
+            pg.clock.run_for(2000)
+            assert hits == [], (wide, live, 'asked again within 10 minutes of loading', hits)
+            pg.evaluate("Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })")   # out of view: never asks
+            pg.clock.run_for(10 * 60 * 1000 + 1000); pg.wait_for_timeout(200)
+            assert hits == [], (wide, live, 'asked while out of view', hits)
+            pg.evaluate("delete document.visibilityState; document.dispatchEvent(new Event('visibilitychange'))"); pg.wait_for_timeout(300)   # back in view
+            assert len(hits) == 1 and re.search(r'^https?://[^/]+/version\.json\?\d+$', hits[0]), (wide, live, hits)   # past every cache
+            bar = pg.evaluate("(() => { const p = document.getElementById('ph-saved'); return [p.classList.contains('hidden'), p.querySelector('b').textContent, document.getElementById('ph-saved-go').textContent, p.getClientRects().length > 0]; })()")
+            if want: assert bar == [False, 'A newer Ballotta is available.', 'Reload', True], (wide, live, bar)
+            else: assert bar[0], (wide, live, 'the bar showed', bar)
+            pg.evaluate("document.dispatchEvent(new Event('visibilitychange'))"); pg.clock.run_for(2000)
+            assert len(hits) == 1, (wide, live, 'asked again within 10 minutes', hits)
+            assert pg.evaluate('window.__stay') == 1, 'the page reloaded by itself'
+            if not want:   # still in view: asked again every 10 minutes, with no event at all
+                pg.clock.run_for(11 * 60 * 1000)
+                for _ in range(30):
+                    if len(hits) >= 2: break
+                    pg.wait_for_timeout(100)
+                assert len(hits) == 2, (wide, live, 'not asked again while in view', hits)
+            if want:
+                pg.clock.run_for(30 * 60 * 1000)
+                assert len(hits) == 1, (wide, 'kept asking after it knew', hits)
+                with pg.expect_navigation(): pg.click('#ph-saved-go')
+                assert pg.evaluate('window.__stay') is None, 'Reload did not reload'
+            ctx.close()
+
+@phone_test
 def phone_print_in_a_home_screen_app_says_how(b):
     # Round-2 audit #6: Print does nothing in an iPhone Home Screen app (Lane tried it on his iPhone, Oct 18; Safari
     # prints). There the note under Print says how to print from Safari, and a tap on Print turns it into a warning, on
@@ -2463,6 +2601,31 @@ def phone_print_in_a_home_screen_app_says_how(b):
             if home: assert pg.evaluate('__texts') == ['', NO], (tap, 'the warning isn\'t set anew, so a screen reader may say nothing', pg.evaluate('__texts'))
         assert NO not in pg.inner_text('#lookupmsg'), 'the address form keeps the print message (Pass 1)'
         assert (names(pg)[-1:] == ['crib_printed']) != home, names(pg)[-3:]
+        ctx.close()
+
+@phone_test
+def an_ipad_home_screen_app_held_sideways_can_paste_picks(b):
+    # Round-2 audit #14 (#112): an iPad's Home Screen app held sideways (1024px or wider) gets the laptop layout, whose
+    # menu had no "Paste my picks link", and a Home Screen app can't open a link: its picks from Safari couldn't come in.
+    IPAD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+    TOUCH = "Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 }); Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' });"
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("pick('c070', optionsOf(BYID.c070)[0])"); keep = pg.evaluate('keepURL()'); ctx.close()
+    for init, want in ((STANDALONE + TOUCH, True), (TOUCH, False), (STANDALONE, False)):   # an iPad app; iPad Safari; a Mac app
+        ctx, pg = phone_page(b, init=init, ua=IPAD, size={'width': 1180, 'height': 820}); pg.goto(BASE)
+        pg.evaluate("localStorage.setItem('ballotta.ballot', JSON.stringify({ pr: '300', b: [1, 70, 71], mode: 'saved', at: 0, pt: null }))"); pg.reload(); pg.wait_for_selector('body.dk-app-on')
+        pg.click('#dk-help'); items = pg.inner_text('#dk-menu')
+        assert ('Paste my picks link' in items) == want, (init, items)
+        assert pg.evaluate("[...document.querySelectorAll('#ph-mitems button')].filter(b => b.textContent.includes('Paste my picks link')).length") == (1 if want else 0), 'the phone sheet lists it once'
+        assert 'undefined' not in pg.evaluate("[...document.querySelectorAll('#ph-mitems button')].map(b => b.dataset.ph).join()")
+        if want:
+            pg.click('#dk-menu >> text=Paste my picks link'); pg.wait_for_selector('#ph-paste-d[open]')
+            assert pg.evaluate("document.getElementById('dk-menu').classList.contains('hidden')"), 'the menu stayed open'
+            pg.click('#ph-paste-d [data-close]'); pg.wait_for_function("!document.getElementById('ph-paste-d').open")
+            assert pg.evaluate('document.activeElement.id') == 'dk-help', ('focus lost when the sheet closed', pg.evaluate('document.activeElement.outerHTML.slice(0, 80)'))
+            pg.click('#dk-help'); pg.click('#dk-menu >> text=Paste my picks link'); pg.wait_for_selector('#ph-paste-d[open]')
+            pg.fill('#ph-p-in', keep); pg.click('#ph-p-go'); pg.wait_for_selector('#d-restore[open]')
+            pg.click('#restore-go'); pg.wait_for_function("current('c070').length === 1")
         ctx.close()
 
 @phone_test
