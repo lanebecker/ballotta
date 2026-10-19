@@ -267,7 +267,7 @@ M = [
  ('C2 laptop hours copied from the phone page', PREV, '<div class="sub">\' + hoursHTML() + \'</div>\'', '<div class="sub">\' + $(\'hours\').innerHTML + \'</div>\'', ['desk_works_without_phone_buttons']),
  ('C3 laptop crib copied from the phone page', PREV, '\'" id="dk-page">\' + cribHTML() + \'</div>\';', '\'" id="dk-page">\' + $(\'crib\').innerHTML + \'</div>\';', ['desk_works_without_phone_buttons']),
  ('C4 laptop print clicks the phone button', PREV, "    else if (a === 'print') printCrib();", "    else if (a === 'print') $('print').click();", ['desk_works_without_phone_buttons']),
- ('C5 laptop clear clicks the phone button', PREV, "    else if (a === 'clear') { clearPicks(); render(); }", "    else if (a === 'clear') { $('reset').click(); render(); }", ['desk_works_without_phone_buttons']),
+ ('C5 laptop clear clicks the phone button', PREV, "    else if (a === 'clear') { left = null; clearPicks(); render(); }", "    else if (a === 'clear') { left = null; $('reset').click(); render(); }", ['desk_works_without_phone_buttons']),
  ('B9 census.html out of date', BLD, ' || e.source !== parent || ', ' || ', ['census_runs_in_a_sandbox']),
  ('B11 census.html runs unsandboxed', BLD, "if (self.origin !== 'null' || ", 'if (', ['census_runs_in_a_sandbox']),
  ('B12 a reloading frame loops', PREV, ", '*'), { once: true });  // once", ", '*'));  // once", ['census_runs_in_a_sandbox']),
@@ -534,6 +534,19 @@ M = [
  ('W1q the framed line shown on the page itself', PREV, '<p class="nojs framed" hidden>', '<p class="nojs framed">', ['page_refuses_to_show_in_another_sites_frame']),
  ('W1r focus lost after Leave my reasons out', PREV, "  const k = prepKeep(); k.p.then(() => { if (keepPrep === k && $('d-keep').open) $('keep-send').focus(); });", "  prepKeep();", ['a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out']),
  ('W1s an overtaken keep pack changes the reopened sheet', PREV, ' if (keepPrep !== k) return u;', '', ['a_keep_link_too_long_for_chat_apps_can_leave_the_reasons_out']),
+ ('W2a Clear my picks keeps a reason waiting to be saved', PREV, "{ clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' });", "{ track('cleared', { what: 'picks' });", ['clearing_picks_drops_a_reason_waiting_to_be_saved']),
+ ('W2b loading a Keep link keeps a reason waiting to be saved', PREV, '  clearTimeout(whyTimer); whyTyping = null;  // a reason typed a moment ago is replaced too', '  // a reason typed a moment ago is replaced too', ['clearing_picks_drops_a_reason_waiting_to_be_saved']),
+ ('W2c long reasons uncut', PREV, "return a.length > 600 ? a.slice(0, 600).join('') + '…' : a.join('');", "return a.join('');", ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
+ ('W2d a long reason cut inside a character', PREV, "const a = Array.from(String(t || '').trim());", "const a = String(t || '').trim().split('');", ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
+ ('W2e At a glance shows the whole reason', PREV, '\'<span class="dk-wt">\' + esc(whyShown(whys[id]))', '\'<span class="dk-wt">\' + esc(whys[id])', ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
+ ('W2f the crib sheet prints the whole reason', PREV, '\'<div class="why">\' + esc(whyShown(whys[b.c.id]))', '\'<div class="why">\' + esc(whys[b.c.id])', ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
+ ('W2g a new share name keeps the old link on screen', PREV, "$('sharename').addEventListener('input', () => prepShare());", "$('sharename').addEventListener('input', prepShare);", ['a_new_share_name_hides_the_link_just_shared']),
+ ('W2h hiding a friend drops a waiting Keep link', PREV, "if (typeof v === 'string' && v[0] === 's') SS.del('ballotta.incoming'); }\n  $('friend')", "SS.del('ballotta.incoming'); }\n  $('friend')", ['hiding_a_friends_picks_keeps_a_waiting_keep_link']),
+ ('W2i Next never leaves a contest', PREV, "function leave() { if (ui.view === 'decide' && !upNext() && !decided(ui.cur)) left = ui.cur; }", 'function leave() {}', ['next_keeps_going_past_a_contest_left_undecided']),
+ ('W2j a contest left undecided is still named', PREV, 'if (b && !decided(b.c.id) && b.c.id !== skip) return b;', 'if (b && !decided(b.c.id)) return b;', ['next_keeps_going_past_a_contest_left_undecided']),
+ ('W2l Next forgets what it left on its own moves', PREV, '    if (!goingOn) left = null;', '    left = null;', ['next_keeps_going_past_a_contest_left_undecided']),
+ ('W2m Clear my picks keeps a contest left', PREV, "else if (a === 'clear') { left = null; clearPicks();", "else if (a === 'clear') { clearPicks();", ['next_keeps_going_past_a_contest_left_undecided']),
+ ('W2n any other move keeps a contest left', PREV, '    if (!goingOn) left = null;', '', ['next_keeps_going_past_a_contest_left_undecided']),
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
 def mutate(f, text, a, z):

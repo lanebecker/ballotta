@@ -5,9 +5,10 @@ wrong vote center) and the last good release has to go back up now. Written for 
 1.1.5, which went out by these steps.
 
 **A rollback is a forward release.** Never reset or force-push `main`, and never ship a bare `git revert` of a release
-commit: it also takes away that release's CHANGELOG section and puts the old `version.json` back, so the release check
-refuses it and `ballotta.org/version.json` would name a release that isn't the one live. Revert the change, then release
-it as the next PATCH.
+commit: it also takes away that release's CHANGELOG section and puts the old VERSION and `version.json` back, so pages
+already open (which only hear of a higher version) would never learn of it, and `ballotta.org/version.json` would name a
+release that isn't the one live. The bump check (`source/check_bumped.py`) refuses a VERSION lower than a release
+already tagged. Revert the change, then release it as the next PATCH.
 
 Each step says what "done" looks like. Don't go on until it does.
 
@@ -94,7 +95,7 @@ gh run list --branch main --limit 4        # Pages, Build check, Release check, 
 gh run watch <Pages run id> --exit-status
 ```
 
-The Pages workflow runs the pipeline tests (job `pipeline`), then builds the site folder and deploys (job `deploy`).
+The Pages workflow runs the pipeline tests (job `pipeline`), then, in job `deploy`, the bump check (a published file changed since tag `v<VERSION>` without a new VERSION, or a VERSION lower than a tagged release, is refused), then builds the site folder and deploys (job `deploy`).
 **Red means nothing was deployed and the bad page is still live**: read the failed step (`gh run view <id>
 --log-failed`), fix, and go back to step 3. Release tag makes the `v1.1.7` tag; Build check and Release check should
 be green too.

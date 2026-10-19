@@ -4,6 +4,8 @@ name: Release check
 # request whose VERSION isn't a plain semantic version, whose CHANGELOG.md doesn't open with [Unreleased] and then
 # a dated "## [VERSION]" section, or whose version.json (written by source/build_site.py) disagrees. The rules
 # live in source/check_release.py, so they run identically on a laptop and in the build. Stdlib only: no installs.
+# It also refuses a push that changes the published site without a new VERSION (source/check_bumped.py, #117): a page
+# left open learns of a newer release only from a higher version.
 
 on:
   pull_request: {}
@@ -26,5 +28,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0          # history and tags: the bump check compares with tag v<VERSION>
       - name: VERSION, CHANGELOG.md and version.json agree
         run: python3 source/check_release.py
+      - name: A change to the published site comes with a new VERSION (round-2 audit #19)
+        run: python3 source/check_bumped.py

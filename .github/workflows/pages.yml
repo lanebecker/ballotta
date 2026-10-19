@@ -4,7 +4,9 @@ name: Pages
 # whole repo, so tests/, docs/ and source/ are never served. On every push to main, and by hand.
 # The pipeline tests run first, in their own job with read-only permissions (round-2 audit #3): a hand edit to the
 # answer key or the vote centers that the build faithfully copies would otherwise deploy before Build check, running
-# in parallel, turned red; and the packages they install from PyPI never run where the deploy credentials are.
+# in parallel, turned red; and the packages they install from PyPI never run where the deploy credentials are. The
+# deploy job itself refuses a change to the published site without a new VERSION, or a VERSION lower than a release
+# already tagged (source/check_bumped.py, #117): stdlib and git only, so it runs even when the pipeline job is skipped.
 # `--site` then refuses when the committed build has drifted from its sources (the same check as Build check).
 # If PyPI itself is down during a rollback, run this workflow by hand with "skip the pipeline tests" (docs/RUNBOOK.md).
 # If Settings → Pages → Source is ever set back to a branch, Pages publishes the branch itself: this workflow then
@@ -57,6 +59,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0          # history and tags, for the bump check
+      - name: A change to the published site comes with a new VERSION (round-2 audit #19); never skipped
+        run: python3 source/check_bumped.py
       - name: Build the site folder
         run: python3 source/build_site.py --site _site
       - name: Where Pages publishes from

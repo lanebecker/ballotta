@@ -132,7 +132,7 @@ M = [
  ('P119 the title never opens the list', PREV, "  $('ph-list').addEventListener('click', openList);\n", '', ['phone_ballot_list_sheet']),
  ('P120 from another view, Previous steps back a contest', PREV, "    if (D.ui.view === 'decide') D.act('prev');", "    if (true) D.act('prev');", ['phone_next_undecided_then_the_crib_sheet']),
  ('P121 all decided: Next skips to the crib sheet', PREV, "dec && i < n - 1 ? 'Next →' : 'Crib sheet →'", "'Crib sheet →'", ['phone_next_undecided_then_the_crib_sheet']),
- ('P122 all decided: Next opens the crib sheet anyway', PREV, "    else if (D.ui.view === 'decide' && i < ballot.length - 1) D.go(ballot[i + 1].c.id);\n", '', ['phone_next_undecided_then_the_crib_sheet']),
+ ('P122 all decided: Next opens the crib sheet anyway', PREV, "    else if (D.ui.view === 'decide' && i < ballot.length - 1) D.goOn(ballot[i + 1].c.id);\n", '', ['phone_next_undecided_then_the_crib_sheet']),
  ('P123 the precinct never reaches the paper', PREV, 'if (top) top.textContent', 'if (false) top.textContent', ['phone_lookup_opens_the_app_at_its_top']),
  ('P124 Feedback & Info is a second menu icon', PREV, "%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v6'/%3E%3Ccircle cx='12' cy='7.6' r='1.2' fill='%23FFF9F1' stroke='none'/%3E", "%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E", ['phone_lookup_opens_the_app_at_its_top']),
  ('P125 the wordmark crowds the title', PREV, 'body.dk-app-on .dk-brand b,body.dk-app-on .dk-loc,', 'body.dk-app-on .dk-loc,', ['phone_lookup_opens_the_app_at_its_top']),
@@ -140,7 +140,7 @@ M = [
  ('P127 the title is cut off on a 320px phone', PREV, '#ph-list{flex:1;min-width:0;', '#ph-list{flex:0 0 120px;min-width:0;', ['phone_lookup_opens_the_app_at_its_top']),
  ('P128 back to the contest is not counted', PREV, "D.setView('decide'); track('view_opened', { view: 'decide' });", "D.setView('decide');", ['phone_next_undecided_then_the_crib_sheet']),
  ('P129 the title shows on the landing page', PREV, '  body.dk-app-on #ph-list{display:flex}\n', '  #ph-list{display:flex}\n', ['phone_landing_band_form_and_faq']),
- ('P130 Next points at the contest already open', PREV, "    return nx && !(D.ui.view === 'decide' && nx.c.id === D.ui.cur) ? nx : null;", '    return nx;', ['phone_next_undecided_then_the_crib_sheet']),
+ ('P130 Next points at the contest already open', PREV, "return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }\n  function leave()", "return nx; }\n  function leave()", ['phone_next_undecided_then_the_crib_sheet']),
  ('P131 the bar runs off a zoomed page', PREV, '#ph-back,#ph-next{white-space:normal;', '#ph-back,#ph-next{white-space:nowrap;', ['phone_lookup_opens_the_app_at_its_top']),
  ('P132 the title wraps out of its pill', PREV, '#ph-list b,#ph-list small{white-space:nowrap;', '#ph-list small{white-space:nowrap;', ['phone_lookup_opens_the_app_at_its_top']),
  ('P133 no precinct reads "Precinct ·"', PREV, 'pr && /\\d/.test(pr.textContent)', 'pr', ['phone_lookup_opens_the_app_at_its_top']),
@@ -169,6 +169,13 @@ M = [
  ('P156 the menu stays open over the paste sheet', PREV, "$('dk-menu').classList.add('hidden'); $('dk-help').setAttribute('aria-expanded', 'false'); $('dk-help').focus(); paste();", 'paste();', ['an_ipad_home_screen_app_held_sideways_can_paste_picks']),
  ('P150b the page in view asks only every 10 minutes', PREV, '  setInterval(askNewer, 60 * 1000);', '  setInterval(askNewer, NEWER_EVERY);', ['a_page_left_open_learns_of_a_newer_release']),
  ('P157 focus lost when the paste sheet closes', PREV, "$('dk-help').setAttribute('aria-expanded', 'false'); $('dk-help').focus(); paste();", "$('dk-help').setAttribute('aria-expanded', 'false'); paste();", ['an_ipad_home_screen_app_held_sideways_can_paste_picks']),
+ ('P158 the saved-copy bar waits 20 s to ask', PREV, '    setTimeout(check, 1000);', '', ['phone_saved_copy_bar_follows_the_site']),
+ ('P159 the Home Screen copy ignores a link too long', PREV, 'lite ? homeLiteURL || await (homeLite || keepURL(true)) : full', 'full', ['copy_my_picks_link_for_the_home_screen_always_opens_there']),
+ ("P160 the Home Screen copy follows the Keep sheet's last choice", PREV, '{ keepNoWhy = false; prepKeep();', '{ prepKeep();', ['copy_my_picks_link_for_the_home_screen_always_opens_there']),
+ ('P161 a picks-only copy says nothing', PREV, "lite ? '✓ Copied (picks only: your reasons made the link too long)' : '✓ Copied'", "'✓ Copied'", ['copy_my_picks_link_for_the_home_screen_always_opens_there']),
+ ("P162 the phone's Next never leaves a contest", PREV, '    D.leave();\n    const nx = upcoming()', '    const nx = upcoming()', ['next_keeps_going_past_a_contest_left_undecided']),
+ ('P163 a picks-only link shown to copy by hand says nothing', PREV, "if (via === 'shown' && lite) {", "if (false) {", ['copy_my_picks_link_for_the_home_screen_always_opens_there']),
+ ("P164 the phone's Next forgets what it left", PREV, "D.goOn(ballot[i + 1].c.id);", "D.go(ballot[i + 1].c.id);", ['next_keeps_going_past_a_contest_left_undecided']),
 ]
 if __name__ == '__main__':
     R.main(M)

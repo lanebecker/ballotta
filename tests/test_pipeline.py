@@ -141,6 +141,37 @@ def release_bookkeeping_is_consistent():
 
 
 @test
+def a_change_to_the_published_site_needs_a_new_version():
+    # Round-2 audit #19 (#117): since 1.1.6 a page left open learns of a newer release only from a higher VERSION, so a
+    # push that changes what the site publishes without a bump would never reach phones already in use (and
+    # version.json would name a release that isn't what's live). source/check_bumped.py refuses it once v<VERSION> is
+    # tagged; a docs or tests change, or a bumped VERSION (not tagged yet), passes.
+    import shutil
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 'r'
+        shutil.copytree(ROOT, d, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pdf', '.mutate-lock', '*.mutate-tmp', '_site'))
+        git = lambda *a: subprocess.run(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', *a], cwd=str(d), capture_output=True, text=True, check=True)
+        run = lambda: subprocess.run([sys.executable, 'source/check_bumped.py'], cwd=str(d), capture_output=True, text=True)
+        git('init', '-q'); git('add', '-A'); git('commit', '-qm', 'base')
+        r = run(); assert r.returncode != 0 and 'tags' in r.stderr, ('no release tags at all (a clone without them) passed', r.stdout, r.stderr)
+        git('tag', 'v0.0.1')
+        r = run(); assert r.returncode == 0, ('no tag yet: a new release', r.stdout, r.stderr)
+        v = (d / 'VERSION').read_text().strip(); git('tag', 'v' + v)
+        r = run(); assert r.returncode == 0, ('the tagged release itself', r.stdout, r.stderr)
+        (d / 'README.md').write_text((d / 'README.md').read_text() + '\nmore\n'); git('commit', '-qam', 'docs')
+        r = run(); assert r.returncode == 0, ('a docs change', r.stdout, r.stderr)
+        (d / 'index.html').write_text((d / 'index.html').read_text(encoding='utf-8').replace('<title>', '<title> ', 1), encoding='utf-8'); git('commit', '-qam', 'page')
+        r = run(); assert r.returncode != 0 and 'index.html' in r.stdout + r.stderr and 'VERSION' in r.stdout + r.stderr, ('a page change without a bump passed', r.stdout, r.stderr)
+        (d / 'VERSION').write_text('99.0.0\n'); git('commit', '-qam', 'bump')
+        r = run(); assert r.returncode == 0, ('a bumped VERSION, not tagged yet', r.stdout, r.stderr)
+        git('tag', 'v99.0.0'); git('revert', '--no-edit', 'HEAD')   # Pass 1: a bare revert of a release puts the old VERSION back
+        r = run(); assert r.returncode != 0 and 'lower' in r.stderr, ('a VERSION lower than a tagged release passed', r.stdout, r.stderr)
+        shallow = d.parent / 'shallow'
+        subprocess.run(['git', 'clone', '-q', '--depth', '1', 'file://' + str(d), str(shallow)], check=True, capture_output=True)
+        r = subprocess.run([sys.executable, 'source/check_bumped.py'], cwd=str(shallow), capture_output=True, text=True)
+        assert r.returncode != 0 and 'history' in r.stderr, ('a shallow clone passed', r.stdout, r.stderr)
+
+@test
 def release_check_refuses_drift():
     good = ('# Changelog\n\n## [Unreleased]\n\n_Nothing yet._\n\n## [1.1.0] — 2026-10-18\n\n- b\n\n## [1.0.0] — 2026-10-17\n\n- a\n')
     cases = {

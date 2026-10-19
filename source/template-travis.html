@@ -1397,6 +1397,9 @@ function milestones() {
   const skipped = few(ids.filter(id => current(id)[0] === '__skip').length);
   now.forEach(p => track('progress', { at: String(p), reasons, skipped }));
 }
+// A reason as the crib sheet and At a glance show it: its first 600 characters, then "…"; never half a
+// character (round-2 #28, #126; Lane). The box keeps every word.
+function whyShown(t) { const a = Array.from(String(t || '').trim()); return a.length > 600 ? a.slice(0, 600).join('') + '…' : a.join(''); }
 function cribHTML() {  // the crib sheet, for the phone page and the laptop's crib view alike (#38)
   const withWhy = $('withwhy').checked;
   let html = '<div class="ch"><b style="font-size:15px">My ballot choices</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
@@ -1404,7 +1407,7 @@ function cribHTML() {  // the crib sheet, for the phone page and the laptop's cr
     if (b.c.level !== last) { last = b.c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
     const v = current(b.c.id), txt = !v.length || v[0] === '__skip' ? '______' : v.join(', ');
     html += '<div class="ln"><span>' + esc(cleanTitle(b.c)) + (b.conf === 'medium' ? ' *' : '') + '</span><span>' + esc(txt) + '</span></div>';
-    if (withWhy && whys[b.c.id]) html += '<div class="why">' + esc(whys[b.c.id]) + '</div>';
+    if (withWhy && whys[b.c.id]) html += '<div class="why">' + esc(whyShown(whys[b.c.id])) + '</div>';
   });
   html += '<p style="font-size:10px;margin-top:10px">Blank = no vote planned. * = check your official sample ballot. Contests are in ballot order.</p>';
   return html;
@@ -1721,6 +1724,7 @@ $('d-restore').querySelector('[data-close]').addEventListener('click', restoreAn
 $('restore-go').addEventListener('click', () => {
   const o = incomingKeep; if (!o) return;
   const { P, W } = unpackPicks(o);
+  clearTimeout(whyTimer); whyTyping = null;  // a reason typed a moment ago is replaced too, never saved back over the link's (round-2 #12, #110)
   picks = P; whys = W; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys);
   const prev = LS.get('ballotta.ballot', null);
   const pr = cleanPr(o.pr), b = cleanBallot(o.b), st = { pr, b, mode: 'saved', at: Date.now(), pt: prev && pr && prev.pr === pr ? cleanPt(prev.pt) : null };
@@ -1768,7 +1772,7 @@ function prepShare(keepShown) {  // keepShown: right after a share, the link jus
   st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = baseURL() + '#' + f));
   sharePrep = st; return st;
 }
-$('sharename').addEventListener('input', prepShare);
+$('sharename').addEventListener('input', () => prepShare());  // a new name: the link just shared goes (#98; the event itself would have read as keepShown)
 // The note waits for typing to pause, or for the box to be left: "Dem…" on the way to "Demi" isn't a refusal, and the
 // note is read aloud (Pass 1). Clearing it never waits.
 let nameNoteTimer = 0, nameRefused = false;
@@ -1881,7 +1885,9 @@ function safeName(n) {
   return refused(LOOKALIKE) || refused(LOOKALIKE_STROKE) ? '' : n;
 }
 function hideFriend() {  // Hide these picks, from either layout (#38)
-  $('friend').classList.add('hidden'); $('compare').classList.add('hidden'); SS.del('ballotta.incoming'); friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
+  // Only the friend's own link goes from storage: a Keep link left waiting stays (#130).
+  { const v = SS.get('ballotta.incoming'); if (typeof v === 'string' && v[0] === 's') SS.del('ballotta.incoming'); }
+  $('friend').classList.add('hidden'); $('compare').classList.add('hidden'); friend = null;/*DESK*/ if (window.desk) try { desk.render(); } catch (e) {}/*/DESK*/
 }
 function friendName() { return friend && friend.name ? friend.name : 'Your friend'; }
 function openFriend(o, fresh) {
@@ -2025,7 +2031,7 @@ window.addEventListener('storage', (e) => {
   /*DESK*/if (window.desk) try { desk.syncWhy(); } catch (err) {}/*/DESK*/
   quietProgress = true; try { refresh(); } finally { quietProgress = false; }
 });
-function clearPicks() { if (confirm('Clear all your picks and reasons?')) { track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
+function clearPicks() { if (confirm('Clear all your picks and reasons?')) { clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
 $('reset').addEventListener('click', clearPicks);
 
 /*DESK*/
@@ -2057,9 +2063,9 @@ const desk = (() => {
     ta.style.height = (ta.scrollHeight + ta.offsetHeight - ta.clientHeight) + 'px';
     card.style.minHeight = keep;
   }
-  function nextUndecided(from) {
+  function nextUndecided(from, skip) {
     const i = idx(from);
-    for (let k = 1; k <= ballot.length; k++) { const b = ballot[(i + k + ballot.length) % ballot.length]; if (b && !decided(b.c.id)) return b; }
+    for (let k = 1; k <= ballot.length; k++) { const b = ballot[(i + k + ballot.length) % ballot.length]; if (b && !decided(b.c.id) && b.c.id !== skip) return b; }
     return null;
   }
   function samePick(id) { const f = friend.P[id], m = current(id); return m.length > 0 && m[0] !== '__skip' && m.length === f.length && m.every(x => f.includes(x)); }
@@ -2139,7 +2145,10 @@ const desk = (() => {
     if (window.phone) try { phone.after(); } catch (e) {}
     /*/PHONE*/
   }
+  let left = null, goingOn = false;  // see upNext()
+  function goOn(cid, focus) { goingOn = true; try { go(cid, focus); } finally { goingOn = false; } }  // Next's own moves keep what it left
   function go(cid, focus) {
+    if (!goingOn) left = null;
     if (idx(cid) < 0) return;
     ui.cur = cid; ui.view = 'decide'; save(); render();
     if (!WIDE.matches) return;
@@ -2169,10 +2178,15 @@ const desk = (() => {
   function announce(c) { say({ pick: c }); }  // what a key just did, for screen readers (audit #30)
   function where(b) { say({ move: b.c }); }  // a move to another contest: the paper's own label never changes (#39)
   // Decide by mouse puts you back on the paper, where the keys work; by keyboard you stay on the tabs (Pass 2).
-  function setView(v, toPaper) { ui.view = v; save(); render(); if (WIDE.matches) { window.scrollTo(0, 0); if (v === 'decide' && toPaper) P().focus({ preventScroll: true }); } }
+  function setView(v, toPaper) { left = null; ui.view = v; save(); render(); if (WIDE.matches) { window.scrollTo(0, 0); if (v === 'decide' && toPaper) P().focus({ preventScroll: true }); } }
   // Next is never the contest already open (it would go nowhere, #53, as on the phone): when the open contest is the only
   // undecided one, Next goes on to the next contest in order, and from the last one to At a glance.
-  function upNext() { const nx = nextUndecided(ui.cur); return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }
+  // A contest the voter moved on from with Next while it was the only one left undecided stays left while they go on
+  // contest by contest: Next keeps going in order instead of pointing back at it, which made Next alternate between the
+  // two forever (round-2 #28, #125). From another view (At a glance, the crib sheet), Next undecided names it again, and
+  // any other move, a new ballot or Clear my picks forgets it (Pass 1): left lives only while Next carries on.
+  function upNext() { const nx = nextUndecided(ui.cur, left); return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }
+  function leave() { if (ui.view === 'decide' && !upNext() && !decided(ui.cur)) left = ui.cur; }
   function inOrder() { const i = idx(ui.cur); return ui.view === 'decide' && nextUndecided(ui.cur) && i < ballot.length - 1 ? ballot[i + 1] : null; }
   function nextLabel() {
     const nx = upNext(), io = !nx && inOrder(), k = ' <span class="kbd" aria-hidden="true">N</span>';
@@ -2249,7 +2263,7 @@ const desk = (() => {
       const ctl = seats(c) > 1
         ? esc(v.length ? (v[0] === '__skip' ? 'Skipping' : v.join(', ')) : 'Undecided') + ' · <button type="button" class="dk-link" data-go="' + id + '">Choose</button>'
         : '<select class="dk-sel" data-sel="' + id + '" aria-label="Your pick: ' + esc(cleanTitle(c)) + '"><option value="">Pick one…</option>' + optionsOf(c).map(o => '<option value="' + esc(o) + '"' + (v[0] === o ? ' selected' : '') + '>' + esc(optLabel(c, o)) + '</option>').join('') + '<option value="__skip"' + (v[0] === '__skip' ? ' selected' : '') + '>Skip</option></select>';
-      const why = hasWhy(id) ? '<span class="dk-wt">' + esc(whys[id]) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
+      const why = hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
       rows += '<tr data-tr="' + id + '"><th scope="row"><button type="button" class="dk-link" data-go="' + id + '">' + esc(cleanTitle(c)) + '</button>' + (isUnopp(c) ? '<small>Unopposed</small>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th><td>' + ctl + '</td><td>' + why + '</td><td>' + (lw ? '<a href="' + esc(lw.u) + '" target="_blank" rel="noopener">League guide, p. ' + esc(lw.u.split('#page=')[1] || '') + '</a>' : '<span class="note">—</span>') + '</td></tr>';
     });
     P().innerHTML = '<div class="dk-gh"><div><span class="ov">At a glance</span><h1>Your whole ballot</h1></div><label class="dk-tog"><input type="checkbox" id="dk-hideu"' + (ui.hideUnopp ? ' checked' : '') + '> Hide unopposed races</label></div>' +
@@ -2328,7 +2342,7 @@ const desk = (() => {
   /* ----- actions ----- */
   function act(a, focus) {
     if (a === 'prev') { const i = idx(ui.cur); if (i > 0) go(ballot[i - 1].c.id, focus); }
-    else if (a === 'next') { const nx = upNext() || inOrder(); if (nx) go(nx.c.id, focus); else setView('glance'); }
+    else if (a === 'next') { leave(); const nx = upNext() || inOrder(); if (nx) goOn(nx.c.id, focus); else setView('glance'); }
     else if (a === 'hidefriend') { hideFriend(); if (WIDE.matches) P().focus({ preventScroll: true }); }
     else if (a === 'print') printCrib();
   }
@@ -2374,7 +2388,7 @@ const desk = (() => {
     if (a === 'feedback') sendFeedback();
     else if (a === 'privacy' || a === 'about') info(a);
     else if (a === 'address') toLanding();
-    else if (a === 'clear') { clearPicks(); render(); }
+    else if (a === 'clear') { left = null; clearPicks(); render(); }
     else if (a === 'clearall') clearEverything();
   }));
   $('dk-share').addEventListener('click', openShare);
@@ -2436,9 +2450,9 @@ const desk = (() => {
 
   /* ----- hooks the shared code calls (the DESK one-liners in showBallot, refresh, renderCrib and openFriend) ----- */
   return {
-    render,/*PHONE*/ ph: { ui, go, setView, act, nextUndecided, idx, curB, decided },/*/PHONE*/
+    render,/*PHONE*/ ph: { ui, go, goOn, setView, act, nextUndecided, idx, curB, decided, upNext, leave },/*/PHONE*/
     ballot(meta) {
-      ui.landing = false;
+      ui.landing = false; left = null;
       $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)
       if (!ballot.length) return render();
       const first = String(meta.where || '').split(' · ')[0];
@@ -2545,14 +2559,12 @@ const phone = (() => {
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   }
   // The next undecided contest, never the one already open (it would go nowhere: Pass 1).
-  function upcoming() {
-    const nx = D.nextUndecided(D.ui.cur);
-    return nx && !(D.ui.view === 'decide' && nx.c.id === D.ui.cur) ? nx : null;
-  }
+  function upcoming() { return D.upNext(); }  // the laptop's own rule, the contest left undecided included (#125)
   function next() {
+    D.leave();
     const nx = upcoming(), i = D.idx(D.ui.cur);
-    if (nx) { const was = D.ui.view; D.go(nx.c.id); if (was !== 'decide') track('view_opened', { view: 'decide' }); }  // as back() counts it (#76)
-    else if (D.ui.view === 'decide' && i < ballot.length - 1) D.go(ballot[i + 1].c.id);
+    if (nx) { const was = D.ui.view; D.goOn(nx.c.id); if (was !== 'decide') track('view_opened', { view: 'decide' }); }  // as back() counts it (#76)
+    else if (D.ui.view === 'decide' && i < ballot.length - 1) D.goOn(ballot[i + 1].c.id);
     else { D.setView('crib'); track('view_opened', { view: 'crib' }); }
   }
   function back() {
@@ -2695,7 +2707,10 @@ const phone = (() => {
     $('ph-i-other').classList.toggle('hidden', !!bip || ios);
     $('ph-i-out').classList.add('hidden');
     if (ios) steps(picked);
-    if (ios && picked) prepKeep();  // packed now: Safari only lets the copy happen right after the tap
+    // Packed now: Safari only lets the copy happen right after the tap. Picks and reasons, whatever the Keep sheet was
+    // last set to, and the picks only as well, for when the reasons make that link too long to open (#129).
+    if (ios && picked) { keepNoWhy = false; prepKeep(); homeLiteURL = null; const p = homeLite = keepURL(true); p.then(u => { if (homeLite === p) homeLiteURL = u; }, () => {}); }  // only this opening's (Pass 2)
+    $('ph-i-ok').textContent = '✓ Copied';
     $('ph-install').showModal();
   }
   // Name the browser's own buttons, and draw them (Lane, Oct 16: "Share" read as Ballotta's own Share my picks, and on
@@ -2726,8 +2741,12 @@ const phone = (() => {
     try { await ev.prompt(); await ev.userChoice; } catch (e) {}
     $('ph-install').close();
   });
+  let homeLite = null, homeLiteURL = null;  // the URL itself once packed: nothing to wait for between the tap and the copy (Pass 1)
   $('ph-i-copy').addEventListener('click', async () => {
-    const k = keepPrep || prepKeep(), via = await copyLink(k.url || await k.p, $('ph-i-out'), $('ph-i-copy'));
+    const k = keepPrep || prepKeep(), full = k.url || await k.p, lite = keepTooLong(full);
+    const via = await copyLink(lite ? homeLiteURL || await (homeLite || keepURL(true)) : full, $('ph-i-out'), $('ph-i-copy'));
+    if (via === 'copy') $('ph-i-ok').textContent = lite ? '✓ Copied (picks only: your reasons made the link too long)' : '✓ Copied';  // Lane's words
+    if (via === 'shown' && lite) { $('ph-i-ok').textContent = 'Picks only: your reasons made the link too long'; $('ph-i-ok').classList.remove('hidden'); }  // the link shown to copy by hand says so too (Pass 1)
     if (via) { track('home_screen', { action: 'copied' }); track('keep_created', { via }); nudgeKept(); }
     if (via === 'copy') { $('ph-i-carry').classList.remove('ph-now'); $('ph-i-ok').classList.remove('hidden'); $('ph-i-icon').classList.add('ph-now'); }  // shown, not copied: step 1 isn't done yet
   });
@@ -2803,6 +2822,7 @@ const phone = (() => {
       try { fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: ac ? ac.signal : undefined }).then((r) => end(r.ok), () => end(false)); } catch (e) { end(false); }
     };
     document.addEventListener('visibilitychange', check); window.addEventListener('online', check); setInterval(check, 20000);
+    setTimeout(check, 1000);  // and once soon after load: a copy opened on a line that's fine now says so at once, not after 20 s (round-2 #16, #114)
     window.addEventListener('offline', () => { gen++; busy = false; back(false); });
     $('ph-saved').classList.remove('hidden'); document.documentElement.classList.add('ph-saved-on');
     savedSay();

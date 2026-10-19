@@ -2162,6 +2162,94 @@ def desk_next_never_points_at_the_open_contest(b):
         assert ui() == after, (open_, 'N', ui())
     ctx.close()
 
+@phone_test
+def next_keeps_going_past_a_contest_left_undecided(b):
+    # Round-2 audit #28 (#125): with one contest left undecided and open, Next went on in order, and from there "Next
+    # undecided" pointed back at it: Next and N alternated between the two forever. Moving on from it with Next means
+    # leaving it for now: Next keeps going in order, to At a glance (laptop) or the crib sheet (phone), not back.
+    for wide in (True, False):
+        ctx, pg = (new_page(b, wide=True) if wide else phone_page(b)); pg.goto(BASE)
+        pg.evaluate("ids => localStorage.setItem('ballotta.picks', JSON.stringify(Object.fromEntries(ids.map(id => [id, [optionsOf(BYID[id])[0]]]))))", ['c001', 'c071', 'c072'])
+        saved_ballot(pg, [1, 70, 71, 72]); pg.wait_for_selector('body.dk-app-on')
+        ui = lambda: pg.evaluate('[desk.ph.ui.view, desk.ph.ui.cur]')
+        pg.evaluate("desk.ph.go('c070')"); pg.wait_for_timeout(200)
+        nxt = (lambda: pg.click('#dk-next')) if wide else (lambda: pg.click('#ph-next'))
+        nxt(); pg.wait_for_timeout(200); assert ui() == ['decide', 'c071'], (wide, ui())
+        label = pg.inner_text('#dk-next') if wide else pg.inner_text('#ph-next')
+        assert 'undecided' not in label.lower(), (wide, 'points back at the contest just left', label)
+        pg.evaluate("desk.ph.go('c001')"); assert pg.evaluate("(desk.ph.upNext() || { c: {} }).c.id") == 'c070', (wide, 'another move kept it left')   # Pass 1
+        pg.evaluate("desk.ph.go('c070')"); nxt(); pg.wait_for_timeout(200); assert ui() == ['decide', 'c071'], (wide, ui())
+        nxt(); pg.wait_for_timeout(200); assert ui() == ['decide', 'c072'], (wide, 'went back', ui())
+        nxt(); pg.wait_for_timeout(200); assert ui()[0] == ('glance' if wide else 'crib'), (wide, ui())
+        assert pg.evaluate("(desk.ph.upNext() || { c: {} }).c.id") == 'c070', (wide, 'from another view it is named again')
+        pg.evaluate("desk.ph.go('c001')"); pg.wait_for_timeout(200)   # Pass 1: any other move forgets it: named again
+        label = pg.inner_text('#dk-next') if wide else pg.inner_text('#ph-next')
+        assert 'undecided' in label.lower() and pg.evaluate("desk.ph.upNext().c.id") == 'c070', (wide, 'from elsewhere, the contest left undecided is still named', label)
+        pg.evaluate("desk.ph.go('c070')"); nxt(); pg.wait_for_timeout(200); assert ui() == ['decide', 'c071'], (wide, ui())   # left again,
+        pg.evaluate("() => { window.confirm = () => true; document.querySelector('#dk-menu [data-help=clear]').click(); ['c001', 'c071', 'c072'].forEach(id => pick(id, optionsOf(BYID[id])[0])); }")   # then Clear my picks
+        assert pg.evaluate('desk.ph.ui.cur') == 'c071' and pg.evaluate("(desk.ph.upNext() || { c: {} }).c.id") == 'c070', (wide, 'Clear my picks kept it left')
+        ctx.close()
+
+@desk_test
+def a_long_reason_is_cut_in_the_printout_and_the_glance_table(b):
+    # Round-2 audit #28 (#126; Lane): a pasted essay printed page after page on the crib sheet and stretched At a glance.
+    # Both show a reason's first 600 characters, then "…", as links already keep; the box keeps every word, and never
+    # cuts a character in two.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate(r"""() => { pick('c070', optionsOf(BYID.c070)[0]); pick('c071', optionsOf(BYID.c071)[0]);
+        whys.c070 = 'a'.repeat(599) + '\u{1F600}' + 'b'.repeat(4000); whys.c071 = 'Short and sweet.'; LS.set('ballotta.whys', whys); $('withwhy').checked = true; desk.render(); }""")
+    want = 'a' * 599 + '\U0001F600' + '…'
+    pg.click('#dk-views [data-view="glance"]')
+    shown = pg.evaluate("[...document.querySelectorAll('.dk-wt')].map(e => e.textContent)")
+    assert want in shown and 'Short and sweet.' in shown, [x[-5:] for x in shown]
+    pg.click('#dk-views [data-view="crib"]')
+    crib = pg.evaluate("[...document.querySelectorAll('#dk-paper .why, #crib .why')].map(e => e.textContent)")
+    assert crib and all(x in (want, 'Short and sweet.') for x in crib) and want in crib, [x[-5:] for x in crib]
+    assert pg.evaluate("whys.c070.length") == 599 + 2 + 4000, 'the reason itself was cut'
+    ctx.close()
+
+@desk_test
+def clearing_picks_drops_a_reason_waiting_to_be_saved(b):
+    # Round-2 audit #12 (#110): "Clear my picks", and loading a Keep link, left a reason typed in the last 150 ms waiting
+    # to be saved: if another tab saved meanwhile, the box's old text came back into memory and was saved again.
+    # Both now drop it, as Clear everything does.
+    for how in ('clear', 'restore'):
+        ctx, a = new_page(b, wide=True); a.goto(BASE); saved_ballot(a, [1, 70, 71]); a.wait_for_selector('body.dk-app-on')
+        t = ctx.new_page(); t.goto(BASE); t.wait_for_selector('body.dk-app-on')
+        a.evaluate("desk.ph.go('c070')"); a.wait_for_selector('#dk-w')
+        if how == 'restore':   # a Keep link is waiting to be loaded
+            a.evaluate("u => { location.hash = u.split('#')[1]; }", link('k', {'v': 1, 'pr': '300', 'b': [1, 70, 71], 'p': {'71': 0}})); a.wait_for_selector('#d-restore[open]')
+        a.evaluate("""h => { window.confirm = () => true; const w = document.getElementById('dk-w'); w.value = 'typed just now'; w.dispatchEvent(new Event('input', { bubbles: true }));
+            if (h === 'restore') document.getElementById('restore-go').click(); else clearPicks(); }""", how)
+        t.evaluate("pick('c001', optionsOf(BYID.c001)[0])")   # another tab saves inside the 150 ms
+        a.wait_for_timeout(600)
+        assert not a.evaluate("whys.c070") and 'typed just now' not in (a.evaluate("localStorage.getItem('ballotta.whys')") or ''), (how, 'the cleared reason came back', a.evaluate("whys.c070"))
+        ctx.close()
+
+@test
+def a_new_share_name_hides_the_link_just_shared(b):
+    # #98: right after a share, the link just shared stays on screen; typing a new name means another link, so the old
+    # one goes, as it does when the sections change.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("pick('c070', optionsOf(BYID.c070)[0])")
+    pg.evaluate("openShare()"); pg.fill('#sharename', 'Lane'); pg.click('#share-go'); pg.wait_for_selector('#share-out:not(.hidden)')
+    pg.type('#sharename', 'y'); pg.wait_for_timeout(200)
+    assert not pg.is_visible('#share-out'), 'the old link stayed next to a new name'
+    ctx.close()
+
+@test
+def hiding_a_friends_picks_keeps_a_waiting_keep_link(b):
+    # #130: since #108 a stray close keeps a Keep link waiting; hiding a friend's picks dropped it anyway (it deleted
+    # whatever link was stored), so a reload no longer asked. It now drops only the friend's link.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE)
+    fresh_goto(pg, link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2349', 'g': 1, 'p': {'70': 0}})); pg.wait_for_function("!!friend", timeout=5000)
+    pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]')
+    pg.keyboard.press('Escape'); pg.wait_for_function("!document.getElementById('d-restore').open")
+    pg.evaluate('hideFriend()')
+    assert pg.evaluate("(sessionStorage.getItem('ballotta.incoming') || '')[0]") == 'k', 'the waiting Keep link was dropped'
+    pg.reload(); pg.wait_for_selector('#d-restore[open]', timeout=5000)
+    ctx.close()
+
 @test
 def share_names_close_remaining_gaps(b):
     # #43: Unicode's look-alike table (not a hand-made map), flag letters, a stray space next to a single letter,
@@ -2626,6 +2714,35 @@ def an_ipad_home_screen_app_held_sideways_can_paste_picks(b):
             pg.click('#dk-help'); pg.click('#dk-menu >> text=Paste my picks link'); pg.wait_for_selector('#ph-paste-d[open]')
             pg.fill('#ph-p-in', keep); pg.click('#ph-p-go'); pg.wait_for_selector('#d-restore[open]')
             pg.click('#restore-go'); pg.wait_for_function("current('c070').length === 1")
+        ctx.close()
+
+@phone_test
+def copy_my_picks_link_for_the_home_screen_always_opens_there(b):
+    # #129 (round-2 wave 1 audit, F1 and F3): the Add to Home Screen steps' "Copy my picks link" copied a link too long for
+    # the Home Screen app to open when the reasons were long, and silently left the reasons out if "Leave my reasons out"
+    # was pressed earlier in the Keep sheet. It now copies picks and reasons; when that link is too long, the picks only,
+    # and says so (Lane's words).
+    LONG = """() => { ballot.forEach((x, i) => { const o = optionsOf(x.c); if (o.length) pick(x.c.id, o[0]);
+        whys[x.c.id] = Array.from({ length: 600 }, (_, k) => String.fromCodePoint(0x4E00 + ((i * 600 + k) * 7919) % 20000)).join(''); }); }"""
+    for long_ in (False, True):
+        ctx, pg = phone_page(b, ua=IPHONE_UA); pg.goto(BASE); saved_ballot(pg, list(range(1, 73))); pg.wait_for_selector('body.dk-app-on')
+        if long_: pg.evaluate(LONG)
+        else: pg.evaluate("() => { pick('c070', optionsOf(BYID.c070)[0]); whys.c070 = 'A short reason.'; keepNoWhy = true; }")   # as if left out in the Keep sheet before
+        pa_menu(pg, 'Add to your Home Screen'); pg.wait_for_selector('#ph-install[open]')
+        pg.click('#ph-i-copy'); pg.wait_for_function("(window.__events || []).some(e => e[0] === 'keep_created')", timeout=20000)
+        clip = pg.evaluate('navigator.clipboard.readText()')
+        o = pg.evaluate("f => unpackFrag(f)", clip.split('#', 1)[1])
+        assert o and o != 'too old' and pg.evaluate('u => !keepTooLong(u)', clip), (long_, 'the copied link would not open', len(clip))
+        assert bool(o.get('w')) != long_, (long_, 'reasons', bool(o.get('w')))
+        assert len(o['p']) == pg.evaluate("ballot.filter(x => current(x.c.id).length).length"), 'every pick is in it'
+        ok = pg.inner_text('#ph-i-ok')
+        assert ok == ('✓ Copied (picks only: your reasons made the link too long)' if long_ else '✓ Copied'), (long_, ok)
+        if long_:   # Pass 1: the clipboard refused, the link shown to copy by hand: it says so too
+            pg.evaluate("() => { navigator.clipboard.writeText = () => Promise.reject(new Error('refused')); }")
+            pg.click('#ph-install [data-close]'); pa_menu(pg, 'Add to your Home Screen'); pg.wait_for_selector('#ph-install[open]')
+            pg.click('#ph-i-copy'); pg.wait_for_selector('#ph-i-out:not(.hidden)')
+            shown = pg.inner_text('#ph-i-out'); o2 = pg.evaluate("f => unpackFrag(f)", shown.strip().split('#', 1)[1])
+            assert not o2.get('w') and pg.is_visible('#ph-i-ok') and pg.inner_text('#ph-i-ok') == 'Picks only: your reasons made the link too long', pg.inner_text('#ph-i-ok')
         ctx.close()
 
 @phone_test
@@ -3242,7 +3359,8 @@ def phone_saved_copy_bar_follows_the_site(b):
         Flip.slow = {'/' + PAGE: 7}; pg.reload(timeout=20000); Flip.slow = {}
         assert visible() and 'Slow connection' in bar.inner_text()
         back = "document.querySelector('#ph-saved b').textContent === 'Ballotta is back.' && document.getElementById('ph-saved-go').textContent === 'Reload'"
-        seen(); poll(pg, back, 10)                                         # Lane (Oct 18): the bar offers the newer page, never reloads by itself
+        poll(pg, back, 6)                                                  # Lane (Oct 18): the bar offers the newer page, never reloads by itself;
+                                                                           # round-2 #16 (#114): first asked a second after load, not after 20 s
         assert visible() and pg.get_attribute('html', 'data-copy') == 'slow' and 'copy saved' not in bar.inner_text(), bar.inner_text()
         pg.evaluate('desk.render()'); assert bar.inner_text().replace('\n', ' ').split() == ['Ballotta', 'is', 'back.', 'Reload'], ('a redraw brought old words back', bar.inner_text())
         with pg.expect_navigation(timeout=20000): pg.click('#ph-saved-go')

@@ -16,6 +16,42 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.1.7] — 2026-10-18
+
+**The small bugs filed so far** (round-2 wave 2's voter-facing items, brought forward), and the bump check.
+
+### Fixed
+- **Add to Home Screen's "Copy my picks link" always copies a link the Home Screen app can open** (#129): picks and
+  reasons, whatever the Keep sheet was last set to; when long reasons make that link too long to open, the picks only,
+  saying "✓ Copied (picks only: your reasons made the link too long)" (Lane's words).
+- **Next no longer ping-pongs** (#125): moving on with Next from the only contest left undecided leaves it; Next keeps
+  going in order, to At a glance (laptop) or the crib sheet (phone), instead of pointing back at it. From At a glance
+  or the crib sheet, Next undecided names it again.
+- **A long reason is cut in the crib sheet and At a glance** (#126; Lane): its first 600 characters, then "…". The box
+  keeps every word.
+- **Clear my picks, and loading a Keep link, drop a reason still waiting to be saved** (#110), so another tab's save
+  can't bring it back.
+- **The saved-copy bar asks whether Ballotta is back a second after load** (#114), not first after 20 seconds.
+- **A new share name hides the link just shared** (#98).
+- **Hiding a friend's picks keeps a Keep link left waiting** (#130).
+
+### Added
+- **The bump check** (#117, `source/check_bumped.py`): a push that changes what the site publishes without a new
+  `VERSION`, or whose VERSION is lower than a release already tagged (a bare `git revert` of a release), is refused,
+  by the Pages workflow's deploy job before it deploys (even when the pipeline tests are skipped) and by Release check. Since 1.1.6 a page left open
+  learns of a newer release only from a higher version.
+
+### Tests
+- `copy_my_picks_link_for_the_home_screen_always_opens_there`, `next_keeps_going_past_a_contest_left_undecided`,
+  `a_long_reason_is_cut_in_the_printout_and_the_glance_table`, `clearing_picks_drops_a_reason_waiting_to_be_saved`,
+  `a_new_share_name_hides_the_link_just_shared`, `hiding_a_friends_picks_keeps_a_waiting_keep_link`;
+  `phone_saved_copy_bar_follows_the_site` waits 6 s for the first answer, not a visibility change. Pipeline:
+  `a_change_to_the_published_site_needs_a_new_version`.
+- Mutants W2a–W2j, W2l–W2n and P158–P164; M29, C5, P122, P130 and P159 re-anchored.
+- Remediation audit: Pass 1 (Next's "left" contest is now forgotten on any other move, a new ballot or Clear my picks;
+  the bump check also refuses a VERSION lower than a tagged release and a clone without history or tags, and runs in the
+  deploy job; a picks-only link shown to copy by hand says so; #131 filed).
+
 ## [1.1.6] — 2026-10-18
 
 **Round-2 cold audit, wave 1** (early voting, week 1): what a voter could lose or be misled by.
