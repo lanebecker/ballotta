@@ -4902,7 +4902,8 @@ def the_date_override_works_only_on_this_computer(b):
     ctx, pg = new_page(b, wide=True); asked = []
     ctx.route('https://ballotta.org/**', lambda r: (asked.append(r.request.url) if r.request.url.split('?')[0].endswith('results.json') else None,
               r.fulfill(path=str(ROOT / (urllib.parse.urlsplit(r.request.url).path.lstrip('/') or 'index.html')))))
-    if not TODAY: pg.clock.install(time=rs_when('2026-10-20T12:00'))
+    if TODAY: pg.clock.set_system_time(rs_when('2026-10-20T12:00'))                              # the suite's own date may be past Nov 4
+    else: pg.clock.install(time=rs_when('2026-10-20T12:00'))
     pg.goto('https://ballotta.org/index.html'); pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify(b))", RS_BALLOT)
     pg.goto('https://ballotta.org/index.html?today=2026-11-06'); pg.wait_for_timeout(600)
     assert asked == [] and not pg.is_visible('#rs-top'), ('ballotta.org ignores ?today=', asked)
