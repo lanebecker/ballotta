@@ -322,6 +322,8 @@ def three_counties_make_one_unofficial_result():
         sen = out['contests']['c001']                                          # the live Nov 3 feed: no votes yet
         assert (sen['state'], sen['verdict']) == ('counting', 'none') and [x[0] for x in sen['choices'] if x[3]] == ['Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons']
         assert out['seq'] == 1 and ch['verdict_changed'] and check_results_ok(out)
+        # the change list, in plain words: first-seen contests with no votes are one line
+        assert ch['lines'] == ['- 1 contest now shown, no votes yet', '- City of Austin Proposition A: Failing (unofficial) (c071)'], ch['lines']
     finally: s.close()
 
 def check_results_ok(out):
@@ -371,7 +373,7 @@ def the_ledger_counts_changes_and_names_corrections():
         s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12'}})
         two, ch = s.build(prev=one)
         assert two['seq'] == 2 and two['contests']['c071']['changed'] == 2 and two['contests']['c001']['changed'] == 1 and ch['verdict_changed']
-        assert any('c071' in ln and 'unofficial failing → official failed' in ln for ln in ch['lines']), ch['lines']
+        assert '- City of Austin Proposition A: Failing (unofficial) → Failed (official) (c071)' in ch['lines'], ch['lines']
         # Hays's file was bad: excluded, the verdict moves (official -> partial is refused, so take the canvass back too)
         s.official()
         hays = s.raw('hays')[0]
@@ -380,6 +382,7 @@ def the_ledger_counts_changes_and_names_corrections():
         three, ch = s.build(prev=two, mp=mp)
         e = three['contests']['c071']
         assert (e['state'], e['verdict'], e['corrected'], three['seq']) == ('partial', 'none', '2026-11-09', 3), e
+        assert '- City of Austin Proposition A: Failed (official) → No call yet (partial: Hays County missing) (c071)' in ch['lines'], ch['lines']
     finally: s.close()
 
 @test

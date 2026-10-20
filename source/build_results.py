@@ -239,20 +239,23 @@ def build(res=RES, mp=None, prev=None, key=None):
             corrections[cid] = max(corrections.get(cid, ""), x["date"])
     out = {"seq": prev["seq"], "election": "2026-11-03", "withdrawn": bool(official.get("withdrawn")),
            "late_until": official.get("late_until", mp["meta"]["late_until"]), "contests": contests}
-    lines, verdict_changed = [], False
+    lines, verdict_changed, fresh = [], False, 0
     for cid in sorted(set(contests) | set(prev["contests"])):
         e, old = contests.get(cid), prev["contests"].get(cid)
         title = key[cid]["title"]
         if e is None:
             if old is not None:
-                lines.append(f"- {cid} {title}: removed"); verdict_changed = True
+                lines.append(f"- {title}: no longer shown ({cid})"); verdict_changed = True
             continue
         moved = old is None or (e["state"], e["verdict"], e["leaders"], e["runoff"], e["note"]) != (old["state"], old["verdict"], old["leaders"], old["runoff"], old["note"])
         if moved:
             verdict_changed = True
             if old is not None and old["verdict"] != e["verdict"] and corrections.get(cid, "") > (old.get("corrected") or ""):
                 e["corrected"] = corrections[cid]
-            lines.append(f"- {cid} {title}: " + (f"{word(old)} → " if old else "") + word(e))
+            if old is None and e["state"] == "counting":
+                fresh += 1                                # first seen, no votes yet: one summary line, not dozens
+            else:
+                lines.append(f"- {title}: " + (f"{word(old)} → " if old else "") + word(e) + f" ({cid})")
         e["changed"] = -1 if moved else old["changed"]
     same = {k: v for k, v in out.items() if k != "seq"}
     was = {k: v for k, v in prev.items() if k != "seq"}
@@ -261,11 +264,13 @@ def build(res=RES, mp=None, prev=None, key=None):
     for e in contests.values():
         if e["changed"] == -1:
             e["changed"] = out["seq"]
+    if fresh:
+        lines.insert(0, f"- {fresh} contest{'s' if fresh > 1 else ''} now shown, no votes yet")
     if out["seq"] != prev["seq"] and not verdict_changed:
-        lines.append("- numbers only: no state or verdict changed")
+        lines.append("- Numbers only: no result changed")
     if out["withdrawn"] != prev.get("withdrawn"):
         verdict_changed = True
-        lines.insert(0, "- results " + ("WITHDRAWN (the kill switch)" if out["withdrawn"] else "restored"))
+        lines.insert(0, "- RESULTS WITHDRAWN (the kill switch): every result is hidden" if out["withdrawn"] else "- Results restored (the kill switch is off)")
     bad = check_results.check(out, key, prev if prev.get("contests") or prev.get("seq") else None)
     if bad:
         raise Problem("the built file fails the check: " + "; ".join(bad[:10]))
@@ -277,9 +282,23 @@ def strip_changed(o):
     return {**o, "contests": {k: {**v, "changed": 0} for k, v in o["contests"].items()}}
 
 
+VERDICT_WORDS = {"none": "No call yet", "leading": "Leading", "too_close": "Too close to call", "may_runoff": "May go to a runoff",
+                 "runoff": "Headed to a runoff", "won": "Won", "elected": "Elected", "passing": "Passing", "failing": "Failing",
+                 "passed": "Passed", "failed": "Failed", "failed_tie": "Failed on a tie", "unopposed": "Unopposed",
+                 "tied": "Tied (state law decides)", "tied_legislature": "Tied (the Legislature decides)",
+                 "tied_runoff": "Tied (goes to a runoff)", "tied_second": "Tie for the runoff spot (a recount decides)"}
+NOTE_WORDS = {"district_not_confirmed": "the district wasn't confirmed", "annex_both": "annexed",
+              "annex_district_rejected": "not annexed: the district voted no", "annex_area_rejected": "not annexed: the area voted no",
+              "annex_both_rejected": "not annexed: both voted no"}
+
+
 def word(e):
-    who = ", ".join(e["leaders"] or e["runoff"])
-    return f"{e['state']} {e['verdict']}" + (f" ({who})" if who else "") + (f" [{e['note']}]" if e["note"] else "")
+    """One contest's standing in plain words, for the pull request: "Leading: Jane Doe (unofficial)"."""
+    if e["state"] == "counting":
+        return "No votes yet"
+    who = " and ".join(e["leaders"] or e["runoff"])
+    state = {"partial": "partial: " + ", ".join(e["missing"]) + " missing", "recount": "official, recount requested"}.get(e["state"], e["state"])
+    return VERDICT_WORDS[e["verdict"]] + (f": {who}" if who else "") + f" ({state})" + (f"; {NOTE_WORDS[e['note']]}" if e["note"] else "")
 
 
 def notes(contests, mp):
