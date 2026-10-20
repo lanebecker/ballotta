@@ -4863,6 +4863,12 @@ def withdrawn_results_hide_everything(b):
     pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(400)
     assert not pg.is_visible('#rs-land') and pg.errs == [], pg.errs
     ctx.close()
+    # a hurried pull that flips the switch but leaves every number in the file: still nothing shows
+    ctx, pg = rs_page(b, {'body': {**fx.scene('mixed'), 'withdrawn': True}})
+    assert pg.inner_text('#rs-top').startswith('Results are paused'), pg.inner_text('#rs-top')
+    assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c124') == '' and pg.query_selector('[data-rs="all"]') is None
+    pg.click('#dk-views [data-view="glance"]'); assert pg.query_selector('.rs-cell') is None and pg.errs == [], pg.errs
+    ctx.close()
 
 @results_test
 def a_bad_results_file_breaks_nothing(b):
@@ -4913,6 +4919,8 @@ def all_travis_county_results_need_no_address(b):
     pg.click('#rs-levels [data-lv="City"]'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
     assert titles and all('City of' in t for t in titles), titles
     pg.click('#rs-levels [data-lv="all"]'); pg.fill('#rs-q', 'Morales'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
+    assert titles == ['County Commissioner, Precinct 4'], titles
+    pg.fill('#rs-q', 'commissioner'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]   # a word only in the title
     assert titles == ['County Commissioner, Precinct 4'], titles
     pg.fill('#rs-q', 'zzz'); assert 'Nothing matches' in pg.inner_text('#rs-list')
     pg.keyboard.press('Escape'); pg.keyboard.press('Escape')   # in a search box the first Escape clears it (the browser's own), the second closes
