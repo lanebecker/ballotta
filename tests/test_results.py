@@ -408,6 +408,94 @@ def anything_unmapped_stops_the_build():
     finally: s.close()
 
 
+def clarity(contests, stamp='11/5/2026 9:00:00 AM CST', region='Travis'):
+    """A valid Detail XML with chosen numbers: {key: (name, [(choice, votes)])}, one precinct, one vote type."""
+    out = [f'<?xml version="1.0" encoding="utf-8"?><ElectionResult><Timestamp>{stamp}</Timestamp><ElectionName>Test</ElectionName>'
+           f'<ElectionDate>11/3/2026</ElectionDate><Region>{region}</Region><VoterTurnout totalVoters="5000" ballotsCast="0" voterTurnout="0">'
+           '<Precincts><Precinct name="101" totalVoters="5000" ballotsCast="0" voterTurnout="0" percentReporting="4" /></Precincts></VoterTurnout>']
+    for k, (name, ch) in contests.items():
+        out.append(f'<Contest key="{k}" text="{name}" voteFor="1" isQuestion="false" precinctsReporting="1" precinctsReported="1">')
+        for i, (n, v) in enumerate(ch):
+            out.append(f'<Choice key="{i:03d}" text="{n}" party="NON" totalVotes="{v}"><VoteType name="Election Day" votes="{v}">'
+                       f'<Precinct name="101" votes="{v}" /></VoteType></Choice>')
+        out.append('</Contest>')
+    return ('\n'.join(out) + '</ElectionResult>').encode('utf-8')
+
+def scratch_with(files):
+    """A results folder holding just these Travis files (filed through the inbox, as Lane's are)."""
+    d = pathlib.Path(tempfile.mkdtemp()); res = d / 'results'
+    for c in ('travis', 'bastrop', 'williamson', 'hays'): (res / 'inbox' / c).mkdir(parents=True)
+    for i, data in enumerate(files):
+        (res / 'inbox/travis' / f'f{i}.xml').write_bytes(data); B.file_inbox(res)
+    return d, res
+
+def one_map(**contests):
+    mp = copy.deepcopy(MAP); mp['contests'] = contests
+    mp['canvassers'].update({k: {'label': f'the {k} board', 'kind': 'local'} for k in ('eastwood-mud', 'esd-9', 'esd-4')})
+    return mp
+
+M = lambda key, **k: {'source': 'counties', 'canvasser': k.pop('canvasser', 'eastwood-mud'), 'electorate': ['travis'], 'keys': {'travis': key}, **k}
+FA = lambda f, a: [('FOR', f), ('AGAINST', a)]
+
+@test
+def a_failed_confirmation_marks_the_whole_district():
+    d, res = scratch_with([clarity({'1': ('Confirmation', FA(300, 700)), '2': ('Bonds', FA(600, 400))})])
+    try:
+        mp = one_map(c147=M('1'), c148=M('2', depends_on='c147'))
+        out, _ = B.build(res=res, mp=mp)
+        assert out['contests']['c148']['note'] is None, 'failing (unofficial) is not yet failed'
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-10'}}}))
+        out, _ = B.build(res=res, mp=mp)
+        assert out['contests']['c147']['verdict'] == 'failed' and out['contests']['c148']['note'] == 'district_not_confirmed'
+        assert out['contests']['c148']['verdict'] == 'passed', 'its own result stands, with the note'
+    finally: shutil.rmtree(d)
+
+@test
+def an_annexation_gets_one_outcome_from_both_votes():
+    d, res = scratch_with([clarity({'1': ('ESD 9 district', FA(400, 600)), '2': ('ESD 9 territory', FA(80, 20))})])
+    try:
+        mp = one_map(c206=M('1', canvasser='esd-9', who='district', pair='c208'), c208=M('2', canvasser='esd-9', who='area', pair='c206'))
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-9': {'canvassed': '2026-11-10'}}}))
+        out, _ = B.build(res=res, mp=mp)
+        assert [out['contests'][c]['note'] for c in ('c206', 'c208')] == ['annex_district_rejected'] * 2, out['contests']['c206']['note']
+        assert (out['contests']['c206']['who'], out['contests']['c208']['who']) == ('district', 'area')
+    finally: shutil.rmtree(d)
+
+@test
+def an_outcome_one_total_cant_show_waits_for_the_canvass():
+    d, res = scratch_with([clarity({'1': ('ESD 4 annexation', FA(900, 100))})])
+    try:
+        mp = one_map(c205=M('1', canvasser='esd-4', outcome_from_canvass=True))
+        e = B.build(res=res, mp=mp)[0]['contests']['c205']
+        assert (e['state'], e['verdict']) == ('unofficial', 'none'), '90% for, and still no call: two majorities, one total'
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}}))
+        try: B.build(res=res, mp=mp); raise AssertionError('canvassed without its outcome entered')
+        except B.Problem as x: assert 'outcomes' in str(x), x
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}, 'outcomes': {'c205': 'failed'}}))
+        assert B.build(res=res, mp=mp)[0]['contests']['c205']['verdict'] == 'failed', "the canvass's outcome, not the total's"
+    finally: shutil.rmtree(d)
+
+@test
+def a_generic_write_in_line_is_left_out():
+    d, res = scratch_with([clarity({'1': ('Prop', [('FOR', 600), ('AGAINST', 400), ('Write-in', 7)])})])
+    try:
+        e = B.build(res=res, mp=one_map(c148=M('1')))[0]['contests']['c148']
+        assert [x[:2] for x in e['choices']] == [['FOR', 600], ['AGAINST', 400]] and e['choices'][0][2] == 60.0, e['choices']
+    finally: shutil.rmtree(d)
+
+@test
+def a_race_decided_in_travis_alone_has_no_travis_breakdown():
+    d, res = scratch_with([clarity({'9': ('U.S. Senator', [('James Talarico', 10), ('Ken Paxton', 9), ('Ted Brown', 1)])})])
+    try:
+        data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
+        raw = B.raw_dir(res, 'sos', r['posted'], data); raw.mkdir(parents=True); (raw / 'election.json').write_bytes(data)
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9'
+        assert B.build(res=res, mp=mp)[0]['contests']['c001']['travis'] == [['Ken Paxton', 9, 45.0], ['James Talarico', 10, 50.0], ['Ted Brown', 1, 5.0]]   # ballot order, not the file's
+        mp['contests']['c001']['travis_only'] = True
+        assert B.build(res=res, mp=mp)[0]['contests']['c001']['travis'] is None
+    finally: shutil.rmtree(d)
+
+
 # ---------------------------------------------------------------- 4. the fetcher, with a stand-in network
 def net(pages):
     asked = []
