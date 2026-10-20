@@ -3586,8 +3586,17 @@ def the_map_shows_all_five_closest_centers(b):
         assert pg.evaluate("[...document.querySelectorAll('#dk-map > text')].every(t => +t.getAttribute('x') >= 48 && +t.getAttribute('x') <= 512)"), 'a town name cut off at the edge'
         assert pg.evaluate("[...document.querySelectorAll('#dk-map .top text')].pop().textContent") == '1', 'center 1 is drawn last, on top'
         assert pg.evaluate("(() => { const t = [...document.querySelectorAll('#dk-map > text')].map(e => [+e.getAttribute('x'), +e.getAttribute('y')]); return t.every((a, i) => t.every((b, j) => i === j || Math.hypot(a[0] - b[0], a[1] - b[1]) >= 60)); })()") or not wide, 'widened: town names pile up'   # Pass 2 (measured: never closer than 70px at real far points, so no spacing code)
-        if not wide:
-            assert pg.evaluate("[...document.querySelectorAll('#dk-map > circle')].length") <= 15, 'downtown: the usual close-in map, not one widened to most of the county'
+        # The map's width in degrees, read back from where the numbered centers sit (x = W/2 + (lon - yours) / width * W).
+        # Measured, not guessed from a dot count: Election Day has 201 centers, so a close-in map downtown holds ~48 dots.
+        for per in ('early', 'eday'):
+            pg.click(f'[data-period="{per}"]'); pg.wait_for_selector('#dk-map')
+            sx = pg.evaluate("""([lon, per]) => {
+              const W = 560, at = {}; DATA.sites[per].forEach(s => { at[s[0]] = s[5]; });
+              const far = [...document.querySelectorAll('#dk-map .top circle')].map(c => [+c.getAttribute('cx') - W / 2, at[c.querySelector('title').textContent]])
+                .sort((a, b) => Math.abs(b[0]) - Math.abs(a[0]))[0];
+              return (far[1] - lon) / far[0] * W; }""", [pt[0], per])
+            if wide: assert sx > 0.13, (pt, per, sx, 'widened to fit the five')
+            else: assert abs(sx - 0.12) < 0.002, (pt, per, sx, 'downtown: the usual close-in map, not one widened to most of the county')
         ctx.close()
 
 
