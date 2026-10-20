@@ -285,6 +285,7 @@ def site_folder_holds_only_the_site():
         bs = repo / 'source/build_site.py'; src = bs.read_text(encoding='utf-8'); assert src.count('\nPHONE_LIVE = True\n') == 1
         bs.write_text(src.replace('\nPHONE_LIVE = True\n', '\nPHONE_LIVE = False\n', 1), encoding='utf-8')
         r = run(); assert r.returncode == 0, r.stderr[-300:]
+        (repo / 'next/index.html').write_text(build_site.moved_page(), encoding='utf-8')              # next/ as it is when nothing is in preview (Oct 19)
         r = run('--site', str(d / 'stale'))                                                           # the rollback without --preview: next/ is still the hand-off page
         assert r.returncode != 0 and 'next/index.html' in r.stderr and not (d / 'stale').exists(), ('a rollback published the old next/', r.stderr[-300:])
         for args in (('--preview',), ('--site', str(d / 'rollback'))):                                # a phone rollback, as the README says
@@ -484,6 +485,48 @@ def a_site_is_broken_only_when_it_surely_is():
         assert all(v['http'] == '000' for v in got.values() if v.get('site')), 'a request got past the dead proxy (a ~/.curlrc?): this test reached a site'
         r = subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d))
         assert r.returncode != 0 and 'out of date' in r.stderr, r.stderr[-300:]
+
+
+def street_problems(d):
+    """What is wrong with the street map's data d (source/data/streets.json, parsed), as a list; [] when nothing is."""
+    import fetch_streets as F
+    out, q = [], d.get('q')
+    if set(d) != {'v', 'q', 'fwy', 'hwy', 'art', 'water', 'tags', 'order'} or d['v'] != 1 or q != F.Q: return ['keys or version: ' + str(sorted(d))]
+    for layer, box, least in (('fwy', F.VIEW, 50), ('hwy', F.VIEW, 150), ('art', F.NEAR, 300), ('water', F.VIEW, 5)):
+        if len(d[layer]) < least: out.append(f'{layer}: only {len(d[layer])}')
+        for a in d[layer]:
+            if len(a) < 4 or len(a) % 2 or not all(type(v) is int for v in a): out.append(f'{layer}: malformed {a[:6]}'); continue
+            x, y, pts = a[0], a[1], [(a[0], a[1])]
+            for i in range(2, len(a), 2): x += a[i]; y += a[i + 1]; pts.append((x, y))
+            if not all(box[0] - 1 / q <= px / q <= box[2] + 1 / q and box[1] - 1 / q <= py / q <= box[3] + 1 / q for px, py in pts): out.append(f'{layer}: a point outside {box}')
+            if layer == 'water' and pts[0] != pts[-1]: out.append('water: an outline not closed')
+    if d['order'] != [label for label, _ in F.TAGS] or {t[0] for t in d['tags']} != set(d['order']): out.append('tags: a label with no place, or a place with no label')
+    if not all(len(t) == 3 and type(t[1]) is int and type(t[2]) is int and F.VIEW[0] <= t[1] / q <= F.VIEW[2] and F.VIEW[1] <= t[2] / q <= F.VIEW[3] for t in d['tags']): out.append('tags: a malformed place, or one outside the view')
+    near = lambda lab, x, y: any(t[0] == lab and abs(t[1] / q - x) < 0.03 and abs(t[2] / q - y) < 0.03 for t in d['tags'])
+    if not (near('I-35', -97.7357, 30.2672) and near('MoPac', -97.7700, 30.2950)): out.append('tags: I-35 or MoPac not near downtown')
+    return out
+
+
+@test
+def street_data_is_whole_and_in_view():
+    """source/data/streets.json, the street map's data (Lane, Oct 19), as source/fetch_streets.py writes it and the page
+    reads it: compact, within its size cap, every layer there, every point inside the area the maps can show, every
+    lake outline closed, a place for every highway label and the labels in the script's order. The check is shown to
+    catch each kind of damage on a copy."""
+    import copy, fetch_streets as F
+    raw = (ROOT / 'source/data/streets.json').read_bytes()
+    d = json.loads(raw)
+    assert raw == (json.dumps(d, separators=(',', ':')) + '\n').encode('utf-8'), 'not as fetch_streets.py writes it (compact, one line)'
+    assert len(raw) <= F.MAX_BYTES, (len(raw), F.MAX_BYTES)
+    assert street_problems(d) == [], street_problems(d)
+    for damage in (lambda e: e['water'][0].extend([1, 1]),                 # an outline left open
+                   lambda e: e['art'][0].__setitem__(0, e['art'][0][0] - 20000),   # a street moved 2 degrees west
+                   lambda e: e['tags'].__setitem__(slice(None), [t for t in e['tags'] if t[0] != '71']),   # a highway with no label place
+                   lambda e: e['order'].reverse(),
+                   lambda e: e['fwy'].__setitem__(slice(10, None), []),
+                   lambda e: e['hwy'][0].append(5)):
+        e = copy.deepcopy(d); damage(e)
+        assert street_problems(e), 'the check missed a damaged copy'
 
 
 if __name__ == '__main__':

@@ -551,7 +551,7 @@ M = [
  ('W3b the share hand-off drops the picks', ROOT / 'picks/index.html', "new URL('../', location.href).href + location.hash);", "new URL('../', location.href).href);", ['a_share_link_has_its_own_card']),
  ('W3d a share link shows the generic card', ROOT / 'picks/index.html', 'content="https://ballotta.org/og-picks.png"', 'content="https://ballotta.org/og.png"', ['a_share_link_has_its_own_card']),
  ('W3e a share link titled as the site', ROOT / 'picks/index.html', '<title>My picks for Nov 3 · Ballotta</title>', '<title>Ballotta</title>', ['a_share_link_has_its_own_card']),
- ('W3f the offline copy does not keep picks/', ROOT / 'sw.js', "['./', 'next/', 'picks/'].map", "['./', 'next/'].map", ['a_share_link_opens_from_the_offline_copy']),
+ ('W3f the offline copy does not keep picks/', ROOT / 'sw.js', ", 'picks/'].map", "].map", ['a_share_link_opens_from_the_offline_copy']),   # with or without next/ (Oct 19)
  ('W3g the share page points unfurlers at the site', ROOT / 'picks/index.html', '<meta property="og:url" content="https://ballotta.org/picks/">', '<link rel="canonical" href="https://ballotta.org/">', ['a_share_link_has_its_own_card']),
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')

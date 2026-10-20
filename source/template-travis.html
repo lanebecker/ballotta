@@ -345,6 +345,18 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-map circle.late{fill:var(--gold)}
   .dk-map .top circle{fill:var(--plum)}
   .dk-map .top text{fill:#fff;font-weight:700}
+/*STREETS*/
+  .dk-map .st-wat{fill:#D8E4EA;stroke:none}
+  .dk-map .st-rd{fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dk-map .st-art{stroke:#E7DDD0;stroke-width:1.4}
+  .dk-map .st-hwc{stroke:#DED2C3;stroke-width:4}
+  .dk-map .st-hw{stroke:#fff;stroke-width:2.2}
+  .dk-map .st-fwc{stroke:#CDBFAE;stroke-width:6}
+  .dk-map .st-fw{stroke:#fff;stroke-width:3.6}
+  .dk-map .st-wat ~ text{font-weight:600;fill:var(--ink2);paint-order:stroke;stroke:var(--ground);stroke-width:3px;stroke-linejoin:round}
+  .dk-map .st-tag rect{fill:#fff;stroke:#CDBFAE;stroke-width:1}
+  .dk-map .st-tag text{font-weight:700;fill:var(--muted)}
+/*/STREETS*/
   /* crib sheet preview (same look as the printout) */
   .dk-page{background:#fff;border:1px solid var(--line2);box-shadow:0 2px 12px rgba(36,26,46,.12);padding:28px 32px}
   .dk-page.two{column-count:2;column-gap:24px}
@@ -598,6 +610,18 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   .dk-map circle.late{fill:var(--gold)}
   .dk-map .top circle{fill:var(--plum)}
   .dk-map .top text{fill:#fff;font-weight:700}
+/*STREETS*/
+  .dk-map .st-wat{fill:#D8E4EA;stroke:none}
+  .dk-map .st-rd{fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dk-map .st-art{stroke:#E7DDD0;stroke-width:1.4}
+  .dk-map .st-hwc{stroke:#DED2C3;stroke-width:4}
+  .dk-map .st-hw{stroke:#fff;stroke-width:2.2}
+  .dk-map .st-fwc{stroke:#CDBFAE;stroke-width:6}
+  .dk-map .st-fw{stroke:#fff;stroke-width:3.6}
+  .dk-map .st-wat ~ text{font-weight:600;fill:var(--ink2);paint-order:stroke;stroke:var(--ground);stroke-width:3px;stroke-linejoin:round}
+  .dk-map .st-tag rect{fill:#fff;stroke:#CDBFAE;stroke-width:1}
+  .dk-map .st-tag text{font-weight:700;fill:var(--muted)}
+/*/STREETS*/
   /* Crib sheet: the printout's look, then its options and the Print button */
   .dk-page{background:#fff;border:1px solid var(--line2);box-shadow:0 2px 12px rgba(36,26,46,.12);padding:18px 16px}
   .dk-page.two{column-count:2;column-gap:16px}
@@ -857,7 +881,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   <section class="card">
     <h3>About this test</h3>
     <p class="note">Ballotta is an early test for Travis County voters only. It isn't affiliated with Travis County, the League of Women Voters, or any campaign, and it doesn't tell you how to vote.</p>
-    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026 (corrected Oct 14). Candidate answers and the campaign websites we link: the <a href="https://austinvotersguide.org/LWVAA-VG-EN.pdf" target="_blank" rel="noopener">League of Women Voters of the Austin Area 2026 Voters Guide</a>, linked as published. Voting locations: Travis County Clerk; map positions from the U.S. Census geocoder, Travis County and © OpenStreetMap contributors. Contests marked "Double-check" aren't confirmed yet; one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet. Always compare with your official ballot using the county’s <a href="https://votetravis.gov/voter-lookup/" target="_blank" rel="noopener">Voter Lookup</a> (search by name and birth date).</p>
+    <p class="note">Districts: Travis County Tax Office voter registration data (public map server). State and federal districts: Texas Legislative Council, CC BY 4.0. Contests and candidates: Travis County's consolidated ballot for Nov 3, 2026 (corrected Oct 14). Candidate answers and the campaign websites we link: the <a href="https://austinvotersguide.org/LWVAA-VG-EN.pdf" target="_blank" rel="noopener">League of Women Voters of the Austin Area 2026 Voters Guide</a>, linked as published. Voting locations: Travis County Clerk; map positions from the U.S. Census geocoder, Travis County and © OpenStreetMap contributors.<!--STREETS--> Streets and water on the map: U.S. Census Bureau TIGER/Line, 2024.<!--/STREETS--> Contests marked "Double-check" aren't confirmed yet; one district on the county ballot (Travis County MUD No. 41) can't be placed on a map yet. Always compare with your official ballot using the county’s <a href="https://votetravis.gov/voter-lookup/" target="_blank" rel="noopener">Voter Lookup</a> (search by name and birth date).</p>
   </section>
   <footer class="card" aria-label="Feedback">
     <h3>Tell us what you think</h3>
@@ -2288,6 +2312,76 @@ const desk = (() => {
     if (here) all.sort((a, b) => a.d - b.d); else all.sort((a, b) => a.name.localeCompare(b.name));
     return all;
   }
+/*STREETS*/
+  // The street map (Lane, Oct 19): freeways, highways, major streets and water, from the U.S. Census Bureau's
+  // TIGER/Line files (public domain), built into the page by source/fetch_streets.py, so drawing it asks nothing of
+  // anyone. Its format is described at the top of that script.
+  const STREETS = __STREETS__;
+  let streetLines = null;
+  function streetsDecoded() {   // each line as points in degrees, with its bounding box, worked out once
+    if (streetLines) return streetLines;
+    const q = STREETS.q, dec = (a) => {
+      let x = a[0], y = a[1], w = x, e = x, s = y, n = y;
+      const p = [[x / q, y / q]];
+      for (let i = 2; i < a.length; i += 2) { x += a[i]; y += a[i + 1]; p.push([x / q, y / q]); if (x < w) w = x; if (x > e) e = x; if (y < s) s = y; if (y > n) n = y; }
+      return { p, b: [w / q, s / q, e / q, n / q] };
+    };
+    streetLines = {};
+    for (const k of ['water', 'art', 'hwy', 'fwy']) streetLines[k] = STREETS[k].map(dec);
+    return streetLines;
+  }
+  // Boxes, in map pixels ([left, top, right, bottom]), for keeping labels off each other and off the dots.
+  const overlaps = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+  function placeBox(name, x, y) {   // a town name's box, at the size the page's CSS gives it (13px on a phone, 11px wider)
+    const fs = matchMedia('(max-width: 1023.98px)').matches ? 13 : 11, w = name.length * fs * 0.62 + 4;
+    return [x - w / 2, y - fs * 0.85, x + w / 2, y + fs * 0.3];
+  }
+  function mapMarks(all, X, Y, W, H) {   // you, and every vote center (the five closest are bigger)
+    return [[W / 2 - 18, H / 2 - 18, W / 2 + 18, H / 2 + 18]].concat(all.map((st, i) => {
+      const r = i < 5 ? 13 : 8, x = X(st.pt[0]), y = Y(st.pt[1]);
+      return [x - r, y - r, x + r, y + r];
+    }));
+  }
+  // A town name a dot would cover moves just above or below it, or is left out (Lane, Oct 19).
+  function placeClear(p, all, X, Y, W, H, sy) {
+    const marks = mapMarks(all, X, Y, W, H), x = X(p[1]);
+    for (const dy of [0, -16, 16]) {
+      const y = Y(p[2]) + dy;
+      if (y >= 16 && y <= H - 8 && !marks.some(m => overlaps(placeBox(p[0], x, y), m))) return [p[0], p[1], p[2] - dy * sy / H];
+    }
+    return null;
+  }
+  function streetLayer(all, X, Y, W, H, sx, sy) {
+    const L = streetsDecoded(), w = here[0] - sx / 2, e = here[0] + sx / 2, s = here[1] - sy / 2, n = here[1] + sy / 2;
+    const d = (list) => list.filter(f => f.b[2] >= w && f.b[0] <= e && f.b[3] >= s && f.b[1] <= n)   // only lines that reach the view
+      .map(f => f.p.map((pt, i) => (i ? 'L' : 'M') + X(pt[0]).toFixed(1) + ' ' + Y(pt[1]).toFixed(1)).join('')).join('');
+    const fw = d(L.fwy), hw = d(L.hwy);
+    let out = '<path class="st-wat" d="' + d(L.water) + '"></path>' +                  // always drawn, even empty: the town names' halo follows it
+      '<path class="st-rd st-art" d="' + (sx <= 0.6 ? d(L.art) : '') + '"></path>' +  // a widened map shows highways only
+      '<path class="st-rd st-hwc" d="' + hw + '"></path><path class="st-rd st-hw" d="' + hw + '"></path>' +
+      '<path class="st-rd st-fwc" d="' + fw + '"></path><path class="st-rd st-fw" d="' + fw + '"></path>';
+    // One label per highway, in the data's order: its place nearest your address whose label touches nothing already
+    // on the map (you, the vote centers, the town names, the labels placed before it); none if no place in view does.
+    const fs = matchMedia('(max-width: 1023.98px)').matches ? 12 : 10, best = {};
+    const taken = mapMarks(all, X, Y, W, H).concat(PLACES.filter(p => X(p[1]) >= 48 && X(p[1]) <= W - 48 && Y(p[2]) >= 16 && Y(p[2]) <= H - 8)
+      .map(p => placeClear(p, all, X, Y, W, H, sy)).filter(Boolean).map(p => placeBox(p[0], X(p[1]), Y(p[2]))));
+    STREETS.tags.forEach(([name, tx, ty]) => {
+      const x = X(tx / STREETS.q), y = Y(ty / STREETS.q);
+      (best[name] = best[name] || []).push([Math.hypot(x - W / 2, y - H / 2), x, y]);
+    });
+    STREETS.order.filter(name => best[name]).forEach(name => {
+      const bw = name.length * fs * 0.64 + fs, bh = fs * 1.5, box = (x, y) => [x - bw / 2 - 2, y - bh / 2 - 2, x + bw / 2 + 2, y + bh / 2 + 2];
+      const inside = (x, y) => x - bw / 2 >= 4 && x + bw / 2 <= W - 4 && y - bh / 2 >= 4 && y + bh / 2 <= H - 4;   // the whole tag on the map
+      const c = best[name].sort((a, b) => a[0] - b[0]).find(([, x, y]) => inside(x, y) && !taken.some(t => overlaps(box(x, y), t)));
+      if (!c) return;
+      const [, x, y] = c;
+      taken.push(box(x, y));
+      out += '<g class="st-tag" aria-hidden="true"><rect x="' + (x - bw / 2).toFixed(1) + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="4"></rect>' +
+        '<text x="' + x.toFixed(1) + '" y="' + (y + fs * 0.36).toFixed(1) + '" style="font-size:' + fs + 'px">' + esc(name) + '</text></g>';
+    });
+    return out;
+  }
+/*/STREETS*/
   function dotMap(all) {
     if (!here) return '<p class="note">Look up your address to see the closest vote centers on a map.</p>';
     // Usually 0.12° wide; wider just enough that the five numbered centers all fit, for an outlying address (#76).
@@ -2299,7 +2393,10 @@ const desk = (() => {
     let g = '';
     for (let k = 50; k < W; k += 50) g += '<line x1="' + k + '" y1="0" x2="' + k + '" y2="' + H + '"></line>';
     for (let k = 50; k < H; k += 50) g += '<line x1="0" y1="' + k + '" x2="' + W + '" y2="' + k + '"></line>';
-    const labels = PLACES.filter(p => X(p[1]) >= 48 && X(p[1]) <= W - 48 && Y(p[2]) >= 16 && Y(p[2]) <= H - 8).map(p => '<text x="' + X(p[1]).toFixed(0) + '" y="' + Y(p[2]).toFixed(0) + '">' + esc(p[0]) + '</text>').join('');
+    /*STREETS*/
+    g = streetLayer(all, X, Y, W, H, sx, sy);   // streets and water in place of the grid
+    /*/STREETS*/
+    const labels = PLACES.filter(p => X(p[1]) >= 48 && X(p[1]) <= W - 48 && Y(p[2]) >= 16 && Y(p[2]) <= H - 8)/*STREETS*/.map(p => placeClear(p, all, X, Y, W, H, sy)).filter(Boolean)/*/STREETS*/.map(p => '<text x="' + X(p[1]).toFixed(0) + '" y="' + Y(p[2]).toFixed(0) + '">' + esc(p[0]) + '</text>').join('');
     const rest = all.slice(5).filter(s => inView(s.pt)).map(s => '<circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="6"' + (s.f.includes('L') ? ' class="late"' : '') + '><title>' + esc(s.name) + '</title></circle>').join('');
     const top = all.slice(0, 5).map((s, k) => [s, k]).filter(([s]) => inView(s.pt)).reverse().map(([s, k]) => '<g class="top"><circle cx="' + X(s.pt[0]).toFixed(1) + '" cy="' + Y(s.pt[1]).toFixed(1) + '" r="11"><title>' + esc(s.name) + '</title></circle><text x="' + X(s.pt[0]).toFixed(1) + '" y="' + (Y(s.pt[1]) + 4).toFixed(1) + '">' + (k + 1) + '</text></g>').join('');
     const you = '<g aria-hidden="true"><circle cx="' + W / 2 + '" cy="' + H / 2 + '" r="16" style="fill:#E9A92A;opacity:.3;stroke:none"></circle><rect x="' + (W / 2 - 6) + '" y="' + (H / 2 - 6) + '" width="12" height="12" rx="2" fill="#241A2E" transform="rotate(45 ' + W / 2 + ' ' + H / 2 + ')"></rect></g>';

@@ -3,7 +3,9 @@
     python3 source/build_site.py             # index.html: the live site
     python3 source/build_site.py --check     # CI: rebuilds in memory and compares with what is committed; writes nothing (#81)
     python3 source/build_site.py --site DIR  # the Pages workflow: after --check passes, copies only the site's files to DIR (#83)
-    python3 source/build_site.py --preview   # next/: the same page with the phone layout on (and its Home Screen files); counts nothing
+    python3 source/build_site.py --preview   # next/, while the phone layout isn't live: the page with it on; counts nothing
+                                             # (once it is, the main build writes next/: the street map's preview until
+                                             # STREETS_LIVE, then a page that sends people on)
 
 Rebuild rules first if the answer key or district data change:  python3 source/build_rules.py
 """
@@ -35,6 +37,14 @@ PHONE_LIVE = True
 # The offline copy (sw.js). False writes a sw.js that removes itself and its copies from every phone that has it, and
 # the page stops installing it: the switch to pull if offline copies ever cause trouble. Rebuild and push to apply.
 OFFLINE = True
+# The street map (Lane, Oct 19): freeways, highways, major streets and water under the vote-center dots, drawn on the
+# device from source/data/streets.json (written by source/fetch_streets.py from the U.S. Census Bureau's TIGER/Line
+# files, public domain), so drawing it asks nothing of anyone. Marked /*STREETS*/ ... /*/STREETS*/ and <!--STREETS-->
+# ... <!--/STREETS-->, like the two layouts were. Until Lane approves it at ballotta.org/next/, the main build removes
+# every marked block, so index.html stays as it was (the street data too), and next/ is a preview again: the main
+# page with the street map on, with its own Home Screen app and offline copy, counting nothing. Promotion: set
+# STREETS_LIVE = True; next/ then goes back to sending people on (docs/plans/2026-10-19-street-map.md, Task 9).
+STREETS_LIVE = False
 
 
 def marks(tag):
@@ -79,17 +89,21 @@ def strip_phone(html):
     return strip_marked(html, 'PHONE')
 
 
+def strip_streets(html):
+    return strip_marked(html, 'STREETS')
+
+
 # ---- Content-Security-Policy (#36). Only the page's own inline scripts (by hash) and files from this site run; data
 # goes only to the county map server and the counting service; frames only from this site (the Census sandbox).
 PAGE_CSP = ("default-src 'none'; script-src 'self' {hashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
             "connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'")
 
 
-def script_json(obj):
+def script_json(obj, compact=False):
     """obj as a JavaScript literal that can sit inside an inline <script> (#85): no "</" (ends the script), no "<!--"
     (changes how the script is parsed), no U+2028/U+2029 (line ends in older JavaScript). Every "<" is written \\u003c,
-    which reads back as the same text."""
-    return (json.dumps(obj, ensure_ascii=False).replace("<", "\\u003c")
+    which reads back as the same text. compact: no spaces after "," and ":" (the street map's data: a third smaller)."""
+    return (json.dumps(obj, ensure_ascii=False, separators=(",", ":") if compact else None).replace("<", "\\u003c")
             .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
 
 
@@ -134,7 +148,17 @@ def cache_prefix(preview):
 
 def sw_js(preview):
     keep = "['./']" if preview else "['./', 'next/', 'picks/']"   # picks/: where share links go, so the first one opens offline too (1.2.0, Pass 1)
-    return SW_JS.replace("'ballotta-1'", "'" + cache_prefix(preview) + "1'").replace("PREFIX", cache_prefix(preview)).replace("KEEP.map", keep + ".map")
+    js = SW_JS
+    if not preview and not STREETS_LIVE:   # next/ is the street map's preview (600 KB), not the hand-off page: no phone fetches it unasked,
+        keep = "['./', 'picks/']"           # and a hand-off page kept before is dropped, so it is never shown for the preview (Oct 19, Pass 2)
+        js = js.replace(STALE_NEXT[0], STALE_NEXT[1], 1)
+        assert STALE_NEXT[1] in js
+    return js.replace("'ballotta-1'", "'" + cache_prefix(preview) + "1'").replace("PREFIX", cache_prefix(preview)).replace("KEEP.map", keep + ".map")
+
+
+# While a preview is at next/, the main copy's install also deletes a kept next/ (the old hand-off page) before keeping the rest.
+STALE_NEXT = ("e.waitUntil(caches.open(CACHE).then((c) => Promise.all(",
+              "e.waitUntil(caches.open(CACHE).then((c) => c.delete(new URL('next/', location.href).href).catch(() => {}).then(() => c)).then((c) => Promise.all(")
 
 
 def sw_off_js(preview):
@@ -203,6 +227,8 @@ MOVED_JS = (
     "    Promise.race([sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href).href && g.update()),\n"
     "                  new Promise((ok) => setTimeout(ok, 1500))]).catch(() => {}).then(go);\n"
     "  } catch (e) { go(); } })();\n")
+# (While a preview is up again, the street map's since Oct 19, this refreshes the preview's own worker instead: a phone that
+# installed the old preview and hasn't opened Ballotta since fetches the preview once. Left as is: changing it changes the live page.)
 # The main page does the same for a phone that installed the preview but only ever opens ballotta.org/ now: it asks for
 # next/sw.js again, and the self-removing worker takes the preview's copy away. A failed fetch removes nothing.
 SW_NEXT = ("sw.getRegistration('next/').then((g) => g && g.scope === new URL('next/', location.href).href && g.update()).catch(() => {});")
@@ -247,7 +273,8 @@ def picks_page():
             '<script>' + PICKS_JS + '</script>\n</body></html>\n')
 
 
-# next/manifest.webmanifest is left as it is: once no page links it, nothing can install from it, and a Home Screen
+# next/manifest.webmanifest is left as it is (a preview, the street map's since Oct 19, links it again while it is up;
+# it installs as "Ballotta (preview)"): once no page links it, nothing can install from it, and a Home Screen
 # app installed from the preview opens next/, which sends it on. Rewriting its start_url or scope could merge the two
 # apps' identities on Android.
 
@@ -263,8 +290,11 @@ def outputs(preview):
            "version.json": json.dumps({"version": check_release.version(ROOT)}) + "\n",
            "picks/index.html": picks_page()}   # where Share my picks links go: their own card (Lane, Oct 18)
     if PHONE_LIVE:
-        out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False),
-                    "next/sw.js": sw_off_js(True), "next/index.html": moved_page()})
+        out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False)})
+        if STREETS_LIVE:   # nothing in preview: next/ sends people on, and its worker removes itself
+            out.update({"next/sw.js": sw_off_js(True), "next/index.html": moved_page()})
+        else:              # the street map's preview (Lane, Oct 19), with its own offline copy, as the layouts' was
+            out.update({"next/sw.js": sw_js(True) if OFFLINE else sw_off_js(True), "next/index.html": build(True)})
     else:   # a rollback after promotion: phones keep a worker until its sw.js says otherwise, so it removes itself (Pass 2)
         out["sw.js"] = sw_off_js(False)
     return out
@@ -297,9 +327,15 @@ def census_page():
             '<title>Census address lookup</title></head><body>\n<script>' + CENSUS_JS + '</script>\n</body></html>\n')
 
 
-def build(preview=False, desk=None, phone=None):
+def build(preview=False, desk=None, phone=None, streets=None):
     """desk: include the laptop layout (default: on for the preview, or once DESK_LIVE). phone: include the phone layout
-    (default: on for the preview, or once PHONE_LIVE). The laptop-parity test builds with and without it."""
+    (default: on for the preview, or once PHONE_LIVE). The laptop-parity test builds with and without it. streets: the
+    street map (default: on for the preview, or once STREETS_LIVE; never without the laptop layout, which draws it)."""
+    desk = desk if desk is not None else (preview or DESK_LIVE)
+    phone = phone if phone is not None else (preview or PHONE_LIVE)
+    streets = streets if streets is not None else bool((preview or STREETS_LIVE) and desk)
+    assert desk or not phone, "the phone layout is built on the laptop layout's code"
+    assert desk or not streets, "the street map is drawn by the laptop layout's code"
     key = json.load(open(HERE / "answer_key.json", encoding="utf-8"))
     rules = json.load(open(HERE / "rules.json"))
     tlc = json.load(open(HERE / "tlc_precincts.json"))
@@ -316,11 +352,10 @@ def build(preview=False, desk=None, phone=None):
     data = script_json({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites,
                         "version": check_release.version(ROOT)})   # a page left open compares it with version.json (#105)
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
-    desk = desk if desk is not None else (preview or DESK_LIVE)
-    phone = phone if phone is not None else (preview or PHONE_LIVE)
-    assert desk or not phone, "the phone layout is built on the laptop layout's code"
     if not desk:
         html = strip_desk(html)
+    if not streets:   # before the phone layout's if/else below, never between them
+        html = strip_streets(html)
     if not phone:
         html = strip_phone(html)
     else:
@@ -355,12 +390,20 @@ def build(preview=False, desk=None, phone=None):
             analytics = analytics.replace('src="umami.js"', 'src="../umami.js"').replace(f'data-domains="{UMAMI_DOMAINS}"', 'data-domains="preview.invalid"')
             assert 'preview.invalid' in analytics and '../umami.js' in analytics
         html = html.replace("<title>Ballotta ·", "<title>[Preview] Ballotta ·", 1)
+        # Search engines leave the preview out: the main page is the one to list (README, "noindex"; Oct 19).
+        html = html.replace('<meta name="referrer" content="no-referrer">', '<meta name="referrer" content="no-referrer">\n<meta name="robots" content="noindex">', 1)
+        assert html.count('<meta name="robots" content="noindex">') == 1
         for a, b in [("url('fonts/", "url('../fonts/"), ('href="favicon.svg"', 'href="../favicon.svg"'), ("f.src = 'census.html'", "f.src = '../census.html'"),
-                     ('href="apple-touch-icon.png"', 'href="../apple-touch-icon.png"')]:
+                     ('href="apple-touch-icon.png"', 'href="../apple-touch-icon.png"'),
+                     ("fetch('version.json?'", "fetch('../version.json?'")]:   # the one version.json, at the root (Oct 19)
             assert a in html, a
             html = html.replace(a, b)
     html = html.replace("<!--ANALYTICS-->", analytics)
-    # The data goes in last, so nothing in it can be mistaken for one of the placeholders above (#37).
+    # The street data, compact (spaces would add a third), then the rest of the data, last, so nothing in either can be
+    # mistaken for one of the placeholders above (#37). The street data is numbers and highway names only.
+    assert html.count("__STREETS__") == (1 if streets else 0), "__STREETS__ must appear once, inside a STREETS block"
+    if streets:
+        html = html.replace("__STREETS__", script_json(json.load(open(HERE / "data/streets.json", encoding="utf-8")), compact=True), 1)
     html = html.replace("__DATA__", data, 1)
     return html.replace("<!--CSP-->", csp_meta(html, phone), 1)  # last of all: it hashes the finished scripts (#36)
 
@@ -416,6 +459,10 @@ def check():
             build(desk=desk, phone=phone)
         except (AssertionError, SystemExit) as e:
             bad.append(f"the rollback build (laptop layout {'on' if desk else 'off'}, phone layout off) fails: {e}")
+    try:
+        build(streets=False)          # the street map's rollback (after promotion), which runs every STREETS marker check
+    except (AssertionError, SystemExit) as e:
+        bad.append(f"the street map's rollback build fails: {e}")
     bad += [f"{f} is published but missing" for f in site_files() if not (ROOT / f).is_file()]
     return bad
 
@@ -433,7 +480,7 @@ if __name__ == "__main__":
         sys.exit(1 if bad else print("build check: every output matches the build, and both rollback builds pass") or 0)
     preview = "--preview" in sys.argv[1:]
     if preview and PHONE_LIVE:
-        print("The phone layout is live: the main build writes next/ (a page that sends people on, and the self-removing next/sw.js).")
+        print("The phone layout is live: the main build writes next/ (the street map's preview until STREETS_LIVE, then a page that sends people on).")
         sys.exit(0)  # not an error, so `--preview && build_site.py` still builds the live page (Pass 2)
     refuse_while_mutating()
     if not preview and (bad := check_release.problems(ROOT, check_json=False)):  # VERSION and CHANGELOG.md first

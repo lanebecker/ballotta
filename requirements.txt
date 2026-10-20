@@ -5,3 +5,5 @@ pdfplumber==0.11.10      # source/ballot/pdf_lines.py: measure texts and the PDF
 pdfminer.six==20260107   # pdfplumber's PDF reader, pinned too: the answer key rebuilds byte for byte only with the same reading
 PyMuPDF==1.28.2          # source/parse_lwv.py (the League guide)
 pypdf==5.9.0             # tests/test_site.py: the crib sheet's printed PDF
+pyshp==3.1.6             # source/fetch_streets.py only: reads the Census TIGER/Line shapefiles for the street map
+shapely==2.2.0           # source/fetch_streets.py only: joins, cuts and simplifies their lines (same version, same bytes)

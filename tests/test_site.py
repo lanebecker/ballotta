@@ -21,6 +21,7 @@ TODAY = _dt.datetime.fromisoformat(os.environ['BALLOTTA_TODAY']) if os.environ.g
 BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
+HAS_STREETS = '.dk-map .st-wat{' in (ROOT / PAGE).read_text(encoding='utf-8')   # the street map (next/ until STREETS_LIVE)
 if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(encoding='utf-8'):   # promotion audit #5
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
@@ -247,6 +248,8 @@ DESK_TESTS = set()
 def desk_test(fn): TESTS.append(fn); DESK_TESTS.add(fn.__name__); return fn
 PHONE_TESTS = set()                                            # run only where the page has the phone layout (the preview)
 def phone_test(fn): TESTS.append(fn); PHONE_TESTS.add(fn.__name__); return fn
+STREETS_TESTS = set()                                          # run only where the page has the street map (Lane, Oct 19)
+def streets_test(fn): TESTS.append(fn); STREETS_TESTS.add(fn.__name__); return fn
 
 def build_module():
     spec = importlib.util.spec_from_file_location('build_site', ROOT / 'source' / 'build_site.py')
@@ -1533,7 +1536,8 @@ def desk_phone_layout_matches_live_page(b):
     # promotion, when index.html itself carries the laptop layout (audit #28).
     m = build_module(); shots = []
     for name, desk in (('_parity_plain.html', False), ('_parity_desk.html', True)):              # served from memory: nothing is written (Pass 1)
-        html = m.build(desk=desk, phone=False)                                                  # the old phone page, as a rollback would bring it back
+        html = m.build(desk=desk, phone=False, streets=False)                                   # the old phone page, as a rollback would bring it back
+                                                                                                # (the street map, Oct 19, has its own credit: off in both)
         ctx, pg = new_page(b); ctx.route(f'**/{name}', (lambda h: lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=h))(html))
         pg.goto(f'http://127.0.0.1:{PORT}/{name}'); pg.wait_for_timeout(600)
         assert pg.evaluate('!!document.getElementById("dk-app")') == desk, (name, 'built the wrong flavour')
@@ -2858,6 +2862,8 @@ def a_share_link_opens_from_the_offline_copy(b):
     # 1.2.0, Pass 1: share links go to picks/, which the offline copy kept only once a share link had been opened online.
     # A phone with the copy, in line with no signal, opening its first share link got the browser's own error, where a
     # 1.1.7 link (to the page itself) opened from the copy. The copy now keeps picks/ from the start, as it does the page.
+    if PAGE.startswith('next/'):                                         # a share link goes to the main site's picks/, which only
+        return print('  (not on the preview: share links open on the main site)')   # the main page's offline copy keeps (Oct 19)
     Flip.swap, Flip.gone, Flip.fail, Flip.slow, Flip.gzip = {}, set(), {}, {}, False; srv, url = own_server()
     site = url.rsplit('/', 1)[0]
     ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
@@ -3220,8 +3226,8 @@ def phone_offline_kill_switch_and_promotion(b):
     folder = PAGE.rsplit('/', 1)[0] + '/' if '/' in PAGE else ''; mine = 'ballotta-next-1' if pv else 'ballotta-1'
     on, off = m.sw_js(True), m.sw_off_js(True)
     assert "'ballotta-next-1'" in on and "'ballotta-1'" in m.sw_js(False) and "startsWith('ballotta-next-')" in off and "startsWith('ballotta-')" in m.sw_off_js(False)
-    m.PHONE_LIVE = True; out = m.outputs(False); m.PHONE_LIVE = False
-    assert out['next/sw.js'] == m.sw_off_js(True) and out['sw.js'] == m.sw_js(False) and out['next/index.html'] == m.moved_page(), sorted(out)
+    was = m.STREETS_LIVE; m.PHONE_LIVE = m.STREETS_LIVE = True; out = m.outputs(False); main_sw = m.sw_js(False); m.PHONE_LIVE, m.STREETS_LIVE = False, was   # nothing in preview (Oct 19)
+    assert out['next/sw.js'] == m.sw_off_js(True) and out['sw.js'] == main_sw and out['next/index.html'] == m.moved_page(), sorted(out)
     Flip.swap = {}; srv, url = own_server()
     ctx, pg = phone_page(b, sw=True)
     try:
@@ -3273,9 +3279,9 @@ def promotion_hands_the_preview_on(b):
     # nothing (Pass 3).
     m = build_module()
     pre = m.outputs(True)
-    m.PHONE_LIVE = True
+    was = m.STREETS_LIVE; m.PHONE_LIVE = m.STREETS_LIVE = True                              # nothing else in preview at next/ (Oct 19)
     try: post = m.outputs(False)
-    finally: m.PHONE_LIVE = False
+    finally: m.PHONE_LIVE, m.STREETS_LIVE = False, was
     assert post['next/index.html'] == m.moved_page() and post['next/sw.js'] == m.sw_off_js(True), sorted(post)
     assert post['index.html'].count(m.SW_NEXT) == 1 and 'id="ph-bar"' in post['index.html'], 'the promoted page clears the preview'
     live_now = m.PHONE_LIVE; m.PHONE_LIVE = False
@@ -3510,7 +3516,8 @@ def offline_copy_one_copy_for_the_page(b):
     ctx, pg = phone_page(b, sw=True)
     try:
         pg.goto(base + 'index.html'); poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); pg.wait_for_timeout(500)
-        keys = pg.evaluate("caches.open('ballotta-1').then(c => c.keys()).then(ks => ks.map(r => r.url))")
+        mine = 'ballotta-next-1' if PAGE.startswith('next/') else 'ballotta-1'                 # the preview keeps its own (Oct 19)
+        keys = pg.evaluate(f"caches.open('{mine}').then(c => c.keys()).then(ks => ks.map(r => r.url))")
         assert base in keys and base + 'index.html' not in keys, keys
         srv.shutdown(); srv.server_close(); up = False
         for at in (base, base + 'index.html'):
@@ -3582,6 +3589,101 @@ def the_map_shows_all_five_closest_centers(b):
         if not wide:
             assert pg.evaluate("[...document.querySelectorAll('#dk-map > circle')].length") <= 15, 'downtown: the usual close-in map, not one widened to most of the county'
         ctx.close()
+
+
+# ---------------------------------------------------------------- the street map (Lane, Oct 19; next/ until STREETS_LIVE)
+STREET_SPOTS = {'south': [-97.7745, 30.2235], 'downtown': [-97.7431, 30.2747], 'mueller': [-97.7050, 30.2980],
+                'domain': [-97.7195, 30.3885], 'oakhill': [-97.84, 30.235], 'far': [-98.17, 30.62]}
+# Mueller: the town name sits on you; Oak Hill: highway labels compete for one corner; far: a widened map
+MAP_PROBLEMS = """(() => {
+  const m = document.getElementById('dk-map'), W = 560, H = 520, bb = e => { const r = e.getBBox(); return [r.x, r.y, r.x + r.width, r.y + r.height]; };
+  const hit = (a, b) => a[0] < b[2] - 0.5 && b[0] < a[2] - 0.5 && a[1] < b[3] - 0.5 && b[1] < a[3] - 0.5, out = [];
+  const tags = [...m.querySelectorAll('.st-tag')].map(g => ({ n: g.textContent, r: bb(g.querySelector('rect')), t: bb(g.querySelector('text')) }));
+  const dots = [...m.querySelectorAll(':scope > circle, .top circle')].map(bb), you = bb(m.querySelector(':scope > g:not(.top):not(.st-tag) rect'));
+  const names = [...m.querySelectorAll(':scope > text')].map(e => ({ n: e.textContent, b: bb(e) }));
+  tags.forEach((g, i) => {
+    if (!(g.t[0] >= g.r[0] - 0.5 && g.t[2] <= g.r[2] + 0.5 && g.t[1] >= g.r[1] - 1.5 && g.t[3] <= g.r[3] + 1.5)) out.push('label sticks out of its tag: ' + g.n);
+    if (!(g.r[0] >= 0 && g.r[2] <= W && g.r[1] >= 0 && g.r[3] <= H)) out.push('tag off the edge of the map: ' + g.n);
+    if (hit(g.r, you)) out.push('tag on you: ' + g.n);
+    dots.forEach(d => { if (hit(g.r, d)) out.push('tag on a vote center: ' + g.n); });
+    names.forEach(t => { if (hit(g.r, t.b)) out.push('tag on a town name: ' + g.n + ' / ' + t.n); });
+    tags.slice(i + 1).forEach(h => { if (hit(g.r, h.r)) out.push('two tags overlap: ' + g.n + ' / ' + h.n); });
+  });
+  names.forEach(t => { if (hit(t.b, you)) out.push('town name on you: ' + t.n); dots.forEach(d => { if (hit(t.b, d)) out.push('town name under a vote center: ' + t.n); }); });
+  m.querySelectorAll('.st-wat, .st-rd').forEach(p => (p.getAttribute('d') || '').split('M').filter(Boolean).forEach(sub => {
+    const n = sub.split(/[ L]/).map(Number), xs = n.filter((_, i) => i % 2 === 0), ys = n.filter((_, i) => i % 2 === 1);
+    if (Math.max(...xs) < 0 || Math.min(...xs) > W || Math.max(...ys) < 0 || Math.min(...ys) > H) out.push('a line drawn wholly outside the map: ' + p.getAttribute('class'));
+  }));
+  return [...new Set(out)];
+})()"""
+
+@test
+def street_map_waits_for_promotion(b):
+    # Lane, Oct 19: the street map is built into the preview (next/) only, until STREETS_LIVE: the main page carries none
+    # of its code or data. The preview has the data compact and the credit; promotion puts it on the main page and sends
+    # next/ on again; with streets off the page is exactly the main page; the street map needs the laptop layout.
+    m = build_module(); was = m.STREETS_LIVE; m.PHONE_LIVE = True                           # as promoted (a phone rollback has no next/ to check)
+    live, prev = m.build(), m.build(preview=True)
+    data = json.loads((ROOT / 'source/data/streets.json').read_text(encoding='utf-8'))
+    assert m.strip_streets('a\n/*STREETS*/\nb\n/*/STREETS*/\nc;/*STREETS*/ d;/*/STREETS*/\n') == 'a\nc;\n'
+    for bad in ('/*STREETS*/ x', 'a\n/*STREETS*/\nb\n/*/STREETS*/ }\n', 'x /*STREETS*/ y\n/*/STREETS*/\n'):
+        try: m.strip_streets(bad); refused = False
+        except AssertionError: refused = True
+        assert refused, f'malformed STREETS markers must stop the build: {bad!r}'
+    assert '.dk-map .st-wat{' in prev and 'const STREETS = ' + json.dumps(data, separators=(',', ':')) + ';' in prev, 'the preview carries the street data, compact'
+    assert 'Streets and water on the map: U.S. Census Bureau TIGER/Line, 2024.' in prev, 'the credit'
+    assert prev.count('<meta name="robots" content="noindex">') == 1 and 'noindex' not in live, 'search engines list the main page, never the preview'
+    assert "fetch('../version.json?'" in prev and "fetch('version.json?'" in live, 'a preview left open asks the one version.json, at the root'
+    assert m.build(streets=False) == (live if not was else m.build(streets=False)) and '.dk-map .st-wat{' not in m.build(streets=False) and '"fwy":' not in m.build(streets=False)
+    if not was:
+        assert '.dk-map .st-wat{' not in live and 'TIGER/Line' not in live and '"fwy":' not in live, 'the street map leaked into the main page'
+        out = m.outputs(False)
+        assert out['next/index.html'] == prev and out['next/sw.js'] == (m.sw_js(True) if m.OFFLINE else m.sw_off_js(True)), 'next/ is the preview, with its own offline copy'
+        if m.OFFLINE:
+            assert "['./', 'picks/'].map" in out['sw.js'], "the main page's offline copy fetches the 600 KB preview at install"
+            assert "c.delete(new URL('next/', location.href).href)" in out['sw.js'], 'a hand-off page kept before would be shown for the preview'
+    assert "['./'].map" in m.sw_js(True) and 'c.delete(' not in m.sw_js(True), "the preview's own copy keeps only its page"
+    m.STREETS_LIVE = True
+    try: post = m.outputs(False); rolled = m.build(desk=True, phone=False)        # promoted, then a phone-layout rollback: it builds, street map and all
+    finally: m.STREETS_LIVE = was
+    assert '.dk-map .st-wat{' in rolled and 'id="ph-bar"' not in rolled, 'a phone-layout rollback after promotion'
+    assert '.dk-map .st-wat{' in post['index.html'] and post['next/index.html'] == m.moved_page() and post['next/sw.js'] == m.sw_off_js(True), 'promoted: on the main page, and next/ sends people on'
+    if m.OFFLINE:
+        assert "['./', 'next/', 'picks/'].map" in post['sw.js'] and 'c.delete(' not in post['sw.js'], 'promoted: the offline copy keeps the hand-off page again, for Home Screen apps from a preview'
+    try: m.build(desk=False, phone=False, streets=True); refused = False                   # phone off: its own refusal names the laptop layout too
+    except AssertionError as e: refused = 'street map' in str(e) and 'laptop layout' in str(e)
+    assert refused, 'the street map without the laptop layout that draws it: refused, saying why'
+
+@streets_test
+def street_map_draws_streets_and_asks_nobody(b):
+    # Lane, Oct 19: streets, highways and water under the dots, from data in the page: drawing the map asks nothing of
+    # anyone. Labels (highway tags, town names) keep off you, the vote centers and each other; a town name a dot would
+    # cover moves above or below it; a widened map shows highways only; only lines that reach the view are drawn.
+    for spot, pt in STREET_SPOTS.items():
+        for period in ('early', 'eday'):
+            ctx, pg = new_page(b, wide=True); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+            pg.goto(BASE); saved_ballot(pg, [1, 70], pt=pt); pg.wait_for_selector('body.dk-app-on')
+            asked = []; pg.on('request', lambda r: asked.append(r.url))
+            pg.evaluate("desk.ph.setView('vote')"); pg.click(f'[data-period="{period}"]'); pg.wait_for_selector('#dk-map')
+            assert asked == [], (spot, 'drawing the map asked for', asked)
+            m = pg.evaluate("""(() => { const m = document.getElementById('dk-map'), d = c => m.querySelector(c).getAttribute('d');
+              return {grid: m.querySelectorAll(':scope > line').length, wat: d('.st-wat'), art: d('.st-art'), fw: d('.st-fw'), hw: d('.st-hw'),
+                      tags: [...m.querySelectorAll('.st-tag text')].map(t => t.textContent), size: [...m.querySelectorAll('.st-tag text')].map(t => getComputedStyle(t).fontSize),
+                      halo: [...m.querySelectorAll(':scope > text')].map(t => getComputedStyle(t).paintOrder)}; })()""")
+            assert m['grid'] == 0 and (m['fw'] or m['hw']), (spot, period, 'streets in place of the grid', m['tags'])
+            assert bool(m['art']) == (spot != 'far' or period == 'eday'), (spot, period, 'major streets close in; highways only on a widened map (far out, early voting: 45 centers)')
+            assert m['tags'] and set(m['size']) == {'10px'} and all(h.startswith('stroke') for h in m['halo']), (spot, period, m['tags'], m['size'], m['halo'])
+            if spot in ('south', 'downtown'): assert 'I-35' in m['tags'] and 'MoPac' in m['tags'] and m['wat'], (spot, period, m['tags'])
+            problems = pg.evaluate(MAP_PROBLEMS)
+            assert problems == [], (spot, period, problems)
+            assert errs == [], errs
+            ctx.close()
+    ctx, pg = phone_page(b); pg.goto(BASE); saved_ballot(pg, [1, 70], pt=STREET_SPOTS['south']); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("desk.ph.setView('vote')"); pg.click('.ph-mapfold summary'); expect(pg.locator('#dk-map')).to_be_visible()
+    assert set(pg.evaluate("[...document.querySelectorAll('#dk-map .st-tag text')].map(t => getComputedStyle(t).fontSize)")) == {'12px'}, 'phone: bigger tags, as its town names are'
+    problems = pg.evaluate(MAP_PROBLEMS)
+    assert problems == [] and sideways(pg) <= 0 and pg.errs == [], (problems, pg.errs)
+    ctx.close()
 
 @phone_test
 def laptops_stay_laptops_after_a_narrow_start(b):
@@ -4633,6 +4735,8 @@ def main():
                 skipped += 1; print('SKIP', fn.__name__, '- no laptop layout in', PAGE); continue
             if fn.__name__ in PHONE_TESTS and not HAS_PHONE:
                 skipped += 1; print('SKIP', fn.__name__, '- no phone layout in', PAGE); continue
+            if fn.__name__ in STREETS_TESTS and not HAS_STREETS:
+                skipped += 1; print('SKIP', fn.__name__, '- no street map in', PAGE, '(it is in next/index.html until STREETS_LIVE)'); continue
             try:
                 fn(b); print('PASS', fn.__name__)
             except Exception as e:

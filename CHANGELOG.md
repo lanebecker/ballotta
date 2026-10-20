@@ -16,6 +16,33 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.2.1] — 2026-10-19
+
+### Added
+- **A street map, in preview at ballotta.org/next/** (Lane, Oct 19). Where to vote's map draws freeways, highways,
+  major streets, the lakes and the river under the vote-center dots, with small labels on the main highways and roads (I-35,
+  MoPac, 183…), in place of the graph-paper grid. It is drawn on your device from street data built into the page
+  (U.S. Census Bureau TIGER/Line, 2024, public domain, simplified by `source/fetch_streets.py`), so no map company is
+  asked anything and it works offline: the caption's promise stands as written. A town name a vote center would cover
+  moves just above or below it. Only the preview has it until Lane approves it there (`STREETS_LIVE = False`):
+  ballotta.org itself is unchanged.
+
+### Changed
+- **ballotta.org/next/ is a preview again**, of the street map: the main page with it on, its own offline copy, a
+  "[Preview]" title, nothing counted, and a `noindex` so search engines list only ballotta.org. A Home Screen app added
+  from the Oct 15–17 preview opens it again instead of being sent on; after promotion it is sent on again. While
+  `next/` is a preview, the main page's offline copy no longer fetches it at install (a 600 KB page most phones would
+  never open), and a phone that kept the old hand-off page drops it, so the preview is never shown as the old page
+  (a Home Screen app from the old preview then opens `next/` offline only after one online visit; a phone that
+  installed the old preview and hasn't opened Ballotta since fetches the preview once when it next opens ballotta.org,
+  since the main page's request to update `next/sw.js` now reaches the preview's own copy); promotion puts all that back. Mutant W3f re-anchored to hold either way.
+
+### Tests
+- `street_map_waits_for_promotion` and `street_map_draws_streets_and_asks_nobody` (the second runs where the page has
+  the street map: `BALLOTTA_PAGE=next/index.html` until promotion), and `street_data_is_whole_and_in_view` in the
+  pipeline tests; `tests/mutate_streets.py`, 28 mutants. The two promotion tests set `STREETS_LIVE` as well as
+  `PHONE_LIVE`, since next/ sends people on only once nothing is in preview.
+
 ## [1.2.0] — 2026-10-18
 
 ### Added

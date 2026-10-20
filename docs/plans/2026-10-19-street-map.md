@@ -207,6 +207,19 @@ A third narrow pass over that last rework (the audit's stopping rule: the second
     street-map test); and a Home Screen app from the Oct 15–17 preview whose worker already removed itself opens
     `next/` offline only after one online visit.
 
+The plan's own Task 6 review (remediation-audit Pass 1 on the whole release, Oct 19 afternoon, in the real repo after
+every test was green: 169/169 + 1 skip, 170/170, 28 of 28) found nothing blocking; ballotta.org changes by its version
+string and the `sw.js` keep list only. What it found:
+
+22. The main page's request that `next/sw.js` update itself (unchanged, so the live page stays byte-for-byte) now
+    reaches the preview's real offline copy: a phone that installed the Oct 15–17 preview and hasn't opened Ballotta
+    since fetches the preview once, in the background. Reproduced. Accepted (few phones, once; the fix would change the
+    live page during early voting); the comment, README and CHANGELOG now say so.
+23. A Home Screen app from the Oct 15–17 preview, opened offline after 1.2.1, gets the browser's error until one
+    online visit (item 21): reproduced; now in the CHANGELOG and README.
+24. The README's phone-layout paragraph still described `next/` as always the hand-off page; a sentence now points to
+    the street map's paragraph. The CHANGELOG's labels are "on the main highways and roads" (Lamar, Congress).
+
 ## Base and preflight
 
 The plan was generated against `22ff484` (v1.2.0). If `main` has moved on (Wave 2 fixes, say), every edit's "Find"
@@ -993,7 +1006,8 @@ Replace it with:
 
 ````python
     "  } catch (e) { go(); } })();\n")
-# (While a preview is up again, the street map's since Oct 19, this only asks the preview's own worker to update: harmless.)
+# (While a preview is up again, the street map's since Oct 19, this refreshes the preview's own worker instead: a phone that
+# installed the old preview and hasn't opened Ballotta since fetches the preview once. Left as is: changing it changes the live page.)
 # The main page does the same for a phone that installed the preview but only ever opens ballotta.org/ now: it asks for
 ````
 
@@ -1381,7 +1395,7 @@ CHANGELOG claims. Pass 2 on any rework.
 
 ## Task 7: the release notes
 
-**Files:** `CHANGELOG.md`, `VERSION`, `README.md`. Use the day's date (`date +%F`) in place of `2026-10-21` below.
+**Files:** `CHANGELOG.md`, `VERSION`, `README.md`. (Done Oct 19 with that day's date, as below.)
 
 **Edit CL1** (`CHANGELOG.md`). Find, exactly once:
 
@@ -1395,11 +1409,11 @@ Replace it with:
 ````markdown
 _Nothing yet._
 
-## [1.2.1] — 2026-10-21
+## [1.2.1] — 2026-10-19
 
 ### Added
 - **A street map, in preview at ballotta.org/next/** (Lane, Oct 19). Where to vote's map draws freeways, highways,
-  major streets, the lakes and the river under the vote-center dots, with small labels on the main highways (I-35,
+  major streets, the lakes and the river under the vote-center dots, with small labels on the main highways and roads (I-35,
   MoPac, 183…), in place of the graph-paper grid. It is drawn on your device from street data built into the page
   (U.S. Census Bureau TIGER/Line, 2024, public domain, simplified by `source/fetch_streets.py`), so no map company is
   asked anything and it works offline: the caption's promise stands as written. A town name a vote center would cover
@@ -1411,8 +1425,10 @@ _Nothing yet._
   "[Preview]" title, nothing counted, and a `noindex` so search engines list only ballotta.org. A Home Screen app added
   from the Oct 15–17 preview opens it again instead of being sent on; after promotion it is sent on again. While
   `next/` is a preview, the main page's offline copy no longer fetches it at install (a 600 KB page most phones would
-  never open), and a phone that kept the old hand-off page drops it, so the preview is never shown as the old page;
-  promotion puts all that back. Mutant W3f re-anchored to hold either way.
+  never open), and a phone that kept the old hand-off page drops it, so the preview is never shown as the old page
+  (a Home Screen app from the old preview then opens `next/` offline only after one online visit; a phone that
+  installed the old preview and hasn't opened Ballotta since fetches the preview once when it next opens ballotta.org,
+  since the main page's request to update `next/sw.js` now reaches the preview's own copy); promotion puts all that back. Mutant W3f re-anchored to hold either way.
 
 ### Tests
 - `street_map_waits_for_promotion` and `street_map_draws_streets_and_asks_nobody` (the second runs where the page has
@@ -1429,18 +1445,20 @@ Set `VERSION` to `1.2.1` (the whole file is that line).
 
 ````markdown
 
-### Anonymous counts
+The phone layout is marked in `source/template-travis.html` (`/*PHONE*/ … /*/PHONE*/`, `<!--PHONE--> … <!--/PHONE-->`); `PHONE_LIVE = True` in `source/build_site.py` keeps it in `index.html` (setting it back to False is the rollback: the old phone page returns; release it with a `VERSION` bump like any change, as `docs/RUNBOOK.md` says, and note that the old page has no newer-release check, so pages on it learn of the next release only when reloaded). Since promotion (Oct 17) the main build also writes `next/index.html`, a page that asks the browser to fetch `next/sw.js` again (the self-removing worker) and then sends people on to the main page with any #link, and the main page asks for `next/sw.js` too, so a phone that installed the preview loses its copy even if it never opens `next/` again; a failed fetch removes nothing. Setting `PHONE_LIVE` back to False (a rollback) writes `sw.js` as the self-removing worker, so phones drop the copy they kept since promotion; `manifest.webmanifest` stays on disk, unlinked. The offline copy keeps the page (and `next/`) from its first install (its fonts and icons from the next visit), so a Home Screen app from the preview opens with no connection. `--preview` no longer builds anything; the tests run against `index.html` only (a test checks every file the build writes against the one on disk, and pins the live page's fingerprint). A second test builds the page with and without the phone code and checks that laptops see exactly the same pixels. **Offline kill switch:** set `OFFLINE = False` in `source/build_site.py`, rebuild and push it as a release (a `VERSION` bump): the page then asks the browser to fetch `sw.js` again instead of installing it, and the new `sw.js` takes the page over, deletes Ballotta's copies (no others) and removes itself (a test runs this end to end). On promotion the build keeps writing `next/sw.js` as that self-removing version, so phones that installed the preview drop its copy. Two laptop details changed on purpose: crib-sheet print options now survive a window narrowed below 1024px and widened again (a phone shows them too), and a friend's picks are counted (`share_compare`) when they first show beside a ballot at any width, so after promotion phone counts mean that rather than a Compare tap.
+
 ````
 
 Replace it with:
 
 ````markdown
 
+The phone layout is marked in `source/template-travis.html` (`/*PHONE*/ … /*/PHONE*/`, `<!--PHONE--> … <!--/PHONE-->`); `PHONE_LIVE = True` in `source/build_site.py` keeps it in `index.html` (setting it back to False is the rollback: the old phone page returns; release it with a `VERSION` bump like any change, as `docs/RUNBOOK.md` says, and note that the old page has no newer-release check, so pages on it learn of the next release only when reloaded). Since promotion (Oct 17) the main build also writes `next/index.html`, a page that asks the browser to fetch `next/sw.js` again (the self-removing worker) and then sends people on to the main page with any #link, and the main page asks for `next/sw.js` too, so a phone that installed the preview loses its copy even if it never opens `next/` again; a failed fetch removes nothing. Setting `PHONE_LIVE` back to False (a rollback) writes `sw.js` as the self-removing worker, so phones drop the copy they kept since promotion; `manifest.webmanifest` stays on disk, unlinked. The offline copy keeps the page (and `next/`) from its first install (its fonts and icons from the next visit), so a Home Screen app from the preview opens with no connection. (While a preview is up at `next/`, the street map's since 1.2.1, the hand-off page, the self-removing `next/sw.js` and the offline copy's `next/` are set aside: see **Street map**.) `--preview` no longer builds anything; the tests run against `index.html` (a test checks every file the build writes against the one on disk, and pins the live page's fingerprint), and against `next/index.html` while a preview is up there. A second test builds the page with and without the phone code and checks that laptops see exactly the same pixels. **Offline kill switch:** set `OFFLINE = False` in `source/build_site.py`, rebuild and push it as a release (a `VERSION` bump): the page then asks the browser to fetch `sw.js` again instead of installing it, and the new `sw.js` takes the page over, deletes Ballotta's copies (no others) and removes itself (a test runs this end to end). On promotion the build keeps writing `next/sw.js` as that self-removing version, so phones that installed the preview drop its copy. Two laptop details changed on purpose: crib-sheet print options now survive a window narrowed below 1024px and widened again (a phone shows them too), and a friend's picks are counted (`share_compare`) when they first show beside a ballot at any width, so after promotion phone counts mean that rather than a Compare tap.
+
 ### Street map (in preview at ballotta.org/next/ since 1.2.1)
 
-Where to vote's map draws freeways, highways, major streets (186 names; an east and a west half count as two), the lakes and the river under the vote-center dots, with small labels on the main highways, instead of a grid. The data is the U.S. Census Bureau's TIGER/Line 2024 shapefiles (public domain), simplified by `source/fetch_streets.py` into `source/data/streets.json` (about 160 KB; its format is described at the top of the script), which the build puts into the page, so drawing the map asks nothing of anyone and works offline. The code is marked in `source/template-travis.html` (`/*STREETS*/ … /*/STREETS*/`, `<!--STREETS--> … <!--/STREETS-->`), and `STREETS_LIVE = False` in `source/build_site.py` leaves it out of `index.html` (with the data) while the main build writes `next/` as the preview: the main page with the street map on, its own offline copy, counting nothing, `noindex`. Promotion: set `STREETS_LIVE = True` and release it; `next/` then sends people on again (`docs/plans/2026-10-19-street-map.md`, Task 9). While `next/` is a preview, the main page's offline copy doesn't fetch it at install (a 600 KB page most phones would never open). The plan's Task 10 is the rollback.
+Where to vote's map draws freeways, highways, major streets (186 names; an east and a west half count as two), the lakes and the river under the vote-center dots, with small labels on the main highways, instead of a grid. The data is the U.S. Census Bureau's TIGER/Line 2024 shapefiles (public domain), simplified by `source/fetch_streets.py` into `source/data/streets.json` (about 160 KB; its format is described at the top of the script), which the build puts into the page, so drawing the map asks nothing of anyone and works offline. The code is marked in `source/template-travis.html` (`/*STREETS*/ … /*/STREETS*/`, `<!--STREETS--> … <!--/STREETS-->`), and `STREETS_LIVE = False` in `source/build_site.py` leaves it out of `index.html` (with the data) while the main build writes `next/` as the preview: the main page with the street map on, its own offline copy, counting nothing, `noindex`. Promotion: set `STREETS_LIVE = True` and release it; `next/` then sends people on again (`docs/plans/2026-10-19-street-map.md`, Task 9). While `next/` is a preview, the main page's offline copy doesn't fetch it at install (a 600 KB page most phones would never open) and drops the hand-off page it kept, so a Home Screen app from the Oct 15–17 preview opens `next/` offline only after one online visit; and the main page's request that `next/sw.js` update itself now refreshes the preview's own copy rather than removing it, so a phone that installed the old preview and hasn't opened Ballotta since fetches the preview once, in the background (left as is: changing it would change the live page). The plan's Task 10 is the rollback.
 
-### Anonymous counts
 ````
 
 **Edit RM2** (`README.md`). Find, exactly once:
@@ -1619,7 +1637,7 @@ Set `VERSION` to `1.3.0`.
 
 ### Street map (in preview at ballotta.org/next/ since 1.2.1)
 
-Where to vote's map draws freeways, highways, major streets (186 names; an east and a west half count as two), the lakes and the river under the vote-center dots, with small labels on the main highways, instead of a grid. The data is the U.S. Census Bureau's TIGER/Line 2024 shapefiles (public domain), simplified by `source/fetch_streets.py` into `source/data/streets.json` (about 160 KB; its format is described at the top of the script), which the build puts into the page, so drawing the map asks nothing of anyone and works offline. The code is marked in `source/template-travis.html` (`/*STREETS*/ … /*/STREETS*/`, `<!--STREETS--> … <!--/STREETS-->`), and `STREETS_LIVE = False` in `source/build_site.py` leaves it out of `index.html` (with the data) while the main build writes `next/` as the preview: the main page with the street map on, its own offline copy, counting nothing, `noindex`. Promotion: set `STREETS_LIVE = True` and release it; `next/` then sends people on again (`docs/plans/2026-10-19-street-map.md`, Task 9). While `next/` is a preview, the main page's offline copy doesn't fetch it at install (a 600 KB page most phones would never open). The plan's Task 10 is the rollback.
+Where to vote's map draws freeways, highways, major streets (186 names; an east and a west half count as two), the lakes and the river under the vote-center dots, with small labels on the main highways, instead of a grid. The data is the U.S. Census Bureau's TIGER/Line 2024 shapefiles (public domain), simplified by `source/fetch_streets.py` into `source/data/streets.json` (about 160 KB; its format is described at the top of the script), which the build puts into the page, so drawing the map asks nothing of anyone and works offline. The code is marked in `source/template-travis.html` (`/*STREETS*/ … /*/STREETS*/`, `<!--STREETS--> … <!--/STREETS-->`), and `STREETS_LIVE = False` in `source/build_site.py` leaves it out of `index.html` (with the data) while the main build writes `next/` as the preview: the main page with the street map on, its own offline copy, counting nothing, `noindex`. Promotion: set `STREETS_LIVE = True` and release it; `next/` then sends people on again (`docs/plans/2026-10-19-street-map.md`, Task 9). While `next/` is a preview, the main page's offline copy doesn't fetch it at install (a 600 KB page most phones would never open) and drops the hand-off page it kept, so a Home Screen app from the Oct 15–17 preview opens `next/` offline only after one online visit; and the main page's request that `next/sw.js` update itself now refreshes the preview's own copy rather than removing it, so a phone that installed the old preview and hasn't opened Ballotta since fetches the preview once, in the background (left as is: changing it would change the live page). The plan's Task 10 is the rollback.
 
 ````
 
