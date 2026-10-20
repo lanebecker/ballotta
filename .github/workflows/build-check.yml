@@ -32,3 +32,5 @@ jobs:
         run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
       - name: The answer key against the ballot PDF, and the release check
         run: python3 tests/test_pipeline.py
+      - name: The results back end (rules, parsers, build)
+        run: python3 tests/test_results.py

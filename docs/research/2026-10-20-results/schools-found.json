@@ -1,0 +1,466 @@
+{
+ "entities": {
+  "Austin Community College": {
+   "canvasser": "the Board of Trustees of the Austin Community College District (ACC Board of Trustees)",
+   "canvass_date": null,
+   "canvass_cite": "Trustee order (Agenda Item 2026-91, adopted Aug 3, 2026) Sec. 5 'The Board shall canvass the returns and declare the results', PDF p.8 (Attachment A p.7); annexation order (Agenda Item 2026-94, Aug 17, 2026) Sec. 6, PDF p.16 - https://votetravis.gov/wp-content/uploads/Austin-Community-College_ORDER-ACC-BOT-Election-Nov-2026-0817130141219.pdf. Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Bastrop",
+    "Caldwell",
+    "Hays",
+    "Lee",
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Austin-Community-College_ORDER-ACC-BOT-Election-Nov-2026-0817130141219.pdf PDF p.2 (Attachment A p.1, recital: contract for election services with Bastrop, Caldwell, Hays, Lee, Travis, and Williamson Counties) and PDF p.3 Sec. 3 (precincts of those six counties wholly or partially within ACC's taxing district). Applies to trustee Places 1-3 only; Prop A differs (see c120).",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/Austin-Community-College_ORDER-ACC-BOT-Election-Nov-2026-0817130141219.pdf PDF p.8 (Attachment A p.7), Sec. 5: if no candidate receives 'the votes of a majority of the resident, qualified electors voting', the Board orders a run-off between the top two.",
+   "notes": "Trustees elected at large for six-year terms (Places 1, 2, 3) - order PDF p.1-2; https://offices.austincc.edu/community-and-government-affairs/acc-board-of-trustees-elections/. Candidate filing July 18-Aug 17, 2026. ACC's own candidate page spells the Place 1 challenger 'Gloria Gonzalez-Dholakia' (https://offices.austincc.edu/community-and-government-affairs/acc-board-of-trustees-elections/candidates-for-the-acc-board-of-trustees-2026-election/); the Travis ballot spells it 'Gloria Gonzales-Dholakia' (bedsheet p.7) - use ballot spelling. Order signed by Chair Sean Hassan; attested by Secretary Dana Walker (Place 1 incumbent)."
+  },
+  "Austin ISD": {
+   "canvasser": "the Austin ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "Order Calling Election (adopted Apr 23, 2026) Sec. 6 'The Board shall canvass the returns and declare the results', PDF p.2 - https://votetravis.gov/wp-content/uploads/Austin-ISD_Order-of-Election-signed.pdf. Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Austin-ISD_Order-of-Election-signed.pdf PDF p.1: election conducted under an Election Services Agreement with Travis County only; Sec. 3 designates Travis County election precincts within AISD as voting precincts. Comptroller PVS Travis index lists Austin ISD (227-901) as NOT a split district: https://comptroller.texas.gov/taxes/property-tax/pvs/2020p/227index.php",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/Austin-ISD_Order-of-Election-signed.pdf PDF pp.2-3, Sec. 6: if no candidate receives a majority of votes, the Board orders a run-off between the top two.",
+   "notes": "District 1, 4, 6, 7 are single-member districts (voters of that district only); At-Large Position 9 is district-wide (order Sec. 1, PDF p.1). Order signed Apr 23, 2026."
+  },
+  "Coupland ISD": {
+   "canvasser": "the Coupland ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/Coupland-ISD_Orders.pdf PDF p.5, VATRE order Sec. 8: 'The Board shall canvass the returns and declare the results of the Election.' Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Coupland-ISD_Orders.pdf PDF p.1 (caption 'COUNTY OF TRAVIS AND WILLIAMSON'; contract for election services with Travis and Williamson County) and PDF p.2 Sec. 3 (Travis and Williamson precincts). Comptroller 2023 PVS worksheet for Coupland ISD (246-914) shows only Travis and Williamson county segments (no Bastrop): https://comptroller.texas.gov/auto-data/PT2/PVS/2023F/2272469141D.php",
+   "majority": null,
+   "majority_cite": "No contested trustee race on the ballot. Trustee seats were declared elected unopposed (bedsheet p.7: special election Rhonda Suzanne Dunlop; general election Crystal Ward, Michael Roepke). Prop A (VATRE) passes by simple majority of votes cast - order Sec. 8, PDF p.5.",
+   "notes": "Only contest in list is Prop A, a VATRE (voter-approval tax rate election). Bastrop County: no evidence Coupland ISD extends into Bastrop (Comptroller shows Travis + Williamson only). Order recital contains a typo ('November 4, 2025')."
+  },
+  "Del Valle ISD": {
+   "canvasser": "the Del Valle ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-of-Election.pdf PDF p.6 (VATRE order Sec. 9: 'The Board shall canvass the returns and declare the results'). Trustee order is an SOS form with no canvass clause; governing body canvasses per Tex. Elec. Code 67.002 (https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf). Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-of-Election.pdf PDF pp.1-2 (SOS Form 1-3 trustee order for Single Member Districts 3, 5, 7, 8, 9; Travis County Clerk as early voting clerk) and PDF p.3 (VATRE order: election agreements with Travis County). Comptroller PVS Travis index lists Del Valle ISD (227-910) as NOT a split district: https://comptroller.texas.gov/taxes/property-tax/pvs/2020p/227index.php",
+   "majority": false,
+   "majority_cite": "Plurality by past practice, not policy text: 2014 DVISD Single Member District 3 - Charles W. Diggs, Jr. won with 196 of 476 votes (41.18%) over two opponents (Travis County cumulative results, https://votetravis.gov/wp-content/uploads/travis-tx/election-results/2014/Tuesday,%20November%204,%202014%20Joint%20General%20and%20Special%20Elections/Jurisdictions%20in%20Travis%20County/20141104cumulative.pdf); Ballotpedia says Diggs 'defeated two challengers' with no runoff noted (https://ballotpedia.org/Darla_Wegner). The 2026 trustee order (SOS Form 1-3, https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-of-Election.pdf PDF pp.1-2) has no majority/runoff clause. No DVISD runoff found. BBB(LOCAL) not readable: pol.tasb.org returned client errors / fetch not permitted (Leander's Policy Online key is 1248 per leanderisd.org; DVISD and RRISD keys not found). The policy could have changed since 2014.",
+   "notes": "Five single-member-district trustee races (3, 5, 7, 8, 9) - all within Travis. Prop A is a VATRE: $1.0328/$100, +19.5% M&O revenue (~$20,038,349), order adopted Aug 11, 2026. VATRE order was signed attest by Board Secretary Darla Wegner, who is a candidate in SMD 8. The file votetravis.gov labels 'Del Valle ISD Order of Election' contains both the trustee SOS form (pp.1-2) and the VATRE order/notice."
+  },
+  "Leander ISD": {
+   "canvasser": "the Leander ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "Leander orders posted on votetravis.gov contain no canvass clause; governing body canvasses per Tex. Elec. Code 67.002 (https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf). Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Leander-ISD_Orders.pdf PDF p.1 (trustee order: ballot-by-mail clerks for Travis County and Williamson County voters) and PDF p.5 (VATRE order recital: district 'located in Travis and Williamson Counties, Texas').",
+   "majority": false,
+   "majority_cite": "Community Impact, Nov 8, 2022: 'in Leander ISD, school board candidates are elected by a plurality... There will not be a runoff election' - https://communityimpact.com/austin/cedar-park-leander/election/2022/11/08/three-of-four-leander-isd-incumbent-trustees-win-re-election-francesca-romans-elected-to-open-seat/. 2026 trustee order (SOS-style, PDF p.1) has no runoff clause. BBB(LOCAL) text itself not read. Also in Nov 2022, Place 5 (43.82%), Place 6 (43.09%) and Place 7 (35.01%) were won without a majority (same source). BBB(LOCAL) not readable: pol.tasb.org returned client errors / fetch not permitted (Leander's Policy Online key is 1248 per leanderisd.org; DVISD and RRISD keys not found).",
+   "notes": "Four at-large full-term places (1, 2, 6, 7) - order PDF p.1. Prop A is a VATRE: $1.1169/$100, +3.72% M&O (~$12,066,324); VATRE order adopted Aug 17, 2026."
+  },
+  "Manor ISD": {
+   "canvasser": "the Manor ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "Bond order has no canvass clause; governing body canvasses per Tex. Elec. Code 67.002 (https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf). Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Manor-ISD_Resolution-Order-Calling-Bond-Election-1.pdf PDF p.1 (recital: district 'located in Travis County, Texas'; contracts with Travis County Clerk for all registered voters). Comptroller PVS Travis index lists Manor ISD (227-907) as NOT a split district: https://comptroller.texas.gov/taxes/property-tax/pvs/2020p/227index.php",
+   "majority": null,
+   "majority_cite": "No trustee contest on ballot: Places 1-4 declared elected unopposed (bedsheet p.8: Stephanie Rodriguez, LaKesha Small, Ana Cortez, Fabian Martinez). Bond props A/B: ordinary majority of votes cast (no supermajority stated in order).",
+   "notes": "Order adopted Aug 10, 2026. Prop A $391,500,000 (facilities, safety/security, buses); Prop B $8,500,000 (technology) - separate prop required by Educ. Code 45.003(g)(6). Both carry 'THIS IS A PROPERTY TAX INCREASE'. The order PDF posted on votetravis.gov has blank amounts; amounts are in the notice (https://votetravis.gov/wp-content/uploads/Manor-ISD_Notice-of-Bond-Election-EngSpn_UPDATED.pdf PDF p.2) and on the ballot (bedsheet p.8)."
+  },
+  "Pflugerville ISD": {
+   "canvasser": "the Pflugerville ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "Order (SOS Form 1-3, issued July 16, 2026) has no canvass clause; governing body canvasses per Tex. Elec. Code 67.002 (https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf). Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/PfIugerville-ISD_Notice-of-Election_UPDATED.pdf PDF pp.1-2 (ballot-by-mail clerks for Travis County and Williamson County; Travis and Williamson polling lists). Comptroller PVS Travis index marks Pflugerville ISD (227-904) as a split district: https://comptroller.texas.gov/taxes/property-tax/pvs/2020p/227index.php",
+   "majority": null,
+   "majority_cite": "UNVERIFIED. Order is silent; BBB(LOCAL) (TASB Policy Online) could not be fetched. Weak evidence of plurality: 2017 Place 6 'winner' at 45.31% (unofficial, Travis only) - https://communityimpact.com/round-rock-pflugerville-hutto/education/pflugerville-isd-candidates-battle-three-positions/",
+   "notes": "First PfISD trustee election held in November (board moved from May to Nov in Dec 2025; terms remain three years) - https://communityimpact.com/austin/pflugerville-hutto/education/2025/12/15/pflugerville-isd-approves-resolution-to-move-trustee-elections-to-november/. PfISD is also the territory of ACC Prop A (annexation)."
+  },
+  "Round Rock ISD": {
+   "canvasser": "the Round Rock ISD Board of Trustees",
+   "canvass_date": null,
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Orders-of-Elections-UPDATED.pdf PDF p.2, trustee Order for General Election item: 'The returns of the election will be canvassed by the Board of Trustees of the District'; VATRE order Sec. 9 (PDF p.17). Canvass date not announced in any source found (as of 2026-10-20). Tex. Elec. Code 67.003 per SOS: local canvass no earlier than 3rd day after election day and, for the Nov even-year general election, no later than 14th day after (i.e. by Nov 17, 2026) - https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Orders-of-Elections-UPDATED.pdf PDF p.1 (caption 'COUNTIES OF WILLIAMSON AND TRAVIS'; election 'conducted in Williamson and Travis Counties') and PDF p.14 (VATRE order: election agreements with Williamson County and Travis County).",
+   "majority": false,
+   "majority_cite": "Plurality by past practice, not policy text: Nov 2022 Place 4 - Alicia Markum won with 43.2% and Place 1 - Estevan Zarate with 49.1%; they 'join' the board with no runoff reported (https://news.yahoo.com/2-newcomers-join-round-rock-162233180.html?fr=sycsrp_catchall). Markum holds Position 4 in the 2026 order (https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Orders-of-Elections-UPDATED.pdf PDF p.1), so she was seated without a majority. An earlier RRISD release also reports Suzi David leading Place 5 with 38% (https://news.roundrockisd.org/?p=19677). The 2026 trustee order (PDF pp.1-3) has no runoff clause. BBB(LOCAL) not readable: pol.tasb.org returned client errors / fetch not permitted (Leander's Policy Online key is 1248 per leanderisd.org; DVISD and RRISD keys not found).",
+   "notes": "Places 3, 4, 5, 6, four-year terms, at large (order PDF p.1). Prop A is a VATRE: $0.9484/$100, +3.09% M&O (~$12,313,099); order adopted Aug 13, 2026."
+  }
+ },
+ "contests": {
+  "c117": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "Six-county at-large race (entity counties). Voters in the PfISD annexation territory are not yet in ACC and do not vote here. Spelling: ballot 'Gloria Gonzales-Dholakia' vs ACC site 'Gonzalez-Dholakia'."
+  },
+  "c118": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "Single candidate (Gigi Edwards Bryant, incumbent) still printed on ballot; not declared unopposed because ACC has other contested races/prop."
+  },
+  "c119": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": ""
+  },
+  "c120": {
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Austin-Community-College_ORDER-ACC-BOT-Election-Nov-2026-0817130141219.pdf PDF p.12 (Agenda Item 2026-94 order, caption 'COUNTIES OF TRAVIS AND WILLIAMSON'; recital 'territory of the Pflugerville Independent School District in Travis and Williamson Counties excluding the areas already within the Austin Community College Taxing District'), PDF p.13 Sec. 1 (only resident qualified electors of the PfISD territory to be annexed vote) and Sec. 3 (election agreements with Travis and Williamson Counties).",
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date",
+    "registered voters in territory by county"
+   ],
+   "notes": "MEASURE: annexation under Educ. Code 130.065, 'THIS IS A TAX INCREASE', imposes ACC tax currently $0.1034/$100. Electorate = PfISD territory NOT already in ACC taxing district (Travis + Williamson parts), NOT all ACC voters. Passes by simple majority of votes cast (no special threshold stated in order). Petition needed 3,988 valid signatures (5% of registered voters in territory); 5,483 submitted (https://offices.austincc.edu/community-and-government-affairs/annexation/pflugerville-annexation-election/). Canvassed by ACC Board (order Sec. 6, PDF p.16). Order adopted Aug 17, 2026."
+  },
+  "c121": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "Single-member trustee district; only voters residing in that district vote (AISD order Sec. 1, PDF p.1). Entirely in Travis County."
+  },
+  "c122": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "Single-member trustee district; only voters residing in that district vote (AISD order Sec. 1, PDF p.1). Entirely in Travis County."
+  },
+  "c123": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "Single-member trustee district; only voters residing in that district vote (AISD order Sec. 1, PDF p.1). Entirely in Travis County."
+  },
+  "c124": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "Single-member trustee district; only voters residing in that district vote (AISD order Sec. 1, PDF p.1). Entirely in Travis County."
+  },
+  "c125": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": true,
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "At-large; all AISD voters."
+  },
+  "c126": {
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "MEASURE (VATRE): ratify $1.192200 rate, +4.14% M&O revenue (~$86,933); simple majority (order Sec. 8, PDF p.5). Electorate Travis + Williamson portions of Coupland ISD; Travis portion is small (Comptroller 2023: ~$7.9M of ~$309M taxable value in Travis)."
+  },
+  "c127": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c131)"
+   ],
+   "notes": "Del Valle single-member district; only that district's voters; entirely Travis County."
+  },
+  "c128": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c131)"
+   ],
+   "notes": "Del Valle single-member district; only that district's voters; entirely Travis County. Single candidate (Jason Sierra) printed on ballot."
+  },
+  "c129": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c131)"
+   ],
+   "notes": "Del Valle single-member district; only that district's voters; entirely Travis County."
+  },
+  "c130": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c131)"
+   ],
+   "notes": "Del Valle single-member district; only that district's voters; entirely Travis County. Darla Wegner is current Board Secretary (attested the VATRE order)."
+  },
+  "c131": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: board rule inferred from 2014 practice; current BBB(LOCAL) not read"
+   ],
+   "notes": "Del Valle single-member district; only that district's voters; entirely Travis County.",
+   "majority_cite": "Plurality by past practice, not policy text: 2014 DVISD Single Member District 3 - Charles W. Diggs, Jr. won with 196 of 476 votes (41.18%) over two opponents (Travis County cumulative results, https://votetravis.gov/wp-content/uploads/travis-tx/election-results/2014/Tuesday,%20November%204,%202014%20Joint%20General%20and%20Special%20Elections/Jurisdictions%20in%20Travis%20County/20141104cumulative.pdf); Ballotpedia says Diggs 'defeated two challengers' with no runoff noted (https://ballotpedia.org/Darla_Wegner). The 2026 trustee order (SOS Form 1-3, https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-of-Election.pdf PDF pp.1-2) has no majority/runoff clause. No DVISD runoff found. BBB(LOCAL) not readable: pol.tasb.org returned client errors / fetch not permitted (Leander's Policy Online key is 1248 per leanderisd.org; DVISD and RRISD keys not found). The policy could have changed since 2014."
+  },
+  "c132": {
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "MEASURE (VATRE): $1.0328/$100 ($0.7328 M&O + $0.30 I&S), +19.5% M&O (~$20,038,349); simple majority (order Sec. 9, https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-of-Election.pdf PDF p.6). Travis only."
+  },
+  "c133": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority (cited from news report, not BBB(LOCAL))"
+   ],
+   "notes": "At-large full term; Travis + Williamson."
+  },
+  "c134": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: from news report + 2022 practice; BBB(LOCAL) not read"
+   ],
+   "notes": "At-large full term; Travis + Williamson.",
+   "majority_cite": "Community Impact, Nov 8, 2022: 'in Leander ISD, school board candidates are elected by a plurality... There will not be a runoff election' - https://communityimpact.com/austin/cedar-park-leander/election/2022/11/08/three-of-four-leander-isd-incumbent-trustees-win-re-election-francesca-romans-elected-to-open-seat/. 2026 trustee order (SOS-style, PDF p.1) has no runoff clause. BBB(LOCAL) text itself not read. Also in Nov 2022, Place 5 (43.82%), Place 6 (43.09%) and Place 7 (35.01%) were won without a majority (same source). BBB(LOCAL) not readable: pol.tasb.org returned client errors / fetch not permitted (Leander's Policy Online key is 1248 per leanderisd.org; DVISD and RRISD keys not found)."
+  },
+  "c135": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority (cited from news report, not BBB(LOCAL))"
+   ],
+   "notes": "At-large full term; Travis + Williamson. Single candidate (Laura Marques) printed on ballot."
+  },
+  "c136": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority (cited from news report, not BBB(LOCAL))"
+   ],
+   "notes": "At-large full term; Travis + Williamson."
+  },
+  "c137": {
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "MEASURE (VATRE): $1.1169/$100, +3.72% M&O (~$12,066,324); simple majority. Travis + Williamson."
+  },
+  "c138": {
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "MEASURE (bond): $391,500,000 school facilities incl. campus renovations, safety/security, buses; 'THIS IS A PROPERTY TAX INCREASE'; simple majority. Travis only."
+  },
+  "c139": {
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "MEASURE (bond): $8,500,000 school technology; 'THIS IS A PROPERTY TAX INCREASE'; simple majority. Travis only."
+  },
+  "c140": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": null,
+   "unverified": [
+    "majority",
+    "canvass_date"
+   ],
+   "notes": "At-large, three-year term; Travis + Williamson."
+  },
+  "c141": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": null,
+   "unverified": [
+    "majority",
+    "canvass_date"
+   ],
+   "notes": "At-large, three-year term; Travis + Williamson. Single candidate (Chevonne Lorigo-Johst, incumbent/board president) printed on ballot."
+  },
+  "c142": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred from 2022 practice; BBB(LOCAL) not read"
+   ],
+   "notes": "At-large, four-year term; Travis + Williamson. Incumbent appears on ballot as 'Amber Feller Landrum'.",
+   "majority_cite": "Plurality by past practice, not policy text: Nov 2022 Place 4 - Alicia Markum won with 43.2% and Place 1 - Estevan Zarate with 49.1%; they 'join' the board with no runoff reported (https://news.yahoo.com/2-newcomers-join-round-rock-162233180.html?fr=sycsrp_catchall). Markum holds Position 4 in the 2026 order (https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Orders-of-Elections-UPDATED.pdf PDF p.1), so she was seated without a majority. An earlier RRISD release also reports Suzi David leading Place 5 with 38% (https://news.roundrockisd.org/?p=19677). The 2026 trustee order (PDF pp.1-3) has no runoff clause. BBB(LOCAL) not readable: pol.tasb.org returned client errors / fetch not permitted (Leander's Policy Online key is 1248 per leanderisd.org; DVISD and RRISD keys not found)."
+  },
+  "c143": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c142)"
+   ],
+   "notes": "At-large, four-year term; Travis + Williamson. Single candidate (Alicia Markum, incumbent/board president) printed on ballot."
+  },
+  "c144": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c142)"
+   ],
+   "notes": "At-large, four-year term; Travis + Williamson."
+  },
+  "c145": {
+   "write_ins": [],
+   "write_ins_cite": "Travis County consolidated (bedsheet) ballot, corrected version, PDF pp.7-9 (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf): no 'Write-in / Voto Escrito' line appears in any school contest (write-in lines appear only in partisan contests). Write-in votes count only for candidates who filed a declaration (SOS, https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml). A separate Travis County 'declared write-in candidates' list was NOT found on votetravis.gov (current-election, required-notices, candidates pages checked).",
+   "majority": false,
+   "unverified": [
+    "canvass_date",
+    "majority: inferred (see c142)"
+   ],
+   "notes": "At-large, four-year term; Travis + Williamson."
+  },
+  "c146": {
+   "majority": null,
+   "write_ins": [],
+   "write_ins_cite": "Measure - not applicable.",
+   "unverified": [
+    "canvass_date"
+   ],
+   "notes": "MEASURE (VATRE): $0.9484/$100, +3.09% M&O (~$12,313,099); simple majority (VATRE order Sec. 9, https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Orders-of-Elections-UPDATED.pdf PDF p.17). Travis + Williamson."
+  }
+ },
+ "sources": [
+  "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf",
+  "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+  "https://votetravis.gov/resources/required-notices/",
+  "https://votetravis.gov/current-election-information/current-election/",
+  "https://votetravis.gov/candidates-office-holders/",
+  "https://votetravis.gov/current-election-information/election-calendar/",
+  "https://votetravis.gov/wp-content/uploads/Austin-Community-College_ORDER-ACC-BOT-Election-Nov-2026-0817130141219.pdf",
+  "https://votetravis.gov/wp-content/uploads/ACC_Notices-combined_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Austin-ISD_Order-of-Election-signed.pdf",
+  "https://votetravis.gov/wp-content/uploads/Austin-ISD_NOTICE-OF-GENERAL-ELECTION-2026_revised.pdf",
+  "https://votetravis.gov/wp-content/uploads/Coupland-ISD_Orders.pdf",
+  "https://votetravis.gov/wp-content/uploads/Coupland-ISD_Notice-of-Special-Election-VATRE_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/Del-Valle-ISD_Order-Notice-of-Election-VATRE.pdf",
+  "https://votetravis.gov/wp-content/uploads/2024-DVISD-Trustee-Election-Order.pdf",
+  "https://votetravis.gov/wp-content/uploads/Leander-ISD_Orders.pdf",
+  "https://votetravis.gov/wp-content/uploads/Leander-ISD_combined-notices_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Manor-ISD_Resolution-Order-Calling-Bond-Election-1.pdf",
+  "https://votetravis.gov/wp-content/uploads/Manor-ISD_Notice-of-Bond-Election-EngSpn_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/PfISD_Order-of-Election-2026-signed-by-BOT.pdf",
+  "https://votetravis.gov/wp-content/uploads/PfIugerville-ISD_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Orders-of-Elections-UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Round-Rock-ISD_Notices-of-Elections-UPDATED.pdf",
+  "https://offices.austincc.edu/community-and-government-affairs/acc-board-of-trustees-elections/",
+  "https://offices.austincc.edu/community-and-government-affairs/acc-board-of-trustees-elections/election-postings-november-2026-election-cycle/",
+  "https://offices.austincc.edu/community-and-government-affairs/annexation/pflugerville-annexation-election/",
+  "https://offices.austincc.edu/community-and-government-affairs/acc-board-of-trustees-elections/candidates-for-the-acc-board-of-trustees-2026-election/",
+  "https://comptroller.texas.gov/auto-data/PT2/PVS/2023F/2272469141D.php",
+  "https://comptroller.texas.gov/taxes/property-tax/pvs/2020p/227index.php",
+  "https://communityimpact.com/austin/cedar-park-leander/election/2022/11/08/three-of-four-leander-isd-incumbent-trustees-win-re-election-francesca-romans-elected-to-open-seat/",
+  "https://communityimpact.com/round-rock/election/election-results-show-some-turnover-in-round-rock-isd-board-races/",
+  "https://communityimpact.com/round-rock-pflugerville-hutto/education/pflugerville-isd-candidates-battle-three-positions/",
+  "https://communityimpact.com/austin/pflugerville-hutto/education/2025/12/15/pflugerville-isd-approves-resolution-to-move-trustee-elections-to-november/",
+  "https://communityimpact.com/round-rock/election/early-voting-runs-oct-19-30-here-s-your-round-rock-area-sample-ballot/",
+  "https://www.fox7austin.com/news/2026-election-school-bonds-vatre-board",
+  "https://www.sos.texas.gov/elections/forms/canvassing-and-post-election-procedures-presentation.pdf",
+  "https://www.sos.texas.gov/elections/candidates/guide/2026/writein2026.shtml",
+  "https://www.sos.texas.gov/elections/laws/write-in-a-local-election.shtml",
+  "https://votetravis.gov/wp-content/uploads/travis-tx/election-results/2014/Tuesday,%20November%204,%202014%20Joint%20General%20and%20Special%20Elections/Jurisdictions%20in%20Travis%20County/20141104cumulative.pdf",
+  "https://ballotpedia.org/Darla_Wegner",
+  "https://news.yahoo.com/2-newcomers-join-round-rock-162233180.html?fr=sycsrp_catchall",
+  "https://news.roundrockisd.org/?p=19677",
+  "https://www.leanderisd.org/runningfortheleanderisdschoolboardfaqs/",
+  "https://www.leanderisd.org/board_elections/",
+  "https://ballotpedia.org/Martha_Lujan",
+  "https://ballotpedia.org/Amber_Handley",
+  "https://ballotpedia.org/David_Albert",
+  "https://www.austinchronicle.com/news/round-rock-crushes-far-right-candidates-running-for-school-board-12831469/"
+ ],
+ "unreachable": [
+  "https://www.dvisd.net/ (fetch permission not granted)",
+  "https://www.wilcotx.gov/Elections (fetch permission not granted)",
+  "https://pol.tasb.org/PolicyOnline/PolicyDetails?key=1147&code=BBB (client error; district unknown)",
+  "https://en.wikipedia.org/wiki/Coupland_Independent_School_District (not fetched)",
+  "Comptroller PVS 2020P worksheets for Pflugerville/Round Rock/Leander/Del Valle (fetch permission not granted)",
+  "https://pol.tasb.org/Policy/Code/1248?filter=BBB (Leander; fetch not permitted)",
+  "https://pol.tasb.org/PolicyOnline/PolicyDetails?key=1248&code=BBA (client error)",
+  "https://ballotpedia.org/Round Rock Independent School District,_Texas (robots disallowed)"
+ ],
+ "as_of": "2026-10-20"
+}

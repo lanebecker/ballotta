@@ -1,0 +1,951 @@
+{
+ "entities": {
+  "Travis Central Appraisal District": {
+   "canvasser": "the Travis Central Appraisal District board of directors",
+   "canvass_date": null,
+   "canvass_cite": "SOS 'Appraisal District Board Elections in Counties with Populations of 75,000 or More', FAQ 5: 'The CAD Board is responsible for ordering and canvassing the election for the elected CAD Board members' (Elec. Code §67.002), https://www.sos.state.tx.us/elections/laws/county-appraisal-district-elec-population-75-thousand-plus.shtml; precedent: TCAD board canvassed the May 2024 director election at a special meeting on May 13, 2024, https://traviscad.org/update/canvassed-results-of-the-may-2024-board-of-directors-election/",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "TCAD order of general election (Places 1-3 'Travis Central Appraisal District, Travis County') https://votetravis.gov/wp-content/uploads/TCAD-Order.pdf; notice addressed 'To the registered voters of the County of Travis' https://votetravis.gov/wp-content/uploads/TCAD_Notice-of-Election_UPDATED.pdf",
+   "majority": true,
+   "majority_cite": "Tax Code §6.0301(c): 'Three directors are elected by majority vote at the general election for state and county officers' https://texas.public.law/statutes/tex._tax_code_section_6.0301; SOS FAQ: winner must receive more than 50%, else top two go to a runoff under Elec. Code ch. 2 https://www.sos.state.tx.us/elections/laws/county-appraisal-district-elec-population-75-thousand-plus.shtml; TCAD page https://traviscad.org/boardelections",
+   "confirmation": null,
+   "notes": "Canvass date not announced (none found). Only Place 3 is contested (Muñoz vs. Gorman); Places 1 and 2 have one candidate each but remain on the ballot because the election could not be cancelled while Place 3 is contested. Per SOS FAQ, the three winners draw lots at the board's first meeting: one serves 2 years, two serve 4 years (new elected-director cycle under SB 2, 88th Leg. 2nd C.S.). Write-in declarations were due Aug 21, 2026 (traviscad.org/boardelections). The three seats are the full elected seats, not unexpired terms."
+  },
+  "Eastwood MUD": {
+   "canvasser": "the Eastwood MUD board of (temporary) directors",
+   "canvass_date": null,
+   "canvass_cite": "Eastwood MUD order §14: returns delivered to the Board Secretary, 'at which the Board shall canvass the returns and declare the results' (Water Code §49.101, Elec. Code §67.003) https://votetravis.gov/wp-content/uploads/Eastwood-MUD_Order-of-Election.pdf; Water Code §49.102(d) https://texas.public.law/statutes/tex._water_code_section_49.102",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order recital: 'the District is located within Travis County' (Section 49.4645 recital, p. 4) and §12 'All qualified resident electors of the District' https://votetravis.gov/wp-content/uploads/Eastwood-MUD_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Water Code §49.102(g) (candidates with the most votes declared elected) https://texas.public.law/statutes/tex._water_code_section_49.102; Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": "c147",
+   "notes": "Newly created district: the temporary board canvasses (Water Code §49.102(d)). If a majority votes against confirmation the temporary board declares the district defeated (§49.102(e)); per §49.102(g) the temporary board declares the candidates receiving the most votes elected as permanent directors. https://texas.public.law/statutes/tex._water_code_section_49.102 TCEQ created the district April 9, 2026 (order recital). Prop D (road bonds) needs a two-thirds vote (order recital citing Tex. Const. art. III §52)."
+  },
+  "Hero Way West MUD": {
+   "canvasser": "the Hero Way West MUD board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Election Code §67.002 (governing body canvasses) (the order does not itself spell out the canvass; OCR of the scanned order found no canvass section) https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_Order-of-Election_UPDATED.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Scanned order (OCR'd) certificate captioned 'COUNTY OF TRAVIS'; §11 interlocal agreement with Travis County only; §10 uses regular county election precincts https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_Order-of-Election_UPDATED.pdf",
+   "majority": null,
+   "majority_cite": "No director contest on this ballot.",
+   "confirmation": null,
+   "notes": "Bond election only. The district's creation was already confirmed and permanent directors elected May 3, 2025 (order recital), so no confirmation dependency. Order adopted July 24, 2026. Prop C (roads and refunding road bonds) needs a two-thirds vote (order recital citing 'Article I[II], Section 52(b)'). A separate district, Hero Way West MUD No. 1A, is holding its own confirmation/director/bond/tax election at 15006 Hero Way W. Bldg 2, Leander (its own polling place, not the county ballot) https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_1A_Notice-of-Election_UPDATED.pdf"
+  },
+  "Hidden Lakes MUD No. 1": {
+   "canvasser": "the Hidden Lakes MUD No. 1 of Travis County board of (temporary) directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §9: 'returns made to this Board of Directors in accordance with the Texas Election Code as modified by Chapter 49' https://votetravis.gov/wp-content/uploads/Hidden-Lakes-MUD-1_Order-of-Election.pdf; Water Code §49.102(d) https://texas.public.law/statutes/tex._water_code_section_49.102",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order caption 'COUNTY OF TRAVIS'; polling locations designated by Travis County https://votetravis.gov/wp-content/uploads/Hidden-Lakes-MUD-1_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Water Code §49.102(g) https://texas.public.law/statutes/tex._water_code_section_49.102; Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": "c158",
+   "notes": "Newly created district: the temporary board canvasses (Water Code §49.102(d)). If a majority votes against confirmation the temporary board declares the district defeated (§49.102(e)); per §49.102(g) the temporary board declares the candidates receiving the most votes elected as permanent directors. https://texas.public.law/statutes/tex._water_code_section_49.102 TCEQ created the district Nov 10, 2023 (order recital). Prop D (road bonds) is a road bond under Tex. Const. art. III §52, which other Travis MUD orders this cycle recite requires a two-thirds vote; the Hidden Lakes order itself does not state the threshold."
+  },
+  "Kennedy Hill MUD": {
+   "canvasser": "the Kennedy Hill MUD board of (temporary) directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §14 (Board canvasses and declares results, Water Code §49.101, Elec. Code §67.003) https://votetravis.gov/wp-content/uploads/Kennedy-Hill-MUD_Order-of-Election_UPDATED.pdf; Water Code §49.102(d) https://texas.public.law/statutes/tex._water_code_section_49.102",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order recital: 'the District is located within Travis County' https://votetravis.gov/wp-content/uploads/Kennedy-Hill-MUD_Order-of-Election_UPDATED.pdf",
+   "majority": false,
+   "majority_cite": "Water Code §49.102(g) https://texas.public.law/statutes/tex._water_code_section_49.102; Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": "c169",
+   "notes": "Newly created district: the temporary board canvasses (Water Code §49.102(d)). If a majority votes against confirmation the temporary board declares the district defeated (§49.102(e)); per §49.102(g) the temporary board declares the candidates receiving the most votes elected as permanent directors. https://texas.public.law/statutes/tex._water_code_section_49.102 Prop D (road bonds) needs a two-thirds vote (order recital citing Tex. Const. art. III §52)."
+  },
+  "North Austin MUD No. 1": {
+   "canvasser": "the North Austin MUD No. 1 board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §7: 'returns made to the Board in accordance with the Texas Election Code, as modified by Chapter 49' https://votetravis.gov/wp-content/uploads/NAustinMUD1_Order-of-Election.pdf",
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "Order caption 'COUNTIES OF TRAVIS AND WILLIAMSON'; §5: about five election precincts, one in Travis County and four in Williamson County https://votetravis.gov/wp-content/uploads/NAustinMUD1_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001 (no majority requirement in the order or in Water Code ch. 49)",
+   "confirmation": null,
+   "notes": "Regular director election: Places 2 and 4, 4-year terms (order). Most of the district's precincts are in Williamson County, so Travis County results are partial; the full result needs Williamson County's returns."
+  },
+  "Northtown MUD": {
+   "canvasser": "the Northtown MUD board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §7: 'returns made to the Board in accordance with the Texas Election Code, as modified by Chapter 49' (scanned order, OCR'd) https://votetravis.gov/wp-content/uploads/Northtown-MUD_Order-of-Election.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order: election at 'the Travis County ... precinct polling place locations which serve the District'; §5: about four election precincts established by Travis County https://votetravis.gov/wp-content/uploads/Northtown-MUD_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": null,
+   "notes": "Three directors, 4-year terms, elected at large (order adopted July 28, 2026)."
+  },
+  "Sunfield MUD No. 2": {
+   "canvasser": "the Sunfield MUD No. 2 board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §8: 'returns made to this Board of Directors in accordance with the Texas Election Code as modified by Chapter 49' https://votetravis.gov/wp-content/uploads/SunfieldMUD2_Order-of-Election.pdf",
+   "counties": [
+    "Travis",
+    "Hays"
+   ],
+   "counties_cite": "Order caption 'COUNTIES OF HAYS AND TRAVIS'; §7: Travis County and Hays County appoint election officers under contracts with both counties; Hays early-voting clerk named https://votetravis.gov/wp-content/uploads/SunfieldMUD2_Order-of-Election.pdf",
+   "majority": null,
+   "majority_cite": "No director contest on this ballot.",
+   "confirmation": null,
+   "notes": "Bond election only (created 2005, so no confirmation). Road powers acquired by TCEQ order April 27, 2026. Prop B (road bonds) is a Tex. Const. art. III §52 road bond (two-thirds vote; the Sunfield order does not recite the threshold). Hays County administers part of the election, so Travis-only results may be partial. Whether the Hays portion has registered voters was not confirmed (Hays County notice not found).",
+   "unverified": [
+    "counties (Hays portion has registered voters?)"
+   ]
+  },
+  "Travis County MMD No. 1": {
+   "canvasser": "the Travis County MMD No. 1 board of (initial) directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §14 (Board canvasses and declares results, Water Code §49.101, Elec. Code §67.003) https://votetravis.gov/wp-content/uploads/TC-MMD-1_Order-of-Election.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order recital: 'the District is located within Travis County' https://votetravis.gov/wp-content/uploads/TC-MMD-1_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001; order §6 lists five initial directors, vote for none to five (no majority requirement stated)",
+   "confirmation": null,
+   "notes": "No confirmation proposition. The district was created by TCEQ order dated Aug 17, 2026 and exercises Local Gov't Code ch. 375 powers; its order calls only an O&M tax, bond, refunding and permanent-directors election ('it is now necessary to call an election for the purpose of the election of five permanent directors'). So none of its contests depends on a confirmation vote. Prop C (road bonds) needs a two-thirds vote (order recital citing Tex. Const. art. III §52)."
+  },
+  "Travis County MUD No. 41": {
+   "canvasser": "the Travis County MUD No. 41 board of (temporary) directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §14 (Board canvasses and declares results, Water Code §49.101, Elec. Code §67.003) https://votetravis.gov/wp-content/uploads/TC-MUD-41_Order-of-Election.pdf; Water Code §49.102(d) https://texas.public.law/statutes/tex._water_code_section_49.102",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order: polling places determined by Travis County; election conducted by Travis County Elections Administrator https://votetravis.gov/wp-content/uploads/TC-MUD-41_Order-of-Election.pdf (no explicit 'located within' recital found)",
+   "majority": false,
+   "majority_cite": "Water Code §49.102(g) https://texas.public.law/statutes/tex._water_code_section_49.102; Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": "c193",
+   "notes": "Newly created district: the temporary board canvasses (Water Code §49.102(d)). If a majority votes against confirmation the temporary board declares the district defeated (§49.102(e)); per §49.102(g) the temporary board declares the candidates receiving the most votes elected as permanent directors. https://texas.public.law/statutes/tex._water_code_section_49.102 TCEQ created the district May 4, 2026. No park-bond proposition. Prop D (road bonds) needs a two-thirds vote (order recital citing Tex. Const. art. III §52)."
+  },
+  "Vista MUD of Travis County": {
+   "canvasser": "the Vista MUD of Travis County board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §12: 'returns made to this Board of Directors in accordance with the Texas Election Code, as modified by Chapter 49' https://votetravis.gov/wp-content/uploads/Vista-MUD_Order-of-Election.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order caption 'COUNTY OF TRAVIS'; contract with Travis County only https://votetravis.gov/wp-content/uploads/Vista-MUD_Order-of-Election.pdf",
+   "majority": null,
+   "majority_cite": "No director contest on this ballot.",
+   "confirmation": null,
+   "notes": "Fire plan election under Water Code §49.351: Prop A approves the fire plan and implementing the Fire Protection Agreement with Travis County ESD No. 8; Prop B approves the agreement's provisions and a tax to make payments under it. Plan implementation requires 'a majority vote of the resident electors voting' (order recital). The district was confirmed Nov 4, 2008. The order does not say whether B is contingent on A."
+  },
+  "Williamson-Travis Counties MUD No. 1": {
+   "canvasser": "the Williamson-Travis Counties MUD No. 1 board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §10: 'returns made to this Board of Directors in accordance with the Texas Election Code as modified by Subchapter D of Chapter 49' https://votetravis.gov/wp-content/uploads/WilCo-TravisCoMUD1_Order-of-Election.pdf",
+   "counties": [
+    "Williamson",
+    "Travis"
+   ],
+   "counties_cite": "Order caption 'COUNTIES OF WILLIAMSON AND TRAVIS'; §§1-4: separate election administration for residents in Travis County and residents in Williamson County https://votetravis.gov/wp-content/uploads/WilCo-TravisCoMUD1_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": null,
+   "notes": "Three directors, vote for up to three. Order §8: write-in votes are not counted unless the name is on the list of write-in candidates (declarations due Aug 21, 2026). Travis County results cover only the Travis portion; Williamson County's returns are needed for the full result."
+  },
+  "Cypress Ranch WCID No. 1": {
+   "canvasser": "the Cypress Ranch WCID No. 1 board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §8: 'returns made to this Board of Directors in accordance with ... the Texas Election Code, as modified by Chapters 49 and 51' https://votetravis.gov/wp-content/uploads/Cypress-Ranch-WCID-1_Order-of-Election.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order §1: polling places established by Travis County to serve 'the county's regular election precinct within the District'; election agreement with Travis County only https://votetravis.gov/wp-content/uploads/Cypress-Ranch-WCID-1_Order-of-Election.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": null,
+   "notes": "Three directors, 4-year terms. The order says the ballot will have three blank write-in spaces, but the final county ballot shows none (see contest write-in note)."
+  },
+  "Travis County WCID No. 17": {
+   "canvasser": "the Travis County WCID No. 17 board of directors",
+   "canvass_date": null,
+   "canvass_cite": "Order §5: 'returns made to this Board of Directors in accordance with the Texas Election Code' https://votetravis.gov/wp-content/uploads/TC-WCID-No-17_Order-of-Election_UPDATED.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order caption 'COUNTY OF TRAVIS' (p. 1, OCR'd); election services agreement with Travis County https://votetravis.gov/wp-content/uploads/TC-WCID-No-17_Order-of-Election_UPDATED.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001",
+   "confirmation": null,
+   "notes": "Three directors, 4-year terms (order adopted June 18, 2026). November even-year election date per HB 4585 (87th Leg.), as the order recites."
+  },
+  "Travis County ESD No. 4": {
+   "canvasser": "the Travis County ESD No. 4 board of emergency services commissioners",
+   "canvass_date": null,
+   "canvass_cite": "Election Code §67.002 (governing body canvasses) default; the ESD 4 order (an SOS form, partly scanned) has no canvass section https://votetravis.gov/wp-content/uploads/TC-ESD-4_Order-the-Election-8-14-26.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order and notice: 'Confirming the Expansion of District Territory of Travis County Emergency Service District 4'; notice addressed to registered voters of Travis County https://votetravis.gov/wp-content/uploads/TCESD4_Notice-of-Election_UPDATED.pdf",
+   "majority": null,
+   "majority_cite": "No candidate contest.",
+   "confirmation": null,
+   "notes": "One proposition (c205): add about 140 properties on the east shore of the Colorado River (Lake Austin) between Pennybacker Bridge and Emma Long Park that were disannexed from the City of Austin, with the territory assuming its share of debts and taxes. ESD 4 site 'DisAnnexation and Joining ESD 4' https://www.esd4.org/disannexation-and-joining-esd-4: property owners in the disannexed area collected petition signatures (May 30, 2026), submitted the petition to ESD 4 with 'over 80 signatures' (July 1), ESD 4 verified it and ordered a hearing (July 14), the formal hearing was held Aug 14, and the election was ordered Aug 14. That is the H&S Code §775.051 petition-annexation procedure (petition by qualified voters owning property in the territory, then hearing, then board approval by resolution). §775.051(f): annexation needs 'a majority of the voters at an election held in the district' and 'a majority of the voters at a separate election held in the territory to be annexed' (https://texas.public.law/statutes/tex._health_and_safety_code_section_775.051). §§775.052-.053 cover dissolution, not annexation. By statute, then, BOTH the existing district and the territory vote, in separate elections, and each needs its own majority. However, the county ballot lists ESD 4 only once, with a single proposition. Unlike ESD 9 and ESD 10, there is no split into district and territory versions. The ESD 4 order (a scanned SOS form) and its notice do not say who votes or whether the two electorates are tallied separately. Its single combined proposition also departs from §775.051(g), which provides two ballot forms. ESD 4's handout (https://www.esd4.org/files/2b5c7fa56/Expansion+Election+Public+Information+handout.pdf) says existing homeowners' rate would not change but does not say who votes. The Travis County order and notice of election (https://votetravis.gov/wp-content/uploads/Travis-County-Order-of-Election.pdf, https://votetravis.gov/wp-content/uploads/G26-Travis-County-Notice-of-Election.pdf) do not list ballot styles or precincts. Sample ballots were 'coming soon' on votetravis.gov, and the ESD 4 voter-education page (https://www.esd4.org/voter-education-re-district-expansion) was blocked (permission request unanswered). Practical risk: if Travis County reports c205 as one combined total, that total cannot show whether both majorities were met.",
+   "unverified": [
+    "which precincts/ballot styles get c205 (district, territory, or both)",
+    "whether district and territory votes on c205 are tallied and reported separately",
+    "canvasser (statutory default, not stated in order)"
+   ]
+  },
+  "Travis County ESD No. 9": {
+   "canvasser": "the Travis County ESD No. 9 board of emergency services commissioners",
+   "canvass_date": null,
+   "canvass_cite": "ESD 9 Resolution No. 2026-06 §8: returns delivered to the Secretary of the Board of Commissioners, 'at which the Commissioners shall canvass the returns and declare the results of the elections pursuant to Section 67.003' https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Resolution No. 2026-06 (County of Travis); territory on Lake Austin between Tom Miller Dam and 2940 Oestrick Lane https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf",
+   "majority": null,
+   "majority_cite": "No candidate contest.",
+   "confirmation": null,
+   "notes": "Annexation by petition under Health & Safety Code §775.051: 'annexation of the Territory is final when approved by a majority of the voters at an election held within the District and by a majority of voters at a separate election held within the Territory' (resolution recital, citing §775.051(e); current codification shows this as subsection (f) https://texas.public.law/statutes/tex._health_and_safety_code_section_775.051). Two separate electorates: c206/c207 are voted by the existing district, c208/c209 by the territory to be annexed. Prop B (assuming its share of debts and taxes) applies only 'if it is added to the district'. Annexation public hearing held July 22, 2026."
+  },
+  "Travis County ESD No. 10": {
+   "canvasser": "the Travis County ESD No. 10 board of emergency services commissioners",
+   "canvass_date": null,
+   "canvass_cite": "Election Code §67.002 (governing body canvasses) default; the ESD 10 order (issued Aug 12, 2026 by President Glen Reid) contains no canvass provision https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order of election for Travis County ESD No. 10 (Edgewater and River Terrace Service Area) https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf",
+   "majority": null,
+   "majority_cite": "No candidate contest.",
+   "confirmation": null,
+   "notes": "CONFIRMED from the order and notice: 'For registered voters in the District' the ballot shows Props A/B without a tax-increase label. 'For the registered voters in the Edgewater and River Terrace Defined Territory to be annexed' it shows the same Props A/B headed 'THIS IS A TAX INCREASE'. On the bedsheet the second ballot version carries the 'THIS IS A TAX INCREASE' header, so c212/c213 are the territory's contests and c210/c211 the existing district's. Annexation needs separate majorities in both (Health & Safety Code §775.051 https://texas.public.law/statutes/tex._health_and_safety_code_section_775.051).",
+   "unverified": [
+    "canvasser (statutory default, not stated in order)"
+   ]
+  },
+  "Wells Branch Community Library District": {
+   "canvasser": "the Wells Branch Community Library District board of trustees",
+   "canvass_date": null,
+   "canvass_cite": "Order §8: 'returns made of this Board of Trustees in accordance with the Texas Election Code' https://votetravis.gov/wp-content/uploads/WellsBranchLibrary_Order-of-Election.pdf",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "Order caption 'COUNTY OF TRAVIS'; §2: held at Travis County precinct polling places under an election agreement with Travis County only https://votetravis.gov/wp-content/uploads/WellsBranchLibrary_Order-of-Election.pdf; notice: 'You may vote at any Travis County precinct polling place' https://votetravis.gov/wp-content/uploads/WellsBranchLibrary_Notice-of-Election_UPDATED.pdf",
+   "majority": false,
+   "majority_cite": "Tex. Elec. Code §2.001 (plurality: 'must receive more votes than any other candidate'), https://texas.public.law/statutes/tex._election_code_section_2.001 (order cites Local Gov't Code §326.043 for annual trustee elections and states no majority requirement)",
+   "confirmation": null,
+   "notes": "Three trustees, 2-year terms (order, citing LGC §326.043). District created by voters Aug 8, 1998. No Williamson County involvement appears in the order or notice."
+  }
+ },
+ "contests": {
+  "c063": {
+   "electorate": "district",
+   "majority": true,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Majority required; runoff between the top two if no one tops 50% (Tax Code §6.0301(c); SOS FAQ). Single candidate."
+  },
+  "c064": {
+   "electorate": "district",
+   "majority": true,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Majority required; runoff between the top two if no one tops 50% (Tax Code §6.0301(c); SOS FAQ). Single candidate."
+  },
+  "c065": {
+   "electorate": "district",
+   "majority": true,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Majority required; runoff between the top two if no one tops 50% (Tax Code §6.0301(c); SOS FAQ). Two candidates, so 50%+ is effectively certain barring write-ins (none declared per the ballot)."
+  },
+  "c147": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Confirmation election (Water Code §49.102). If it fails, the district is not created; the temporary board still declares permanent directors elected (§49.102(e),(g)).",
+   "threshold": "simple majority"
+  },
+  "c148": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c147",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c149": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c147",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c150": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c147",
+   "notes": null,
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Tex. Const. art. III §52(b) road bonds; recited in https://votetravis.gov/wp-content/uploads/Eastwood-MUD_Order-of-Election.pdf"
+  },
+  "c151": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c147",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c152": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c147",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c153": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c147",
+   "unverified": [
+    "vote threshold: no order, statute, AG opinion or case found that settles it; report the FOR percentage and flag any result between 50% and 66.67% as undetermined"
+   ],
+   "notes": "Refunding road bonds. Same legal question as the other five refunding-road props; none of the orders answers it.",
+   "threshold": "unverified: two-thirds (if treated as an art. III §52(b) road-bond election) or simple majority",
+   "threshold_cite": "Order https://votetravis.gov/wp-content/uploads/Eastwood-MUD_Order-of-Election.pdf: Order recites two-thirds only for new road bonds (Prop D). The Prop G recital calls these refunding bonds 'for roads as authorized by Section 52, Article III'; ballot: '$71,250,000 bonds for refunding road bonds (including refunding bonds issued therefor) issued pursuant to Section 52, Article III'. No vote threshold is stated for G. Law: Tex. Const. art. III §52(b) requires 'a vote of two-thirds majority of the voting qualified voters' for a district to 'issue bonds' for '(3) The construction, maintenance and operation of macadamized, graveled or paved roads' (https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52). Gov't Code §1207.003(a): 'Refunding bonds may be issued without an election ... except as provided by Subsection (b)'; (b): if the constitution requires an election for a matter pertaining to refunding bonds, it is held under ch. 1251 (https://texas.public.law/statutes/tex._gov't_code_section_1207.003). Water Code §54.514 (district refunding bonds) requires AG approval but says nothing about an election (https://texas.public.law/statutes/tex._water_code_section_54.514). No statute, AG opinion or court case was found that says whether a voter proposition for refunding road bonds needs two-thirds (as a §52(b) road-bond election) or a simple majority. Searched AG opinions JM-545 and RQ-1792 (neither addresses refunding) and the Braden annotation of art. III §52 (silent on refunding). Water Code §49.4545 does not appear to exist (texas.public.law returned no such section)."
+  },
+  "c154": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": "c147",
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Five temporary/initial directors on the ballot for five permanent seats (vote for none to five); declared elected by plurality."
+  },
+  "c155": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c156": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c157": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Road bonds plus refunding of road bonds in a single proposition.",
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Order recital: 'Article I[II], Section 52(b) of the Texas Constitution requires approval of bonds by a two-thirds majority' https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_Order-of-Election_UPDATED.pdf"
+  },
+  "c158": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Confirmation election (Water Code §49.102). If it fails, the district is not created; the temporary board still declares permanent directors elected (§49.102(e),(g)).",
+   "threshold": "simple majority"
+  },
+  "c159": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c160": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c161": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Tex. Const. art. III §52(b) road bonds (recited as two-thirds in the Eastwood/Kennedy Hill/MUD 41/MMD 1 orders; the Hidden Lakes order is silent)"
+  },
+  "c162": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "unverified": [
+    "vote threshold: no order, statute, AG opinion or case found that settles it; report the FOR percentage and flag any result between 50% and 66.67% as undetermined"
+   ],
+   "notes": "Refunding road bonds. Same legal question as the other five refunding-road props; none of the orders answers it.",
+   "threshold": "unverified: two-thirds (if treated as an art. III §52(b) road-bond election) or simple majority",
+   "threshold_cite": "Order https://votetravis.gov/wp-content/uploads/Hidden-Lakes-MUD-1_Order-of-Election.pdf: The order recites no vote threshold for any proposition, and does not cite art. III §52. Prop E authorizes '$300,000,000 in refunding bonds to refund bonds issued for macadamized, graveled, or paved roads and turnpikes'. Law: Tex. Const. art. III §52(b) requires 'a vote of two-thirds majority of the voting qualified voters' for a district to 'issue bonds' for '(3) The construction, maintenance and operation of macadamized, graveled or paved roads' (https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52). Gov't Code §1207.003(a): 'Refunding bonds may be issued without an election ... except as provided by Subsection (b)'; (b): if the constitution requires an election for a matter pertaining to refunding bonds, it is held under ch. 1251 (https://texas.public.law/statutes/tex._gov't_code_section_1207.003). Water Code §54.514 (district refunding bonds) requires AG approval but says nothing about an election (https://texas.public.law/statutes/tex._water_code_section_54.514). No statute, AG opinion or court case was found that says whether a voter proposition for refunding road bonds needs two-thirds (as a §52(b) road-bond election) or a simple majority. Searched AG opinions JM-545 and RQ-1792 (neither addresses refunding) and the Braden annotation of art. III §52 (silent on refunding). Water Code §49.4545 does not appear to exist (texas.public.law returned no such section)."
+  },
+  "c163": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c164": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c165": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c166": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c167": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c158",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c168": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": "c158",
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Five temporary directors on the ballot for five permanent seats. Ballot title says 'Hidden Lakes MUD No. 1 of Travis County'."
+  },
+  "c169": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Confirmation election (Water Code §49.102). If it fails, the district is not created; the temporary board still declares permanent directors elected (§49.102(e),(g)).",
+   "threshold": "simple majority"
+  },
+  "c170": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c169",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c171": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c169",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c172": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c169",
+   "notes": null,
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Tex. Const. art. III §52(b) road bonds; recited in https://votetravis.gov/wp-content/uploads/Kennedy-Hill-MUD_Order-of-Election_UPDATED.pdf"
+  },
+  "c173": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c169",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c174": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c169",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c175": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c169",
+   "unverified": [
+    "vote threshold: no order, statute, AG opinion or case found that settles it; report the FOR percentage and flag any result between 50% and 66.67% as undetermined"
+   ],
+   "notes": "Refunding road bonds. Same legal question as the other five refunding-road props; none of the orders answers it.",
+   "threshold": "unverified: two-thirds (if treated as an art. III §52(b) road-bond election) or simple majority",
+   "threshold_cite": "Order https://votetravis.gov/wp-content/uploads/Kennedy-Hill-MUD_Order-of-Election_UPDATED.pdf: Same template as Eastwood: two-thirds recited only for new road bonds (Prop D). Prop G is '$90,000,000 bonds for refunding road bonds ... issued pursuant to Section 52, Article III'. No threshold stated. Law: Tex. Const. art. III §52(b) requires 'a vote of two-thirds majority of the voting qualified voters' for a district to 'issue bonds' for '(3) The construction, maintenance and operation of macadamized, graveled or paved roads' (https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52). Gov't Code §1207.003(a): 'Refunding bonds may be issued without an election ... except as provided by Subsection (b)'; (b): if the constitution requires an election for a matter pertaining to refunding bonds, it is held under ch. 1251 (https://texas.public.law/statutes/tex._gov't_code_section_1207.003). Water Code §54.514 (district refunding bonds) requires AG approval but says nothing about an election (https://texas.public.law/statutes/tex._water_code_section_54.514). No statute, AG opinion or court case was found that says whether a voter proposition for refunding road bonds needs two-thirds (as a §52(b) road-bond election) or a simple majority. Searched AG opinions JM-545 and RQ-1792 (neither addresses refunding) and the Braden annotation of art. III §52 (silent on refunding). Water Code §49.4545 does not appear to exist (texas.public.law returned no such section)."
+  },
+  "c176": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": "c169",
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Five temporary/initial directors on the ballot for five permanent seats (vote for none to five); declared elected by plurality."
+  },
+  "c177": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "District spans Travis (1 precinct) and Williamson (4 precincts); Travis results are partial. Single candidate."
+  },
+  "c178": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "District spans Travis (1 precinct) and Williamson (4 precincts); Travis results are partial."
+  },
+  "c179": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Vote for up to 3 of 4; 4-year terms."
+  },
+  "c180": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "District spans Hays and Travis; Travis results are partial.",
+   "threshold": "simple majority"
+  },
+  "c181": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "unverified": [
+    "threshold not stated in the Sunfield order"
+   ],
+   "notes": "District spans Hays and Travis; Travis results are partial.",
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Tex. Const. art. III §52(b) road bonds (the Sunfield order does not recite the threshold; other orders this cycle do)"
+  },
+  "c182": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "District spans Hays and Travis; Travis results are partial.",
+   "threshold": "simple majority"
+  },
+  "c183": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "District spans Hays and Travis; Travis results are partial.",
+   "threshold": "simple majority"
+  },
+  "c184": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "unverified": [
+    "vote threshold: no order, statute, AG opinion or case found that settles it; report the FOR percentage and flag any result between 50% and 66.67% as undetermined"
+   ],
+   "notes": "District spans Hays and Travis; Travis results are partial. Refunding road bonds. Same legal question as the other five refunding-road props; none of the orders answers it.",
+   "threshold": "unverified: two-thirds (if treated as an art. III §52(b) road-bond election) or simple majority",
+   "threshold_cite": "Order https://votetravis.gov/wp-content/uploads/SunfieldMUD2_Order-of-Election.pdf: The order recites no vote threshold. Prop E authorizes '$247,950,000 in refunding bonds to refund bonds issued for macadamized, graveled, and paved roads and turnpikes'. The district has art. III §52 road powers (TCEQ order Apr 27, 2026). Note: the district also spans Hays County. Law: Tex. Const. art. III §52(b) requires 'a vote of two-thirds majority of the voting qualified voters' for a district to 'issue bonds' for '(3) The construction, maintenance and operation of macadamized, graveled or paved roads' (https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52). Gov't Code §1207.003(a): 'Refunding bonds may be issued without an election ... except as provided by Subsection (b)'; (b): if the constitution requires an election for a matter pertaining to refunding bonds, it is held under ch. 1251 (https://texas.public.law/statutes/tex._gov't_code_section_1207.003). Water Code §54.514 (district refunding bonds) requires AG approval but says nothing about an election (https://texas.public.law/statutes/tex._water_code_section_54.514). No statute, AG opinion or court case was found that says whether a voter proposition for refunding road bonds needs two-thirds (as a §52(b) road-bond election) or a simple majority. Searched AG opinions JM-545 and RQ-1792 (neither addresses refunding) and the Braden annotation of art. III §52 (silent on refunding). Water Code §49.4545 does not appear to exist (texas.public.law returned no such section)."
+  },
+  "c185": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "District spans Hays and Travis; Travis results are partial.",
+   "threshold": "simple majority"
+  },
+  "c186": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "O&M tax; Water Code §49.107(b) majority. No confirmation election for this MMD.",
+   "threshold": "simple majority"
+  },
+  "c187": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c188": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": null,
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Tex. Const. art. III §52(b); recited in https://votetravis.gov/wp-content/uploads/TC-MMD-1_Order-of-Election.pdf"
+  },
+  "c189": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c190": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c191": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "unverified": [
+    "vote threshold: no order, statute, AG opinion or case found that settles it; report the FOR percentage and flag any result between 50% and 66.67% as undetermined"
+   ],
+   "notes": "Refunding road bonds. Same legal question as the other five refunding-road props; none of the orders answers it.",
+   "threshold": "unverified: two-thirds (if treated as an art. III §52(b) road-bond election) or simple majority",
+   "threshold_cite": "Order https://votetravis.gov/wp-content/uploads/TC-MMD-1_Order-of-Election.pdf: Same template: two-thirds recited only for new road bonds (Prop C). Prop F is '$196,240,000 bonds for refunding road bonds ... issued pursuant to Section 52, Article III'. No threshold stated. Law: Tex. Const. art. III §52(b) requires 'a vote of two-thirds majority of the voting qualified voters' for a district to 'issue bonds' for '(3) The construction, maintenance and operation of macadamized, graveled or paved roads' (https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52). Gov't Code §1207.003(a): 'Refunding bonds may be issued without an election ... except as provided by Subsection (b)'; (b): if the constitution requires an election for a matter pertaining to refunding bonds, it is held under ch. 1251 (https://texas.public.law/statutes/tex._gov't_code_section_1207.003). Water Code §54.514 (district refunding bonds) requires AG approval but says nothing about an election (https://texas.public.law/statutes/tex._water_code_section_54.514). No statute, AG opinion or court case was found that says whether a voter proposition for refunding road bonds needs two-thirds (as a §52(b) road-bond election) or a simple majority. Searched AG opinions JM-545 and RQ-1792 (neither addresses refunding) and the Braden annotation of art. III §52 (silent on refunding). Water Code §49.4545 does not appear to exist (texas.public.law returned no such section)."
+  },
+  "c192": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Five temporary/initial directors on the ballot for five permanent seats (vote for none to five); declared elected by plurality. No confirmation dependency (MMD not subject to a confirmation election on this ballot)."
+  },
+  "c193": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Confirmation election (Water Code §49.102). If it fails, the district is not created; the temporary board still declares permanent directors elected (§49.102(e),(g)).",
+   "threshold": "simple majority"
+  },
+  "c194": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c193",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c195": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c193",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c196": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c193",
+   "notes": null,
+   "threshold": "two-thirds of votes cast",
+   "threshold_cite": "Tex. Const. art. III §52(b) road bonds; recited in https://votetravis.gov/wp-content/uploads/TC-MUD-41_Order-of-Election.pdf"
+  },
+  "c197": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c193",
+   "notes": null,
+   "threshold": "simple majority"
+  },
+  "c198": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c193",
+   "unverified": [
+    "vote threshold: no order, statute, AG opinion or case found that settles it; report the FOR percentage and flag any result between 50% and 66.67% as undetermined"
+   ],
+   "notes": "Refunding road bonds. Same legal question as the other five refunding-road props; none of the orders answers it.",
+   "threshold": "unverified: two-thirds (if treated as an art. III §52(b) road-bond election) or simple majority",
+   "threshold_cite": "Order https://votetravis.gov/wp-content/uploads/TC-MUD-41_Order-of-Election.pdf: Same template: two-thirds recited only for new road bonds (Prop D). Prop F is '$23,250,000 bonds for refunding road bonds ... issued pursuant to Section 52, Article III'. No threshold stated. Law: Tex. Const. art. III §52(b) requires 'a vote of two-thirds majority of the voting qualified voters' for a district to 'issue bonds' for '(3) The construction, maintenance and operation of macadamized, graveled or paved roads' (https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52). Gov't Code §1207.003(a): 'Refunding bonds may be issued without an election ... except as provided by Subsection (b)'; (b): if the constitution requires an election for a matter pertaining to refunding bonds, it is held under ch. 1251 (https://texas.public.law/statutes/tex._gov't_code_section_1207.003). Water Code §54.514 (district refunding bonds) requires AG approval but says nothing about an election (https://texas.public.law/statutes/tex._water_code_section_54.514). No statute, AG opinion or court case was found that says whether a voter proposition for refunding road bonds needs two-thirds (as a §52(b) road-bond election) or a simple majority. Searched AG opinions JM-545 and RQ-1792 (neither addresses refunding) and the Braden annotation of art. III §52 (silent on refunding). Water Code §49.4545 does not appear to exist (texas.public.law returned no such section)."
+  },
+  "c199": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": "c193",
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Five temporary/initial directors on the ballot for five permanent seats (vote for none to five); declared elected by plurality."
+  },
+  "c200": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Fire plan approval (Water Code §49.351); majority of resident electors voting (order recital).",
+   "threshold": "simple majority"
+  },
+  "c201": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "unverified": [
+    "whether c201 is contingent on c200"
+   ],
+   "notes": "Approves the Fire Protection Agreement and a tax to make payments under it; labeled THIS IS A TAX INCREASE. The order does not state whether it depends on Prop A.",
+   "threshold": "simple majority"
+  },
+  "c202": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Vote for up to 3 of 7. District spans Williamson and Travis; Travis results are partial."
+  },
+  "c203": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Vote for up to 3 of 4; 4-year terms."
+  },
+  "c204": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Vote for up to 3 of 5; 4-year terms."
+  },
+  "c205": {
+   "electorate": null,
+   "majority": null,
+   "depends_on": null,
+   "unverified": [
+    "electorate as actually administered on the ballot: statute requires district + territory separately, but the ballot has a single c205 listing with no split; ballot-style/precinct list not found",
+    "whether results will be reported separately for district and territory"
+   ],
+   "notes": "Single ballot listing combining 'add the territory' with 'assume its share of debts and taxes'. Passing requires a majority in the existing district AND a separate majority in the territory (§775.051(f)). If only a combined total is published, mark the outcome undetermined until ESD 4's canvass order.",
+   "threshold": "simple majority",
+   "electorate_law": "both, in separate elections, each needing its own majority (H&S Code §775.051(f); petition-annexation procedure confirmed by ESD 4's own timeline)",
+   "electorate_cite": "ESD 4 site 'DisAnnexation and Joining ESD 4' https://www.esd4.org/disannexation-and-joining-esd-4: property owners in the disannexed area collected petition signatures (May 30, 2026), submitted the petition to ESD 4 with 'over 80 signatures' (July 1), ESD 4 verified it and ordered a hearing (July 14), the formal hearing was held Aug 14, and the election was ordered Aug 14. That is the H&S Code §775.051 petition-annexation procedure (petition by qualified voters owning property in the territory, then hearing, then board approval by resolution). §775.051(f): annexation needs 'a majority of the voters at an election held in the district' and 'a majority of the voters at a separate election held in the territory to be annexed' (https://texas.public.law/statutes/tex._health_and_safety_code_section_775.051). §§775.052-.053 cover dissolution, not annexation."
+  },
+  "c206": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Annexation passes only if c206 (district) AND c208 (territory) each get a majority (H&S Code §775.051).",
+   "threshold": "simple majority",
+   "paired_with": "c208",
+   "electorate_cite": "Bedsheet headings 'Election for Annexation in the District' vs 'Election for Annexation in the Territory to be Annexed' https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; Resolution No. 2026-06 https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf"
+  },
+  "c207": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c206",
+   "notes": "Debt/tax assumption takes effect only 'if it is added to the district', i.e., if annexation passes in both electorates; it also needs its own paired majority (c207 + c209).",
+   "threshold": "simple majority",
+   "paired_with": "c209",
+   "electorate_cite": "Bedsheet headings 'Election for Annexation in the District' vs 'Election for Annexation in the Territory to be Annexed' https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; Resolution No. 2026-06 https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf",
+   "also_requires": "c208"
+  },
+  "c208": {
+   "electorate": "territory",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Annexation passes only if c206 (district) AND c208 (territory) each get a majority (H&S Code §775.051).",
+   "threshold": "simple majority",
+   "paired_with": "c206",
+   "electorate_cite": "Bedsheet headings 'Election for Annexation in the District' vs 'Election for Annexation in the Territory to be Annexed' https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; Resolution No. 2026-06 https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf"
+  },
+  "c209": {
+   "electorate": "territory",
+   "majority": null,
+   "depends_on": "c208",
+   "notes": "Debt/tax assumption takes effect only 'if it is added to the district', i.e., if annexation passes in both electorates; it also needs its own paired majority (c207 + c209).",
+   "threshold": "simple majority",
+   "paired_with": "c207",
+   "electorate_cite": "Bedsheet headings 'Election for Annexation in the District' vs 'Election for Annexation in the Territory to be Annexed' https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; Resolution No. 2026-06 https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf",
+   "also_requires": "c206"
+  },
+  "c210": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": null,
+   "notes": "Existing-district version (no tax-increase label). Annexation needs majorities in both c210 and c212.",
+   "threshold": "simple majority",
+   "paired_with": "c212",
+   "electorate_cite": "ESD 10 order: 'For registered voters in the District' (no tax-increase label) vs 'For the registered voters in the Edgewater and River Terrace Defined Territory to be annexed' (headed 'THIS IS A TAX INCREASE') https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf; notice https://votetravis.gov/wp-content/uploads/TCESD-10_Notice-of-Election.pdf; bedsheet p.17 https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf"
+  },
+  "c211": {
+   "electorate": "district",
+   "majority": null,
+   "depends_on": "c210",
+   "notes": "Existing-district version. Applies only 'if it is added to the district'.",
+   "threshold": "simple majority",
+   "paired_with": "c213",
+   "electorate_cite": "ESD 10 order: 'For registered voters in the District' (no tax-increase label) vs 'For the registered voters in the Edgewater and River Terrace Defined Territory to be annexed' (headed 'THIS IS A TAX INCREASE') https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf; notice https://votetravis.gov/wp-content/uploads/TCESD-10_Notice-of-Election.pdf; bedsheet p.17 https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+   "also_requires": "c212"
+  },
+  "c212": {
+   "electorate": "territory",
+   "majority": null,
+   "depends_on": null,
+   "notes": "The '(second ballot version)' is the territory's ballot: identical text headed 'THIS IS A TAX INCREASE'. Annexation needs majorities in both c210 and c212.",
+   "threshold": "simple majority",
+   "paired_with": "c210",
+   "electorate_cite": "ESD 10 order: 'For registered voters in the District' (no tax-increase label) vs 'For the registered voters in the Edgewater and River Terrace Defined Territory to be annexed' (headed 'THIS IS A TAX INCREASE') https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf; notice https://votetravis.gov/wp-content/uploads/TCESD-10_Notice-of-Election.pdf; bedsheet p.17 https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf"
+  },
+  "c213": {
+   "electorate": "territory",
+   "majority": null,
+   "depends_on": "c212",
+   "notes": "Territory version, headed 'THIS IS A TAX INCREASE'. Applies only 'if it is added to the district'.",
+   "threshold": "simple majority",
+   "paired_with": "c211",
+   "electorate_cite": "ESD 10 order: 'For registered voters in the District' (no tax-increase label) vs 'For the registered voters in the Edgewater and River Terrace Defined Territory to be annexed' (headed 'THIS IS A TAX INCREASE') https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf; notice https://votetravis.gov/wp-content/uploads/TCESD-10_Notice-of-Election.pdf; bedsheet p.17 https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+   "also_requires": "c210"
+  },
+  "c214": {
+   "electorate": "district",
+   "majority": false,
+   "depends_on": null,
+   "write_ins": [],
+   "write_ins_cite": "No 'Write-in / Voto Escrito' line appears under this contest on the official consolidated ballot (https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf; re-checked against the corrected version https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf); the only write-in lines on that ballot are in partisan/county races. Travis County's published list of declared write-in candidates was not located on votetravis.gov.",
+   "unverified": [
+    "write_ins (inferred from absence of a write-in line on the official ballot; county write-in list not found)"
+   ],
+   "notes": "Vote for up to 3 of 5; 2-year terms."
+  }
+ },
+ "sources": [
+  "https://texas.public.law/statutes/tex._election_code_section_2.001",
+  "https://texas.public.law/statutes/tex._health_and_safety_code_section_775.051",
+  "https://texas.public.law/statutes/tex._tax_code_section_6.0301",
+  "https://texas.public.law/statutes/tex._water_code_section_49.102",
+  "https://texas.public.law/statutes/tex._water_code_section_49.103",
+  "https://traviscad.org/?p=7108",
+  "https://traviscad.org/boardelections",
+  "https://traviscad.org/update/canvassed-results-of-the-may-2024-board-of-directors-election/",
+  "https://votetravis.gov/current-election-information/current-election/",
+  "https://votetravis.gov/resources/required-notices/",
+  "https://votetravis.gov/wp-content/uploads/Cypress-Ranch-WCID-1_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/CypressRanchWCID1_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Eastwood-MUD_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Eastwood-MUD_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf",
+  "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Final-FINAL.pdf",
+  "https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_1A_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/HeroWayWestMUD_Order-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Hidden-Lakes-MUD-1_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/HiddenLakesMUD1_Notice-of-Election-UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Kennedy-Hill-MUD_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Kennedy-Hill-MUD_Order-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/NAustinMUD1_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/NAustinMUD1_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/Northtown-MUD_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/Northtown-MUD_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/SunfieldMUD2_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/SunfieldMUD2_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/TC-ESD-4_Order-the-Election-8-14-26.pdf",
+  "https://votetravis.gov/wp-content/uploads/TC-MMD-1_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TC-MMD-1_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/TC-MUD-41_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TC-MUD-41_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/TC-WCID-No-17_Order-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCAD-Order.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCAD_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCESD-10_Notice-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCESD-9_Notice-of-Special-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCESD-9_Order-of-Special-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCESD-NO.-10-ELECTION-ORDER-LONG-KPC-082326.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCESD4_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/TCWCID17_Notice-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/Vista-MUD_Notice-of-Election-Vista-Fire-Plan-final-all-Languages.pdf",
+  "https://votetravis.gov/wp-content/uploads/Vista-MUD_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/WellsBranchLibrary_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/WellsBranchLibrary_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/WilCo-TravisCoMUD1_Notice-of-Election-UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/WilCo-TravisCoMUD1_Order-of-Election.pdf",
+  "https://www.sos.state.tx.us/elections/candidates/guide/2026/writein2026.shtml",
+  "https://www.sos.state.tx.us/elections/laws/county-appraisal-district-elec-population-75-thousand-plus.shtml",
+  "https://www.sos.texas.gov/elections/laws/write-in-a-local-election.shtml",
+  "https://texas.public.law/statutes/tex._gov't_code_section_1207.003",
+  "https://texas.public.law/statutes/tex._water_code_section_54.514",
+  "https://texaslegalguide.com/Texas_Constitution:Article_III,_Section_52",
+  "https://www.esd4.org/disannexation-and-joining-esd-4",
+  "https://www.esd4.org/",
+  "https://www.esd4.org/files/2b5c7fa56/Expansion+Election+Public+Information+handout.pdf",
+  "https://votetravis.gov/wp-content/uploads/Travis-County-Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/G26-Travis-County-Notice-of-Election.pdf",
+  "https://texasattorneygeneral.gov/sites/default/files/opinion-files/opinion/1986/jm0545.pdf",
+  "https://www.courtlistener.com/opinion/4136430/opinion-no/",
+  "https://www.sll.texas.gov/assets/pdf/braden/16-article-iii.pdf",
+  "https://texas.public.law/statutes/tex._health_and_safety_code_section_775.052",
+  "https://texas.public.law/statutes/tex._health_and_safety_code_section_775.053"
+ ],
+ "unreachable": [
+  "https://www14.tceq.texas.gov/iwud/ (TCEQ Water Districts database; access request not answered, not used)",
+  "statutes.capitol.texas.gov (JavaScript-only; statute text taken from texas.public.law mirrors instead)",
+  "https://www.esd4.org/voter-education-re-district-expansion (permission request unanswered; not retried)"
+ ],
+ "not_found": [
+  "Travis County list of declared write-in candidates for Nov 3, 2026 (not on votetravis.gov Required Notices, Current Election, or Candidates pages)",
+  "Joint election agreement listing participating entities (not posted on votetravis.gov)",
+  "Any announced canvass dates"
+ ]
+}
