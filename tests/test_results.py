@@ -438,6 +438,12 @@ M = lambda key, **k: {'source': 'counties', 'canvasser': k.pop('canvasser', 'eas
 FA = lambda f, a: [('FOR', f), ('AGAINST', a)]
 
 @test
+def clarity_times_in_utc_read_as_austin_time():
+    assert P.parse_clarity(clarity({}, stamp='11/5/2026 3:00:00 PM UTC'))['posted'] == '2026-11-05T09:00'   # CST: UTC-6
+    assert P.parse_clarity(clarity({}, stamp='10/30/2026 3:00:00 PM UTC'))['posted'] == '2026-10-30T10:00'  # CDT: UTC-5
+    assert P.parse_clarity(clarity({}, stamp='11/5/2026 9:00:00 AM CST'))['posted'] == '2026-11-05T09:00'
+
+@test
 def a_failed_confirmation_marks_the_whole_district():
     d, res = scratch_with([clarity({'1': ('Confirmation', FA(300, 700)), '2': ('Bonds', FA(600, 400))})])
     try:
