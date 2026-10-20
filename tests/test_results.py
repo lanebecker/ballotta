@@ -9,12 +9,14 @@
 3. The build (source/build_results.py), end to end in a scratch folder, on those real files: Lane's downloads filed
    (and refused in the wrong folder), the partial rule from a missing county, official only through the contest's own
    canvasser, the ledger (seq, changed, corrected), the kill switch, and a stop (never a guess) on anything unmapped.
+4. The fetcher (source/fetch_results.py) with a stand-in network: what it fetches, when, and that one failure doesn't
+   stop the rest.
 """
 import pathlib, sys, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'source'))
-import results_rules as R, results_parse as P, build_results as B
+import results_rules as R, results_parse as P, build_results as B, fetch_results as FR
 import copy, shutil, tempfile
 import io, json, re, zipfile
 FX = ROOT / 'tests/fixtures/results'
@@ -373,6 +375,43 @@ def anything_unmapped_stops_the_build():
         try: s.build(); raise AssertionError('two different files posted the same minute were accepted')
         except B.Problem as e: assert 'exclude one' in str(e), e
     finally: s.close()
+
+
+# ---------------------------------------------------------------- 4. the fetcher, with a stand-in network
+def net(pages):
+    asked = []
+    def fetch(url):
+        asked.append(url)
+        if url not in pages: raise OSError(f'{url}: HTTP 404')
+        return pages[url]
+    return fetch, asked
+
+META = {'sos_election': '53815', 'sos_time_zone': 'America/Chicago',
+        'fetch': {'williamson': 'https://wc.example/results', 'hays': ['https://hays.example/Cumulative%20Results%20Unofficial.pdf']}}
+
+@test
+def the_fetcher_files_what_it_gets_and_skips_what_fails():
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        sos = f'{FR.SOS}/election/53815'
+        fetch, asked = net({sos: fx('sos-53815-travis.json'), 'https://wc.example/results': fx('williamson-2025-11.html')})
+        out = FR.fetch_all(META, res=d, fetch=fetch)
+        assert [(s, bool(p), bool(e)) for s, p, e in out] == [('sos', True, False), ('williamson', True, False), ('hays', False, True)], out
+        assert not any('electionReports' in u for u in asked), 'no canvass report until the feed lists one'
+        out = FR.fetch_all(META, res=d, fetch=fetch)
+        assert [p for _, p, _ in out] == [None, None, None], 'nothing new: nothing written'
+        # once the feed lists the Official Canvass Report, it's fetched (from its {"upload": base64} wrapper) and filed
+        m = dict(META, sos_election='58314')
+        pdf = json.dumps({'upload': __import__('base64').b64encode(fx('sos-58314-canvass.pdf')).decode()}).encode()
+        fetch, asked = net({f'{FR.SOS}/election/58314': fx('sos-58314.json'), f'{FR.SOS}/electionReports/58314/OfficialCanvassReport/pdf': pdf})
+        out = dict((s, p) for s, p, _ in FR.fetch_all(m, res=d, fetch=fetch))
+        assert out['sos_canvass'] and out['sos_canvass'].name == 'official-canvass.pdf', out
+        # a page that doesn't add up is never filed
+        bad = fx('williamson-2025-11.html').replace(b'>2,498<', b'>2,499<')
+        fetch, _ = net({sos: fx('sos-53815-travis.json'), 'https://wc.example/results': bad})
+        out = FR.fetch_all(META, res=d, fetch=fetch)
+        assert out[1][0] == 'williamson' and out[1][1] is None and 'disagree' in out[1][2], out
+    finally: shutil.rmtree(d)
 
 
 def main():
