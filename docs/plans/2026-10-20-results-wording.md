@@ -1,4 +1,8 @@
-# Results wording — first review pass (draft for Lane, Oct 20)
+# Results wording — first review pass (Lane reviewed Oct 20)
+
+**Lane's first pass (Oct 20, 11:19 am):** W35 "behind", not "trailing" (W37 too); W36, W51, W31 as drafted; W52 gives a
+short reason; W54 "Possible runoff", not "Runoff?". The other strings stand as drafted. Second pass: in place on a
+local server with fictional results (~Nov 2).
 
 Every visitor-facing string the results feature adds, numbered for review. Tone (Lane, Oct 20): "Didn't win", never
 "Lost"; no ✓ or ✗ marks; "Leading", not "Ahead", and never "winning" before official; "Unofficial" on every ribbon.
@@ -54,9 +58,9 @@ Names, counties, dates and times below are placeholders. Separators and quotes f
 ## C. Your pick (only when the ballot has a pick here)
 
 - **W34** "Your pick is leading."
-- **W35** "Your pick is trailing."
+- **W35** "Your pick is behind."
 - **W36** No leader named (too close, may go to a runoff, partial without a leader): "Your pick: Name" (no verb)
-- **W37** Measures: "Your pick, For, is leading." / "Your pick, Against, is leading." / "Your pick, For, is trailing."
+- **W37** Measures: "Your pick, For, is leading." / "Your pick, Against, is leading." / "Your pick, For, is behind."
 - **W38** Vote for up to N: "2 of your picks are leading." / "1 of your 2 picks is leading." / "None of your picks are
   leading."
 - **W39** "Your pick is headed to the runoff." / "Your pick didn’t make the runoff."
@@ -84,12 +88,13 @@ Names, counties, dates and times below are placeholders. Separators and quotes f
 - **W50** "Since you last looked: 3 results changed." (a leader, a runoff or a passing/failing changed)
 - **W51** "Corrected since you last looked: 1 result. An earlier version on Ballotta was wrong." (on the contest itself:
   "Corrected Nov 6: an earlier version on Ballotta was wrong.")
-- **W52** Results switched off (the kill switch): "Results are paused while we check them."
+- **W52** Results switched off (the kill switch): "Results are paused while we check a problem with the latest
+  numbers. Your picks aren’t affected."
 
 ## G. At a glance (the Result column)
 
 - **W53** Column heading: "Result"
-- **W54** Cells: "Leading · Unofficial", "Too close · Unofficial", "Runoff?", "Runoff", "Passing · Unofficial",
+- **W54** Cells: "Leading · Unofficial", "Too close · Unofficial", "Possible runoff", "Runoff", "Passing · Unofficial",
   "Won · Official", "Didn’t win · Official", "Passed · Official", "Failed · Official", "Elected · Official", "—" (no
   votes yet). "Your pick" stays in its own column; this column says nothing about it.
 
