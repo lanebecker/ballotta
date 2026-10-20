@@ -45,6 +45,7 @@ M = [
  ('R28 search finds nothing new', PREV, "(!q || (c.title + ' ' + optionsOf(c).join(' ')", "(!q || ('' + ' ' + ''", [A]),
  ('R29 a bad file breaks the page', PREV, '    Object.keys(j.contests).forEach(cid => { if (entryOK(cid, j.contests[cid])) contests[cid] = j.contests[cid]; });', '    Object.keys(j.contests).forEach(cid => { contests[cid] = j.contests[cid]; });', [X]),
  ('R30 asked before the gate', PREV, "    if (!live() || document.visibilityState === 'hidden' ||", "    if (document.visibilityState === 'hidden' ||", [N]),
+ ('R31 a two-thirds measure unsaid', PREV, "    if (e.needs === 'two_thirds') h +=", "    if (false) h +=", [A]),
 ]
 if __name__ == '__main__':
     R.main(M)

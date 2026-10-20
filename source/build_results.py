@@ -154,6 +154,8 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
         any_county = False
         for county in m["electorate"]:
             rep, key = reports.get(county), m["keys"].get(county)
+            if key == "absent":                          # confirmed from that county's own file: none of its voters vote here
+                continue
             if rep is None or not key:
                 missing.append(P.LABELS[county])
                 reg = m.get("registered", {}).get(county)
@@ -179,11 +181,25 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
     if done and cast == 0 and not (kind == "candidate" and R.is_unopposed(names, n, write_ins)):
         raise Problem(f"{where}: {cvr['label']} canvassed it on {done}, but the numbers loaded have no votes")
     recount = (line.get("recount") or {}).get("link")
-    if done:
-        verdict, leaders, runoff = R.official(kind, rows, n, m.get("majority", False), write_ins, cid)
-        state = "recount" if recount else "official"
-    else:
-        verdict, leaders, runoff = R.unofficial(kind, rows, n, m.get("majority", False), slack, write_ins, cid)
+    needs = m.get("needs")                           # None | "two_thirds" | "unsure" (measures)
+    try:
+        if done and m.get("outcome_from_canvass"):
+            # one total can't show the outcome (ESD 4's annexation, c205: separate majorities, one ballot listing):
+            # the canvass's own outcome, entered by hand in official.json
+            verdict = official.get("outcomes", {}).get(cid)
+            if verdict not in ("passed", "failed"):
+                raise Problem(f"{where}: canvassed; put its outcome in official.json's outcomes (passed or failed)")
+            leaders, runoff, state = [], [], ("recount" if recount else "official")
+        elif done:
+            verdict, leaders, runoff = R.official(kind, rows, n, m.get("majority", False), write_ins, cid, needs)
+            state = "recount" if recount else "official"
+        elif m.get("outcome_from_canvass"):
+            verdict, leaders, runoff = "none", [], []
+        else:
+            verdict, leaders, runoff = R.unofficial(kind, rows, n, m.get("majority", False), slack, write_ins, cid, needs)
+    except ValueError as e:
+        raise Problem(f"{where}: {e} (source/results_map.json)")
+    if not done:
         state = "partial" if missing else ("counting" if cast == 0 and verdict != "unopposed" else "unofficial")
     return {
         "state": state, "verdict": verdict, "leaders": leaders, "runoff": runoff,
@@ -195,7 +211,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
         "official_numbers": official_numbers if done else True,
         "changed": 0, "corrected": (prev_entry or {}).get("corrected"), "note": None, "who": m.get("who"),
         "runoff_on": official.get("runoffs", {}).get(cid) if verdict in ("runoff", "may_runoff", "tied_runoff") else None,
-        "recount": recount, "write_ins": bool(write_ins),
+        "recount": recount, "write_ins": bool(write_ins), "needs": "two_thirds" if needs == "two_thirds" else None,
     }
 
 

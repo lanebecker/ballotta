@@ -41,17 +41,30 @@ def is_unopposed(candidates, seats, write_ins):
     return len(candidates) <= seats and not write_ins
 
 
-def unofficial(kind, votes, seats=1, majority=False, slack=0, write_ins=(), cid=None):
+HALF, TWO_THIRDS = Fraction(1, 2), Fraction(2, 3)
+NEEDS = {None: HALF, "two_thirds": TWO_THIRDS}       # a measure's threshold; "unsure": a verdict only where both agree
+
+
+def unofficial(kind, votes, seats=1, majority=False, slack=0, write_ins=(), cid=None, needs=None):
     """(verdict, leaders, runoff) before the canvass. kind: 'candidate' or 'measure'. write_ins: the declared
-    write-ins' names (they are in votes, after the ballot's choices)."""
+    write-ins' names (they are in votes, after the ballot's choices). needs: a measure's threshold (None: more than
+    half; "two_thirds": road bonds, Tex. Const. art. III §52(b); "unsure": not yet settled, so a verdict only where
+    a majority and two-thirds agree)."""
     total = sum(v for _, v in votes)
     if kind == "measure":
-        return measure(votes, total, slack), [], []
+        if needs == "unsure":
+            a, b = measure(votes, total, slack, HALF), measure(votes, total, slack, TWO_THIRDS)
+            return (a if a == b else "too_close"), [], []
+        return measure(votes, total, slack, NEEDS[needs]), [], []
     names = [n for n, _ in votes if n not in write_ins]
     if is_unopposed(names, seats, write_ins):
         return "unopposed", names, []
     if total == 0 or slack is None:
         return "none", [], []
+    if majority == "unsure":                         # the rule isn't settled: a verdict only where both readings agree
+        a = unofficial(kind, votes, seats, False, slack, write_ins, cid)
+        b = unofficial(kind, votes, seats, True, slack, write_ins, cid)
+        return a if a == b else ("none", [], [])
     r = ranked(votes)
     if majority and seats == 1 and len(votes) >= 3:
         return majority_zone(r, total, slack)
@@ -65,16 +78,17 @@ def unofficial(kind, votes, seats=1, majority=False, slack=0, write_ins=(), cid=
     return "too_close", [], []
 
 
-def measure(votes, total, slack=0):
-    """Symmetric: FOR >= 50.5% and 20 votes ahead passes; FOR <= 49.5% and 20 votes behind fails; else too close.
-    The slack goes against whichever way it leans."""
+def measure(votes, total, slack=0, need=Fraction(1, 2)):
+    """Symmetric around the threshold: passing when FOR's share is at least half a point above it AND at least 10
+    voters would have to switch to undo it; failing likewise below; else too close. At one half this is exactly
+    FOR >= 50.5% and 20 votes ahead (Lane's answer 2). The slack goes against whichever way it leans."""
     if total == 0 or slack is None:
         return "none"
-    f, a = dict(votes)["FOR"], dict(votes)["AGAINST"]
+    f = dict(votes)["FOR"]
     cast = total + slack
-    if Fraction(100 * f, cast) >= MEASURE_PASS and f - (a + slack) >= FLOOR:
+    if Fraction(100 * f, cast) - 100 * need >= Fraction(1, 2) and f - need * cast >= FLOOR // 2:
         return "passing"
-    if Fraction(100 * (f + slack), cast) <= MEASURE_FAIL and a - (f + slack) >= FLOOR:
+    if 100 * need - Fraction(100 * (f + slack), cast) >= Fraction(1, 2) and need * cast - (f + slack) >= FLOOR // 2:
         return "failing"
     return "too_close"
 
@@ -96,17 +110,29 @@ def majority_zone(r, total, slack=0):
     return "may_runoff", [], []
 
 
-def official(kind, votes, seats=1, majority=False, write_ins=(), cid=None):
+def official(kind, votes, seats=1, majority=False, write_ins=(), cid=None, needs=None):
     """(verdict, leaders, runoff) once canvassed. Ties: offices -> state law decides (§2.002); c006-c010 -> the
     Legislature (§2.002(h)); a two-way majority contest -> runoff (§2.023(a)); a tie for the second runoff spot ->
     recount decides (§2.023(c)); measures -> fail on a tie."""
     total = sum(v for _, v in votes)
     if kind == "measure":
         f, a = dict(votes)["FOR"], dict(votes)["AGAINST"]
-        return ("passed" if f > a else "failed_tie" if f == a else "failed"), [], []
+        half = ("passed" if f > a else "failed_tie" if f == a else "failed")
+        thirds = "passed" if 3 * f >= 2 * total and total else "failed"          # at least two-thirds of the votes cast
+        if needs == "unsure":
+            if (half == "passed") != (thirds == "passed"):
+                raise ValueError("canvassed, and a majority and two-thirds disagree: settle this measure's threshold")
+            return half, [], []
+        return (thirds if needs == "two_thirds" else half), [], []
     names = [n for n, _ in votes if n not in write_ins]
     if is_unopposed(names, seats, write_ins):
         return "elected", names, []
+    if majority == "unsure":
+        a = official(kind, votes, seats, False, write_ins, cid)
+        b = official(kind, votes, seats, True, write_ins, cid)
+        if a != b:
+            raise ValueError("canvassed, and plurality and majority disagree: settle this contest's rule")
+        return a
     r = ranked(votes)
     if majority and seats == 1:
         if len(r) == 2 and r[0][1] == r[1][1]:

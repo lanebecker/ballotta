@@ -11,6 +11,8 @@
    canvasser, the ledger (seq, changed, corrected), the kill switch, and a stop (never a guess) on anything unmapped.
 4. The fetcher (source/fetch_results.py) with a stand-in network: what it fetches, when, and that one failure doesn't
    stop the rest.
+5. The map (source/results_map.json, written by source/build_results_map.py): every contest, every canvasser, every
+   county known; the 42 SOS contests against the live Nov 3 feed, write-ins included, through a full build.
 """
 import pathlib, sys, traceback
 
@@ -82,6 +84,24 @@ def measures_are_symmetric_around_half():
     assert (o(5001, 5000), o(5000, 5000), o(4999, 5000)) == ('passed', 'failed_tie', 'failed')
 
 @test
+def road_bonds_need_two_thirds():
+    # Tex. Const. art. III §52(b): of 3,000 cast, two-thirds is 2,000; half a point and 10 switching voters either side
+    m = lambda f, n=3000, **k: R.unofficial('measure', V(('FOR', f), ('AGAINST', n - f)), needs='two_thirds', **k)[0]
+    assert (m(2015), m(2014), m(1986), m(1985)) == ('passing', 'too_close', 'too_close', 'failing')
+    assert m(1900) == 'failing', '63% is a clear majority, and still fails a two-thirds measure'
+    o = lambda f, n=3000: R.official('measure', V(('FOR', f), ('AGAINST', n - f)), needs='two_thirds')[0]
+    assert (o(2000), o(1999), o(1500)) == ('passed', 'failed', 'failed'), 'at least two-thirds; a tie just fails'
+
+@test
+def an_unsettled_threshold_gives_a_verdict_only_where_both_agree():
+    u = lambda f, n=10000: R.unofficial('measure', V(('FOR', f), ('AGAINST', n - f)), needs='unsure')[0]
+    assert (u(7000), u(6000), u(4000)) == ('passing', 'too_close', 'failing')
+    o = lambda f, n=10000: R.official('measure', V(('FOR', f), ('AGAINST', n - f)), needs='unsure')[0]
+    assert (o(7000), o(4000)) == ('passed', 'failed')
+    try: o(6000); raise AssertionError('canvassed at 60% with the threshold unsettled was decided')
+    except ValueError: pass
+
+@test
 def majority_contests_with_three_or_more():
     mj = lambda *v, **k: R.unofficial('candidate', V(*v), majority=True, **k)
     assert mj(('A', 5300), ('B', 3000), ('C', 1700)) == ('leading', ['A'], [])           # 53%
@@ -92,6 +112,17 @@ def majority_contests_with_three_or_more():
     assert mj(('A', 4700), ('B', 2700), ('C', 2610)) == ('runoff', [], [])               # second and third within a point
     # a declared write-in counts toward the three
     assert mj(('A', 4700), ('B', 4300), ('W', 1000), write_ins=('W',)) == ('runoff', [], ['A', 'B'])
+
+@test
+def an_unsettled_majority_rule_gives_a_verdict_only_where_both_agree():
+    u = lambda *v: R.unofficial('candidate', V(*v), majority='unsure')
+    assert u(('A', 6000), ('B', 3000), ('C', 1000)) == ('leading', ['A'], []), '60%: leads either way'
+    assert u(('A', 4500), ('B', 3500), ('C', 2000)) == ('none', [], []), '45%: leads a plurality, headed to a runoff under a majority'
+    assert u(('A', 5060), ('B', 4940)) == ('leading', ['A'], []) and u(('A', 5040), ('B', 4960))[0] == 'too_close', 'two candidates: the same either way'
+    o = lambda *v: R.official('candidate', V(*v), majority='unsure')
+    assert o(('A', 6000), ('B', 3000), ('C', 1000)) == ('won', ['A'], [])
+    try: o(('A', 4500), ('B', 3500), ('C', 2000)); raise AssertionError('canvassed at 45% with the rule unsettled was decided')
+    except ValueError: pass
 
 @test
 def two_way_majority_contests_use_the_leading_test():
@@ -411,6 +442,49 @@ def the_fetcher_files_what_it_gets_and_skips_what_fails():
         fetch, _ = net({sos: fx('sos-53815-travis.json'), 'https://wc.example/results': bad})
         out = FR.fetch_all(META, res=d, fetch=fetch)
         assert out[1][0] == 'williamson' and out[1][1] is None and 'disagree' in out[1][2], out
+    finally: shutil.rmtree(d)
+
+
+# ---------------------------------------------------------------- 5. the map
+def real_map(): return json.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))
+
+@test
+def the_map_is_what_its_tables_write_and_covers_every_contest():
+    import subprocess, check_results
+    r = subprocess.run([sys.executable, str(ROOT / 'source/build_results_map.py'), '--check'], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    mp, key = real_map(), check_results.answer_key()
+    assert set(mp['contests']) == set(key), set(key) ^ set(mp['contests'])
+    for cid, m in mp['contests'].items():
+        cv = mp['canvassers'].get(m['canvasser'])
+        assert cv and cv['label'].startswith('the ') and cv['kind'] in ('local', 'state', 'legislature'), cid
+        if m['source'] == 'counties':
+            assert m['electorate'] and set(m['keys']) == set(m['electorate']) and all(c in P.LABELS for c in m['electorate']), cid
+            assert cv['kind'] == 'local', (cid, 'a county-counted contest is canvassed locally')
+        assert m['majority'] in (True, False, 'unsure') and m.get('needs') in (None, 'two_thirds', 'unsure'), cid
+        if m.get('needs'): assert key[cid]['type'] == 'measure', cid
+        if m.get('depends_on'): assert key[m['depends_on']]['type'] == 'measure' and key[m['depends_on']]['entity'] == key[cid]['entity'], cid
+        if m.get('pair'): assert mp['contests'][m['pair']]['pair'] == cid and {m['who'], mp['contests'][m['pair']]['who']} == {'district', 'area'}, cid
+        if m.get('write_ins'): assert 'Write-in' in key[cid]['choices'], (cid, 'a declared write-in where the ballot has no write-in line')
+    assert mp['contests']['c006']['canvasser'] == mp['contests']['c007']['canvasser'] == 'legislature'
+
+@test
+def every_sos_contest_reads_from_the_live_feed_through_a_full_build():
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        res = d / 'results'; data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
+        raw = B.raw_dir(res, 'sos', r['posted'], data); raw.mkdir(parents=True); (raw / 'election.json').write_bytes(data)
+        out, ch = B.build(res=res, mp=real_map())
+        sos = [cid for cid, m in real_map()['contests'].items() if m['source'] == 'sos']
+        assert sorted(out['contests']) == sorted(sos) and len(sos) == 42, sorted(set(sos) ^ set(out['contests']))
+        import check_results; key = check_results.answer_key()
+        for cid, e in out['contests'].items():   # no votes yet: counting, except a one-candidate race, unopposed from the start
+            one = len(check_results.pick_names(key[cid])) == 1 and not any(x[3] for x in e['choices'])
+            assert (e['state'], e['verdict']) == (('unofficial', 'unopposed') if one else ('counting', 'none')), (cid, e['state'], e['verdict'])
+        assert sum(e['verdict'] == 'unopposed' for e in out['contests'].values()) == 11
+        assert sum(x[3] for e in out['contests'].values() for x in e['choices']) == 11, 'the 11 declared write-ins'
+        assert out['contests']['c006']['canvass'] == {'kind': 'legislature', 'by': None, 'on': None, 'done': None}
+        assert check_results_ok(out)
     finally: shutil.rmtree(d)
 
 

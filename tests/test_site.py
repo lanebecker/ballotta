@@ -4924,7 +4924,9 @@ def all_travis_county_results_need_no_address(b):
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, ballot=False)
     assert pg.is_visible('#rs-land') and 'See all Travis County results' in pg.inner_text('#rs-land')
     pg.click('#rs-land-go'); assert pg.evaluate("document.getElementById('rs-all').open")
-    n = len(pg.query_selector_all('#rs-list .rs-c')); assert n == 11, n
+    n = len(pg.query_selector_all('#rs-list .rs-c')); assert n == 12, n
+    bond = pg.locator('#rs-list .rs-c', has=pg.locator('.rs', has_text='Needs two-thirds of the vote to pass.'))   # W68, a road bond at 63%
+    assert bond.count() == 1 and 'Failing' in bond.inner_text() and 'Eastwood' in bond.inner_text(), bond.count()
     assert 'Your pick' not in pg.inner_text('#rs-list'), 'nobody’s ballot, even with picks saved here'
     pg.click('#rs-levels [data-lv="City"]'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
     assert titles and all('City of' in t for t in titles), titles

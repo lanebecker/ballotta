@@ -35,7 +35,7 @@ def entry(cid, state="unofficial", verdict="leading", votes=None, leaders=None, 
             "sources": srcs, "missing": list(missing), "travis": tv, "canvasser": canvasser,
             "canvass": {"kind": kind, "by": by, "on": on, "done": done}, "official_numbers": official_numbers,
             "changed": changed, "corrected": corrected, "note": note, "who": who, "runoff_on": runoff_on, "recount": recount,
-            "write_ins": bool(write_ins)}
+            "write_ins": bool(write_ins), "needs": None}
 
 
 def E(cid, over=None, **kw):
@@ -65,6 +65,10 @@ def scene(name="mixed"):
         e["c124"] = entry("c124", canvasser="the Austin ISD Board of Trustees", votes=[6200, 5100])   # one seat, the voter's pick leading
         e["c147"] = E("c147", verdict="failing", canvasser="the Eastwood MUD board", votes=[8, 30],
                           over={"state": "official", "verdict": "failed", "done": "2026-11-10", "note": "district_not_confirmed"} if off else None)
+        # a road bond (two-thirds, W68): 63% for is a clear majority and still fails; not on the test ballot, so it
+        # shows only in All Travis County results
+        e["c150"] = E("c150", verdict="failing", canvasser="the Eastwood MUD board", votes=[630, 370])
+        e["c150"]["needs"] = "two_thirds"
         e["c117"] = entry("c117", state="counting", verdict="none", votes=[0, 0], canvasser="the ACC Board of Trustees")
     if name == "withdrawn":
         return {"seq": 3, "election": "2026-11-03", "withdrawn": True, "late_until": "2026-11-17", "contests": {}}

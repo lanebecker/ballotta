@@ -2162,6 +2162,7 @@ const results = (() => {
     if (!isStr(e.canvasser) || !cv || typeof cv !== 'object' || !['local', 'state', 'legislature'].includes(cv.kind) || !['by', 'on', 'done'].every(k => dateOrNull(cv[k]))) return false;
     if (typeof e.official_numbers !== 'boolean' || !isNat(e.changed) || !dateOrNull(e.corrected) || !dateOrNull(e.runoff_on)) return false;
     if (!NOTES.includes(e.note) || ![null, 'district', 'area'].includes(e.who) || typeof e.write_ins !== 'boolean') return false;
+    if (![null, 'two_thirds'].includes(e.needs) || (e.needs && c.type !== 'measure')) return false;
     if (!(e.recount === null || (isStr(e.recount) && /^https:\/\//.test(e.recount)))) return false;
     return true;
   }
@@ -2278,6 +2279,7 @@ const results = (() => {
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
     if (v) h += '<p class="rs-v">' + esc(v) + '</p>';
+    if (e.needs === 'two_thirds') h += '<p class="rs-n">Needs two-thirds of the vote to pass.</p>';   // W68: road bonds (Tex. Const. art. III §52(b))
     if (e.state !== 'counting') h += bars(c, e.choices, true);
     if (e.write_ins) h += '<p class="rs-n">Declared write-in candidates are listed by name. Only votes for declared write-in candidates count.</p>';  // W45
     if (e.note) h += '<p class="rs-n rs-key">' + NOTE[e.note] + '</p>';

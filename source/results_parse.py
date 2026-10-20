@@ -17,7 +17,8 @@ from zoneinfo import ZoneInfo
 
 AUSTIN = ZoneInfo("America/Chicago")
 LABELS = {"travis": "Travis County", "bastrop": "Bastrop County", "williamson": "Williamson County", "hays": "Hays County",
-          "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State"}
+          "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State",
+          "caldwell": "Caldwell County", "lee": "Lee County"}       # ACC only; no file ever comes from them (Task 1 finding 11)
 PARTIES = {"REP", "DEM", "LIB", "GRN", "IND", "NON", "W", "WI", "W-I"}
 
 

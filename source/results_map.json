@@ -1,0 +1,3249 @@
+{
+ "meta": {
+  "election": "2026-11-03",
+  "sos_election": "53815",
+  "sos_time_zone": "America/Chicago",
+  "late_until": "2026-11-17",
+  "orders": "https://votetravis.gov/resources/required-notices/",
+  "fetch": {
+   "williamson": null,
+   "hays": []
+  }
+ },
+ "canvassers": {
+  "state": {
+   "label": "the state",
+   "kind": "state",
+   "why": "Elec. Code §67.010: the Governor's state canvass, Nov 21 - Dec 7"
+  },
+  "legislature": {
+   "label": "the Legislature",
+   "kind": "legislature",
+   "why": "Tex. Const. art. IV §3; Elec. Code §67.011 (Governor, Lt. Governor)"
+  },
+  "travis-county": {
+   "label": "the Travis County Commissioners Court",
+   "kind": "local",
+   "why": "Elec. Code §67.002 (county offices)"
+  },
+  "tcad": {
+   "label": "the Travis Central Appraisal District board",
+   "kind": "local",
+   "why": "SOS appraisal-district election FAQ 5; TCAD canvassed its May 2024 election"
+  },
+  "city-of-austin": {
+   "label": "the Austin City Council",
+   "kind": "local",
+   "why": "Elec. Code §67.002; Ord. 20260806-002"
+  },
+  "city-of-elgin": {
+   "label": "the Elgin City Council",
+   "kind": "local",
+   "why": "Elec. Code §501.109(b)(2) (local option)"
+  },
+  "city-of-jonestown": {
+   "label": "the Jonestown City Council",
+   "kind": "local",
+   "why": "Jonestown order of election"
+  },
+  "city-of-lago-vista": {
+   "label": "the Lago Vista City Council",
+   "kind": "local",
+   "why": "Ord. 26-07-16-01"
+  },
+  "city-of-manor": {
+   "label": "the Manor City Council",
+   "kind": "local",
+   "why": "Res. 2026-16"
+  },
+  "city-of-pflugerville": {
+   "label": "the Pflugerville City Council",
+   "kind": "local",
+   "why": "Pflugerville orders of election"
+  },
+  "city-of-sunset-valley": {
+   "label": "the Sunset Valley City Council",
+   "kind": "local",
+   "why": "Ord. 260602-A"
+  },
+  "sunset-valley-ccpd": {
+   "label": "the Sunset Valley Crime Control and Prevention District board",
+   "kind": "local",
+   "why": "INFERRED: the district's board ordered Prop A (Local Gov't Code ch. 363); its canvass not stated"
+  },
+  "village-of-volente": {
+   "label": "the Volente Village Council",
+   "kind": "local",
+   "why": "Res. 2026-R-02"
+  },
+  "acc": {
+   "label": "the ACC Board of Trustees",
+   "kind": "local",
+   "why": "ACC order of election, Nov 2026"
+  },
+  "austin-isd": {
+   "label": "the Austin ISD Board of Trustees",
+   "kind": "local",
+   "why": "AISD order of election"
+  },
+  "coupland-isd": {
+   "label": "the Coupland ISD Board of Trustees",
+   "kind": "local",
+   "why": "Coupland ISD orders"
+  },
+  "del-valle-isd": {
+   "label": "the Del Valle ISD Board of Trustees",
+   "kind": "local",
+   "why": "Del Valle ISD order of election"
+  },
+  "leander-isd": {
+   "label": "the Leander ISD Board of Trustees",
+   "kind": "local",
+   "why": "Elec. Code §67.002"
+  },
+  "manor-isd": {
+   "label": "the Manor ISD Board of Trustees",
+   "kind": "local",
+   "why": "Elec. Code §67.002"
+  },
+  "pflugerville-isd": {
+   "label": "the Pflugerville ISD Board of Trustees",
+   "kind": "local",
+   "why": "Elec. Code §67.002"
+  },
+  "round-rock-isd": {
+   "label": "the Round Rock ISD Board of Trustees",
+   "kind": "local",
+   "why": "Round Rock ISD orders of election"
+  },
+  "eastwood-mud": {
+   "label": "the Eastwood MUD board",
+   "kind": "local",
+   "why": "temporary directors: Water Code §49.102(d)"
+  },
+  "hero-way-west-mud": {
+   "label": "the Hero Way West MUD board",
+   "kind": "local",
+   "why": "Elec. Code §67.002"
+  },
+  "hidden-lakes-mud-1": {
+   "label": "the Hidden Lakes MUD No. 1 board",
+   "kind": "local",
+   "why": "temporary directors: Water Code §49.102(d)"
+  },
+  "kennedy-hill-mud": {
+   "label": "the Kennedy Hill MUD board",
+   "kind": "local",
+   "why": "temporary directors: Water Code §49.102(d)"
+  },
+  "north-austin-mud-1": {
+   "label": "the North Austin MUD No. 1 board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "northtown-mud": {
+   "label": "the Northtown MUD board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "sunfield-mud-2": {
+   "label": "the Sunfield MUD No. 2 board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "travis-county-mmd-1": {
+   "label": "the Travis County MMD No. 1 board",
+   "kind": "local",
+   "why": "initial directors; its order of election"
+  },
+  "travis-county-mud-41": {
+   "label": "the Travis County MUD No. 41 board",
+   "kind": "local",
+   "why": "temporary directors: Water Code §49.102(d)"
+  },
+  "vista-mud": {
+   "label": "the Vista MUD board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "williamson-travis-mud-1": {
+   "label": "the Williamson-Travis Counties MUD No. 1 board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "cypress-ranch-wcid-1": {
+   "label": "the Cypress Ranch WCID No. 1 board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "travis-county-wcid-17": {
+   "label": "the Travis County WCID No. 17 board",
+   "kind": "local",
+   "why": "its order of election"
+  },
+  "esd-4": {
+   "label": "the Travis County ESD No. 4 board",
+   "kind": "local",
+   "why": "Elec. Code §67.002 (its order doesn't say)"
+  },
+  "esd-9": {
+   "label": "the Travis County ESD No. 9 board",
+   "kind": "local",
+   "why": "its order; Health & Safety Code §775.051"
+  },
+  "esd-10": {
+   "label": "the Travis County ESD No. 10 board",
+   "kind": "local",
+   "why": "Elec. Code §67.002 (its order doesn't say)"
+  },
+  "wells-branch-library": {
+   "label": "the Wells Branch Community Library District board",
+   "kind": "local",
+   "why": "its order of election"
+  }
+ },
+ "contests": {
+  "c001": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "5075",
+    "travis": null
+   },
+   "sos_name": "U. S. SENATOR",
+   "write_ins": [
+    {
+     "name": "Avery Ayers"
+    },
+    {
+     "name": "Bradford \"Brad\" Hall"
+    },
+    {
+     "name": "Zul Mohamed"
+    },
+    {
+     "name": "Jade Simmons"
+    }
+   ],
+   "majority": false,
+   "travis_only": false
+  },
+  "c002": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "5039",
+    "travis": null
+   },
+   "sos_name": "U. S. REPRESENTATIVE DISTRICT 10",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c003": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "5067",
+    "travis": null
+   },
+   "sos_name": "U. S. REPRESENTATIVE DISTRICT 37",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c004": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "5040",
+    "travis": null
+   },
+   "sos_name": "U. S. REPRESENTATIVE DISTRICT 11",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c005": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "5057",
+    "travis": null
+   },
+   "sos_name": "U. S. REPRESENTATIVE DISTRICT 27",
+   "write_ins": [
+    {
+     "name": "Wayne Raasch"
+    }
+   ],
+   "majority": false,
+   "travis_only": false
+  },
+  "c006": {
+   "source": "sos",
+   "canvasser": "legislature",
+   "keys": {
+    "sos": "3579",
+    "travis": null
+   },
+   "sos_name": "GOVERNOR",
+   "write_ins": [
+    {
+     "name": "Edward Earl Giles"
+    },
+    {
+     "name": "Jenn Mack"
+    },
+    {
+     "name": "Jinghpaw Majoishingra"
+    },
+    {
+     "name": "Mike Miller"
+    }
+   ],
+   "majority": false,
+   "travis_only": false
+  },
+  "c007": {
+   "source": "sos",
+   "canvasser": "legislature",
+   "keys": {
+    "sos": "4714",
+    "travis": null
+   },
+   "sos_name": "LIEUTENANT GOVERNOR",
+   "write_ins": [
+    {
+     "name": "Arturo Espinosa"
+    },
+    {
+     "name": "Stephen Samuelson"
+    }
+   ],
+   "majority": false,
+   "travis_only": false
+  },
+  "c008": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3",
+    "travis": null
+   },
+   "sos_name": "ATTORNEY GENERAL",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c009": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "21",
+    "travis": null
+   },
+   "sos_name": "COMPTROLLER OF PUBLIC ACCOUNTS",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c010": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "20",
+    "travis": null
+   },
+   "sos_name": "COMMISSIONER OF THE GENERAL LAND OFFICE",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c011": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "19",
+    "travis": null
+   },
+   "sos_name": "COMMISSIONER OF AGRICULTURE",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c012": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4843",
+    "travis": null
+   },
+   "sos_name": "RAILROAD COMMISSIONER",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c013": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "18",
+    "travis": null
+   },
+   "sos_name": "CHIEF JUSTICE, SUPREME COURT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c014": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4706",
+    "travis": null
+   },
+   "sos_name": "JUSTICE, SUPREME COURT, PLACE 2 - UNEXPIRED TERM",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c015": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4711",
+    "travis": null
+   },
+   "sos_name": "JUSTICE, SUPREME COURT, PLACE 7",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c016": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4712",
+    "travis": null
+   },
+   "sos_name": "JUSTICE, SUPREME COURT, PLACE 8",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c017": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3819",
+    "travis": null
+   },
+   "sos_name": "JUDGE, COURT OF CRIMINAL APPEALS, PLACE 3",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c018": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3820",
+    "travis": null
+   },
+   "sos_name": "JUDGE, COURT OF CRIMINAL APPEALS, PLACE 4",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c019": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3823",
+    "travis": null
+   },
+   "sos_name": "JUDGE, COURT OF CRIMINAL APPEALS, PLACE 9",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c020": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4725",
+    "travis": null
+   },
+   "sos_name": "MEMBER, STATE BOARD OF EDUCATION, DISTRICT 5",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c021": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "5019",
+    "travis": null
+   },
+   "sos_name": "STATE SENATOR, DISTRICT 21",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c022": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4917",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 19",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c023": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4947",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 46",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c024": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4948",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 47",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c025": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4949",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 48",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c026": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4950",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 49",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c027": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4952",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 50",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c028": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "4953",
+    "travis": null
+   },
+   "sos_name": "STATE REPRESENTATIVE DISTRICT 51",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c029": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "15242",
+    "travis": null
+   },
+   "sos_name": "CHIEF JUSTICE, 15TH COURT OF APPEALS DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c030": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "15243",
+    "travis": null
+   },
+   "sos_name": "JUSTICE, 15TH COURT OF APPEALS DISTRICT, PLACE 2",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c031": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "15244",
+    "travis": null
+   },
+   "sos_name": "JUSTICE, 15TH COURT OF APPEALS DISTRICT, PLACE 3",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c032": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "11",
+    "travis": null
+   },
+   "sos_name": "CHIEF JUSTICE, 3RD COURT OF APPEALS DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": false
+  },
+  "c033": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3131",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 147TH JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c034": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3192",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 201ST JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c035": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3246",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 250TH JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c036": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3258",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 261ST JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c037": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3299",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 299TH JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c038": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3337",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 331ST JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c039": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3414",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 403RD JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c040": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3431",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 419TH JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c041": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3470",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 455TH JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c044": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c042": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c043": {
+   "source": "sos",
+   "canvasser": "state",
+   "keys": {
+    "sos": "3474",
+    "travis": null
+   },
+   "sos_name": "DISTRICT JUDGE, 459TH JUDICIAL DISTRICT",
+   "write_ins": [],
+   "majority": false,
+   "travis_only": true
+  },
+  "c045": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c046": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c047": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c048": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c049": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c050": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c051": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c052": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c053": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c054": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c055": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c056": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c057": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c058": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c059": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c060": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c061": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c062": {
+   "source": "counties",
+   "canvasser": "travis-county",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "general-election county offices: plurality, Elec. Code §2.001"
+  },
+  "c063": {
+   "source": "counties",
+   "canvasser": "tcad",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Tax Code §6.0301(c): majority, runoff otherwise"
+  },
+  "c064": {
+   "source": "counties",
+   "canvasser": "tcad",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Tax Code §6.0301(c): majority, runoff otherwise"
+  },
+  "c065": {
+   "source": "counties",
+   "canvasser": "tcad",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Tax Code §6.0301(c): majority, runoff otherwise"
+  },
+  "c066": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
+   "possible": [
+    "williamson",
+    "hays"
+   ]
+  },
+  "c067": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
+   "possible": [
+    "williamson",
+    "hays"
+   ]
+  },
+  "c068": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
+   "possible": [
+    "williamson",
+    "hays"
+   ]
+  },
+  "c069": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
+   "possible": [
+    "williamson",
+    "hays"
+   ]
+  },
+  "c070": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
+   "possible": [
+    "williamson",
+    "hays"
+   ]
+  },
+  "c071": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c072": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c073": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c074": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c075": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c076": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c077": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c078": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c079": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c080": {
+   "source": "counties",
+   "canvasser": "city-of-austin",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
+  },
+  "c081": {
+   "source": "counties",
+   "canvasser": "city-of-elgin",
+   "electorate": [
+    "bastrop",
+    "travis"
+   ],
+   "keys": {
+    "bastrop": null,
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Bastrop + Travis (Travis precincts 490, 145, 146); a measure only"
+  },
+  "c082": {
+   "source": "counties",
+   "canvasser": "city-of-jonestown",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; Travis only per its order"
+  },
+  "c083": {
+   "source": "counties",
+   "canvasser": "city-of-jonestown",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; Travis only per its order"
+  },
+  "c084": {
+   "source": "counties",
+   "canvasser": "city-of-jonestown",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; Travis only per its order"
+  },
+  "c085": {
+   "source": "counties",
+   "canvasser": "city-of-lago-vista",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Ord. 26-07-16-01 §13"
+  },
+  "c086": {
+   "source": "counties",
+   "canvasser": "city-of-lago-vista",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Ord. 26-07-16-01 §13"
+  },
+  "c087": {
+   "source": "counties",
+   "canvasser": "city-of-lago-vista",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Ord. 26-07-16-01 §13"
+  },
+  "c088": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c089": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c090": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c091": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c092": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c093": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c094": {
+   "source": "counties",
+   "canvasser": "city-of-manor",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "charter §5.11 runoff; UNVERIFIED: current charter text not read"
+  },
+  "c095": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c096": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c097": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c098": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c099": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c100": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c101": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c102": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c103": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c104": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c105": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c106": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c107": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c108": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c109": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c110": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c111": {
+   "source": "counties",
+   "canvasser": "city-of-pflugerville",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "at-large; INFERRED majority from the 2025 mayoral runoff"
+  },
+  "c112": {
+   "source": "counties",
+   "canvasser": "city-of-sunset-valley",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; one election precinct"
+  },
+  "c113": {
+   "source": "counties",
+   "canvasser": "city-of-sunset-valley",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; one election precinct"
+  },
+  "c114": {
+   "source": "counties",
+   "canvasser": "sunset-valley-ccpd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; one election precinct"
+  },
+  "c115": {
+   "source": "counties",
+   "canvasser": "village-of-volente",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; Travis only per Res. 2026-R-02"
+  },
+  "c116": {
+   "source": "counties",
+   "canvasser": "village-of-volente",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001; Travis only per Res. 2026-R-02"
+  },
+  "c117": {
+   "source": "counties",
+   "canvasser": "acc",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays",
+    "bastrop",
+    "caldwell",
+    "lee"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null,
+    "bastrop": null,
+    "caldwell": null,
+    "lee": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
+   "registered": {
+    "caldwell": 28491,
+    "lee": 12262
+   }
+  },
+  "c118": {
+   "source": "counties",
+   "canvasser": "acc",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays",
+    "bastrop",
+    "caldwell",
+    "lee"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null,
+    "bastrop": null,
+    "caldwell": null,
+    "lee": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
+   "registered": {
+    "caldwell": 28491,
+    "lee": 12262
+   }
+  },
+  "c119": {
+   "source": "counties",
+   "canvasser": "acc",
+   "electorate": [
+    "travis",
+    "williamson",
+    "hays",
+    "bastrop",
+    "caldwell",
+    "lee"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null,
+    "hays": null,
+    "bastrop": null,
+    "caldwell": null,
+    "lee": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
+   "registered": {
+    "caldwell": 28491,
+    "lee": 12262
+   }
+  },
+  "c120": {
+   "source": "counties",
+   "canvasser": "acc",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
+   "who": "area"
+  },
+  "c121": {
+   "source": "counties",
+   "canvasser": "austin-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "majority per its order; Travis only"
+  },
+  "c122": {
+   "source": "counties",
+   "canvasser": "austin-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "majority per its order; Travis only"
+  },
+  "c123": {
+   "source": "counties",
+   "canvasser": "austin-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "majority per its order; Travis only"
+  },
+  "c124": {
+   "source": "counties",
+   "canvasser": "austin-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "majority per its order; Travis only"
+  },
+  "c125": {
+   "source": "counties",
+   "canvasser": "austin-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": true,
+   "why": "majority per its order; Travis only"
+  },
+  "c126": {
+   "source": "counties",
+   "canvasser": "coupland-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Travis + Williamson per its order (not Bastrop); measures only"
+  },
+  "c127": {
+   "source": "counties",
+   "canvasser": "del-valle-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+  },
+  "c128": {
+   "source": "counties",
+   "canvasser": "del-valle-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+  },
+  "c129": {
+   "source": "counties",
+   "canvasser": "del-valle-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+  },
+  "c130": {
+   "source": "counties",
+   "canvasser": "del-valle-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+  },
+  "c131": {
+   "source": "counties",
+   "canvasser": "del-valle-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+  },
+  "c132": {
+   "source": "counties",
+   "canvasser": "del-valle-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+  },
+  "c133": {
+   "source": "counties",
+   "canvasser": "leander-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: 2022 Community Impact report and 2022 winners at 35-44%"
+  },
+  "c134": {
+   "source": "counties",
+   "canvasser": "leander-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: 2022 Community Impact report and 2022 winners at 35-44%"
+  },
+  "c135": {
+   "source": "counties",
+   "canvasser": "leander-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: 2022 Community Impact report and 2022 winners at 35-44%"
+  },
+  "c136": {
+   "source": "counties",
+   "canvasser": "leander-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: 2022 Community Impact report and 2022 winners at 35-44%"
+  },
+  "c137": {
+   "source": "counties",
+   "canvasser": "leander-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: 2022 Community Impact report and 2022 winners at 35-44%"
+  },
+  "c138": {
+   "source": "counties",
+   "canvasser": "manor-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only"
+  },
+  "c139": {
+   "source": "counties",
+   "canvasser": "manor-isd",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only"
+  },
+  "c140": {
+   "source": "counties",
+   "canvasser": "pflugerville-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED; only two-candidate and one-candidate races, so it can't change a result"
+  },
+  "c141": {
+   "source": "counties",
+   "canvasser": "pflugerville-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": "unsure",
+   "why": "UNVERIFIED; only two-candidate and one-candidate races, so it can't change a result"
+  },
+  "c142": {
+   "source": "counties",
+   "canvasser": "round-rock-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: no runoff clause; Place 4 won with 43.2% in 2022"
+  },
+  "c143": {
+   "source": "counties",
+   "canvasser": "round-rock-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: no runoff clause; Place 4 won with 43.2% in 2022"
+  },
+  "c144": {
+   "source": "counties",
+   "canvasser": "round-rock-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: no runoff clause; Place 4 won with 43.2% in 2022"
+  },
+  "c145": {
+   "source": "counties",
+   "canvasser": "round-rock-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: no runoff clause; Place 4 won with 43.2% in 2022"
+  },
+  "c146": {
+   "source": "counties",
+   "canvasser": "round-rock-isd",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: no runoff clause; Place 4 won with 43.2% in 2022"
+  },
+  "c147": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)"
+  },
+  "c148": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147"
+  },
+  "c149": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147"
+  },
+  "c150": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147",
+   "needs": "two_thirds"
+  },
+  "c151": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147"
+  },
+  "c152": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147"
+  },
+  "c153": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147",
+   "needs": "unsure"
+  },
+  "c154": {
+   "source": "counties",
+   "canvasser": "eastwood-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c147"
+  },
+  "c155": {
+   "source": "counties",
+   "canvasser": "hero-way-west-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001"
+  },
+  "c156": {
+   "source": "counties",
+   "canvasser": "hero-way-west-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001"
+  },
+  "c157": {
+   "source": "counties",
+   "canvasser": "hero-way-west-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality: Elec. Code §2.001",
+   "needs": "two_thirds"
+  },
+  "c158": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)"
+  },
+  "c159": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c160": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c161": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158",
+   "needs": "two_thirds"
+  },
+  "c162": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158",
+   "needs": "unsure"
+  },
+  "c163": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c164": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c165": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c166": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c167": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c168": {
+   "source": "counties",
+   "canvasser": "hidden-lakes-mud-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c158"
+  },
+  "c169": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)"
+  },
+  "c170": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169"
+  },
+  "c171": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169"
+  },
+  "c172": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169",
+   "needs": "two_thirds"
+  },
+  "c173": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169"
+  },
+  "c174": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169"
+  },
+  "c175": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169",
+   "needs": "unsure"
+  },
+  "c176": {
+   "source": "counties",
+   "canvasser": "kennedy-hill-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c169"
+  },
+  "c177": {
+   "source": "counties",
+   "canvasser": "north-austin-mud-1",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "four of its five precincts are in Williamson"
+  },
+  "c178": {
+   "source": "counties",
+   "canvasser": "north-austin-mud-1",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "four of its five precincts are in Williamson"
+  },
+  "c179": {
+   "source": "counties",
+   "canvasser": "northtown-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality"
+  },
+  "c180": {
+   "source": "counties",
+   "canvasser": "sunfield-mud-2",
+   "electorate": [
+    "travis",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Hays + Travis per its order"
+  },
+  "c181": {
+   "source": "counties",
+   "canvasser": "sunfield-mud-2",
+   "electorate": [
+    "travis",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Hays + Travis per its order",
+   "needs": "two_thirds"
+  },
+  "c182": {
+   "source": "counties",
+   "canvasser": "sunfield-mud-2",
+   "electorate": [
+    "travis",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Hays + Travis per its order"
+  },
+  "c183": {
+   "source": "counties",
+   "canvasser": "sunfield-mud-2",
+   "electorate": [
+    "travis",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Hays + Travis per its order"
+  },
+  "c184": {
+   "source": "counties",
+   "canvasser": "sunfield-mud-2",
+   "electorate": [
+    "travis",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Hays + Travis per its order",
+   "needs": "unsure"
+  },
+  "c185": {
+   "source": "counties",
+   "canvasser": "sunfield-mud-2",
+   "electorate": [
+    "travis",
+    "hays"
+   ],
+   "keys": {
+    "travis": null,
+    "hays": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Hays + Travis per its order"
+  },
+  "c186": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote"
+  },
+  "c187": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote"
+  },
+  "c188": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote",
+   "needs": "two_thirds"
+  },
+  "c189": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote"
+  },
+  "c190": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote"
+  },
+  "c191": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote",
+   "needs": "unsure"
+  },
+  "c192": {
+   "source": "counties",
+   "canvasser": "travis-county-mmd-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "created by TCEQ Aug 17, 2026 (Local Gov't Code ch. 375); no confirmation vote"
+  },
+  "c193": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)"
+  },
+  "c194": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c193"
+  },
+  "c195": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c193"
+  },
+  "c196": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c193",
+   "needs": "two_thirds"
+  },
+  "c197": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c193"
+  },
+  "c198": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c193",
+   "needs": "unsure"
+  },
+  "c199": {
+   "source": "counties",
+   "canvasser": "travis-county-mud-41",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "directors: plurality, Water Code §49.102(g)",
+   "depends_on": "c193"
+  },
+  "c200": {
+   "source": "counties",
+   "canvasser": "vista-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality"
+  },
+  "c201": {
+   "source": "counties",
+   "canvasser": "vista-mud",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality"
+  },
+  "c202": {
+   "source": "counties",
+   "canvasser": "williamson-travis-mud-1",
+   "electorate": [
+    "travis",
+    "williamson"
+   ],
+   "keys": {
+    "travis": null,
+    "williamson": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "spans Williamson per its order"
+  },
+  "c203": {
+   "source": "counties",
+   "canvasser": "cypress-ranch-wcid-1",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality"
+  },
+  "c204": {
+   "source": "counties",
+   "canvasser": "travis-county-wcid-17",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "plurality"
+  },
+  "c205": {
+   "source": "counties",
+   "canvasser": "esd-4",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measure only",
+   "outcome_from_canvass": true
+  },
+  "c206": {
+   "source": "counties",
+   "canvasser": "esd-9",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "district",
+   "pair": "c208"
+  },
+  "c207": {
+   "source": "counties",
+   "canvasser": "esd-9",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "district",
+   "pair": "c209"
+  },
+  "c208": {
+   "source": "counties",
+   "canvasser": "esd-9",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "area",
+   "pair": "c206"
+  },
+  "c209": {
+   "source": "counties",
+   "canvasser": "esd-9",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "area",
+   "pair": "c207"
+  },
+  "c210": {
+   "source": "counties",
+   "canvasser": "esd-10",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "district",
+   "pair": "c212"
+  },
+  "c211": {
+   "source": "counties",
+   "canvasser": "esd-10",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "district",
+   "pair": "c213"
+  },
+  "c212": {
+   "source": "counties",
+   "canvasser": "esd-10",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "area",
+   "pair": "c210"
+  },
+  "c213": {
+   "source": "counties",
+   "canvasser": "esd-10",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "measures only",
+   "who": "area",
+   "pair": "c211"
+  },
+  "c214": {
+   "source": "counties",
+   "canvasser": "wells-branch-library",
+   "electorate": [
+    "travis"
+   ],
+   "keys": {
+    "travis": null
+   },
+   "write_ins": [],
+   "majority": false,
+   "why": "Travis only per its order"
+  }
+ }
+}

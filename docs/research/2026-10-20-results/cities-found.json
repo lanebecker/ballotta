@@ -1,0 +1,652 @@
+{
+ "entities": {
+  "City of Austin": {
+   "canvasser": "the Austin City Council",
+   "canvass_date": null,
+   "canvass_cite": "Canvass by council is the City's practice (e.g. Resolution No. 20221121-001 canvassing Nov 8 2022, https://services.austintexas.gov/edims/document.cfm?id=397765). No Nov 2026 canvass meeting posted as of Oct 20 2026: https://www.austintexas.gov/council/2026/2026_master_index",
+   "counties": [
+    "Travis",
+    "Williamson",
+    "Hays"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p1 (Ord. 20260806-002 recital: City 'located in Hays, Travis, and Williamson Counties'); p7 Ord. 20260806-003 Parts 3-5 (central counting stations in Travis, Williamson, Hays); p14ff Ord. 20260806-004 Parts 11-13",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p7, Ord. 20260806-003 Part 1: council members 'shall be elected by majority vote of voters residing in each respective district'; also Tex. Elec. Code §275.002 (cities >200,000 require majority), per SOS opinion HC-1 https://www.sos.texas.gov/elections/elo/hc1.html. Charter section itself not retrieved.",
+   "notes": "Three ordinances adopted Aug 6 2026: 20260806-002 (bond election, Props A-B = 'Measure A/B' $260M parks, $35M libraries), -003 (council D1,3,5,8,9), -004 (charter amendments Props C-J). No mayor race. Prop I is the only citizen-initiated (Save Austin Now petition, certified sufficient June 22 2026) amendment. Council races are by single-member district: only voters residing in the district vote."
+  },
+  "City of Elgin": {
+   "canvasser": "the Elgin City Council",
+   "canvass_date": null,
+   "canvass_cite": "Prop A is a local-option alcohol election (Tex. Elec. Code §501.035). Under §501.109(b)(2) a municipal local-option election is conducted by the city and 'the commissioners court is considered to refer to the governing body of the municipality'; §501.151(a) the canvassing body declares the result. https://texas.public.law/statutes/tex._election_code_section_501.109 ; https://texas.public.law/statutes/tex._election_code_section_501.151. No canvass date found.",
+   "counties": [
+    "Bastrop",
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/City-of-Elgin_Order-of-Special-Election-Ward-1-Alcohol.pdf p1-2 (early voting/ABBM arrangements for Bastrop County voters and Travis County voters); https://votetravis.gov/wp-content/uploads/City-of-Elgin_Notice-of-Special-Election_UPDATED.pdf p2 (Travis precincts within City for the local-option election: 490, 145, 146)",
+   "majority": null,
+   "majority_cite": "measure",
+   "notes": "Elgin's order (issued July 21 2026) also orders a City Council Member Ward 1 election to fill a vacancy; that race is NOT on the Travis ballot (Travis notice covers only Prop A), so Ward 1 appears to be wholly outside Travis (presumably Bastrop) - not in our contest list. Bastrop County Elections Administrator: Kristin Miles."
+  },
+  "City of Jonestown": {
+   "canvasser": "the Jonestown City Council",
+   "canvass_date": "between 2026-11-06 and 2026-11-17 (no exact date announced)",
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf p3, Res. 2026-R-577 §13: 'the election returns shall be canvassed by the City Council not earlier than November 6, 2026, nor later than November 17, 2026'",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf p1-2 (joint election 'with other political subdivisions in Travis County'; §7 'returns for the precincts in Travis County'; contract only with Travis County Elections Officer). County-only status inferred from the order naming only Travis.",
+   "majority": false,
+   "majority_cite": "Plurality: Tex. Elec. Code §2.001 ('to be elected to a public office, a candidate must receive more votes than any other candidate') https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm; order §6 (https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf p2) says the election follows 'the law governing the holding of general elections by general law cities'. No city majority requirement found (not exhaustively verified).",
+   "notes": "Places 3, 4, 5 for 2-year terms (Res. 2026-R-577, passed Aug 13 2026). Order contains copy-paste references to 'November 4, 2025' in §5 and §8. Place 4 is uncontested."
+  },
+  "City of Lago Vista": {
+   "canvasser": "the Lago Vista City Council",
+   "canvass_date": null,
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf p3, Ord. 26-07-16-01 §13: 'The Council shall canvass the returns and declare the results of the Election.'",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf p2 §§4-6 (Travis County Election Officer; precincts 'established by Travis County'; only Travis returns). County-only status inferred from the order naming only Travis.",
+   "majority": false,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf p3, Ord. 26-07-16-01 §13: 'The candidate receiving the largest number of votes for such position ... shall be declared elected.'",
+   "notes": "Home-rule city (order §4 cites 'law governing the holding of elections by home rule cities'). Places 2, 4, 6, two-year terms; passed July 16 2026 ('Corrected'). Places 4 and 6 uncontested."
+  },
+  "City of Manor": {
+   "canvasser": "the Manor City Council",
+   "canvass_date": null,
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf p3, Res. 2026-16 §12: 'The official canvass, tabulations, and declaration of the results of the election shall be conducted by the City Council at a regular or special meeting'",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf p1-2 (Res. 2026-16 §§3-5: contract with Travis County only; joint election 'with other political subdivisions within Travis County'); Ord. 827 p13 §2; https://www.manortx.gov/439/Elections (City contracts with Travis County). County-only status inferred.",
+   "majority": true,
+   "majority_cite": "https://www.manortx.gov/439/Elections (Prop B, approved Nov 2020, 'extended terms to four years and required election by majority vote'); charter §5.11 run-off text in https://www.manortx.gov/DocumentCenter/View/374/Proposition-B-Four-Year-Office-Term-PDF ('If no candidate for an elective office receives a majority of the votes cast ... a run-off election shall be held'). Current charter text not retrieved directly.",
+   "notes": "Council Places 2, 4, 6 for four-year terms (Res. 2026-16, Aug 5 2026). Props A-D are charter amendments ordered by Ord. 827 (Charter Review Commission); LGC ch. 9 applies (simple majority, LGC §9.005). Write-in declaration deadline was Aug 21 2026 (https://www.manortx.gov/472/November-2026-General-Election-Informati)."
+  },
+  "City of Pflugerville": {
+   "canvasser": "the Pflugerville City Council",
+   "canvass_date": null,
+   "canvass_cite": "Council canvasses (2025 precedent: 'The City Council will canvass the results during a Special City Council Meeting on November 18', https://www.cbsaustin.com/news/local/pflugerville-elects-councilmember-doug-weiss-as-new-mayor). No Nov 2026 canvass date found.",
+   "counties": [
+    "Travis",
+    "Williamson"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p1-3 (Res. 2279-26-08-11-1441: agreements with Travis County and Williamson County; precincts 'established by Travis County and Williamson County'; returns from both) and p12-14 (Ord. 1716-26-08-11, same for charter election)",
+   "majority": true,
+   "majority_cite": "Evidence: Nov 2025 mayor race went to a Dec 13 2025 runoff because no candidate exceeded 50% (https://www.cbsaustin.com/news/local/pflugerville-elects-councilmember-doug-weiss-as-new-mayor; https://votetravis.gov/wp-content/uploads/City-of-Pflugerville-Notice-of-Runoff-Election.pdf). Charter section requiring a majority NOT retrieved - unverified cite.",
+   "notes": "Places 2, 4, 6 are at-large (Res. para 10: 'All qualified resident electors of the City shall be entitled to vote'), so every Pflugerville contest spans Travis + Williamson. Props A-N are charter amendments (Ord. 1716-26-08-11, Aug 11 2026, from Charter Review Commission plus council-initiated); simple majority under LGC §9.005. Place 6 uncontested."
+  },
+  "City of Sunset Valley": {
+   "canvasser": "the Sunset Valley City Council",
+   "canvass_date": null,
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/Sunset-Valley-Ordinance-260602-A.pdf p2, Ord. 260602-A §8: 'the election returns shall be canvassed by the City Council according to State law'",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Sunset-Valley-Ordinance-260602-A.pdf p2 §§6-7 (one election precinct containing all of the City; early voting for 'City residents residing in Travis County'; Travis County Elections Administrator conducts)",
+   "majority": false,
+   "majority_cite": "Plurality by default, Tex. Elec. Code §2.001 https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm; the ordinance states no majority requirement. City's general-law/home-rule status not verified.",
+   "notes": "Mayor + two council members, two-year terms (Ord. 260602-A, June 2 2026). Council race is a 'vote for two' with 3 candidates: top two are elected. Mayor uncontested. Prop A is ordered by a DIFFERENT body: the Board of Directors of the City of Sunset Valley Crime Control and Prevention District (Res. 260602, LGC §363.251(b))."
+  },
+  "Village of Volente": {
+   "canvasser": "the Volente Village Council",
+   "canvass_date": "between 2026-11-06 and 2026-11-17 (no exact date announced)",
+   "canvass_cite": "https://votetravis.gov/wp-content/uploads/Village-of-Volente_Order-of-Election.pdf p4, Res. 2026-R-02 §13: returns 'shall be canvassed by the City Council not earlier than November 6, 2026, nor later than November 17, 2026' (the governing body is the Village Council per the resolution's title)",
+   "counties": [
+    "Travis"
+   ],
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/Village-of-Volente_Order-of-Election.pdf p1, Res. 2026-R-02 recital: 'the Village of Volente (the \"City\") lies within the boundaries of Travis County'",
+   "majority": false,
+   "majority_cite": "Plurality by default, Tex. Elec. Code §2.001 https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm; resolution states no majority requirement (general-law village; not further verified).",
+   "notes": "One Mayor and two Council Members (Res. 2026-R-02, July 21 2026). Council: 2 candidates for 2 seats (both elected if they receive any votes; vote-for-two). Mayor race: incumbent Mayor Thomas Blauvelt signed the order and is on the ballot as 'Tom Blauvelt'."
+  }
+ },
+ "contests": {
+  "c066": {
+   "counties": [
+    "Travis"
+   ],
+   "counties_complete": false,
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf p2 (Travis portion confirmed only)",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p7 (Ord. 20260806-003 Part 1: 'elected by majority vote of voters residing in each respective district')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "counties (Williamson/Hays slices)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Single-member district: only voters residing in District 1 vote (Ord. 20260806-003 Part 1). The district is on the Travis ballot (bedsheet p2). Whether any part of District 1 lies in Williamson or Hays County could NOT be verified: no official precinct-by-district/county list was found, Hays County sites blocked automated access, and Williamson's site was not reachable. Hays County did post the council-election ordinance (https://www.hayscountytx.gov/DocumentCenter/View/5071), which by itself does not prove a Hays slice. Treat counties as at least Travis; confirm before summing. Candidate filings: https://www.austintexas.gov/clerk/elections/Ballot-Applications-November-2026"
+  },
+  "c067": {
+   "counties": [
+    "Travis"
+   ],
+   "counties_complete": false,
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf p3 (Travis portion confirmed only)",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p7 (Ord. 20260806-003 Part 1: 'elected by majority vote of voters residing in each respective district')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "counties (Williamson/Hays slices)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Single-member district: only voters residing in District 3 vote (Ord. 20260806-003 Part 1). The district is on the Travis ballot (bedsheet p3). Whether any part of District 3 lies in Williamson or Hays County could NOT be verified: no official precinct-by-district/county list was found, Hays County sites blocked automated access, and Williamson's site was not reachable. Hays County did post the council-election ordinance (https://www.hayscountytx.gov/DocumentCenter/View/5071), which by itself does not prove a Hays slice. Treat counties as at least Travis; confirm before summing. Candidate filings: https://www.austintexas.gov/clerk/elections/Ballot-Applications-November-2026"
+  },
+  "c068": {
+   "counties": [
+    "Travis"
+   ],
+   "counties_complete": false,
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf p3 (Travis portion confirmed only)",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p7 (Ord. 20260806-003 Part 1: 'elected by majority vote of voters residing in each respective district')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "counties (Williamson/Hays slices)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Single-member district: only voters residing in District 5 vote (Ord. 20260806-003 Part 1). The district is on the Travis ballot (bedsheet p3). Whether any part of District 5 lies in Williamson or Hays County could NOT be verified: no official precinct-by-district/county list was found, Hays County sites blocked automated access, and Williamson's site was not reachable. Hays County did post the council-election ordinance (https://www.hayscountytx.gov/DocumentCenter/View/5071), which by itself does not prove a Hays slice. Treat counties as at least Travis; confirm before summing. Candidate filings: https://www.austintexas.gov/clerk/elections/Ballot-Applications-November-2026"
+  },
+  "c069": {
+   "counties": [
+    "Travis"
+   ],
+   "counties_complete": false,
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf p3 (Travis portion confirmed only)",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p7 (Ord. 20260806-003 Part 1: 'elected by majority vote of voters residing in each respective district')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "counties (Williamson/Hays slices)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Single-member district: only voters residing in District 8 vote (Ord. 20260806-003 Part 1). The district is on the Travis ballot (bedsheet p3). Whether any part of District 8 lies in Williamson or Hays County could NOT be verified: no official precinct-by-district/county list was found, Hays County sites blocked automated access, and Williamson's site was not reachable. Hays County did post the council-election ordinance (https://www.hayscountytx.gov/DocumentCenter/View/5071), which by itself does not prove a Hays slice. Treat counties as at least Travis; confirm before summing. Candidate filings: https://www.austintexas.gov/clerk/elections/Ballot-Applications-November-2026"
+  },
+  "c070": {
+   "counties": [
+    "Travis"
+   ],
+   "counties_complete": false,
+   "counties_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf p3 (Travis portion confirmed only)",
+   "majority": true,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p7 (Ord. 20260806-003 Part 1: 'elected by majority vote of voters residing in each respective district')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "counties (Williamson/Hays slices)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Single-member district: only voters residing in District 9 vote (Ord. 20260806-003 Part 1). The district is on the Travis ballot (bedsheet p3). Whether any part of District 9 lies in Williamson or Hays County could NOT be verified: no official precinct-by-district/county list was found, Hays County sites blocked automated access, and Williamson's site was not reachable. Hays County did post the council-election ordinance (https://www.hayscountytx.gov/DocumentCenter/View/5071), which by itself does not prove a Hays slice. Treat counties as at least Travis; confirm before summing. Candidate filings: https://www.austintexas.gov/clerk/elections/Ballot-Applications-November-2026"
+  },
+  "c071": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Bond Prop A ($260,000,000 parks, recreation, aquatics, open space; 'THIS IS A TAX INCREASE'). Ordered as 'City of Austin Measure A' in Ord. 20260806-002. Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p1-2. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c072": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Bond Prop B ($35,000,000 library facilities; 'THIS IS A TAX INCREASE'). Ordered as 'City of Austin Measure B' in Ord. 20260806-002. Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p2. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c073": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (ICRC independence/redistricting changes). Adopted if approved by 'the majority of voters voting at the election' (Ord. 20260806-004 Part 2). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14-15. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c074": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (delete weekly-meeting requirement). Simple majority (Ord. 20260806-004 Part 3). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c075": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (delete rules-by-ordinance requirement). Simple majority (Part 4). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c076": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (define 'election'; campaign limits adjusted each Jan 1). Simple majority (Part 5). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c077": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (initiative and petitioned charter elections on next even-year November date). Simple majority (Part 6). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c078": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (Council appoints and removes City Attorney). Simple majority (Part 7). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c079": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment: Independent Affordability & Efficiency Initiative. The ONLY citizen-initiated proposition (Save Austin Now petition, certified sufficient June 22 2026) per https://communityimpact.com/east-austin/election/what-austin-voters-need-to-know-about-10-ballot-propositions-from-bonds-to-charter-changes/; ordinance caption confirms one citizen-initiated amendment. Simple majority (Part 8). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p14-15. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c080": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment (non-substantive cleanup / superseded language). Simple majority (Part 9). Citywide: Travis + Williamson + Hays. Ordinance cite: https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf p15. Charter amendments need a simple majority of votes cast (LGC §9.005(a), https://texas.public.law/statutes/tex._local_gov't_code_section_9.005)."
+  },
+  "c081": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [
+    "canvass date"
+   ],
+   "notes": "Local-option alcohol legalization ('The legal sale of all alcoholic beverages including mixed beverages', Tex. Elec. Code §501.035). Citywide (Bastrop + Travis); Travis precincts 490, 145, 146 (https://votetravis.gov/wp-content/uploads/City-of-Elgin_Notice-of-Special-Election_UPDATED.pdf p2). Passes with a majority of votes cast favoring the issue (§501.151(c), https://texas.public.law/statutes/tex._election_code_section_501.151). Canvassed by the Elgin City Council via §501.109(b)(2)."
+  },
+  "c082": {
+   "majority": false,
+   "majority_cite": "Plurality (Tex. Elec. Code §2.001); general-law city per Res. 2026-R-577 §6, https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf p2",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Place 3, 2-year term. Incumbent Councilmember Mark Holmstrom signed the order."
+  },
+  "c083": {
+   "majority": false,
+   "majority_cite": "Plurality (Tex. Elec. Code §2.001); general-law city per Res. 2026-R-577 §6, https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf p2",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Place 4, 2-year term; uncontested (Dave Nelsen, incumbent per order signature page)."
+  },
+  "c084": {
+   "majority": false,
+   "majority_cite": "Plurality (Tex. Elec. Code §2.001); general-law city per Res. 2026-R-577 §6, https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf p2",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Place 5, 2-year term. Incumbent Councilmember Linda Bush signed the order."
+  },
+  "c085": {
+   "majority": false,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf p3 §13 ('candidate receiving the largest number of votes ... shall be declared elected')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Place 2, two-year term."
+  },
+  "c086": {
+   "majority": false,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf p3 §13 ('candidate receiving the largest number of votes ... shall be declared elected')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Place 4, two-year term; uncontested."
+  },
+  "c087": {
+   "majority": false,
+   "majority_cite": "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf p3 §13 ('candidate receiving the largest number of votes ... shall be declared elected')",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Place 6, two-year term; uncontested."
+  },
+  "c088": {
+   "majority": true,
+   "majority_cite": "Majority with runoff: https://www.manortx.gov/439/Elections (Prop B 2020 'required election by majority vote'); charter §5.11 in https://www.manortx.gov/DocumentCenter/View/374/Proposition-B-Four-Year-Office-Term-PDF",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (current charter text not read directly)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Council Place 2, four-year term (Res. 2026-16 §2). Travis only."
+  },
+  "c089": {
+   "majority": true,
+   "majority_cite": "Majority with runoff: https://www.manortx.gov/439/Elections (Prop B 2020 'required election by majority vote'); charter §5.11 in https://www.manortx.gov/DocumentCenter/View/374/Proposition-B-Four-Year-Office-Term-PDF",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (current charter text not read directly)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Council Place 4, four-year term. Travis only."
+  },
+  "c090": {
+   "majority": true,
+   "majority_cite": "Majority with runoff: https://www.manortx.gov/439/Elections (Prop B 2020 'required election by majority vote'); charter §5.11 in https://www.manortx.gov/DocumentCenter/View/374/Proposition-B-Four-Year-Office-Term-PDF",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (current charter text not read directly)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Council Place 6, four-year term; 3 candidates, runoff possible if no majority. Travis only."
+  },
+  "c091": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter Sec. 1.05 municipal powers reorganization. Ordered by Ord. 827 (Aug 5 2026), https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf p8-14; LGC ch. 9 applies (§5): simple majority, LGC §9.005(a). Travis only."
+  },
+  "c092": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter Sec. 1.07 annexation and disannexation. Ordered by Ord. 827 (Aug 5 2026), https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf p8-14; LGC ch. 9 applies (§5): simple majority, LGC §9.005(a). Travis only."
+  },
+  "c093": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter Sec. 7.01(i) 'insure' -> 'ensure'. Ordered by Ord. 827 (Aug 5 2026), https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf p8-14; LGC ch. 9 applies (§5): simple majority, LGC §9.005(a). Travis only."
+  },
+  "c094": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter Sec. 10.11 repeal Community Committees requirement (bedsheet p5). Ordered by Ord. 827 (Aug 5 2026), https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf p8-14; LGC ch. 9 applies (§5): simple majority, LGC §9.005(a). Travis only."
+  },
+  "c095": {
+   "majority": true,
+   "majority_cite": "Majority (runoff precedent Dec 13 2025: https://votetravis.gov/wp-content/uploads/City-of-Pflugerville-Notice-of-Runoff-Election.pdf; https://www.cbsaustin.com/news/local/pflugerville-elects-councilmember-doug-weiss-as-new-mayor); charter section not retrieved",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority charter cite",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Council Place 2, at-large (Travis + Williamson)."
+  },
+  "c096": {
+   "majority": true,
+   "majority_cite": "Majority (runoff precedent Dec 13 2025: https://votetravis.gov/wp-content/uploads/City-of-Pflugerville-Notice-of-Runoff-Election.pdf; https://www.cbsaustin.com/news/local/pflugerville-elects-councilmember-doug-weiss-as-new-mayor); charter section not retrieved",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority charter cite",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Council Place 4, at-large (Travis + Williamson); 3 candidates, runoff possible."
+  },
+  "c097": {
+   "majority": true,
+   "majority_cite": "Majority (runoff precedent Dec 13 2025: https://votetravis.gov/wp-content/uploads/City-of-Pflugerville-Notice-of-Runoff-Election.pdf; https://www.cbsaustin.com/news/local/pflugerville-elects-councilmember-doug-weiss-as-new-mayor); charter section not retrieved",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority charter cite",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Council Place 6, at-large (Travis + Williamson); uncontested."
+  },
+  "c098": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop A: council compensation ($750/mo mayor, $500/mo council). Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c099": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop B: data/surveillance/AI oversight. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c100": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop C: ordinance adoption procedures. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c101": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop D: lower initiative/referendum petition threshold 15% -> 10%. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c102": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop E: council meeting/agenda procedures. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c103": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop F: petition requirements/supplementary petition deadline. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c104": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop G: budget requirements (GFOA, 5-year forecast). Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c105": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop H: mayor alone may excuse City Manager. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c106": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop I: ETJ residents as non-voting advisory participants. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c107": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop J: Mayor and Council set strategic direction. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c108": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop K: public comment in removal proceedings. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c109": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop L: municipal judge residency requirement removed. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c110": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop M: new Sec. 11.05 public participation. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c111": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [],
+   "notes": "Charter amendment Prop N: non-substantive technical corrections. Ord. 1716-26-08-11 (https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf p12-31); simple majority (LGC §9.005(a)). Citywide: Travis + Williamson."
+  },
+  "c112": {
+   "majority": false,
+   "majority_cite": "Plurality by default (Tex. Elec. Code §2.001, https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm); Ord. 260602-A states no majority rule",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (city type not verified)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Mayor, two-year term; uncontested (Marc Bruner, incumbent mayor who signed Ord. 260602-A)."
+  },
+  "c113": {
+   "majority": false,
+   "majority_cite": "Plurality by default (Tex. Elec. Code §2.001, https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm); Ord. 260602-A states no majority rule",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (city type not verified)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Two at-large seats, vote for up to 2; the two highest vote-getters win. Two-year terms."
+  },
+  "c114": {
+   "majority": null,
+   "majority_cite": "measure",
+   "write_ins": [],
+   "write_ins_cite": "n/a (measure)",
+   "unverified": [
+    "canvasser for this proposition (inferred)",
+    "canvass date"
+   ],
+   "notes": "Continuation of the City of Sunset Valley Crime Control and Prevention District (and its sales tax) for 10 years per ballot text (bedsheet p6). Ordered by the Board of Directors of the CCPD, NOT the city council (Res. 260602, June 2 2026, under LGC §363.251(b); https://votetravis.gov/wp-content/uploads/Sunset-Valley-Ordinance-260602-A.pdf pp4-6). The canvasser is therefore presumably the CCPD Board of Directors (the district's governing body) - not confirmed by a document. District created Nov 2021 for five years. Simple majority."
+  },
+  "c115": {
+   "majority": false,
+   "majority_cite": "Plurality by default (Tex. Elec. Code §2.001, https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm); Res. 2026-R-02 states no majority rule",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (not separately verified)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Village Mayor. Candidate 'Tom Blauvelt' = Thomas Blauvelt, the mayor who signed Res. 2026-R-02."
+  },
+  "c116": {
+   "majority": false,
+   "majority_cite": "Plurality by default (Tex. Elec. Code §2.001, https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm); Res. 2026-R-02 states no majority rule",
+   "write_ins": [],
+   "write_ins_cite": "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf pp2-6 (no write-in line on any city contest); list of declared write-ins not found",
+   "unverified": [
+    "majority (not separately verified)",
+    "write_ins (no official declared write-in list found)"
+   ],
+   "notes": "Two seats, vote for up to 2, exactly 2 candidates (Eric Peeters, Tony Ruff)."
+  }
+ },
+ "sources": [
+  "https://communityimpact.com/east-austin/election/what-austin-voters-need-to-know-about-10-ballot-propositions-from-bonds-to-charter-changes/",
+  "https://services.austintexas.gov/edims/document.cfm?id=397765",
+  "https://services.austintexas.gov/edims/document.cfm?id=478218",
+  "https://tcss.legis.texas.gov/resources/EL/htm/EL.2.htm",
+  "https://texas.public.law/statutes/tex._election_code_section_501.109",
+  "https://texas.public.law/statutes/tex._election_code_section_501.151",
+  "https://texas.public.law/statutes/tex._local_gov't_code_section_9.005",
+  "https://votetravis.gov/current-election-information/current-election/",
+  "https://votetravis.gov/resources/required-notices/",
+  "https://votetravis.gov/wp-content/uploads/City-of-Austin-Orders.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Austin_Notice-of-General-Special-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Elgin_Notice-of-Special-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Elgin_Order-of-Special-Election-Ward-1-Alcohol.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Jonestown_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Notice-of-Election_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Lago-Vista_Order-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Manor_Notices-of-Elections_UPDATED.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Manor_Orders-of-Elections.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Pflugerville-Notice-of-Runoff-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Orders-of-Election-combined.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Pflugerville_Updated-Notices-combined.pdf",
+  "https://votetravis.gov/wp-content/uploads/City-of-Sunset-Valley_Notices-of-Elections.pdf",
+  "https://votetravis.gov/wp-content/uploads/G26-Bedsheet-Ballot-Corrected-Final2.pdf",
+  "https://votetravis.gov/wp-content/uploads/G26-Travis-County-Notice-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/Sunset-Valley-Ordinance-260602-A.pdf",
+  "https://votetravis.gov/wp-content/uploads/Village-of-Volente_Notice-of-Election.pdf",
+  "https://votetravis.gov/wp-content/uploads/Village-of-Volente_Order-of-Election.pdf",
+  "https://www.austintexas.gov/clerk/elections/Ballot-Applications-November-2026",
+  "https://www.austintexas.gov/council/2026/20260806-reg",
+  "https://www.austintexas.gov/council/2026/2026_master_index",
+  "https://www.austintexas.gov/department/city-council/2022/20221121-spec.htm",
+  "https://www.austintexas.gov/department/elections",
+  "https://www.cbsaustin.com/news/local/pflugerville-elects-councilmember-doug-weiss-as-new-mayor",
+  "https://www.hayscountytx.gov/DocumentCenter/View/5071",
+  "https://www.manortx.gov/439/Elections",
+  "https://www.manortx.gov/472/November-2026-General-Election-Informati",
+  "https://www.manortx.gov/DocumentCenter/View/374/Proposition-B-Four-Year-Office-Term-PDF",
+  "https://www.sos.texas.gov/elections/elo/hc1.html"
+ ],
+ "blocked_or_unreachable": [
+  "https://www.hayscountytx.gov/389/Elections (permission not granted)",
+  "https://hayscountytx.gov/departments/elections/current-elections (HTTP 403 to automated fetch)",
+  "hayscountytx.com (egress proxy refused)",
+  "https://www.wilcotx.gov/elections (permission not granted)",
+  "https://www.austintexas.gov/clerk/november-2026-election (permission not granted)",
+  "https://services.austintexas.gov/election/search.cfm (permission not granted)",
+  "https://tcss.legis.texas.gov/resources/EL/htm/EL.67.htm (permission not granted)"
+ ],
+ "checked": "2026-10-20"
+}

@@ -43,6 +43,8 @@ An entry:
   runoff_on    date or null: the runoff's date, once known (W30)
   recount      https URL or null (W29)
   write_ins    bool: declared write-in candidates are listed in choices (W45)
+  needs        null | two_thirds: a measure that needs two-thirds of the vote to pass (road bonds, Tex. Const. art.
+               III §52(b); W68)
 """
 import json, pathlib, re, sys
 
@@ -56,7 +58,7 @@ NOTES = {None, "district_not_confirmed", "annex_both", "annex_district_rejected"
 KINDS = {"local", "state", "legislature"}
 TOP = {"seq", "election", "withdrawn", "late_until", "contests"}
 ENTRY = {"state", "verdict", "leaders", "runoff", "choices", "sources", "missing", "travis", "canvasser", "canvass",
-         "official_numbers", "changed", "corrected", "note", "who", "runoff_on", "recount", "write_ins"}
+         "official_numbers", "changed", "corrected", "note", "who", "runoff_on", "recount", "write_ins", "needs"}
 # The verdicts each state may carry: an unofficial count never says won, passed or elected (Lane, Oct 20: "Won" only
 # when official), and an official one never says leading.
 ALLOWED = {
@@ -199,6 +201,8 @@ def check(obj, key, prev=None):
             bad.append(where + f"who {e['who']!r}")
         if not (e["recount"] is None or (isinstance(e["recount"], str) and e["recount"].startswith("https://"))):
             bad.append(where + "recount must be an https link or null")
+        if e["needs"] not in (None, "two_thirds") or (e["needs"] and c["type"] != "measure"):
+            bad.append(where + "needs is null, or two_thirds on a measure")
         if (e["state"] == "recount") != bool(e["recount"]):
             bad.append(where + "recount state exactly when there's a recount link")
     if prev is not None and not bad:
