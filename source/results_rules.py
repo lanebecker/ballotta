@@ -54,7 +54,7 @@ def unofficial(kind, votes, seats=1, majority=False, slack=0, write_ins=(), cid=
     if kind == "measure":
         if needs == "unsure":
             a, b = measure(votes, total, slack, HALF), measure(votes, total, slack, TWO_THIRDS)
-            return (a if a == b else "too_close"), [], []
+            return (a if a == b else "none"), [], []      # no call (W69), never "too close" when it isn't
         return measure(votes, total, slack, NEEDS[needs]), [], []
     names = [n for n, _ in votes if n not in write_ins]
     if is_unopposed(names, seats, write_ins):
