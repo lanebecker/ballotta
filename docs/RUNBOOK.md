@@ -125,3 +125,73 @@ ballotta.org on a phone and look at what was wrong.
 
 Phones need nothing more: the offline copy is network-first, so an online phone takes the new page on its next load. A
 page left open in a tab or a Home Screen app keeps the old one until it is reloaded.
+
+# Runbook: results days (Nov 3, 2026 – Jan 2027)
+
+How election results reach voters' ballots: the plan is `docs/plans/2026-10-20-results.md`; the inputs are explained
+in `source/results/README.md`. Everything happens on the branch `results/next`, through one pull request ("Results
+updates"). Nothing here needs a release: `results.json` is exempt from the bump check.
+
+## Before: by Oct 30
+
+1. Settings → Actions → General → **Allow GitHub Actions to create and approve pull requests**: on. Done: the box is
+   ticked. (Without it, the Results workflow can't open its pull request.)
+2. Run the Results workflow once by hand (Actions → Results → Run workflow). Done: it fetched the SOS feed (the build
+   job's log says `sos: filed …`), and a "Results updates" pull request exists or the log says nothing changed.
+
+## Election night, Nov 3 (after 7 pm)
+
+3. **The SOS time zone** (Task 1 finding 10): open the SOS results page and note the first "Last updated" time.
+   `Nov 03 … 19:xx` or later that evening means Central; `Nov 04 … 01:xx` means UTC. If UTC, set
+   `meta.sos_time_zone` to `"UTC"` in `source/results_map.json`. Done: posted times on the PR read as Austin evening.
+4. **Where the counties post:** put Williamson's Nov 3 results page address in `meta.fetch.williamson` and Hays's
+   cumulative PDF addresses in `meta.fetch.hays` (both unofficial and, later, official). Done: the next run's log says
+   `williamson: filed …` and `hays: filed …`.
+
+## Nov 4 morning: the first day
+
+5. Download Travis's and Bastrop's **Detail XML** (Clarity results page → Reports → Detail XML; `detailxml.zip`).
+6. **Map the county contests** (they get their keys only once the county posts): run
+   `python3 source/build_results.py suggest detailxml.zip` (or ask Claude to). It prints each Ballotta contest with
+   the county contests whose choices fit. Confirm each and put the key in that contest's `keys` in
+   `source/results_map.json`. A contest with no key is shown as *partial* (that county missing), never as zero.
+7. Then go on with the daily steps.
+
+## Every day, Nov 4 → each canvass
+
+8. **By 8:30 am**, download Travis's and Bastrop's Detail XML and upload each into its own folder on `results/next`
+   (GitHub: `source/results/inbox/travis/` → Add file → Upload files; or attach them in a Claude chat). Done: the
+   upload's commit is on `results/next`. Williamson, Hays and the SOS come by themselves (7:15 am and 5:15 pm).
+9. The workflow runs on the upload and updates the "Results updates" pull request with a plain-words change list.
+   - **"Numbers only"**: it merged itself and posted the list on the pinned "Results updates" issue. Nothing to do.
+   - **"A state or verdict changed"**: read the list and **merge by 9 am**, every day at the same time. Hold a merge only
+     for an error in the data, and say why in the pull request. Done: Pages deployed (Actions → Pages, green).
+   - **The build stopped** (red, `results build stopped: …`): it names what it couldn't decide. An unmapped choice or
+     key → fix the map. A bad file → step 11. Nothing is published until it's fixed; what's live stays as it was.
+
+## When a body canvasses
+
+10. Add its line to `source/results/official.json` on `results/next`, with the date and a link to the canvass:
+    `"city-of-austin": {"canvassed": "2026-11-12", "link": "https://…"}`. Before the meeting, `"expected": "2026-11-12"`
+    shows voters when it will be official. A recount: `"recount": {"link": "https://…"}`. A runoff date:
+    `"runoffs": {"c069": "2026-12-12"}`. The state canvass (Nov 21 – Dec 7) is the line `"state"`; the Legislature's
+    (after Jan 12, 2027, Governor and Lt. Governor) is `"legislature"`. Done: the PR lists those contests as official.
+    A canvass date outside its legal window is refused.
+    After a canvass, download that county's file once more: until the files are from on or after the canvass, the
+    contest says "numbers are the last unofficial count".
+
+## When something is wrong
+
+11. **A bad file** (a county posted a mistake, or the wrong file was uploaded): add it to
+    `source/results/excluded.json` with a reason, today's date and the contests it affects. The next run ignores it;
+    any verdict it changes is marked "Corrected" for voters. Never delete or edit a file in `raw/`.
+12. **Anything shown is wrong and the cause isn't clear: the kill switch.** Set `"withdrawn": true` in
+    `source/results/official.json` on `results/next` and merge the pull request it opens (a kill switch is never
+    numbers-only, so it waits for you: merge at once). Every result disappears from every ballot with "Results are
+    paused…" (W52). Set it back to `false` to restore. For a fault in the page's results code, not the data, roll back
+    with `RESULTS_LIVE = False` in `source/build_site.py`: a release (the steps above).
+
+## After
+
+13. The schedule stops on Dec 10. Governor and Lt. Governor stay "becomes official when the Legislature canvasses" until
+    January: add the `"legislature"` line then.
