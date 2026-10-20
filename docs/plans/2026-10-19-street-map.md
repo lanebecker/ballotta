@@ -1752,3 +1752,15 @@ print(sorted({(x['FULLNAME'], x['MTFCC']) for x in r.records() if x['FULLNAME'] 
 
 (replace `Oltorf` with the street). Only `S1400` names belong in `ALSO`; `S1100`/`S1200` streets are drawn as freeways
 or highways already.
+
+## Done (Oct 19)
+
+- **1.2.1, the preview**, pushed at 9:47 pm (13e83b1): Pages green; ballotta.org's page byte-for-byte the build;
+  the street map on `next/` only. Lane looked at 10:14 pm: "This is perfect! Nailed it. Let's make it live."
+- **1.3.0, promotion** (Task 9), the same night: `STREETS_LIVE = True`; 170/170 browser tests on `index.html`,
+  22/22 pipeline, 23 of 23 street mutants; `sw.js`, `next/sw.js` and `next/index.html` byte-for-byte 1.2.0's.
+  Its remediation audit (Pass 1) found nothing blocking; two wording fixes went in (a covered town name may also be
+  left out; a README pointer). Accepted, not changed: a phone whose 1.2.1 offline copy kept the preview page at
+  `next/` (opened before the preview's own copy took over) and whose install fetch of `next/` then fails or takes
+  over 8 seconds still shows that preview at `next/` offline until its next online visit; fixing it would make
+  `sw.js` differ from 1.2.0's.

@@ -16,6 +16,21 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.3.0] — 2026-10-19
+
+### Added
+- **The street map is live** on ballotta.org (Lane, after trying the preview): Where to vote's map draws freeways,
+  highways, major streets, the lakes and the river under the vote-center dots, with labels on the main highways,
+  instead of a grid, and a town name a vote center would cover moves just above or below it (or is left out when
+  neither is clear). Drawn on your device from
+  street data built into the page (U.S. Census Bureau TIGER/Line, 2024, public domain): no map company is asked
+  anything, and it works offline. Credited under About this test. Previewed at next/ in 1.2.1.
+
+### Changed
+- **ballotta.org/next/ sends people on again**, to ballotta.org with any picks link, and its offline copy removes
+  itself, as after the phone layout's promotion (`STREETS_LIVE = True`). The main page's offline copy keeps `next/`
+  from its first install again.
+
 ## [1.2.1] — 2026-10-19
 
 ### Added

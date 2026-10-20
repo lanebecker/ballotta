@@ -44,7 +44,8 @@ OFFLINE = True
 # every marked block, so index.html stays as it was (the street data too), and next/ is a preview again: the main
 # page with the street map on, with its own Home Screen app and offline copy, counting nothing. Promotion: set
 # STREETS_LIVE = True; next/ then goes back to sending people on (docs/plans/2026-10-19-street-map.md, Task 9).
-STREETS_LIVE = False
+# Promoted on 2026-10-19 (Lane): the main page has it, and next/ sends people on.
+STREETS_LIVE = True
 
 
 def marks(tag):
