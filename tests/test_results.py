@@ -6,12 +6,16 @@
 2. The parsers (source/results_parse.py) on real files, trimmed (tests/fixtures/results): the Nov 2025 City of Austin
    Prop Q across three counties equals the City's official canvass; the May 2026 runoff's SOS feed equals its Official
    Canvass Report; and each parser refuses a file that doesn't add up.
+3. The build (source/build_results.py), end to end in a scratch folder, on those real files: Lane's downloads filed
+   (and refused in the wrong folder), the partial rule from a missing county, official only through the contest's own
+   canvasser, the ledger (seq, changed, corrected), the kill switch, and a stop (never a guess) on anything unmapped.
 """
 import pathlib, sys, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'source'))
-import results_rules as R, results_parse as P
+import results_rules as R, results_parse as P, build_results as B
+import copy, shutil, tempfile
 import io, json, re, zipfile
 FX = ROOT / 'tests/fixtures/results'
 
@@ -226,6 +230,149 @@ def hays_reads_every_contest_and_its_run_time():
     assert r['posted'] == '2025-11-10T16:39' and r['official'] and len(r['contests']) == 88, (r['posted'], len(r['contests']))
     smd = r['contests']['CITY OF BUDA SINGLE MEMBER DISTRICT (SMD) C']
     assert smd['choices'] == [['Jeffrey Morales', 460], ['Emily Jones', 154], ['Kimberly Goodman', 465]]
+
+
+# ---------------------------------------------------------------- 3. the build, end to end on real files
+SENATE = next(k for k, c in P.parse_sos(fx('sos-53815-travis.json'))['contests'].items() if c['name'].strip() == 'U. S. SENATOR')
+PROPQ = next(k for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])
+MAP = {
+    'meta': {'election': '2026-11-03', 'sos_election': '53815', 'sos_time_zone': 'America/Chicago', 'late_until': '2026-11-17'},
+    'canvassers': {'state': {'label': 'the state', 'kind': 'state'}, 'city-of-austin': {'label': 'the Austin City Council', 'kind': 'local'}},
+    'contests': {
+        'c001': {'source': 'sos', 'canvasser': 'state', 'keys': {'sos': SENATE, 'travis': None}, 'sos_name': 'U. S. SENATOR',
+                 'write_ins': [{'name': n} for n in ('Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons')]},
+        # Prop Q (Nov 2025) stands in for Austin's Prop A (c071): three counties, real numbers
+        'c071': {'source': 'counties', 'canvasser': 'city-of-austin', 'electorate': ['travis', 'williamson', 'hays'],
+                 'keys': {'travis': PROPQ, 'williamson': '46', 'hays': 'CITY OF AUSTIN PROPOSITION Q'}, 'registered': {'hays': 565}},
+    }}
+
+class Scratch:
+    """A results folder in a temp dir, with the real files put where the workflow and Lane put them."""
+    def __init__(self, travis=True, williamson=True, hays=True, sos=True):
+        self.d = pathlib.Path(tempfile.mkdtemp()); self.res = self.d / 'results'
+        for c in ('travis', 'bastrop', 'williamson', 'hays'): (self.res / 'inbox' / c).mkdir(parents=True)
+        if travis: (self.res / 'inbox/travis/detailxml.xml').write_bytes(fx('travis-2025-11-detail.xml'))
+        if williamson: (self.res / 'inbox/williamson/results.html').write_bytes(fx('williamson-2025-11.html'))
+        if hays: (self.res / 'inbox/hays/cumulative.pdf').write_bytes(fx('hays-2025-11-official.pdf'))
+        B.file_inbox(self.res)
+        if sos:
+            data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
+            d = B.raw_dir(self.res, 'sos', r['posted'], data); d.mkdir(parents=True); (d / 'election.json').write_bytes(data)
+    def official(self, **o): (self.res / 'official.json').write_text(json.dumps(o))
+    def exclude(self, *x): (self.res / 'excluded.json').write_text(json.dumps(list(x)))
+    def build(self, prev=None, mp=None): return B.build(res=self.res, mp=mp or MAP, prev=prev)
+    def raw(self, source): return [f.relative_to(self.res).as_posix() for f in sorted((self.res / 'raw' / source).rglob('*')) if f.is_file()]
+    def close(self): shutil.rmtree(self.d)
+
+@test
+def downloads_are_filed_by_county_and_posted_time():
+    s = Scratch(sos=False)
+    try:
+        assert s.raw('travis') and re.fullmatch(r'raw/travis/2025-11-12T15-00-[0-9a-f]{8}/detailxml.xml', s.raw('travis')[0]), s.raw('travis')
+        assert not [f for f in (s.res / 'inbox/travis').iterdir()], 'the inbox is emptied'
+        (s.res / 'inbox/travis/again.xml').write_bytes(fx('travis-2025-11-detail.xml')); assert B.file_inbox(s.res) == [], 'the same file twice is filed once'
+        (s.res / 'inbox/bastrop/detailxml.xml').write_bytes(fx('travis-2025-11-detail.xml'))
+        try: B.file_inbox(s.res); raise AssertionError('a Travis file in the Bastrop folder was filed')
+        except B.Problem as e: assert 'inbox/travis/' in str(e), e
+    finally: s.close()
+
+@test
+def three_counties_make_one_unofficial_result():
+    s = Scratch()
+    try:
+        out, ch = s.build()
+        e = out['contests']['c071']
+        assert (e['state'], e['verdict']) == ('unofficial', 'failing') and e['choices'] == [['FOR', 62952, 36.53, False], ['AGAINST', 109375, 63.47, False]], e
+        assert [x[0] for x in e['sources']] == ['Williamson County', 'Travis County', 'Hays County'], e['sources']   # newest first
+        assert e['travis'] == [['FOR', 60419, 36.69], ['AGAINST', 104256, 63.31]] and e['canvasser'] == 'the Austin City Council'
+        assert e['canvass'] == {'kind': 'local', 'by': '2026-11-17', 'on': None, 'done': None}
+        sen = out['contests']['c001']                                          # the live Nov 3 feed: no votes yet
+        assert (sen['state'], sen['verdict']) == ('counting', 'none') and [x[0] for x in sen['choices'] if x[3]] == ['Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons']
+        assert out['seq'] == 1 and ch['verdict_changed'] and check_results_ok(out)
+    finally: s.close()
+
+def check_results_ok(out):
+    import check_results; bad = check_results.check(out, check_results.answer_key()); assert not bad, bad; return True
+
+@test
+def a_missing_county_makes_it_partial():
+    s = Scratch(hays=False)
+    try:
+        e = s.build()[0]['contests']['c071']
+        assert (e['state'], e['verdict'], e['missing']) == ('partial', 'failing', ['Hays County']), e   # 565 registered can't close 46,000
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']['registered']
+        e = s.build(mp=mp)[0]['contests']['c071']
+        assert (e['state'], e['verdict']) == ('partial', 'none'), 'unknown registration: no verdict until the file arrives'
+        mp['contests']['c071']['keys']['hays'] = None
+        s2 = Scratch(); e = s2.build(mp=mp)[0]['contests']['c071']; s2.close()
+        assert e['state'] == 'partial' and e['missing'] == ['Hays County'], 'an unmapped county counts as missing, never as zero'
+    finally: s.close()
+
+@test
+def official_only_through_its_own_canvasser():
+    s = Scratch()
+    try:
+        s.official(canvasses={'state': {'canvassed': '2026-12-02'}})
+        try: s.build(); raise AssertionError('canvassed with no votes loaded was accepted')
+        except B.Problem as e: assert 'c001' in str(e) and 'no votes' in str(e), e
+        mp = copy.deepcopy(MAP); del mp['contests']['c001']
+        e = s.build(mp=mp)[0]['contests']['c071']; assert e['state'] == 'unofficial', 'the state canvass never makes a city measure official'
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12', 'link': 'https://example.org'}})
+        e = s.build()[0]['contests']['c071']
+        assert (e['state'], e['verdict'], e['canvass']['done']) == ('official', 'failed', '2026-11-12'), e
+        assert e['official_numbers'] is False, 'files posted before the canvass: the last unofficial count (W11)'
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12', 'recount': {'link': 'https://example.org/recount'}}})
+        assert s.build()[0]['contests']['c071']['state'] == 'recount'
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-20'}})
+        try: s.build(); raise AssertionError('a canvass after Nov 17 was accepted')
+        except B.Problem as e: assert 'Nov 6' in str(e), e
+    finally: s.close()
+
+@test
+def the_ledger_counts_changes_and_names_corrections():
+    s = Scratch()
+    try:
+        one, _ = s.build()
+        same, ch = s.build(prev=one)
+        assert same == one and same['seq'] == 1 and not ch['verdict_changed'], 'nothing new: seq stays'
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12'}})
+        two, ch = s.build(prev=one)
+        assert two['seq'] == 2 and two['contests']['c071']['changed'] == 2 and two['contests']['c001']['changed'] == 1 and ch['verdict_changed']
+        assert any('c071' in ln and 'unofficial failing → official failed' in ln for ln in ch['lines']), ch['lines']
+        # Hays's file was bad: excluded, the verdict moves (official -> partial is refused, so take the canvass back too)
+        s.official()
+        hays = s.raw('hays')[0]
+        s.exclude({'path': hays, 'reason': 'test', 'date': '2026-11-09', 'contests': ['c071']})
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']['registered']
+        three, ch = s.build(prev=two, mp=mp)
+        e = three['contests']['c071']
+        assert (e['state'], e['verdict'], e['corrected'], three['seq']) == ('partial', 'none', '2026-11-09', 3), e
+    finally: s.close()
+
+@test
+def the_kill_switch_hides_everything_and_says_so():
+    s = Scratch()
+    try:
+        one, _ = s.build(); s.official(withdrawn=True)
+        out, ch = s.build(prev=one)
+        assert out['withdrawn'] and out['contests'] == {} and out['seq'] == 2 and ch['verdict_changed'] and 'WITHDRAWN' in ch['lines'][0]
+    finally: s.close()
+
+@test
+def anything_unmapped_stops_the_build():
+    s = Scratch()
+    try:
+        mp = copy.deepcopy(MAP); mp['contests']['c001']['write_ins'] = mp['contests']['c001']['write_ins'][:3]
+        try: s.build(mp=mp); raise AssertionError('a write-in the map lacks was dropped silently')
+        except B.Problem as e: assert 'JADE SIMMONS' in str(e), e
+        mp = copy.deepcopy(MAP); mp['contests']['c071']['keys']['williamson'] = '999'
+        try: s.build(mp=mp); raise AssertionError('a key the file lacks was accepted')
+        except B.Problem as e: assert "'999'" in str(e), e
+        data = fx('sos-53815-travis.json').replace(b'"Version"', b' "Version"'); r = P.parse_sos(data)
+        d = B.raw_dir(s.res, 'sos', r['posted'], data); d.mkdir(parents=True); (d / 'election.json').write_bytes(data)
+        try: s.build(); raise AssertionError('two different files posted the same minute were accepted')
+        except B.Problem as e: assert 'exclude one' in str(e), e
+    finally: s.close()
 
 
 def main():
