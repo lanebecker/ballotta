@@ -10,7 +10,7 @@ os.environ['BALLOTTA_MUTATE_PAGE'] = 'index.html'
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import mutate_desk as R
 
-PREV, BLD = R.PREV, R.BLD
+PREV, BLD, SW = R.PREV, R.BLD, ROOT / 'sw.js'
 L, P, S = 'results_show_on_the_laptop_ballot', 'results_show_on_the_phone_ballot', 'results_say_what_changed_since_you_last_looked'
 W, X, O = 'withdrawn_results_hide_everything', 'a_bad_results_file_breaks_nothing', 'the_date_override_works_only_on_this_computer'
 A, C, N, E = 'all_travis_county_results_need_no_address', 'a_saved_copy_says_so', 'results_wait_for_nov_4', 'the_canvass_is_explained_from_the_results_and_the_menu'
@@ -31,7 +31,7 @@ M = [
  ('R14 a pick line on nobody\'s ballot', PREV, "    if (withPick !== false) { const m = mine(c, e);", "    if (true) { const m = mine(c, e);", [A, P]),
  ('R15 results counted at every redraw', PREV, "    if (!counted) { counted = true; track('results_seen'); }\n  }\n  function landing() {", "    track('results_seen');\n  }\n  function landing() {", [L, P]),
  ('R16 a saved copy unsaid', PREV, "r.headers.get('x-ballotta-copy') === 'saved'", 'false', [C]),
- ('R17 the offline copy marks nothing', BLD, "        js = js.replace(SAVED_RESULTS[0], SAVED_RESULTS[1], 1)\n        assert SAVED_RESULTS[1] in js\n", '', [C]),
+ ('R17 the offline copy marks nothing', SW, "u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept", "u.pathname.endsWith('/results.json') ? kept : kept", [C]),   # the built file; a stale build is the pipeline's catch
  ('R18 a correction never fades', PREV, '+e.corrected.slice(8, 10) + 7)', '+e.corrected.slice(8, 10) + 700)', [S]),
  ('R19 no votes yet reads as unofficial', PREV, "    if (e.state === 'counting') return '<p class=\"rs-st\">No votes reported yet</p>';", '', [L]),
  ('R20 declared write-ins unexplained', PREV, "    if (e.write_ins) h +=", "    if (false) h +=", [L]),

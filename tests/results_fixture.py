@@ -62,6 +62,7 @@ def scene(name="mixed"):
         e["c072"] = entry("c072", state="partial", verdict="failing", votes=[90000, 140000], missing=("Hays County",), travis=[88000, 136000])
         e["c113"] = entry("c113", canvasser="the Sunset Valley City Council", votes=[400, 380, 120], leaders=["Sarah Ponder", "Robert Johnson"])
         e["c121"] = entry("c121", verdict="may_runoff", canvasser="the Austin ISD Board of Trustees", votes=[5100, 4900])
+        e["c124"] = entry("c124", canvasser="the Austin ISD Board of Trustees", votes=[6200, 5100])   # one seat, the voter's pick leading
         e["c147"] = E("c147", verdict="failing", canvasser="the Eastwood MUD board", votes=[8, 30],
                           over={"state": "official", "verdict": "failed", "done": "2026-11-10", "note": "district_not_confirmed"} if off else None)
         e["c117"] = entry("c117", state="counting", verdict="none", votes=[0, 0], canvasser="the ACC Board of Trustees")

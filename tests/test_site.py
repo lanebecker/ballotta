@@ -1300,7 +1300,7 @@ def desk_help_menu_info_address_and_clear(b):
     pg.click('#dk-help'); pg.keyboard.press('Shift+Tab'); pg.keyboard.press('Escape')               # Escape from the button, menu open
     assert pg.is_hidden('#dk-menu'), 'Escape closes the menu from the Feedback & Info button too'
     pg.click('#dk-help')
-    for _ in range(6): pg.keyboard.press('Tab')                                                  # tab out of the menu
+    for _ in range(pg.locator('#dk-menu [role=menuitem]').count()): pg.keyboard.press('Tab')     # tab out of the menu, however many items it has
     pg.wait_for_selector('#dk-menu', state='hidden', timeout=2000)                              # leaving the menu with the keyboard closes it
     pg.click('#dk-help'); pg.click('[data-help="address"]')
     assert pg.is_visible('#start') and pg.is_visible('#dk-back') and pg.is_hidden('#dk-app')
@@ -2568,7 +2568,8 @@ def phone_menu_is_a_sheet(b):
     assert pg.get_attribute('#dk-help', 'aria-haspopup') == 'dialog' and pg.get_attribute('#dk-help', 'aria-controls') is None
     pg.click('#dk-help'); pg.wait_for_selector('#ph-menu[open]'); expect(pg.locator('#dk-menu')).to_be_hidden()
     got = pg.locator('#ph-mitems button b').all_inner_texts(); want = pg.locator('#dk-menu button b').all_text_contents()   # the laptop menu's own items
-    assert got == want[:4] + ['Add to your Home Screen'] + want[4:] and pg.locator('#ph-mitems hr').count() == 1, (got, want)
+    k = want.index('Change address') + 1                                                         # the phone adds Home Screen after Change address
+    assert got == want[:k] + ['Add to your Home Screen'] + want[k:] and pg.locator('#ph-mitems hr').count() == 1, (got, want)
     pg.locator('#ph-mitems button', has_text='How your privacy works').click()
     pg.wait_for_selector('#d-info[open]'); assert not pg.evaluate("document.getElementById('ph-menu').open")
     assert ['help_opened', {'item': 'privacy', 'layout': 'phone'}] in events(pg)
@@ -3087,7 +3088,7 @@ def laptop_unchanged_by_the_phone_code(b):
     # on the landing page and in each view. Both are built in memory from the template (as the phone-parity test does).
     m = build_module(); shots = {}
     for name, ph in (('_lp_plain.html', False), ('_lp_phone.html', True)):
-        html = m.build(phone=ph)
+        html = m.build(phone=ph, results=False)                                                 # results need the phone code, so leave them out of both
         for size in ({'width': 1440, 'height': 900}, {'width': 1024, 'height': 640}):
             ctx, pg = new_page(b, wide=True); ctx.route(f'**/{name}', (lambda h: lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=h))(html))
             pg.set_viewport_size(size); pg.goto(f'http://127.0.0.1:{PORT}/{name}'); pg.wait_for_timeout(500)
@@ -4734,9 +4735,9 @@ def results_test(fn): TESTS.append(fn); RESULTS_TESTS.add(fn.__name__); return f
 def rs_fixtures():
     spec = importlib.util.spec_from_file_location('results_fixture', ROOT / 'tests/results_fixture.py')
     m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m
-RS_BALLOT = {'pr': '142', 'b': [1, 6, 56, 69, 71, 72, 113, 117, 121, 147], 'mode': 'exact', 'at': 0, 'pt': None, 'ln': []}
+RS_BALLOT = {'pr': '142', 'b': [1, 6, 56, 69, 71, 72, 113, 117, 121, 124, 147], 'mode': 'exact', 'at': 0, 'pt': None, 'ln': []}
 RS_PICKS = {'c001': ['James Talarico'], 'c069': ['Selena Xie'], 'c071': ['AGAINST'], 'c072': ['FOR'], 'c113': ['Sarah Ponder', 'Charles Young'],
-            'c121': ['__skip'], 'c147': ['FOR'], 'c056': ['George Morales III']}
+            'c121': ['__skip'], 'c124': ['Jimmy Counihan'], 'c147': ['FOR'], 'c056': ['George Morales III']}
 def rs_when(s): return _dt.datetime.fromisoformat(s + '-06:00' if s >= '2026-11-01T02' else s + '-05:00')   # CST from Nov 1, 2 am
 def rs_page(b, serve, when='2026-11-05T09:00', phone=False, ballot=True, picks=True, url=None, sent=None):
     """serve: {'body': str or dict, 'headers': {...}}, read at each request, so a test can change what the server says."""
@@ -4781,7 +4782,7 @@ def results_show_on_the_laptop_ballot(b):
     fx = rs_fixtures(); sent = []
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, sent=sent)
     top = pg.inner_text('#rs-top')
-    assert top.startswith('Results: 0 of 10 official · oldest numbers posted Nov 4, 7:55 am · Why unofficial? · All Travis County results'), top
+    assert top.startswith('Results: 0 of 11 official · oldest numbers posted Nov 4, 7:55 am · Why unofficial? · All Travis County results'), top
     r = rs_go(pg, 'c071')
     for w in ('Unofficial · TEST DATA (not real results), posted Nov 4, 8:41 am', 'Late mail, overseas and provisional ballots are still being counted.',
               'Becomes official when the Austin City Council canvasses the vote, by Nov 17.', 'Passing', 'Your pick, Against, is behind.',
@@ -4792,6 +4793,7 @@ def results_show_on_the_laptop_ballot(b):
     r = rs_go(pg, 'c072'); assert 'Partial · Hays County’s count isn’t in yet' in r and 'Your pick, For, is behind.' in r, r
     r = rs_go(pg, 'c117'); assert 'No votes reported yet' in r and 'Unofficial' not in r, r
     r = rs_go(pg, 'c121'); assert 'May go to a runoff' in r and 'You skipped this race.' in r, r
+    r = rs_go(pg, 'c124'); assert 'Leading: Jimmy Counihan' in r and 'Your pick is leading.' in r and 'behind' not in r, r
     r = rs_go(pg, 'c001')
     assert 'Becomes official at the state canvass, Nov 21–Dec 7.' in r and 'Jade Simmons (write-in)' in r and 'Only votes for declared write-in candidates count.' in r, r
     r = rs_go(pg, 'c006'); assert 'Becomes official when the Legislature canvasses the vote, after it meets Jan 12, 2027.' in r, r
@@ -4802,7 +4804,7 @@ def results_show_on_the_laptop_ballot(b):
     assert pg.inner_text('.dk-tbl thead').split('\t')[:3] == ['CONTEST', 'YOUR PICK', 'RESULT'], pg.inner_text('.dk-tbl thead')
     cells = [x.inner_text() for x in pg.query_selector_all('.rs-cell')]
     assert cells == ['Too close · Unofficial', 'Too close · Unofficial', 'Unopposed · Unofficial', 'Too close · Unofficial', 'Passing · Unofficial', 'Failing · Unofficial',
-                     'Leading · Unofficial', '—', 'Possible runoff · Unofficial', 'Failing · Unofficial'], cells
+                     'Leading · Unofficial', '—', 'Possible runoff · Unofficial', 'Leading · Unofficial', 'Failing · Unofficial'], cells
     assert all(x.get_attribute('colspan') == '5' for x in pg.query_selector_all('tr.dk-tg th'))
     # nothing about the ballot is sent: one plain GET of the file, and only the bare event
     assert [u for u in sent if 'results' in u] and all(u.endswith('/results.json') for u in sent if 'results' in u), [u for u in sent if 'results' in u]
@@ -4814,7 +4816,7 @@ def results_show_on_the_laptop_ballot(b):
 def results_show_on_the_phone_ballot(b):
     fx = rs_fixtures()
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, phone=True)
-    assert pg.is_visible('#rs-top') and 'Results: 0 of 10 official' in pg.inner_text('#rs-top')
+    assert pg.is_visible('#rs-top') and 'Results: 0 of 11 official' in pg.inner_text('#rs-top')
     r = rs_go(pg, 'c113', phone=True); assert 'Leading for 2 seats' in r and '1 of your 2 picks is leading.' in r, r
     assert sideways(pg) <= 0
     r = rs_go(pg, 'c071', phone=True); assert 'Your pick, Against, is behind.' in r and sideways(pg) <= 0, r
@@ -4831,7 +4833,7 @@ def results_say_what_changed_since_you_last_looked(b):
     assert 'Since you last looked' not in pg.inner_text('#rs-top'), 'the first visit has nothing to compare'
     serve['body'] = fx.scene('official'); pg.clock.set_system_time(rs_when('2026-12-03T09:00')); pg.reload(); pg.wait_for_timeout(600)
     top = pg.inner_text('#rs-top')
-    assert 'Results: 4 of 10 official' in top and 'Since you last looked: 4 results became official.' in top, top
+    assert 'Results: 4 of 11 official' in top and 'Since you last looked: 4 results became official.' in top, top
     r = rs_go(pg, 'c071'); assert r.startswith('Official · canvassed by the Austin City Council, Nov 12') and 'Passed' in r and 'Your pick, Against, didn’t win.' in r, r
     r = rs_go(pg, 'c056'); assert 'Elected: George Morales III (unopposed)' in r and 'Your pick was elected.' in r, r
     r = rs_go(pg, 'c001'); assert 'Official · canvassed by the state, Dec 2 · numbers are the last unofficial count' in r, r
@@ -4906,7 +4908,7 @@ def all_travis_county_results_need_no_address(b):
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, ballot=False)
     assert pg.is_visible('#rs-land') and 'See all Travis County results' in pg.inner_text('#rs-land')
     pg.click('#rs-land-go'); assert pg.evaluate("document.getElementById('rs-all').open")
-    n = len(pg.query_selector_all('#rs-list .rs-c')); assert n == 10, n
+    n = len(pg.query_selector_all('#rs-list .rs-c')); assert n == 11, n
     assert 'Your pick' not in pg.inner_text('#rs-list'), 'nobody’s ballot, even with picks saved here'
     pg.click('#rs-levels [data-lv="City"]'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
     assert titles and all('City of' in t for t in titles), titles
