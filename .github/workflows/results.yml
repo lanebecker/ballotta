@@ -154,9 +154,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
-      - name: Bring results/next up to main (a fast-forward when nothing new was uploaded; otherwise a merge)
+      - name: Bring results/next up to main (a fast-forward when nothing new was uploaded; otherwise a merge; recreated if deleted)
         run: |
           git config user.name "Ballotta results"; git config user.email "results@users.noreply.github.com"
-          git rev-parse --verify --quiet "origin/$NEXT" >/dev/null || exit 0
+          # GitHub offers "Delete branch" right after a merge; Lane's uploads need the branch, so it comes back
+          git rev-parse --verify --quiet "origin/$NEXT" >/dev/null || { git push -q origin "origin/main:refs/heads/$NEXT"; echo "recreated $NEXT from main"; exit 0; }
           if git merge-base --is-ancestor "origin/$NEXT" origin/main; then git push -q origin "origin/main:refs/heads/$NEXT"; exit 0; fi
           git checkout -q -B next "origin/$NEXT"; git merge -q --no-edit origin/main; git push -q origin "HEAD:refs/heads/$NEXT"
