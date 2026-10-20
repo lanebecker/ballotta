@@ -3,12 +3,17 @@
     python3 tests/test_results.py
 
 1. The verdict rules (source/results_rules.py), one at a time, at and around every threshold the plan sets.
+2. The parsers (source/results_parse.py) on real files, trimmed (tests/fixtures/results): the Nov 2025 City of Austin
+   Prop Q across three counties equals the City's official canvass; the May 2026 runoff's SOS feed equals its Official
+   Canvass Report; and each parser refuses a file that doesn't add up.
 """
 import pathlib, sys, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'source'))
-import results_rules as R
+import results_rules as R, results_parse as P
+import io, json, re, zipfile
+FX = ROOT / 'tests/fixtures/results'
 
 TESTS = []
 def test(fn): TESTS.append(fn); return fn
@@ -134,6 +139,93 @@ def annexations_get_one_outcome_line():
 @test
 def percents_round_to_two_places_and_never_divide_by_zero():
     assert R.pct(1, 3) == 33.33 and R.pct(0, 0) == 0 and R.pct(2, 3) == 66.67
+
+
+# ---------------------------------------------------------------- 2. the parsers, on real files
+def fx(name): return (FX / name).read_bytes()
+
+@test
+def prop_q_across_three_counties_equals_the_official_canvass():
+    # Task 1 finding 1: Travis + Williamson + Hays = the City's canvass exhibit (Council backup, Nov 17, 2025)
+    reps = [P.parse_clarity(fx('travis-2025-11-detail.xml')), P.parse_williamson(fx('williamson-2025-11.html')),
+            P.parse_hays(fx('hays-2025-11-official.pdf'))]
+    tot = {}
+    for r in reps:
+        q = [c for c in r['contests'].values() if P.norm(c['name']) == 'CITY OF AUSTIN PROPOSITION Q']
+        assert len(q) == 1, (r['label'], len(q))
+        for n, v in q[0]['choices']: tot[P.norm(n)] = tot.get(P.norm(n), 0) + v
+    assert tot == {'FOR': 62952, 'AGAINST': 109375}, tot
+
+@test
+def clarity_reads_its_county_time_zone_and_registration():
+    r = P.parse_clarity(fx('travis-2025-11-detail.xml'))
+    assert (r['source'], r['label'], r['posted']) == ('travis', 'Travis County', '2025-11-12T15:00'), r['posted']
+    q = [c for c in r['contests'].values() if 'Proposition Q' in c['name']][0]
+    assert q['registered'] > 600000 and q['vote_for'] == 1
+    p1 = [c for c in r['contests'].values() if c['name'] == 'State of Texas Proposition 1'][0]
+    assert sum(v for _, v in p1['choices']) == 222442          # Travis's official count (Task 1 finding 6)
+    z = io.BytesIO()
+    with zipfile.ZipFile(z, 'w') as zf: zf.writestr('detail.xml', fx('travis-2025-11-detail.xml'))
+    assert P.parse_clarity(z.getvalue())['contests'] == r['contests'], 'the zip Lane downloads reads the same'
+
+@test
+def clarity_refuses_what_it_cant_trust():
+    x = fx('travis-2025-11-detail.xml').decode('utf-8')
+    for name, bad in (('another county', x.replace('<Region>Travis</Region>', '<Region>Harris</Region>')),
+                      ('a timestamp with no zone', re.sub(r'(<Timestamp>[^<]*) CST<', r'\1<', x)),
+                      ('a choice whose vote types disagree with it', x.replace('totalVotes="', 'totalVotes="1', 1)),
+                      ('a precinct that disagrees with its vote type', re.sub(r'(<Choice .*?<Precinct name="\d+" votes=")', r'\g<1>1', x, count=1, flags=re.S)),
+                      ('not XML', '<ElectionResult>')):
+        try: P.parse_clarity(bad.encode('utf-8'))
+        except P.BadFile: continue
+        raise AssertionError(name + ' was accepted')
+
+@test
+def the_sos_feed_reads_races_and_the_canvass_flag():
+    r = P.parse_sos(fx('sos-58314.json'))
+    assert r['posted'] == '2026-06-17T00:57' and r['canvass_report'] and len(r['contests']) == 27
+    assert P.parse_sos(fx('sos-58314.json'), zone='UTC')['posted'] == '2026-06-16T19:57'   # the reading to settle Nov 3
+    old = P.parse_sos(fx('sos-51031.json'))
+    assert not old['canvass_report'] and old['posted'] == '2025-11-06T04:18', 'the frozen Nov 2025 feed never says canvassed'
+    lt = [c for c in r['contests'].values() if c['name'] == 'LIEUTENANT GOVERNOR'][0]
+    assert lt['choices'] == [['VIKKI GOODWIN', 376757], ['MARCOS ISAIAS VELEZ', 179238]]
+    f = json.loads(fx('sos-58314.json'))
+    sw = json.loads(__import__('base64').b64decode(f['StateWide'])); sw['Races'][0]['T'] += 1
+    f['StateWide'] = __import__('base64').b64encode(json.dumps(sw).encode()).decode()
+    try: P.parse_sos(json.dumps(f).encode()); raise AssertionError('a race whose total disagrees was accepted')
+    except P.BadFile: pass
+
+@test
+def the_sos_canvass_report_equals_the_feed_name_by_name():
+    feed, can = P.parse_sos(fx('sos-58314.json')), P.parse_sos_canvass(fx('sos-58314-canvass.pdf'))
+    assert can['posted'] == '2026-08-03T14:17' and len(can['contests']) == 27
+    for r in feed['contests'].values():
+        o = can['contests'][P.norm(r['name'])]; names = [n for n, _ in r['choices']]
+        got = sorted((P.match(n, names), v) for n, v in o['choices'])
+        assert got == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])   # wrapped and shortened names too
+
+@test
+def names_match_only_when_exactly_one_fits():
+    assert P.match('JESUS GARCIA, JR', ['JESUS TOMAS GARCIA, JR', 'NOE GARZA']) == 'JESUS TOMAS GARCIA, JR'
+    assert P.match('greg abbott (i)', ['GREG ABBOTT', 'GINA HINOJOSA']) == 'GREG ABBOTT'
+    assert P.match('Bradford \u201cBrad\u201d Hall', ['BRADFORD "BRAD" HALL']) == 'BRADFORD "BRAD" HALL'
+    assert P.match('SMITH', ['JOHN SMITH', 'JANE SMITH']) is None, 'two fit: no guess'
+    assert P.match('Someone Else', ['JOHN SMITH']) is None
+
+@test
+def williamson_refuses_a_page_whose_two_copies_disagree():
+    r = P.parse_williamson(fx('williamson-2025-11.html'))
+    assert r['posted'] == '2026-09-30T14:07' and list(r['contests'].values())[0]['choices'] == [['For', 2498], ['Against', 5028]]
+    bad = fx('williamson-2025-11.html').decode('utf-8').replace('class="content-data">2,498<', 'class="content-data">2,499<')
+    try: P.parse_williamson(bad.encode()); raise AssertionError('accepted')
+    except P.BadFile: pass
+
+@test
+def hays_reads_every_contest_and_its_run_time():
+    r = P.parse_hays(fx('hays-2025-11-official.pdf'))
+    assert r['posted'] == '2025-11-10T16:39' and r['official'] and len(r['contests']) == 88, (r['posted'], len(r['contests']))
+    smd = r['contests']['CITY OF BUDA SINGLE MEMBER DISTRICT (SMD) C']
+    assert smd['choices'] == [['Jeffrey Morales', 460], ['Emily Jones', 154], ['Kimberly Goodman', 465]]
 
 
 def main():
