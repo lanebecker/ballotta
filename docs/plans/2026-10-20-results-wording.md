@@ -142,3 +142,10 @@ what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release
   about the pick: keep it, or always say "Won · Official"?
 - **W67** Declared write-in candidates appear in the state's feed in capitals; Ballotta shows them in the ballot's
   own style ("Jade Simmons"), like every other name.
+- **W68** A measure that needs two-thirds of the vote (seven road bonds, Tex. Const. art. III §52(b)), a line under its
+  verdict: "Needs two-thirds of the vote to pass." Without it, "Failing" beside 63% For reads as a mistake.
+- **W69 (a question, no words yet)** Three cases show the numbers with **no verdict word** on purpose, and the ribbon
+  says nothing about why: Del Valle ISD District 9 (majority or plurality unsettled) and six refunding road bonds
+  (majority or two-thirds unsettled), when the two readings disagree; and ESD 4's annexation (c205), whose outcome needs
+  separate majorities that one total can't show, until ESD 4 canvasses. Should the ribbon say something like "No call
+  yet: this one is decided at the canvass"? (Each case is rare; ESD 4's is certain.)
