@@ -117,3 +117,28 @@ Names, counties, dates and times below are placeholders. Separators and quotes f
 
 - **W57** About this test credit: "Results: Texas Secretary of State; Travis, Williamson, Bastrop, Hays, Caldwell and
   Lee counties. Unofficial until each canvass. Ballotta doesn’t call races."
+
+## I. Added while building (Oct 20), for the second pass
+
+All Travis County results (Lane, Oct 20, 12:06 pm: "Can we also build a page that shows all the results, regardless of
+what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release), plus two choices made in the build:
+
+- **W58** Sheet title: "All Travis County results"
+- **W59** Under it: "Every contest on Travis County ballots, from each county’s published results and the Texas Secretary
+  of State. Unofficial until each canvass. Why unofficial?"
+- **W60** Search: label "Search", placeholder "A contest or a name"; level buttons "All", "Federal", "State", "District
+  courts", "County", "City", "School", "Special districts" (the page's own level names)
+- **W61** Before any results: "No results yet. The first numbers arrive the morning of Nov 4."; no match: "Nothing matches
+  “…”." (as the laptop outline says it)
+- **W62** Landing page card (from Nov 4, with or without a saved ballot): "**The Nov 3 results are coming in.** Look up your
+  address to see how your ballot did, or see every contest." Button: "See all Travis County results"
+- **W63** Feedback & Info item: "About election results" / "When results come in, and when they’re official" (opens
+  W55 and W56 as one sheet, titled "What’s a canvass?")
+- **W64** In the top line (W46): "· All Travis County results" after "Why unofficial?"
+- **W65** W33, as built: a line in the ribbon, "Decided by voters in the district." / "Decided by voters in the area to be
+  added.", instead of words added to the contest's title (the title is the ballot's own text everywhere else).
+- **W66** W54, as built: the Result cell says "Didn’t win · Official" only when the voter's own pick lost a one-seat
+  race; otherwise "Won · Official" / "Elected · Official". That contradicts W54's note that the column says nothing
+  about the pick: keep it, or always say "Won · Official"?
+- **W67** Declared write-in candidates appear in the state's feed in capitals; Ballotta shows them in the ballot's
+  own style ("Jade Simmons"), like every other name.

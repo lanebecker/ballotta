@@ -22,6 +22,7 @@ BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_STREETS = '.dk-map .st-wat{' in (ROOT / PAGE).read_text(encoding='utf-8')   # the street map (next/ until STREETS_LIVE)
+HAS_RESULTS = 'id="rs-top"' in (ROOT / PAGE).read_text(encoding='utf-8')   # results on your ballot (RESULTS_LIVE, from 1.4.0)
 if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(encoding='utf-8'):   # promotion audit #5
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
@@ -4725,6 +4726,222 @@ def laptop_and_phone_why_box_grows_with_the_reason(b):
     assert sideways(pg) <= 0 and pg.errs == [], pg.errs
     ctx.close()
 
+# ---------------------------------------------------------------- results on your ballot (Lane, Oct 20; docs/plans/2026-10-20-results.md)
+# The page reads results.json from Nov 4, Austin time. Here it is served from tests/results_fixture.py's TEST DATA scenes,
+# only by this local server (never published). The ballot is a saved one, so no lookup is needed.
+RESULTS_TESTS = set()
+def results_test(fn): TESTS.append(fn); RESULTS_TESTS.add(fn.__name__); return fn
+def rs_fixtures():
+    spec = importlib.util.spec_from_file_location('results_fixture', ROOT / 'tests/results_fixture.py')
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m
+RS_BALLOT = {'pr': '142', 'b': [1, 6, 56, 69, 71, 72, 113, 117, 121, 147], 'mode': 'exact', 'at': 0, 'pt': None, 'ln': []}
+RS_PICKS = {'c001': ['James Talarico'], 'c069': ['Selena Xie'], 'c071': ['AGAINST'], 'c072': ['FOR'], 'c113': ['Sarah Ponder', 'Charles Young'],
+            'c121': ['__skip'], 'c147': ['FOR'], 'c056': ['George Morales III']}
+def rs_when(s): return _dt.datetime.fromisoformat(s + '-06:00' if s >= '2026-11-01T02' else s + '-05:00')   # CST from Nov 1, 2 am
+def rs_page(b, serve, when='2026-11-05T09:00', phone=False, ballot=True, picks=True, url=None, sent=None):
+    """serve: {'body': str or dict, 'headers': {...}}, read at each request, so a test can change what the server says."""
+    ctx, pg = phone_page(b, sent=sent) if phone else new_page(b, sent=sent, wide=True)
+    if not phone:
+        errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.__dict__['errs'] = errs
+    asked = []; pg.__dict__['asked'] = asked
+    def answer(route):
+        asked.append(route.request.url)
+        body = serve['body']
+        route.fulfill(status=serve.get('status', 200), content_type='application/json', headers=serve.get('headers', {}),
+                      body=body if isinstance(body, str) else json.dumps(body))
+    ctx.route(re.compile(r'.*/results\.json(\?.*)?$'), answer)
+    t = rs_when(when)
+    if TODAY: pg.clock.set_system_time(t)
+    else: pg.clock.install(time=t)
+    pg.goto(BASE)
+    if ballot: pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify(b))", RS_BALLOT)
+    if picks: pg.evaluate("p => localStorage.setItem('ballotta.picks', JSON.stringify(p))", RS_PICKS)
+    pg.goto(url or BASE); pg.wait_for_timeout(600)
+    return ctx, pg
+def rs_go(pg, cid, phone=False):
+    if phone: pg.evaluate("id => desk.ph.go(id)", cid)
+    else: pg.click(f'.dk-row[data-row="{cid}"]')
+    pg.wait_for_timeout(100)
+    rib = pg.query_selector('#dk-paper .rs')
+    return rib.inner_text() if rib else ''
+
+@results_test
+def results_wait_for_nov_4(b):
+    # Before Nov 4 (Austin time) nothing changes: the page doesn't even ask for results.json; the landing card stays hidden.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-11-03T23:30')
+    assert pg.asked == [] and pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), (pg.asked,)
+    pg.click('.dk-row[data-row="c071"]'); assert pg.query_selector('#dk-paper .rs') is None
+    pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(300)
+    assert not pg.is_visible('#rs-land') and pg.asked == [] and pg.errs == [], (pg.asked, pg.errs)
+    ctx.close()
+
+@results_test
+def results_show_on_the_laptop_ballot(b):
+    fx = rs_fixtures(); sent = []
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, sent=sent)
+    top = pg.inner_text('#rs-top')
+    assert top.startswith('Results: 0 of 10 official · oldest numbers posted Nov 4, 7:55 am · Why unofficial? · All Travis County results'), top
+    r = rs_go(pg, 'c071')
+    for w in ('Unofficial · TEST DATA (not real results), posted Nov 4, 8:41 am', 'Late mail, overseas and provisional ballots are still being counted.',
+              'Becomes official when the Austin City Council canvasses the vote, by Nov 17.', 'Passing', 'Your pick, Against, is behind.',
+              'HOW TRAVIS COUNTY VOTED', 'Travis County’s count only. The result above includes every county in this race.'):   # the heading is set in capitals
+        assert w in r, (w, r)
+    r = rs_go(pg, 'c069'); assert 'Too close to call' in r and 'Your pick: Selena Xie' in r and 'canvasses the vote on Nov 12.' in r and 'behind' not in r, r
+    r = rs_go(pg, 'c113'); assert 'Leading for 2 seats: Sarah Ponder, Robert Johnson' in r and '1 of your 2 picks is leading.' in r, r
+    r = rs_go(pg, 'c072'); assert 'Partial · Hays County’s count isn’t in yet' in r and 'Your pick, For, is behind.' in r, r
+    r = rs_go(pg, 'c117'); assert 'No votes reported yet' in r and 'Unofficial' not in r, r
+    r = rs_go(pg, 'c121'); assert 'May go to a runoff' in r and 'You skipped this race.' in r, r
+    r = rs_go(pg, 'c001')
+    assert 'Becomes official at the state canvass, Nov 21–Dec 7.' in r and 'Jade Simmons (write-in)' in r and 'Only votes for declared write-in candidates count.' in r, r
+    r = rs_go(pg, 'c006'); assert 'Becomes official when the Legislature canvasses the vote, after it meets Jan 12, 2027.' in r, r
+    # one neutral look: every bar the same color, no party words or marks in a ribbon
+    fills = set(pg.evaluate("[...document.querySelectorAll('#dk-paper .rs-bars:not(.rs-tv .rs-bars) .rs-tr i')].map(i => getComputedStyle(i).backgroundColor)"))
+    assert len(fills) == 1 and not re.search(r'Republican|Democratic|\(I\)|✓|✗', r), (fills, r)
+    pg.click('#dk-views [data-view="glance"]')
+    assert pg.inner_text('.dk-tbl thead').split('\t')[:3] == ['CONTEST', 'YOUR PICK', 'RESULT'], pg.inner_text('.dk-tbl thead')
+    cells = [x.inner_text() for x in pg.query_selector_all('.rs-cell')]
+    assert cells == ['Too close · Unofficial', 'Too close · Unofficial', 'Unopposed · Unofficial', 'Too close · Unofficial', 'Passing · Unofficial', 'Failing · Unofficial',
+                     'Leading · Unofficial', '—', 'Possible runoff · Unofficial', 'Failing · Unofficial'], cells
+    assert all(x.get_attribute('colspan') == '5' for x in pg.query_selector_all('tr.dk-tg th'))
+    # nothing about the ballot is sent: one plain GET of the file, and only the bare event
+    assert [u for u in sent if 'results' in u] and all(u.endswith('/results.json') for u in sent if 'results' in u), [u for u in sent if 'results' in u]
+    assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'laptop'}]], events(pg)
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def results_show_on_the_phone_ballot(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, phone=True)
+    assert pg.is_visible('#rs-top') and 'Results: 0 of 10 official' in pg.inner_text('#rs-top')
+    r = rs_go(pg, 'c113', phone=True); assert 'Leading for 2 seats' in r and '1 of your 2 picks is leading.' in r, r
+    assert sideways(pg) <= 0
+    r = rs_go(pg, 'c071', phone=True); assert 'Your pick, Against, is behind.' in r and sideways(pg) <= 0, r
+    pg.click('#rs-top [data-rs="all"]'); assert pg.evaluate("document.getElementById('rs-all').open")
+    assert 'Your pick' not in pg.inner_text('#rs-list'), 'All Travis County results is nobody’s ballot'
+    assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'phone'}]], events(pg)
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def results_say_what_changed_since_you_last_looked(b):
+    fx = rs_fixtures(); serve = {'body': fx.scene('mixed')}
+    ctx, pg = rs_page(b, serve)
+    assert 'Since you last looked' not in pg.inner_text('#rs-top'), 'the first visit has nothing to compare'
+    serve['body'] = fx.scene('official'); pg.clock.set_system_time(rs_when('2026-12-03T09:00')); pg.reload(); pg.wait_for_timeout(600)
+    top = pg.inner_text('#rs-top')
+    assert 'Results: 4 of 10 official' in top and 'Since you last looked: 4 results became official.' in top, top
+    r = rs_go(pg, 'c071'); assert r.startswith('Official · canvassed by the Austin City Council, Nov 12') and 'Passed' in r and 'Your pick, Against, didn’t win.' in r, r
+    r = rs_go(pg, 'c056'); assert 'Elected: George Morales III (unopposed)' in r and 'Your pick was elected.' in r, r
+    r = rs_go(pg, 'c001'); assert 'Official · canvassed by the state, Dec 2 · numbers are the last unofficial count' in r, r
+    r = rs_go(pg, 'c147'); assert 'Voters didn’t confirm this district (Proposition A failed), so it won’t be created.' in r, r
+    r = rs_go(pg, 'c069'); assert 'Late mail' not in r, ('after late_until, no late-ballot line', r)
+    pg.reload(); pg.wait_for_timeout(600)
+    assert 'Since you last looked' not in pg.inner_text('#rs-top'), 'nothing new the second time'
+    fixed = fx.scene('official'); fixed['seq'] = 6
+    e = fixed['contests']['c071']; e.update(verdict='failed', corrected='2026-12-03', changed=6)
+    e['choices'][0][1], e['choices'][1][1] = 120000, 180000; e['choices'][0][2], e['choices'][1][2] = 40.0, 60.0
+    serve['body'] = fixed; pg.reload(); pg.wait_for_timeout(600)
+    top = pg.inner_text('#rs-top')
+    assert 'Corrected since you last looked: 1 result. An earlier version on Ballotta was wrong.' in top, top
+    r = rs_go(pg, 'c071'); assert 'Corrected Dec 3: an earlier version on Ballotta was wrong.' in r and 'Your pick, Against, won.' in r, r
+    pg.clock.set_system_time(rs_when('2026-12-11T09:00')); pg.reload(); pg.wait_for_timeout(600)
+    assert 'Corrected Dec 3' not in rs_go(pg, 'c071'), 'the correction note fades after a week'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def withdrawn_results_hide_everything(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('withdrawn')})
+    assert pg.inner_text('#rs-top') == 'Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.'
+    assert rs_go(pg, 'c071') == '' and pg.query_selector('[data-rs="all"]') is None
+    pg.click('#dk-views [data-view="glance"]'); assert pg.query_selector('.rs-cell') is None and 'RESULT' not in pg.inner_text('.dk-tbl thead')
+    pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(400)
+    assert not pg.is_visible('#rs-land') and pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def a_bad_results_file_breaks_nothing(b):
+    # results.json is untrusted to the page: each malformed file shows nothing, and the ballot works as before; a single
+    # bad entry is left out, never the rest.
+    fx = rs_fixtures(); serve = {'body': 'not json'}
+    ctx, pg = rs_page(b, serve)
+    bad = ['not json', '[]', 'null', {'seq': -1}, dict(fx.scene('mixed'), election='2024-11-05'), dict(fx.scene('mixed'), contests=[]),
+           {'seq': 1, 'election': '2026-11-03', 'withdrawn': False, 'late_until': '2026-11-17', 'contests': {'c071': {'state': 'unofficial'}}}]
+    for body in bad:
+        serve['body'] = body; pg.reload(); pg.wait_for_timeout(400)
+        assert pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), body
+    one = fx.scene('mixed'); one['contests']['c071']['choices'].reverse()                    # out of ballot order
+    one['contests']['c069']['choices'][0][0] = '<img src=x onerror=alert(1)>'                  # not a ballot name
+    one['contests']['c113']['sources'][0][0] = '<b>Travis</b>'                                 # text, shown as text
+    serve['body'] = one; pg.reload(); pg.wait_for_timeout(500)
+    assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c069') == '', 'a bad entry is left out'
+    r = rs_go(pg, 'c113'); assert '<b>Travis</b>' in r and pg.query_selector('#dk-paper .rs b') is None, r
+    pg.click('.dk-row[data-row="c147"]'); pg.click('#dk-paper .dk-line[data-pick="AGAINST"]')
+    assert cur(pg, 'c147') == ['AGAINST'], 'picking still works'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def the_date_override_works_only_on_this_computer(b):
+    # ?today= is for Lane's local look at sample results (Task 6): on ballotta.org it does nothing.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-10-20T12:00', url=BASE + '?today=2026-11-06')
+    assert pg.asked and pg.is_visible('#rs-top'), 'on localhost the override opens the gate'
+    ctx.close()
+    ctx, pg = new_page(b, wide=True); asked = []
+    ctx.route('https://ballotta.org/**', lambda r: (asked.append(r.request.url) if r.request.url.split('?')[0].endswith('results.json') else None,
+              r.fulfill(path=str(ROOT / (urllib.parse.urlsplit(r.request.url).path.lstrip('/') or 'index.html')))))
+    if not TODAY: pg.clock.install(time=rs_when('2026-10-20T12:00'))
+    pg.goto('https://ballotta.org/index.html'); pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify(b))", RS_BALLOT)
+    pg.goto('https://ballotta.org/index.html?today=2026-11-06'); pg.wait_for_timeout(600)
+    assert asked == [] and not pg.is_visible('#rs-top'), ('ballotta.org ignores ?today=', asked)
+    ctx.close()
+
+@results_test
+def all_travis_county_results_need_no_address(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, ballot=False)
+    assert pg.is_visible('#rs-land') and 'See all Travis County results' in pg.inner_text('#rs-land')
+    pg.click('#rs-land-go'); assert pg.evaluate("document.getElementById('rs-all').open")
+    n = len(pg.query_selector_all('#rs-list .rs-c')); assert n == 10, n
+    assert 'Your pick' not in pg.inner_text('#rs-list'), 'nobody’s ballot, even with picks saved here'
+    pg.click('#rs-levels [data-lv="City"]'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
+    assert titles and all('City of' in t for t in titles), titles
+    pg.click('#rs-levels [data-lv="all"]'); pg.fill('#rs-q', 'Morales'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
+    assert titles == ['County Commissioner, Precinct 4'], titles
+    pg.fill('#rs-q', 'zzz'); assert 'Nothing matches' in pg.inner_text('#rs-list')
+    pg.keyboard.press('Escape'); pg.keyboard.press('Escape')   # in a search box the first Escape clears it (the browser's own), the second closes
+    assert not pg.evaluate("document.getElementById('rs-all').open")
+    pg.goto(BASE.replace('index.html', 'results/')); pg.wait_for_timeout(800)
+    assert pg.url.endswith('/?results') and pg.evaluate("document.getElementById('rs-all').open"), pg.url
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def a_saved_copy_says_so(b):
+    # The offline copy marks a results.json it kept (x-ballotta-copy: saved, sw.js); the page says the results may be out of date.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed'), 'headers': {'x-ballotta-copy': 'saved'}})
+    assert 'Saved copy · may be out of date' in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')
+    ctx.close()
+    sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
+    assert "u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept" in sw and "h.set('x-ballotta-copy', 'saved')" in sw
+
+@results_test
+def the_canvass_is_explained_from_the_results_and_the_menu(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    pg.click('#rs-top [data-rs="why"]'); assert pg.evaluate("document.getElementById('rs-why').open")
+    assert 'Election night counts are unofficial.' in pg.inner_text('#rs-why') and 'It doesn’t call races' in pg.inner_text('#rs-why')
+    pg.keyboard.press('Escape')
+    pg.click('#dk-help'); pg.click('#dk-menu [data-help="results"]')
+    assert pg.evaluate("document.getElementById('rs-why').open") and events(pg)[-1] == ['help_opened', {'item': 'results', 'layout': 'laptop'}], events(pg)[-1:]
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
 def main():
     srv = serve()
     failed = skipped = 0
@@ -4735,6 +4952,8 @@ def main():
                 skipped += 1; print('SKIP', fn.__name__, '- no laptop layout in', PAGE); continue
             if fn.__name__ in PHONE_TESTS and not HAS_PHONE:
                 skipped += 1; print('SKIP', fn.__name__, '- no phone layout in', PAGE); continue
+            if fn.__name__ in RESULTS_TESTS and not HAS_RESULTS:
+                skipped += 1; print('SKIP', fn.__name__, '- no results code in', PAGE, '(RESULTS_LIVE)'); continue
             if fn.__name__ in STREETS_TESTS and not HAS_STREETS:
                 skipped += 1; print('SKIP', fn.__name__, '- no street map in', PAGE, '(it is in next/index.html until STREETS_LIVE)'); continue
             try:
