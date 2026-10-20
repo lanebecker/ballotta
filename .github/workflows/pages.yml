@@ -42,6 +42,8 @@ jobs:
         run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
       - name: The answer key against the ballot PDF, and the release check, before anything deploys
         run: python3 tests/test_pipeline.py
+      - name: The results back end (rules, parsers, build) before anything deploys
+        run: python3 tests/test_results.py
 
   deploy:
     needs: pipeline
@@ -62,6 +64,8 @@ jobs:
           fetch-depth: 0          # history and tags, for the bump check
       - name: A change to the published site comes with a new VERSION (round-2 audit #19); never skipped
         run: python3 source/check_bumped.py
+      - name: The published results.json is sound (stdlib only, so never skipped either)
+        run: python3 source/check_results.py
       - name: Build the site folder
         run: python3 source/build_site.py --site _site
       - name: Where Pages publishes from
