@@ -11,6 +11,7 @@
 // Node's own crypto only: nothing to install.
 import { webcrypto as C, createHash } from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 
 const ITER = 600000;
 const [src, out] = process.argv.slice(2);
@@ -91,6 +92,6 @@ input:focus-visible,button:focus-visible{outline:3px solid #E9A92A;outline-offse
 </body>
 </html>
 `;
-fs.mkdirSync(out.replace(/\/[^/]*$/, '') || '.', { recursive: true });
+fs.mkdirSync(path.dirname(out), { recursive: true });   // a bare file name is its own folder's (the cold audit, #150)
 fs.writeFileSync(out, page);
 console.log(`locked: ${out} (${Math.round(page.length / 1024)} KB)`);

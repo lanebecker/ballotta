@@ -42,6 +42,8 @@ def votes_for(cid, c, rng, cast):
         third = [0.012] * (len(names) - 2)
         top = (1 - sum(third)) / 2
         sh = [top + 0.0015, top - 0.0015] + third
+        if random.Random("order:" + cid).random() < 0.5:   # who's ahead by a hair is a coin toss, so the Dec 8 scene's winners show no pattern (#139)
+            sh[0], sh[1] = sh[1], sh[0]
     else:
         sh = shares(cid, len(names), rng)
     return list(zip(names, [round(cast * s) for s in sh]))

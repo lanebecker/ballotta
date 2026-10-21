@@ -27,8 +27,15 @@ def check(ok, what):
 html = build_demo.page()
 key = json.load(open(ROOT / "source/answer_key.json", encoding="utf-8"))["contests"]
 real = {build_demo.base(ch) for c in key if c["type"] != "measure" for ch in c["choices"]} - {"Write-in", "FOR", "AGAINST", "For", "Against"}
+real |= {w["name"] for m in json.load(open(ROOT / "source/results_map.json", encoding="utf-8"))["contests"].values() for w in m.get("write_ins", [])}   # declared write-ins are real people too (#150)
 check(not [n for n in real if n in html], "no real candidate's name anywhere in the demo")
 check("fetch('results.json'" not in html, "the demo never asks for the real results")
+sys.path.insert(0, str(ROOT / "tests")); import results_demo, collections   # noqa: E402
+PARTY = re.compile(r"\((REP|DEM|LIB|GRN)\)$"); won = collections.Counter()
+for cid, e in results_demo.scene("dec8")["contests"].items():
+    full = [x for x in {c["id"]: c for c in key}[cid]["choices"] if e["verdict"] == "won" and x.startswith(e["leaders"][0])]
+    if full and PARTY.search(full[0]): won[PARTY.search(full[0]).group(1)] += 1
+check(len(won) >= 2 and min(won.values()) * 4 >= sum(won.values()), f"the Dec 8 scene's party races don't all go one way ({dict(won)}) (#139)")
 check('<meta name="robots" content="noindex">' in html and 'data-domains="preview.invalid"' in html, "search engines kept out; the tracker can't send")
 check("Demo · made-up results" in html and "TEST DATA (not real results)" in html, "labeled a demo on every screen, and in every result's source")
 check("'ballotta." not in html and "startsWith('demo:ballotta.')" in html and "sw.register(" not in html, "its own storage; no offline copy")
