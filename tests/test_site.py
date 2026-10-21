@@ -4979,6 +4979,11 @@ def results_turn_the_ballot_into_a_record(b):
     sm = pg.inner_text('#rs-top .rs-sum')
     assert '0/11' in sm and 'YOUR 8 PICKS' in sm and 'A runoff is possible' in sm, sm
     assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['3', '3', '2'], 'won or leading, behind, too close'
+    other = pg.evaluate("() => optionsOf(BYID['c124']).find(x => x !== 'Jimmy Counihan')")   # a one-seat pick that isn't leading
+    pg.evaluate("o => { const p = JSON.parse(localStorage.getItem('ballotta.picks')); p.c124 = [o]; localStorage.setItem('ballotta.picks', JSON.stringify(p)); }", other)
+    pg.reload(); pg.wait_for_timeout(600)
+    assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['2', '4', '2'], 'a pick behind in a leading race counts as behind'
+    pg.evaluate("p => localStorage.setItem('ballotta.picks', JSON.stringify(p))", RS_PICKS); pg.reload(); pg.wait_for_timeout(600)
     assert pg.inner_text('#rs-top .rs-tl li.now b') == 'Late ballots and local canvasses'
     assert pg.inner_text('.dk-row[data-row="c071"] small') == 'Passing · Unofficial'
     pg.click('#dk-filt [data-f="und"]')
