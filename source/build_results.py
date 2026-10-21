@@ -2,9 +2,10 @@
 
     python3 source/build_results.py file-inbox            # moves Lane's downloads from source/results/inbox/<county>/
                                                           # into source/results/raw/, refusing a file in the wrong folder
-    python3 source/build_results.py build [--prev FILE] [--out FILE] [--changes FILE]
+    python3 source/build_results.py build [--prev FILE] [--out FILE] [--changes FILE] [--fetch FILE]
                                                           # writes results.json (default: over the published one, which is
                                                           # also the default --prev) and the change list for the PR
+                                                          # (with fetch_results.py's report, if given, under "Sources")
     python3 source/build_results.py suggest FILE          # for each counties contest without a key for FILE's county,
                                                           # the source contests whose names fit (to confirm by hand)
 
@@ -220,16 +221,21 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
                 continue
             hand = official.get("counted", {}).get(cid, {}).get(county)
             if (rep is None or not key) and hand and done:
-                # a county that never posts a file (Caldwell and Lee, for ACC): its count from the canvass, typed into
-                # official.json's "counted" by Lane (the deep audit, #155)
-                odd = sorted(set(hand) - set(names + write_ins))
-                if odd or not all(isinstance(v, int) and v >= 0 for v in hand.values()):
-                    raise Problem(f"{where}: official.json's counted for {P.LABELS[county]}: {odd or 'counts must be whole numbers'}"
+                # a county that never posts a file (Caldwell and Lee, for ACC): its count from the canvass record, typed
+                # into official.json's "counted" by Lane with the canvass's date and time (the deep audit, #155):
+                # {"at": "2026-11-18T10:00", "votes": {"Jane Doe": 120, ...}}
+                votes, at = hand.get("votes") or {}, hand.get("at")
+                odd = sorted(set(votes) - set(names + write_ins))
+                if odd or not votes or not all(isinstance(v, int) and v >= 0 for v in votes.values()):
+                    raise Problem(f"{where}: official.json's counted for {P.LABELS[county]}: {odd or 'votes must be whole numbers'}"
                                   f" (the names are {names + write_ins})")
+                if not (isinstance(at, str) and check_results.TIME.match(at) and at[:10] >= done):
+                    raise Problem(f"{where}: official.json's counted for {P.LABELS[county]} needs \"at\": the canvass's date and time,"
+                                  f" YYYY-MM-DDTHH:MM, on or after {done}")
                 for n in names + write_ins:
-                    total[n] += hand.get(n, 0)
+                    total[n] += votes.get(n, 0)
                 any_county = True
-                sources.append([f"{cvr['label']}’s canvass", done + "T12:00"])
+                sources.append([f"{P.LABELS[county]}, from the canvass by {cvr['label']}", at])   # W106
                 continue
             if rep is None or not key:
                 missing.append(P.LABELS[county])
@@ -470,6 +476,7 @@ def main(argv):
             arg = lambda k, d: pathlib.Path(argv[argv.index(k) + 1]) if k in argv else d
             out_path, prev_path = arg("--out", ROOT / "results.json"), arg("--prev", ROOT / "results.json")
             obj, changes = build(prev=load(prev_path), since=POLLS_CLOSE, election=ELECTION)
+            changes["fetch"] = load(arg("--fetch", ROOT / "-"), None) or ["- the fetch made no report (see the run's log)"] if "--fetch" in argv else []
             out_path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
             if "--changes" in argv:
                 arg("--changes", None).write_text(json.dumps(changes, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

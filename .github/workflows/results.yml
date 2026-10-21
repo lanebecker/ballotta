@@ -12,7 +12,7 @@ name: Results
 #            posts the change list on the pinned "Results updates" issue (the digest). Verdict changes wait for Lane.
 #   reset    after results.json changes on main: brings results/next up to main, so the next upload starts clean.
 #
-# Runs on Lane's uploads (a push to results/next under source/results/ or the map), twice a day Nov 4 - Dec 10
+# Runs on Lane's uploads (a push to results/next under source/results/ or the map), twice a day Nov 4 - Dec 20
 # (7:15 am and 5:15 pm Austin time), and by hand. Its own pushes (workflow token) don't start it again. Branch names
 # and the change list go through env and files, never ${{ }} inside run.
 
@@ -22,7 +22,7 @@ on:
     paths: ['source/results/**', 'source/results_map.json', 'results.json']
   schedule:
     - cron: '15 13,23 4-30 11 *'
-    - cron: '15 13,23 1-10 12 *'
+    - cron: '15 13,23 1-20 12 *'
   workflow_dispatch: {}
 
 permissions:
@@ -50,14 +50,15 @@ jobs:
           git config user.name "Ballotta results"; git config user.email "results@users.noreply.github.com"
           if git rev-parse --verify --quiet "origin/$NEXT" >/dev/null; then git checkout -q -B work "origin/$NEXT"; git merge -q --no-edit origin/main; else git checkout -q -B work origin/main; fi
           git show origin/main:results.json > "$RUNNER_TEMP/prev.json"
-      - name: The PDF libraries the parsers use (pinned in requirements.txt)
-        run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
+          git rev-parse origin/main > "$RUNNER_TEMP/base.txt"   # the publish job checks main hasn't moved since (#159)
+      - name: The PDF libraries the parsers use (every package pinned by hash, #159)
+        run: python3 -m pip install --break-system-packages --require-hashes -r requirements-results.txt
       - name: File Lane's downloads
         run: python3 source/build_results.py file-inbox
-      - name: Fetch SOS, Williamson and Hays (a failed source is reported and skipped)
-        run: python3 source/fetch_results.py
+      - name: Fetch SOS, Williamson and Hays (a failed source is reported in the PR and skipped; never a failed step)
+        run: python3 source/fetch_results.py --report "$RUNNER_TEMP/fetch.json"
       - name: Build results.json against the published copy
-        run: python3 source/build_results.py build --prev "$RUNNER_TEMP/prev.json" --out results.json --changes "$RUNNER_TEMP/changes.json"
+        run: python3 source/build_results.py build --prev "$RUNNER_TEMP/prev.json" --out results.json --changes "$RUNNER_TEMP/changes.json" --fetch "$RUNNER_TEMP/fetch.json"
       - name: Check it (shape, seq +1, posted times never backwards), the site build and the tests
         run: |
           python3 source/check_results.py results.json --prev "$RUNNER_TEMP/prev.json"
@@ -67,8 +68,8 @@ jobs:
       - name: The patch for the publish job (against this run's starting point, which the publish job rebuilds)
         run: |
           git add -A source/results results.json
-          git diff --cached --binary > results.patch
-          cp "$RUNNER_TEMP/changes.json" .
+          git diff --cached --binary --no-renames > results.patch
+          cp "$RUNNER_TEMP/changes.json" "$RUNNER_TEMP/base.txt" .
           if [ -s results.patch ]; then git diff --cached --stat; else echo "nothing changed"; fi
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
@@ -76,6 +77,7 @@ jobs:
           path: |
             results.patch
             changes.json
+            base.txt
           retention-days: 30
 
   publish:
@@ -99,18 +101,32 @@ jobs:
         id: apply
         env:
           A: ${{ runner.temp }}/results
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "Ballotta results"; git config user.email "results@users.noreply.github.com"
+          # built against another main (merged meanwhile): this patch's seq and comparisons are stale; the next run redoes it (#159)
+          if [ "$(git rev-parse origin/main)" != "$(cat "$A/base.txt")" ]; then
+            echo "::warning::main moved during the build; skipped, and a fresh run started"; echo "results=same" >> "$GITHUB_OUTPUT"
+            gh workflow run results.yml --ref main; exit 0
+          fi
           if git rev-parse --verify --quiet "origin/$NEXT" >/dev/null; then git checkout -q -B next "origin/$NEXT"; git merge -q --no-edit origin/main; else git checkout -q -B next origin/main; fi
-          if [ -s "$A/results.patch" ]; then git apply --index --binary "$A/results.patch"; fi
+          if [ -s "$A/results.patch" ]; then
+            # the build job runs code from results/next and packages from PyPI: only results may come back from it (#159)
+            if git apply --numstat "$A/results.patch" | cut -f3- | grep -vE '^(source/results/(inbox|raw|rejected)/|results\.json$)'; then echo "::error::the patch touches files other than results"; exit 1; fi
+            git apply --index --binary "$A/results.patch"
+          fi
           if git diff --cached --quiet "origin/main" -- results.json && git diff --quiet "origin/main" -- results.json; then echo "results=same" >> "$GITHUB_OUTPUT"; else echo "results=new" >> "$GITHUB_OUTPUT"; fi
           # new raw files are kept even when the numbers didn't move (Hays deletes its unofficial PDFs later)
-          if git diff --cached --quiet && [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$NEXT" 2>/dev/null)" ]; then echo "pushed=no" >> "$GITHUB_OUTPUT"; exit 0; fi
-          git diff --cached --quiet && { git push -q origin "HEAD:refs/heads/$NEXT"; echo "pushed=yes" >> "$GITHUB_OUTPUT"; exit 0; }
-          python3 -c "import json,sys; c=json.load(open(sys.argv[1])); print('Results: seq', c['seq'])" "$A/changes.json" > "$RUNNER_TEMP/msg"
-          git commit -q -F "$RUNNER_TEMP/msg"
-          git push -q origin "HEAD:refs/heads/$NEXT"
-          echo "pushed=yes" >> "$GITHUB_OUTPUT"
+          if git diff --cached --quiet && [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$NEXT" 2>/dev/null)" ]; then echo "pushed=no" >> "$GITHUB_OUTPUT"
+          else
+            if ! git diff --cached --quiet; then
+              python3 -c "import json,sys; c=json.load(open(sys.argv[1])); print('Results: seq', c['seq'])" "$A/changes.json" > "$RUNNER_TEMP/msg"
+              git commit -q -F "$RUNNER_TEMP/msg"
+            fi
+            git push -q origin "HEAD:refs/heads/$NEXT"
+            echo "pushed=yes" >> "$GITHUB_OUTPUT"
+          fi
+          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"   # what the self-merge may merge, and nothing newer
       - name: Open or update the pull request
         if: steps.apply.outputs.results == 'new'
         id: pr
@@ -124,18 +140,31 @@ jobs:
           print(("**A state or verdict changed: Lane merges (by 9 am).**" if c["verdict_changed"] else "Numbers only: this merges itself (Lane's answer 4).") + "\n")
           print("\n".join(c["lines"]) or "- no changes")
           print("\nFiles read:\n" + "\n".join("- " + f for f in c["files"]))
+          if c.get("fetch"):
+              print("\nSources this run:\n" + "\n".join(c["fetch"]))
           PY
           n=$(gh pr list --head "$NEXT" --base main --state open --json number --jq '.[0].number')
           if [ -z "$n" ]; then gh pr create --base main --head "$NEXT" --title "Results updates" --body-file "$RUNNER_TEMP/body.md"; n=$(gh pr list --head "$NEXT" --base main --state open --json number --jq '.[0].number'); else gh pr edit "$n" --body-file "$RUNNER_TEMP/body.md"; fi
           echo "number=$n" >> "$GITHUB_OUTPUT"
-          python3 -c "import json,sys; print('verdict=' + ('yes' if json.load(open(sys.argv[1]))['verdict_changed'] else 'no'))" "$A/changes.json" >> "$GITHUB_OUTPUT"
+          # numbers only? the build job's word, and this job's own comparison of the file with main's (it never trusts
+          # the read-only job alone to allow a self-merge: #159). Any doubt waits for Lane.
+          git show origin/main:results.json > "$RUNNER_TEMP/main.json"
+          python3 - "$A/changes.json" "$RUNNER_TEMP/main.json" results.json >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          c, old, new = (json.load(open(p)) for p in sys.argv[1:])
+          word = lambda e: (e["state"], e["verdict"], sorted(e["leaders"]), sorted(e["runoff"]), e["note"], e.get("corrected"))
+          moved = (old.get("withdrawn") != new.get("withdrawn") or set(old["contests"]) != set(new["contests"])
+                   or any(word(old["contests"][k]) != word(e) for k, e in new["contests"].items()))
+          print("verdict=" + ("yes" if c["verdict_changed"] or moved else "no"))
+          PY
       - name: Numbers only - merge, publish, and post the digest
         if: steps.apply.outputs.results == 'new' && steps.pr.outputs.verdict == 'no'
         env:
           GH_TOKEN: ${{ github.token }}
           N: ${{ steps.pr.outputs.number }}
+          HEAD: ${{ steps.apply.outputs.head }}
         run: |
-          gh pr merge "$N" --merge --delete-branch=false
+          gh pr merge "$N" --merge --delete-branch=false --match-head-commit "$HEAD"   # only the commit checked here (#159)
           gh workflow run pages.yml --ref main
           # the reset job won't run for this merge (the workflow token starts no workflow): results/next is now an
           # ancestor of main, so bring it up to main here

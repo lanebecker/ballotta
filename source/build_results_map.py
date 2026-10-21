@@ -4,7 +4,9 @@ hand except `keys` (filled the morning of Nov 4, when the counties post, as `bui
 "17 = <the county's name for the contest>", or "absent") and `meta.fetch`.
 
     python3 source/build_results_map.py           # writes the map, keeping keys and meta.fetch already in it
-    python3 source/build_results_map.py --check   # the committed map is what this writes (a test runs it)
+    python3 source/build_results_map.py --check   # the committed map says what this writes (a test runs it): compared as
+                                                  # JSON, so a hand edit to what's kept (keys, spell, write-ins,
+                                                  # registered voters, meta.fetch) never fails the Results run (#162)
 
 Researched Oct 20, 2026, from each entity's order and notice of election (votetravis.gov, Required Notices), the
 Corrected-Final2 bedsheet ballot, the Texas SOS feed for election 53815, statutes and charters. INFERRED and UNVERIFIED
@@ -236,6 +238,8 @@ def build(old=None):
                 m["keys"][county] = v
         if was.get("spell"):
             m["spell"] = was["spell"]
+        if was.get("registered"):   # typed in for a county the tables don't cover; the tables' own numbers win
+            m["registered"] = {**was["registered"], **m.get("registered", {})}
         if cid not in SOS and was.get("write_ins"):
             m["write_ins"] = was["write_ins"]
     return mp
@@ -249,7 +253,7 @@ def main(argv):
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else None
     new = text(build(old))
     if "--check" in argv:
-        if not OUT.exists() or OUT.read_text(encoding="utf-8") != new:
+        if not OUT.exists() or json.loads(OUT.read_text(encoding="utf-8")) != json.loads(new):
             sys.exit("results map: source/results_map.json isn't what build_results_map.py writes: change the tables, then rerun it")
         print("results map: up to date"); return
     OUT.write_text(new, encoding="utf-8")

@@ -501,17 +501,19 @@ def a_county_with_no_file_counts_from_the_canvass_and_final_files_are_official_n
         mp = one_map(c147=M('1 = Eastwood MUD Proposition A', electorate=['travis', 'lee'], keys={'travis': '1 = Eastwood MUD Proposition A', 'lee': None}, registered={'lee': 50}))
         e = B.build(res=res, mp=mp)[0]['contests']['c147']
         assert (e['state'], e['missing']) == ('partial', ['Lee County']), e
-        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': {'FOR': 10, 'AGAINST': 5}}}}))
+        LEE = {'at': '2026-11-12T10:30', 'votes': {'FOR': 10, 'AGAINST': 5}}
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': LEE}}}))
         out, ch = B.build(res=res, mp=mp)
         e = out['contests']['c147']
         assert (e['state'], e['verdict'], [x[1] for x in e['choices']]) == ('official', 'passed', [910, 105]), e
-        assert ['the eastwood-mud board’s canvass', '2026-11-12T12:00'] in e['sources'] and not [l for l in ch['lines'] if 'HELD' in l]
+        assert ['Lee County, from the canvass by the eastwood-mud board', '2026-11-12T10:30'] in e['sources'] and not [l for l in ch['lines'] if 'HELD' in l]
         assert e['official_numbers'] is False, 'the Travis file is from before the canvass and not marked final'
-        for bad in ({'FOR': 10, 'AGIANST': 5}, {'FOR': '10', 'AGAINST': 5}):
+        for bad in ({'at': LEE['at'], 'votes': {'FOR': 10, 'AGIANST': 5}}, {'at': LEE['at'], 'votes': {'FOR': '10', 'AGAINST': 5}},
+                    {'votes': LEE['votes']}, {'at': '2026-11-11T10:00', 'votes': LEE['votes']}):   # no time, or before the canvass
             (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': bad}}}))
             out, ch = B.build(res=res, mp=mp, prev=out)
             assert out['contests']['c147']['state'] == 'official' and [l for l in ch['lines'] if 'HELD' in l and 'counted' in l], (bad, ch['lines'])
-        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': {'FOR': 10, 'AGAINST': 5}}}, 'final': {'travis': '2026-11-05'}}))
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': LEE}}, 'final': {'travis': '2026-11-05'}}))
         assert B.build(res=res, mp=mp)[0]['contests']['c147']['official_numbers'] is True, 'a final file: the official numbers'
     finally: shutil.rmtree(d)
 
@@ -713,6 +715,129 @@ def the_fetcher_files_what_it_gets_and_skips_what_fails():
         finally: shutil.rmtree(d2)
     finally: shutil.rmtree(d)
 
+
+@test
+def the_fetcher_tries_again_reports_and_never_stops_the_run():
+    """#161: one timeout meant no data until the next run; errors were only in the log; every fetch failing stopped
+    the job, Lane's uploads with it. And the SOS feed's times, read in the wrong zone, were filed hours off."""
+    import urllib.error, urllib.request, io as _io, email.utils as eu, datetime as _dt
+    calls, real = [], urllib.request.urlopen
+    class Resp(_io.BytesIO):
+        status = 200; headers = {'Date': eu.format_datetime(_dt.datetime(2026, 11, 4, 2, 0, tzinfo=_dt.timezone.utc), usegmt=True)}
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+    def flaky(fails, err):
+        def urlopen(req, timeout=None):
+            calls.append(req.full_url)
+            if len(calls) <= fails: raise err
+            return Resp(b'ok')
+        return urlopen
+    try:
+        urllib.request.urlopen = flaky(2, urllib.error.URLError('timed out'))
+        body = FR.get('https://x.example/a', wait=(0, 0))
+        assert body == b'ok' and len(calls) == 3 and body.date.hour == 2, (body, calls)
+        calls.clear(); urllib.request.urlopen = flaky(5, urllib.error.HTTPError('https://x.example/b', 404, 'Not Found', {}, None))
+        try: FR.get('https://x.example/b', wait=(0, 0)); raise AssertionError('a 404 was taken')
+        except urllib.error.HTTPError: assert len(calls) == 1, 'a 404 is not tried again'
+    finally: urllib.request.urlopen = real
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        feed = fx('sos-53815-travis.json')                       # LastUpdatedTime Oct 16, 2026 16:12:10
+        early = FR.Body(feed); early.date = datetime_utc(2026, 10, 16, 18, 0)   # the server's clock: 1:00 pm Austin time
+        try: FR.keep(d, 'sos', early, 'election.json', P.parse_sos); raise AssertionError('a feed time after the server clock was filed')
+        except P.BadFile as e: assert 'sos_time_zone' in str(e), e
+        late = FR.Body(feed); late.date = datetime_utc(2026, 10, 16, 21, 13)    # 4:13 pm: as it should be
+        assert FR.keep(d, 'sos', late, 'election.json', P.parse_sos) is not None
+        fetch, _ = net({f'{FR.SOS}/election/58314': fx('sos-58314.json')})
+        out = FR.fetch_all(dict(META, sos_election='58314'), res=d, fetch=fetch, election='2026-11-03')
+        assert out[0][1] is None and 'the 2026-05-26 election' in out[0][2], out[0]
+        lines = FR.report(out, res=d, now=datetime_utc(2026, 11, 4, 15, 0))
+        assert lines[0].startswith('- sos: could not fetch') and '- Travis County: no file yet' in lines, lines
+        # the run itself: every fetch failed, and it still ends well, with the report written for the PR
+        rep, was = d / 'fetch.json', (FR.fetch_all, FR.report)
+        FR.fetch_all, FR.report = (lambda meta, election=None: [('sos', None, 'down')]), (lambda out: ['- sos: could not fetch: down'])
+        try: FR.main(['fetch_results.py', '--report', str(rep)])
+        except SystemExit as e: raise AssertionError(f'every fetch failing stopped the run ({e}), and Lane’s uploads with it')
+        finally: FR.fetch_all, FR.report = was
+        assert json.loads(rep.read_text()) == ['- sos: could not fetch: down']
+    finally: shutil.rmtree(d)
+
+def datetime_utc(*a):
+    import datetime as _dt
+    return _dt.datetime(*a, tzinfo=_dt.timezone.utc)
+
+@test
+def the_pull_request_shows_the_fetch_report():
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        (d / 'prev.json').write_text(json.dumps({'seq': 3, 'election': '2026-11-03', 'withdrawn': False, 'late_until': '2026-11-17', 'contests': {}}))
+        (d / 'fetch.json').write_text(json.dumps(['- sos: could not fetch: down']))
+        res, B.RES = B.RES, d / 'results'                      # an empty results folder: nothing filed, nothing built
+        try:
+            args = ['build_results.py', 'build', '--prev', str(d / 'prev.json'), '--out', str(d / 'out.json'), '--changes', str(d / 'ch.json')]
+            with contextlib.redirect_stdout(io.StringIO()):
+                B.main(args + ['--fetch', str(d / 'fetch.json')])
+                assert json.loads((d / 'ch.json').read_text())['fetch'] == ['- sos: could not fetch: down']
+                B.main(args + ['--fetch', str(d / 'none.json')])
+                assert 'no report' in json.loads((d / 'ch.json').read_text())['fetch'][0], 'a fetch step that died says so'
+        finally: B.RES = res
+    finally: shutil.rmtree(d)
+
+@test
+def parsers_take_the_formats_a_general_election_brings():
+    """#163: Hays's report adds a vote-type column in a general (provisional); Williamson lists a contest with no rows
+    mid-update; the state's canvass report and its feed must read as two sources."""
+    for line, want in (('Jane Doe REP 10 5.00% 20 6.00% 30 7.00% 5 1.00% 65 6.00%', ('Jane Doe REP', '65')),
+                       ('FOR 1,234 52.30% 2,000 51.00% 3,234 51.50%', ('FOR', '3,234')), ('AGAINST 1,234 47.70%', ('AGAINST', '1,234'))):
+        m = P.HAYS_ROW.match(line); assert m and (m.group(1), m.group(2)) == want, (line, m and m.groups())
+    assert P.HAYS_CAST.match('Cast Votes: 10 1.00% 20 2.00% 30 3.00% 4 4.00% 64 2.00%').group(1) == '64'
+    h = fx('williamson-2025-11.html').decode('utf-8')
+    h = re.sub(r'<td data-race="46"[^>]*>.*?</td>', '', h, flags=re.S)
+    h = re.sub(r'<div data-race-id="46" class="pie-results">.*?\]\];', '', h, flags=re.S)
+    try: P.parse_williamson(h.encode('utf-8')); raise AssertionError('a contest with no choices was read')
+    except P.BadFile as e: assert 'no choices' in str(e), e
+    assert P.LABELS['sos_canvass'] != P.LABELS['sos'], 'one label: the canvass report reads as the feed going backwards'
+
+@test
+def hand_edits_to_the_map_are_kept_and_never_fail_the_run():
+    """#162: the check compared exact text, so a reformat, a spell or a hand-set registration failed the Results run
+    (nothing published)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('brm', ROOT / 'source/build_results_map.py'); brm = importlib.util.module_from_spec(spec); spec.loader.exec_module(brm)
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        mp = json.loads(brm.OUT.read_text(encoding='utf-8'))
+        mp['contests']['c071']['spell'] = {'travis': {'FOR THE PROP': 'FOR'}}
+        mp['contests']['c071']['registered'] = {'hays': 600}
+        mp['contests']['c071']['keys']['travis'] = '17 = CITY OF AUSTIN PROPOSITION A'
+        mp['contests']['c071']['keys']['williamson'] = 'absent'
+        brm.OUT = d / 'results_map.json'; brm.OUT.write_text(json.dumps(mp, indent=4))   # an editor's reformat
+        try:
+            with contextlib.redirect_stdout(io.StringIO()): brm.main(['x', '--check'])
+        except SystemExit as e: raise AssertionError(f'a hand edit failed the check: {e}')
+        kept = brm.build(json.loads(brm.OUT.read_text()))['contests']['c071']
+        assert (kept['spell'], kept['registered']['hays'], kept['keys']['travis'], kept['keys']['williamson']) == (
+            {'travis': {'FOR THE PROP': 'FOR'}}, 600, '17 = CITY OF AUSTIN PROPOSITION A', 'absent'), kept
+    finally: shutil.rmtree(d)
+
+
+@test
+def the_workflows_keep_what_the_audit_fixed():
+    """#159: the self-merge merges only the commit it checked; the publish job takes back only results, checks main
+    didn't move, and decides "numbers only" itself too; the build job's packages are pinned by hash (the same PDF
+    libraries as requirements.txt); and Pages takes one page from the demo's branch."""
+    y = (ROOT / '.github/workflows/results.yml').read_text(encoding='utf-8')
+    for must in ('--match-head-commit "$HEAD"', "grep -vE '^(source/results/(inbox|raw|rejected)/|results\\.json$)'",
+                 '!= "$(cat "$A/base.txt")"', 'c["verdict_changed"] or moved', '--require-hashes -r requirements-results.txt',
+                 'git diff --cached --binary --no-renames', '--report "$RUNNER_TEMP/fetch.json"', '--fetch "$RUNNER_TEMP/fetch.json"'):
+        assert must in y, must
+    pin = lambda text, name: re.search(rf'^{name}==(\S+)', text, re.M | re.I).group(1)
+    r, h = (ROOT / 'requirements.txt').read_text(), (ROOT / 'requirements-results.txt').read_text()
+    for name in ('pdfplumber', 'pdfminer[.-]six'):
+        assert pin(r, name) == pin(h, name), name
+    assert all('--hash=sha256:' in block for block in re.split(r'\n(?=[a-z])', h.split('\n', 3)[3]) if block.strip()), 'every package hashed'
+    p = (ROOT / '.github/workflows/pages.yml').read_text(encoding='utf-8')
+    assert 'cp "$D/demo/index.html" _site/demo/index.html' in p and 'path: _site\n' not in p.split('demo-locked')[1].split('Where Pages')[0], 'the demo artifact unpacks over the site'
 
 # ---------------------------------------------------------------- 5. the map
 def real_map(): return json.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))

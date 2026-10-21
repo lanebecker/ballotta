@@ -9,6 +9,7 @@ import pathlib, signal, subprocess, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 S = ROOT / "source"
 RULES, PARSE, BUILD, FETCH = S / "results_rules.py", S / "results_parse.py", S / "build_results.py", S / "fetch_results.py"
+MAP = S / "build_results_map.py"
 M = [
     ("B1 the 20-vote floor is 19", RULES, "POINT, FLOOR = 1, 20", "POINT, FLOOR = 1, 19"),
     ("B2 a point exactly isn't enough", RULES, "Fraction(100 * gap, cast) >= POINT", "Fraction(100 * gap, cast) > POINT"),
@@ -40,7 +41,7 @@ M = [
     ("B26 a correction never named", BUILD, 'e["corrected"] = max(hit)', 'pass'),
     ("B33 a final file still says last unofficial", BUILD, '(fin and rep["posted"][:10] >= fin) or ', ''),
     ("B34 a canvass with a county never loaded is official anyway", BUILD, 'if missing and done:', 'if False:'),
-    ("B35 hand counts with a mistyped name taken", BUILD, 'if odd or not all(isinstance(v, int) and v >= 0 for v in hand.values()):', 'if False:'),
+    ("B35 hand counts with a mistyped name taken", BUILD, 'if odd or not votes or not all(isinstance(v, int) and v >= 0 for v in votes.values()):', 'if False:'),
     ("B36 a county with no file never counted from its canvass", BUILD, 'if (rep is None or not key) and hand and done:', 'if False:'),
     ("B37 suggest unranked", BUILD, '        fits.sort(key=lambda kn: -likeness(key[cid]["title"], kn[1]))', '        pass'),
     ("B38 another election's file filed", BUILD, 'if election and rep.get("election") not in (None, election):\n                reject(', 'if False:\n                reject('),
@@ -49,6 +50,17 @@ M = [
     ("B41 a key with no name accepted", BUILD, '        if named is None:\n            raise', '        if False:\n            raise'),
     ("B42 Clarity's election date never read", PARSE, '"election": day_of(root.findtext("ElectionDate"), "%m/%d/%Y")}', '"election": None}'),
     ("B43 the SOS feed's election date never read", PARSE, '"election": day_of(home.get("ElecDate"), "%m%d%Y")}', '"election": None}'),
+    ("B44 a fetch tried once", FETCH, '    for i in range(tries):', '    for i in range(1):'),
+    ("B45 a 404 tried again", FETCH, 'if e.code not in (429, 500, 502, 503, 504) or i == tries - 1:', 'if i == tries - 1:'),
+    ("B46 the SOS clock never checked", FETCH, 'if source == "sos" and sent and ', 'if False and '),
+    ("B47 every fetch failing stops the run", FETCH, '    # never a failed step: Lane\'s uploads are built whatever the network did', '    sys.exit(1) if all(e for _, _, e in out) else None'),
+    ("B48 the fetch report left out of the PR", BUILD, '            changes["fetch"] = ', '            changes["fetch_"] = '),
+    ("B49 Hays reads three vote types only", PARSE, 'HAYS_ROW = re.compile(r"^(.*?)\\s+(?:[\\d,]+\\s+[\\d.]+%\\s+)*', 'HAYS_ROW = re.compile(r"^(.*?)\\s+(?:[\\d,]+\\s+[\\d.]+%\\s+){3}'),
+    ("B50 an empty Williamson contest read", PARSE, '        if not choices:   # a contest the page lists with no rows', '        if False:   # a contest the page lists with no rows'),
+    ("B51 the canvass report reads as the feed", PARSE, '"sos_canvass": "Texas Secretary of State’s canvass"', '"sos_canvass": "Texas Secretary of State"'),
+    ("B52 a hand count with no time of its own", BUILD, 'if not (isinstance(at, str) and check_results.TIME.match(at) and at[:10] >= done):', 'if False:'),
+    ("B53 the map compared as text", MAP, 'json.loads(OUT.read_text(encoding="utf-8")) != json.loads(new)', 'OUT.read_text(encoding="utf-8") != new'),
+    ("B54 a hand-set registration dropped", MAP, '        if was.get("registered"):', '        if False:'),
     ("B27 seq never moves", BUILD, '        out["seq"] = prev["seq"] + 1\n', '        out["seq"] = prev["seq"]\n'),
     ("B28 a generic write-in line counted", BUILD, 'if P.norm(printed) in GENERIC_WRITE_IN:', "if False:"),
     ("B29 an annexation's two votes swapped", BUILD, 'd_cid, a_cid = (cid, pair) if m.get("who") == "district" else (pair, cid)', 'd_cid, a_cid = (pair, cid) if m.get("who") == "district" else (cid, pair)'),

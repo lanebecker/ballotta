@@ -278,3 +278,14 @@ paper ("Runoff · <place> · contest 1 of 1", "Vote for 1 · Runoff, Sat, Dec 12
   councils, Austin ISD, ACC.)
 
 **Lane, Oct 21, 4:55 pm:** W98–W105 approved as built, one by one with alternatives.
+
+## From the deep audit's back-end fixes (Oct 21), for Lane
+
+Two source names voters see in a result's "Where the numbers come from" and its ribbon ("<source>, posted <time>"):
+
+- **W106** A county that posts no file Ballotta reads (ACC's Caldwell and Lee), counted from the canvass record:
+  "Lee County, from the canvass by the ACC Board of Trustees", posted at the canvass's own date and time, as Lane
+  types it from the record (#155).
+- **W107** The state's Official Canvass Report, apart from its election-night feed: "Texas Secretary of State’s
+  canvass" (the feed stays "Texas Secretary of State"). Two names, so the report, printed before the feed's last
+  update, isn't read as the feed's time going backwards (#163).

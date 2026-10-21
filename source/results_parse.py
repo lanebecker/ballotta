@@ -17,7 +17,8 @@ from zoneinfo import ZoneInfo
 
 AUSTIN = ZoneInfo("America/Chicago")
 LABELS = {"travis": "Travis County", "bastrop": "Bastrop County", "williamson": "Williamson County", "hays": "Hays County",
-          "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State",
+          "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State’s canvass",   # apart, so the state
+          # canvass report, printed before the feed's last update, isn't read as the feed going back in time (#163)
           "caldwell": "Caldwell County", "lee": "Lee County"}       # ACC only; no file ever comes from them (Task 1 finding 11)
 PARTIES = {"REP", "DEM", "LIB", "GRN", "IND", "NON", "W", "WI", "W-I"}
 
@@ -257,6 +258,8 @@ def parse_williamson(data):
             choices.append([nm, num(r[k].get("votes", "0") or "0")])
         if rid in pies and [[str(x[0]), int(x[-1])] for x in pies[rid]] != choices:
             raise BadFile(f"{name}: the table and the chart disagree")
+        if not choices:   # a contest the page lists with no rows: a page caught mid-update, never "no votes" (#163)
+            raise BadFile(f"{name}: the page lists no choices for it")
         contests[rid] = {"name": name, "vote_for": vf, "choices": choices, "registered": None}
     # The page prints no election date: each election has its own address (results_map.json's meta.fetch), and nothing
     # posted before the polls close is read (build_results.POLLS_CLOSE).
@@ -264,8 +267,10 @@ def parse_williamson(data):
 
 
 # ---------------------------------------------------------------- Hays County cumulative results PDF (by script)
-HAYS_ROW = re.compile(r"^(.*?)\s+(?:[\d,]+\s+[\d.]+%\s+){3}([\d,]+)\s+[\d.]+%$")
-HAYS_CAST = re.compile(r"^Cast Votes:\s+(?:[\d,]+\s+[\d.]+%\s+){3}([\d,]+)\s+[\d.]+%$")
+# One vote-and-percent pair per vote type, then the total's: three types in 2025 (early, mail, Election Day), but a
+# general election's report can add one (provisional), so any number is read and the last pair is the total (#163)
+HAYS_ROW = re.compile(r"^(.*?)\s+(?:[\d,]+\s+[\d.]+%\s+)*([\d,]+)\s+[\d.]+%$")
+HAYS_CAST = re.compile(r"^Cast Votes:\s+(?:[\d,]+\s+[\d.]+%\s+)*([\d,]+)\s+[\d.]+%$")
 HAYS_HEAD = re.compile(r"^(Cumulative Results Report|Registered Voters|General Election|Precincts Reporting|\d+ of \d+ = |"
                        r"\d+/\d+/\d{4}$|Run Time|Run Date|Nov\. |[A-Z][a-z]+\.? \d+, \d{4} )")
 
