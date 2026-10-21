@@ -372,10 +372,12 @@ def census_page():
             '<title>Census address lookup</title></head><body>\n<script>' + CENSUS_JS + '</script>\n</body></html>\n')
 
 
-def build(preview=False, desk=None, phone=None, streets=None, results=None):
+def build(preview=False, desk=None, phone=None, streets=None, results=None, data_hook=None, hook=None):
     """desk: include the laptop layout (default: on for the preview, or once DESK_LIVE). phone: include the phone layout
     (default: on for the preview, or once PHONE_LIVE). The laptop-parity test builds with and without it. streets: the
-    street map (default: on for the preview, or once STREETS_LIVE; never without the laptop layout, which draws it)."""
+    street map (default: on for the preview, or once STREETS_LIVE; never without the laptop layout, which draws it).
+    data_hook(data) -> data and hook(html) -> html: the demo's changes (source/build_demo.py), to the page's data before it
+    is written in and to the finished page before its Content-Security-Policy is worked out, so the policy covers them."""
     desk = desk if desk is not None else (preview or DESK_LIVE)
     phone = phone if phone is not None else (preview or PHONE_LIVE)
     streets = streets if streets is not None else bool((preview or STREETS_LIVE) and desk)
@@ -396,8 +398,9 @@ def build(preview=False, desk=None, phone=None, streets=None, results=None):
     bad = [u for u in links if u and not re.match(r"https?://", u)]
     if bad:
         sys.exit(f"learn.json has links that are not http(s): {bad[:5]}")
-    data = script_json({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites,
-                        "version": check_release.version(ROOT)})   # a page left open compares it with version.json (#105)
+    data = {"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites,
+            "version": check_release.version(ROOT)}   # a page left open compares it with version.json (#105)
+    data = script_json(data_hook(data) if data_hook else data)
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
     if not desk:
         html = strip_desk(html)
@@ -454,6 +457,8 @@ def build(preview=False, desk=None, phone=None, streets=None, results=None):
     if streets:
         html = html.replace("__STREETS__", script_json(json.load(open(HERE / "data/streets.json", encoding="utf-8")), compact=True), 1)
     html = html.replace("__DATA__", data, 1)
+    if hook:
+        html = hook(html)
     return html.replace("<!--CSP-->", csp_meta(html, phone), 1)  # last of all: it hashes the finished scripts (#36)
 
 
