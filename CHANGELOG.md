@@ -16,6 +16,14 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.3.1] — 2026-10-20
+
+### Fixed
+- **Numbers in Zilla Slab sit level.** The headline font defaults to old-style figures, where 3, 4, 5, 7 and 9 drop
+  below the line and 6 and 8 rise above it, so a count like "5" looked lower than the "6" beside it. Every number on the
+  page now uses the font's lining figures, all one height on the baseline (Lane, Oct 20). Public Sans already drew
+  lining figures, so body text doesn't change.
+
 ## [1.3.0] — 2026-10-19
 
 ### Added
