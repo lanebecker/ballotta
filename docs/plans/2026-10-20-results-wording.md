@@ -154,8 +154,8 @@ what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release
 
 The canvas (reviewed Oct 20–21) supplies most of the after-election words: the menu, "official results", "won or are
 leading", "didn’t win", "too close to call", "Where things stand" and its steps, "What’s next", "As you marked it", "What
-you read before voting", "About this result", "Calling races", "Something look wrong? Tell us". These are new, **not yet
-approved**:
+you read before voting", "About this result", "Calling races", "Something look wrong? Tell us". These were new; **Lane
+approved all of them as built, Oct 21, 10:05 am** (asked one by one, each with alternatives):
 
 - **W71** Your picks, when some are unofficial and not leading: "are behind" (only those), "didn’t win or are behind"
   (a mix). The canvas showed only "didn’t win", which would call an unofficial result too early.
@@ -177,3 +177,7 @@ approved**:
   "Results updated <time>".
 - **W80** A rail row with no result: "No result yet" (or "Results paused"); a runoff row: "Runoff: Ortega and Price ·
   Official" (surnames only, to fit).
+- **W81** On All Travis County results, a contest also on your ballot: "On your ballot · see your pick" (a link to it).
+- **FAQ** "Where do the numbers come from?": "Each county’s published results and the Texas Secretary of State. Every
+  result says which, and when its numbers were posted." (The canvas said "We link to them on every result"; the page
+  names each source and its time but doesn't link it, so Lane chose the accurate version.)
