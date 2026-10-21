@@ -15,6 +15,7 @@ L, P, S = 'results_show_on_the_laptop_ballot', 'results_show_on_the_phone_ballot
 W, X, O = 'withdrawn_results_hide_everything', 'a_bad_results_file_breaks_nothing', 'the_date_override_works_only_on_this_computer'
 A, C, N, E = 'all_travis_county_results_need_no_address', 'a_saved_copy_says_so', 'results_wait_for_nov_4', 'the_canvass_is_explained_from_the_results_and_the_menu'
 T = 'results_turn_the_ballot_into_a_record'
+V = 'every_state_reads_in_at_a_glance_and_the_printout'
 M = [
  ('R1 results before Nov 4', PREV, 'const live = () => day() >= FROM;', 'const live = () => true;', [N]),
  ('R2 ?today= works on ballotta.org', PREV, "const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);", 'const LOCAL = true;', [O]),
@@ -28,7 +29,6 @@ M = [
  ('R10 nothing becomes official since', PREV, "      else if (isOfficial(e) && was[id] && !/^(official|recount)\\|/.test(was[id])) since.official++;\n", '', [S]),
  ('R11 what was seen is never kept', PREV, "    LS.set('ballotta.resultsSeen', { seq: R.seq, v: now });\n", '', [S]),
  ('R12 withdrawn ignored', PREV, 'const entry = (cid) => (R && !R.withdrawn && live() ?', 'const entry = (cid) => (R && live() ?', [W]),
- ('R13 a Result column with nothing in it', PREV, "  function glance(paper) {\n    if (!on()) return;\n", "  function glance(paper) {\n", [W]),
  ('R14 a pick line on nobody\'s ballot', PREV, "    if (withPick !== false) {   // your pick", "    if (true) {   // your pick", [A, P]),
  ('R15 results counted at every redraw', PREV, "    if (!counted) { counted = true; track('results_seen'); }\n  }\n  function landing() {", "    track('results_seen');\n  }\n  function landing() {", [L, P]),
  ('R16 a saved copy unsaid', PREV, "r.headers.get('x-ballotta-copy') === 'saved'", 'false', [C]),
@@ -64,6 +64,17 @@ M = [
  ('R45 a level row does nothing', PREV, "r.addEventListener('click', () => { ui.level = r.dataset.lv; render();", "r.addEventListener('click', () => { render();", [A]),
  ('R46 no summary in the phone list', PREV, "    if (A && html) html = results.listSum() + html;", '', [P]),
  ('R47 the filter ignored on the page', PREV, "&& (st.filter === 'all' || (st.filter === 'und' ? close(c) : RUNOFFISH.includes(entry(c.id).verdict)))", '', [A]),
+ # Phase 3: At a glance and Print your results after the election
+ ('R13 At a glance editable after', PREV, "    if (after()) {   // after the election: the results beside your picks", "    if (false) {   // after the election: the results beside your picks", [T]),
+ ('R48 the pick filter ignored', PREV, "      if (mine && !picked(c)) return;\n", '', [T]),
+ ('R49 the picks printed, not the results', PREV, "  if (window.results && results.after()) return results.crib(withWhy);", '', [T]),
+ ('R50 the printout never redrawn', PREV, "    try { renderCrib(); } catch (e) {}   // the printout", '', [T]),
+ ('R51 a measure share misread', PREV, "f[2].toFixed(1) + '% '", "'50.0% '", [L]),
+ ('R52 no canvass date in At a glance', PREV, "    return s + (cv.on ? ' · canvass ' + md(cv.on) : cv.by ? ' · canvass by ' + md(cv.by) : '');", "    return s;", [L]),
+ ('R53 the runoff date left off', PREV, "    if (e.verdict === 'runoff' && e.runoff_on && day() <= e.runoff_on) return s + ' · runoff ' + dayLong(e.runoff_on) + rc;", '', [T]),
+ ('R54 a recount unsaid in At a glance', PREV, "rc = e.state === 'recount' ? ' · recount requested' : '';", "rc = '';", [V]),
+ ('R55 two-thirds unsaid in At a glance', PREV, "(e.needs === 'two_thirds' ? ' · needs two-thirds' : '')", "''", [V]),
+ ('R56 a tie at full length in At a glance', PREV, "    return e.verdict === 'tied' ? 'Tied' : verdict(c, e);", "    return verdict(c, e);", [V]),
 ]
 if __name__ == '__main__':
     R.main(M)

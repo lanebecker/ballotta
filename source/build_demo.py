@@ -42,6 +42,7 @@ NOT_A_NAME = {"write-in", "for", "against", "yes", "no"}   # compared in lower c
 SCENES = {   # the scene's clock (Austin time) and its label in the ribbon; results_demo makes each one's results
     "nov4": ("2026-11-04T09:00", "Wed, Nov 4 · the morning after"),
     "nov13": ("2026-11-13T09:00", "Thu, Nov 13 · local canvasses done"),
+    "dec8": ("2026-12-08T09:30", "Tue, Dec 8 · state canvass done"),
 }
 DEFAULT = "nov13"
 

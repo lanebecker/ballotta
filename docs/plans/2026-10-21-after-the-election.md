@@ -62,6 +62,8 @@ deploy, and a short note to Lane of what to look at.
    picker. Mostly the laptop's code, as today.
 
 ### Phase 3: At a glance, Print, and the full check (target Oct 30)
+*Built Oct 21 (items 1–2, the state check and the Dec 8 demo scene); the new words are W82–W88 in the wording doc, for
+Lane. Still to come: the cold audit and the release candidate.*
 1. **At a glance:** Contest · Result · Your pick · Your reason; "Only contests I picked in"; read-only picks.
 2. **Print your results:** the crib sheet's layout with each contest's result beside your pick.
 3. **Lining figures, focus order, screen reader labels, every state on the "Pieces" board** (pause, partial, tie,

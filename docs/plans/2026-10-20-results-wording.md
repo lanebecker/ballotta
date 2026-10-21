@@ -181,3 +181,30 @@ approved all of them as built, Oct 21, 10:05 am** (asked one by one, each with a
 - **FAQ** "Where do the numbers come from?": "Each county’s published results and the Texas Secretary of State. Every
   result says which, and when its numbers were posted." (The canvas said "We link to them on every result"; the page
   names each source and its time but doesn't link it, so Lane chose the accurate version.)
+
+## Phase 3 (Oct 21): At a glance and Print your results — new, not yet approved
+
+At a glance follows the canvas's board ("Your ballot's results", Contest · Result · Your pick · Your reason, "Only
+contests I picked in", "No pick", "—", "Showing 14 of 63. Results read the same for everyone; your picks and reasons are
+only on this device."). These are the words the build added beyond the board:
+
+- **W82** At a glance, the Result column's second line, always built the same way: "Official · Nov 12" (the canvass
+  date); "Official · runoff Sat, Dec 12"; "Unofficial · canvass Nov 12" / "Unofficial · canvass by Nov 17" (a local
+  canvass); "Unofficial · state canvass Nov 21 – Dec 7"; "Unofficial · the Legislature, January"; a measure: "Official ·
+  58.0% for". Added: "· recount requested" (a recount), "· needs two-thirds" (a two-thirds measure). (The board showed
+  the canvass date on some unofficial rows and not others; the build shows it on every one.)
+- **W83** At a glance, a tie: "Tied" (W25 in full is too long for the column; the contest's page has it). Other ties
+  keep their wording ("Tied · goes to a runoff").
+- **W84** A pick skipped: "Skipped" (At a glance and the printout); a contest with no result: "No result yet" /
+  "Results paused".
+- **W85** Picks only, nothing to show: "No picks on this device."
+- **W86** The phone's At a glance, which has no column headings: "Your pick: …", "Your reason: …".
+- **W87** Print your results, on screen: "Print your results" / "Your ballot’s results" / "The results beside your
+  picks, on one page, as they stand now."; the button: "Print your results"; under it: "The printout has the results,
+  your picks and, if you choose, your reasons. Nothing else."
+- **W88** The printout: "My ballot’s results" / "Nov 3, 2026 · Results updated Nov 4, 8:41 am"; each contest's result
+  under its name ("Won: Grace Tran · Official · Nov 12"), the pick on the right ("—" for none); when paused: "Results are
+  paused while we check a problem with the latest numbers."; the footnote: "Your pick is on the right, the result under
+  each contest. Unofficial results can change until they’re canvassed. From ballotta.org; contests are in ballot order."
+- **Demo** A third scene, "Tue, Dec 8 · state canvass done": the state's races official, the Governor and Lt. Governor
+  still waiting on the Legislature.

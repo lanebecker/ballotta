@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-P7yBS1j6Ja0J4l/fRwCZiMxcJIoU5LpJB134HBJ2DHk='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-8TWO8+j8h5iCqyBH6SULGyETS+gpavPA96lMVdIG8vE='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -280,7 +280,16 @@ details.rs-fold summary::after{content:'';width:9px;height:9px;border-right:2px 
 details.rs-fold[open] summary::after{transform:rotate(225deg);margin-top:4px}
 details.rs-fold > div{display:flex;flex-direction:column;gap:10px;padding:0 0 14px}
 button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(--lc);font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+#crib .rs-pr,.dk-page .rs-pr{display:block;margin-top:2px;font-size:11px;font-weight:400;color:#333}   /* Print your results: the result under the contest */
+/* At a glance after the election: Contest · Result · Your pick · Your reason, read-only */
+.rs-lbl{display:none}
+.dk-tbl.rs-gl .res{display:block;font-weight:600;color:var(--ink)}
+.dk-tbl.rs-gl .dk-wt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 @media screen and (min-width:1024px){
+  .dk-tbl.rs-gl tbody th{width:28%}
+  .dk-tbl.rs-gl td:nth-child(2){width:30%}
+  .dk-tbl.rs-gl td:nth-child(3){width:18%}
+  .dk-tbl.rs-gl td:nth-child(4){width:24%}
   .dk-ro .dk-lw:has(.dk-line[data-on=true]){background:linear-gradient(90deg,var(--warnsoft),#fff 70%);margin:0 -16px;padding:4px 16px;border-radius:6px}
   .dk-ro.dk-mrow .dk-lw:has(.dk-line[data-on=true]){margin:0;padding:4px 12px}
 }
@@ -288,6 +297,12 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   .dk-ro .dk-lw:has(.dk-line[data-on=true]){background:linear-gradient(90deg,var(--warnsoft),#fff 70%);margin:0 -10px;padding:2px 10px;border-radius:6px}
   .dk-ro.dk-mrow .dk-lw:has(.dk-line[data-on=true]){margin:0;padding:2px 10px}
   .rs-top.rs-band{margin-bottom:10px}
+  .dk-tbl.rs-gl td:nth-child(4){display:block;margin-top:4px;font-size:14px}   /* the reason, which the phone's ballot table leaves out */
+  .dk-tbl.rs-gl td:nth-child(3){margin-top:4px}
+  .dk-tbl.rs-gl .rs-lbl{display:inline;color:var(--muted)}
+  .dk-tbl.rs-gl td:nth-child(n+3) small{display:inline;font-size:14px}
+  .dk-tbl.rs-gl .dk-wt{display:inline}
+  .dk-tbl.rs-gl .res{font-size:15px}   /* under the contest's name, not as big as it */
   .rs-grid{grid-template-columns:minmax(0,1fr)}
   .rs-land-tl{margin-top:8px}
   .dk-rail .rs-listsum{display:flex;flex-direction:column;gap:8px;margin:4px 14px 10px;background:var(--card);color:var(--ink);border-radius:10px;padding:12px 14px}
@@ -1576,6 +1591,9 @@ function milestones() {
 function whyShown(t) { const a = Array.from(String(t || '').trim()); return a.length > 600 ? a.slice(0, 600).join('') + '…' : a.join(''); }
 function cribHTML() {  // the crib sheet, for the phone page and the laptop's crib view alike (#38)
   const withWhy = $('withwhy').checked;
+/*RESULTS*/
+  if (window.results && results.after()) return results.crib(withWhy);   // after the election: Print your results
+/*/RESULTS*/
   let html = '<div class="ch"><b style="font-size:15px">My ballot choices</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
   ballot.forEach(b => {/*DESK*/ try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}/*/DESK*/
     if (b.c.level !== last) { last = b.c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
@@ -2280,6 +2298,7 @@ const results = (() => {
   }
   function redraw() {
     try { if (window.desk) desk.render(); } catch (e) {}   // the laptop render ends by drawing the top line (top())
+    try { renderCrib(); } catch (e) {}   // the printout: the results beside the picks once they're in
     top(); landing();
     if (wantAll && on()) { wantAll = false; openAll(); }   // ballotta.org/?results (the results/ link)
   }
@@ -2381,21 +2400,6 @@ const results = (() => {
     }
     if (e.travis) h += '<div class="rs-tv"><h3>How Travis County voted</h3><p class="rs-n">Travis County’s count only. The result above includes every county in this race.</p>' + bars(c, e.travis.map(x => [x[0], x[1], x[2], false]), false) + '</div>';  // W43, W44
     return h + '</section>';
-  }
-  // At a glance's Result column (W53, W54): the result only; the voter's pick has its own column.
-  const CELL = { leading: 'Leading', too_close: 'Too close', may_runoff: 'Possible runoff', runoff: 'Runoff', passing: 'Passing', failing: 'Failing',
-    won: 'Won', elected: 'Elected', passed: 'Passed', failed: 'Failed', failed_tie: 'Failed', unopposed: 'Unopposed', tied: 'Tied', tied_legislature: 'Tied',
-    tied_runoff: 'Tied', tied_second: 'Runoff' };
-  function cell(c) {
-    const e = entry(c.id);
-    if (!e || e.state === 'counting' || e.verdict === 'none') return '—';
-    let w = CELL[e.verdict] || '—';
-    if (e.verdict === 'won' || e.verdict === 'elected') {
-      const v = current(c.id);
-      if (v.length && v[0] !== '__skip' && !v.some(x => e.leaders.includes(x)) && seats(c) === 1) w = 'Didn’t win';   // "Didn't win" only of the voter's own pick, never of a contest
-      else w = e.verdict === 'won' ? 'Won' : 'Elected';
-    }
-    return w + ' · ' + (isOfficial(e) ? 'Official' : 'Unofficial');
   }
   const on = () => !!(R && live() && !R.withdrawn && Object.keys(R.contests).length);
 
@@ -2645,17 +2649,58 @@ const results = (() => {
     window.addEventListener('focus', () => load(false));
     setInterval(() => load(false), 60 * 1000);   // looks every minute; asks at most every 10 (and only from Nov 4)
   }
-  // At a glance (W53): a Result column after Your pick, added to the table the laptop code drew, so its own code is untouched.
-  function glance(paper) {
-    if (!on()) return;
-    const tbl = paper.querySelector('.dk-tbl');
-    if (!tbl) return;
-    const th = document.createElement('th'); th.scope = 'col'; th.textContent = 'Result';
-    tbl.querySelector('thead tr').children[1].after(th);
-    tbl.querySelectorAll('tr.dk-tg th').forEach(x => { x.colSpan = 5; });
-    tbl.querySelectorAll('tr[data-tr]').forEach(tr => { const c = BYID[tr.dataset.tr], td = document.createElement('td'); td.className = 'rs-cell'; td.textContent = c ? cell(c) : '—'; tr.children[1].after(td); });
+  // Print your results: the crib sheet's layout, each contest's result under it, your pick on the right.
+  function crib(withWhy) {
+    const t = updated();
+    let html = '<div class="ch"><b style="font-size:15px">My ballot’s results</b><span style="font-size:11px">Nov 3, 2026' + (t ? ' · ' + esc(t) : '') + '</span></div>', last = '';
+    if (R && R.withdrawn) html += '<p class="why">Results are paused while we check a problem with the latest numbers.</p>';
+    ballot.forEach(b => {
+      try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}
+      const c = b.c, v = current(c.id), e = entry(c.id), res = glanceRes(c, e);
+      if (c.level !== last) { last = c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
+      const p = !v.length ? '—' : v[0] === '__skip' ? 'Skipped' : v.map(o => choice(c, o)).join(', ');
+      html += '<div class="ln"><span>' + esc(cleanTitle(c)) + '<small class="rs-pr">' + esc(res ? res + ' · ' + glanceWhen(c, e) : R && R.withdrawn ? 'Results paused' : 'No result yet') + '</small></span><span>' + esc(p) + '</span></div>';
+      if (withWhy && whys[c.id]) html += '<div class="why"><i>' + esc(whyShown(whys[c.id])) + '</i></div>';
+    });
+    html += '<p style="font-size:10px;margin-top:10px">Your pick is on the right, the result under each contest. Unofficial results can change until they’re canvassed. From ballotta.org; contests are in ballot order.</p>';
+    return html;
   }
-  return { start, ribbon, cell, on, top, why, openAll, glance, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
+  // At a glance after the election (the canvas's At a glance board): Contest · Result · Your pick · Your reason, read-only.
+  // The result's first line says what happened; the second, whether it's official, and when it was or will be.
+  function glanceRes(c, e) {
+    if (!e || e.state === 'counting' || e.verdict === 'none') return null;
+    if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return 'Runoff: ' + andList(names(c, e.runoff));
+    return e.verdict === 'tied' ? 'Tied' : verdict(c, e);   // W25 is long: the contest's own page says what happens next
+  }
+  function glanceWhen(c, e) {
+    const cv = e.canvass, off = isOfficial(e), s = off ? 'Official' : 'Unofficial', rc = e.state === 'recount' ? ' · recount requested' : '';
+    if (c.type === 'measure') { const f = e.choices[0]; return s + ' · ' + f[2].toFixed(1) + '% ' + choice(c, f[0]).toLowerCase() + (e.needs === 'two_thirds' ? ' · needs two-thirds' : '') + rc; }   // "58.0% for"
+    if (e.verdict === 'runoff' && e.runoff_on && day() <= e.runoff_on) return s + ' · runoff ' + dayLong(e.runoff_on) + rc;
+    if (off) return s + (cv.done ? ' · ' + md(cv.done) : '') + rc;
+    if (cv.kind === 'state') return s + ' · state canvass Nov 21 – Dec 7';
+    if (cv.kind === 'legislature') return s + ' · the Legislature, January';
+    return s + (cv.on ? ' · canvass ' + md(cv.on) : cv.by ? ' · canvass by ' + md(cv.by) : '');
+  }
+  function glancePage(mine, hasWhy) {
+    const n = ballot.length;
+    let rows = '', last = '', shown = 0;
+    ballot.forEach(b => {
+      const c = b.c, v = current(c.id), e = entry(c.id), res = glanceRes(c, e);
+      if (mine && !picked(c)) return;
+      shown++;
+      if (c.level !== last) { last = c.level; rows += '<tr class="dk-tg"><th colspan="4" scope="colgroup">' + esc(LEVEL_LABEL[last] || last) + '</th></tr>'; }
+      const r = res ? '<span class="res">' + esc(res) + '</span><small>' + esc(glanceWhen(c, e)) + '</small>' : '<small>' + (R && R.withdrawn ? 'Results paused' : 'No result yet') + '</small>';
+      const p = !v.length ? '<small>No pick</small>' : v[0] === '__skip' ? '<small>Skipped</small>' : esc(v.map(o => choice(c, o)).join(', '));
+      const w = hasWhy(c.id) ? '<span class="dk-wt">' + esc(whyShown(whys[c.id])) + '</span>' : '<small>—</small>';
+      rows += '<tr data-tr="' + c.id + '"><th scope="row"><button type="button" class="dk-link" data-go="' + c.id + '">' + esc(cleanTitle(c)) + '</button>' + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th>'
+        + '<td>' + r + '</td><td><span class="rs-lbl">Your pick: </span>' + p + '</td><td><span class="rs-lbl">Your reason: </span>' + w + '</td></tr>';
+    });
+    if (!shown) rows = '<tr><td colspan="4"><p class="note">No picks on this device.</p></td></tr>';
+    return '<div class="dk-gh"><div><span class="ov">At a glance</span><h1>Your ballot’s results</h1></div><label class="dk-tog"><input type="checkbox" id="dk-mine"' + (mine ? ' checked' : '') + '> Only contests I picked in</label></div>'
+      + '<table class="dk-tbl rs-gl"><thead><tr><th scope="col">Contest</th><th scope="col">Result</th><th scope="col">Your pick</th><th scope="col">Your reason</th></tr></thead><tbody>' + rows + '</tbody></table>'
+      + '<p class="note">Showing ' + shown + ' of ' + n + '. Results read the same for everyone; your picks and reasons are only on this device.</p>';
+  }
+  return { start, ribbon, on, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
 })();
 window.results = results;
 /*/RESULTS*/
@@ -2668,7 +2713,7 @@ const desk = (() => {
   const WIDE = window.matchMedia('(min-width: 1024px)');
   const saved = LS.get('ballotta.desk', {}) || {};
   const ui = { view: ['decide', 'glance', 'vote', 'crib', 'all'].includes(saved.v) ? saved.v : 'decide', allNow: false, level: 'all', allF: 'all', cur: typeof saved.c === 'string' ? saved.c : '',
-    filter: 'all', q: '', landing: false, addr: '', hideUnopp: false, two: false, hideCrib: false, cmpFor: null };
+    filter: 'all', q: '', landing: false, addr: '', hideUnopp: false, mine: false, two: false, hideCrib: false, cmpFor: null };
   const P = () => $('dk-paper'), N = () => $('dk-notes');
   const save = () => LS.set('ballotta.desk', { v: ui.view, c: ui.cur });
   const idx = (cid) => ballot.findIndex(b => b.c.id === cid);
@@ -2970,17 +3015,24 @@ const desk = (() => {
     N().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
   }
   function viewGlance() {
+/*RESULTS*/
+    if (after()) {   // after the election: the results beside your picks and reasons, a record nothing here changes (Lane, Oct 21)
+      P().innerHTML = results.glancePage(ui.mine, hasWhy);
+      P().querySelectorAll('[data-go]').forEach(btn => btn.addEventListener('click', () => go(btn.dataset.go, true)));
+      $('dk-mine').addEventListener('change', () => { ui.mine = $('dk-mine').checked; viewGlance(); $('dk-mine').focus(); });
+      N().innerHTML = '';
+      return;
+    }
+/*/RESULTS*/
     let rows = '', last = '';
-    const A = after();   // after the election the picks and reasons are a record: shown, not changed (Lane, Oct 21)
     ballot.forEach(b => {
       const c = b.c, id = c.id, v = current(id), L = DATA.learn[id] || {}, lw = (L.src || []).find(s => s.lwv);
       if (ui.hideUnopp && isUnopp(c)) return;
       if (c.level !== last) { last = c.level; rows += '<tr class="dk-tg"><th colspan="4" scope="colgroup">' + esc(LEVEL_LABEL[last] || last) + '</th></tr>'; }
-      const ctl = A ? (v.length ? esc(v[0] === '__skip' ? 'Skipped' : v.map(o => optLabel(c, o)).join(', ')) : '<span class="note">No pick</span>')
-        : seats(c) > 1
+      const ctl = seats(c) > 1
         ? esc(v.length ? (v[0] === '__skip' ? 'Skipping' : v.join(', ')) : 'Undecided') + ' · <button type="button" class="dk-link" data-go="' + id + '">Choose</button>'
         : '<select class="dk-sel" data-sel="' + id + '" aria-label="Your pick: ' + esc(cleanTitle(c)) + '"><option value="">Pick one…</option>' + optionsOf(c).map(o => '<option value="' + esc(o) + '"' + (v[0] === o ? ' selected' : '') + '>' + esc(optLabel(c, o)) + '</option>').join('') + '<option value="__skip"' + (v[0] === '__skip' ? ' selected' : '') + '>Skip</option></select>';
-      const why = A ? (hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span>' : '<span class="note">—</span>') : hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
+      const why = hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
       rows += '<tr data-tr="' + id + '"><th scope="row"><button type="button" class="dk-link" data-go="' + id + '">' + esc(cleanTitle(c)) + '</button>' + (isUnopp(c) ? '<small>Unopposed</small>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th><td>' + ctl + '</td><td>' + why + '</td><td>' + (lw ? '<a href="' + esc(lw.u) + '" target="_blank" rel="noopener">League guide, p. ' + esc(lw.u.split('#page=')[1] || '') + '</a>' : '<span class="note">—</span>') + '</td></tr>';
     });
     P().innerHTML = '<div class="dk-gh"><div><span class="ov">At a glance</span><h1>Your whole ballot</h1></div><label class="dk-tog"><input type="checkbox" id="dk-hideu"' + (ui.hideUnopp ? ' checked' : '') + '> Hide unopposed races</label></div>' +
@@ -2992,9 +3044,6 @@ const desk = (() => {
     }));
     P().querySelectorAll('[data-go]').forEach(btn => btn.addEventListener('click', () => { go(btn.dataset.go, !btn.dataset.why); if (btn.dataset.why && $('dk-w')) $('dk-w').focus(); }));
     $('dk-hideu').addEventListener('change', () => { ui.hideUnopp = $('dk-hideu').checked; viewGlance(); $('dk-hideu').focus(); });
-/*RESULTS*/
-    results.glance(P());
-/*/RESULTS*/
     N().innerHTML = '';
   }
   // Orientation labels for the map (approximate centers of well-known places).
@@ -3117,14 +3166,16 @@ const desk = (() => {
     N().innerHTML = '';
   }
   function cribPaper() {
-    P().innerHTML = '<span class="ov">Print your choices</span><h1>Crib sheet</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p><div class="dk-page' + (ui.two ? ' two' : '') + '" id="dk-page">' + cribHTML() + '</div>';
+    const A = after();
+    P().innerHTML = (A ? '<span class="ov">Print your results</span><h1>Your ballot’s results</h1><p class="lead">The results beside your picks, on one page, as they stand now.</p>'
+      : '<span class="ov">Print your choices</span><h1>Crib sheet</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p>') + '<div class="dk-page' + (ui.two ? ' two' : '') + '" id="dk-page">' + cribHTML() + '</div>';
   }
   function viewCrib() {
     cribPaper();
     N().innerHTML = '<section><h3>Print options</h3><div class="sw"><label for="dk-cw">Include my reasons</label><input type="checkbox" role="switch" id="dk-cw"' + ($('withwhy').checked ? ' checked' : '') + '></div>' +
       '<div class="sw"><label for="dk-c2">Two columns</label><input type="checkbox" role="switch" id="dk-c2"' + (ui.two ? ' checked' : '') + '></div>' +
       '<div class="sw"><label for="dk-cu">Hide unopposed races</label><input type="checkbox" role="switch" id="dk-cu"' + (ui.hideCrib ? ' checked' : '') + '></div></section>' +
-      '<button class="btn" type="button" data-act="print">Print crib sheet</button><p class="note"' + (cantPrint() ? ' id="dk-noprint" role="status"' : '') + '>' + (cantPrint() ? NO_PRINT : 'The printout has your picks and, if you choose, your reasons. Nothing else.') + '</p>';
+      '<button class="btn" type="button" data-act="print">' + (after() ? 'Print your results' : 'Print crib sheet') + '</button><p class="note"' + (cantPrint() ? ' id="dk-noprint" role="status"' : '') + '>' + (cantPrint() ? NO_PRINT : after() ? 'The printout has the results, your picks and, if you choose, your reasons. Nothing else.' : 'The printout has your picks and, if you choose, your reasons. Nothing else.') + '</p>';
     $('dk-cw').addEventListener('change', () => { $('withwhy').checked = $('dk-cw').checked; renderCrib(); cribPaper(); });
     $('dk-c2').addEventListener('change', () => { ui.two = $('dk-c2').checked; $('crib').classList.toggle('two', ui.two); cribPaper(); });
     $('dk-cu').addEventListener('change', () => { ui.hideCrib = $('dk-cu').checked; renderCrib(); cribPaper(); });

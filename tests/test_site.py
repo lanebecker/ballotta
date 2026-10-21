@@ -4809,12 +4809,19 @@ def results_show_on_the_laptop_ballot(b):
     # one neutral look: every bar the same color, no party words or marks in a ribbon
     fills = set(pg.evaluate("[...document.querySelectorAll('#dk-paper .rs-bars:not(.rs-tv .rs-bars) .rs-tr i')].map(i => getComputedStyle(i).backgroundColor)"))
     assert len(fills) == 1 and not re.search(r'Republican|Democratic|\(I\)|✓|✗', r), (fills, r)
+    # At a glance after the election (Phase 3): Contest · Result · Your pick · Your reason; the result says what happened,
+    # then whether it's official and when it will be
     pg.click('#dk-views [data-view="glance"]')
-    assert pg.inner_text('.dk-tbl thead').split('\t')[:3] == ['CONTEST', 'YOUR PICK', 'RESULT'], pg.inner_text('.dk-tbl thead')
-    cells = [x.inner_text() for x in pg.query_selector_all('.rs-cell')]
-    assert cells == ['Too close · Unofficial', 'Too close · Unofficial', 'Unopposed · Unofficial', 'Too close · Unofficial', 'Passing · Unofficial', 'Failing · Unofficial',
-                     'Leading · Unofficial', '—', 'Possible runoff · Unofficial', 'Leading · Unofficial', 'Failing · Unofficial'], cells
-    assert all(x.get_attribute('colspan') == '5' for x in pg.query_selector_all('tr.dk-tg th'))
+    heads = [x.inner_text() for x in pg.query_selector_all('.dk-tbl thead th')]
+    assert heads == ['CONTEST', 'RESULT', 'YOUR PICK', 'YOUR REASON'], heads
+    cells = [' / '.join(x.inner_text().split('\n')) for x in pg.query_selector_all('.rs-gl tr[data-tr] td:nth-child(2)')]
+    assert cells == ['Too close to call / Unofficial · state canvass Nov 21 – Dec 7', 'Too close to call / Unofficial · the Legislature, January',
+                     'Unopposed: George Morales III / Unofficial · canvass by Nov 17', 'Too close to call / Unofficial · canvass Nov 12',
+                     'Passing / Unofficial · 60.0% for', 'Failing / Unofficial · 39.1% for',
+                     'Leading for 2 seats: Sarah Ponder, Robert Johnson / Unofficial · canvass by Nov 17', 'No result yet',
+                     'May go to a runoff / Unofficial · canvass by Nov 17', 'Leading: Jimmy Counihan / Unofficial · canvass by Nov 17',
+                     'Failing / Unofficial · 21.1% for'], cells
+    assert all(x.get_attribute('colspan') == '4' for x in pg.query_selector_all('tr.dk-tg th'))
     # nothing about the ballot is sent: one plain GET of the file, and only the bare event
     assert [u for u in sent if 'results' in u] and all(u.endswith('/results.json') for u in sent if 'results' in u), [u for u in sent if 'results' in u]
     assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'laptop'}]], events(pg)
@@ -4873,7 +4880,8 @@ def withdrawn_results_hide_everything(b):
     ctx, pg = rs_page(b, {'body': fx.scene('withdrawn')})
     assert pg.inner_text('#rs-top') == 'Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.'
     assert rs_go(pg, 'c071') == '' and pg.locator('[data-rs="all"]:visible').count() == 0
-    pg.click('#dk-views [data-view="glance"]'); assert pg.query_selector('.rs-cell') is None and 'RESULT' not in pg.inner_text('.dk-tbl thead')
+    pg.click('#dk-views [data-view="glance"]')
+    assert {x.inner_text() for x in pg.query_selector_all('.rs-gl tr[data-tr] td:nth-child(2)')} == {'Results paused'}, 'no result in At a glance either'
     pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(400)
     assert not pg.is_visible('#rs-or') and pg.inner_text('.dk-tagline').startswith('Don’t wait') and pg.errs == [], pg.errs
     ctx.close()
@@ -4881,7 +4889,8 @@ def withdrawn_results_hide_everything(b):
     ctx, pg = rs_page(b, {'body': {**fx.scene('mixed'), 'withdrawn': True}})
     assert pg.inner_text('#rs-top').startswith('Results are paused'), pg.inner_text('#rs-top')
     assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c124') == '' and pg.locator('[data-rs="all"]:visible').count() == 0
-    pg.click('#dk-views [data-view="glance"]'); assert pg.query_selector('.rs-cell') is None and pg.errs == [], pg.errs
+    pg.click('#dk-views [data-view="glance"]')
+    assert {x.inner_text() for x in pg.query_selector_all('.rs-gl tr[data-tr] td:nth-child(2)')} == {'Results paused'} and pg.errs == [], pg.errs
     ctx.close()
 
 @results_test
@@ -5020,6 +5029,18 @@ def results_turn_the_ballot_into_a_record(b):
     none = pg.evaluate("() => ballot.map(b => b.c.id).find(id => !current(id).length)")
     assert none and 'No pick' in pg.inner_text('#dk-paper tr[data-tr="' + none + '"]'), none
     assert cur(pg, 'c071') == ['AGAINST']
+    assert pg.inner_text('#dk-paper .dk-gh h1') == 'Your ballot’s results' and 'Showing 11 of 11.' in pg.inner_text('#dk-paper')
+    pg.check('#dk-mine'); pg.wait_for_timeout(100)
+    assert len(pg.query_selector_all('#dk-paper tr[data-tr]')) == 8 and 'Showing 8 of 11.' in pg.inner_text('#dk-paper'), 'only the contests picked in'
+    assert pg.evaluate("document.activeElement.id") == 'dk-mine'
+    pg.click('#dk-paper tr[data-tr="c071"] [data-go]'); pg.wait_for_timeout(100)
+    assert pg.get_attribute('.dk-row[aria-current="true"]', 'data-row') == 'c071' and 'Your pick, Against, is behind.' in pg.inner_text('#dk-paper')
+    # Print your results: the crib sheet's layout, each contest's result under it, the pick on the right
+    pg.click('#dk-views [data-view="crib"]'); pg.wait_for_timeout(100)
+    assert pg.inner_text('#dk-paper h1') == 'Your ballot’s results' and pg.inner_text('#dk-notes [data-act="print"]') == 'Print your results'
+    crib = pg.eval_on_selector('#crib', 'e => e.textContent')
+    assert crib.startswith('My ballot’s resultsNov 3, 2026 · Results updated Nov 4, 8:41 am'), crib[:120]
+    assert 'City of Austin Proposition APassing · Unofficial · 60.0% for' in crib and 'Against' in crib and '______' not in crib, crib
     assert pg.errs == [], pg.errs
     ctx.close()
     # an official runoff: What's next names it, and the contest says when
@@ -5029,8 +5050,39 @@ def results_turn_the_ballot_into_a_record(b):
     pg.click('#rs-top .rs-sum button.next'); pg.wait_for_timeout(100)
     r = pg.inner_text('#dk-paper')
     assert 'No one won a majority, so the top two meet again on Sat, Dec 12.' in r and 'A runoff on Saturday, Dec 12' in r and 'You skipped this race.' in r, r
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+    g = pg.inner_text('#dk-paper tr[data-tr="c121"]')
+    assert 'Runoff: Cheryl Bradley and Candace L. Hunter' in g and 'Official · runoff Sat, Dec 12' in g and 'Skipped' in g, g
     assert pg.errs == [], pg.errs
     ctx.close()
+
+@results_test
+def every_state_reads_in_at_a_glance_and_the_printout(b):
+    # Every state on the canvas's Pieces board, through At a glance and Print your results (Phase 3): the result in
+    # words, then official or not and when; nothing reads "undefined", and nothing breaks.
+    import copy
+    fx = rs_fixtures(); base = fx.scene('mixed')
+    def put(cid, extra=None, **kw):
+        sc = copy.deepcopy(base); sc['contests'][cid] = fx.entry(cid, **kw); sc['contests'][cid].update(extra or {}); return sc
+    cases = [
+        ('c069', put('c069', verdict='tied', votes=[10000, 10000]), None, 'Tied / Unofficial · canvass by Nov 17'),
+        ('c069', put('c069', state='official', verdict='tied_runoff', votes=[10000, 10000], done='2026-11-12'), None, 'Tied · goes to a runoff / Official · Nov 12'),
+        ('c071', put('c071', state='official', verdict='failed_tie', votes=[150000, 150000], done='2026-11-12'), None, 'Failed (tie vote) / Official · 50.0% for'),
+        ('c069', put('c069', state='recount', verdict='won', votes=[10010, 9995], done='2026-11-12', recount='https://example.com/recount'), None,
+         'Won: Jeffery Bowen / Official · Nov 12 · recount requested'),
+        ('c071', put('c071', {'needs': 'two_thirds'}, verdict='failing', votes=[180000, 120000]), None, 'Failing / Unofficial · 60.0% for · needs two-thirds'),
+        ('c121', fx.scene('runoff'), '2026-12-14T09:00', 'Runoff held Dec 12 · result not shown here / Official · Nov 13'),
+        ('c117', base, None, 'No result yet'),
+    ]
+    for cid, body, when, want in cases:
+        ctx, pg = rs_page(b, {'body': body}, **({'when': when} if when else {}))
+        pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+        got = ' / '.join(pg.inner_text(f'#dk-paper tr[data-tr="{cid}"] td:nth-child(2)').split('\n'))
+        assert got == want, (cid, got, want)
+        crib = pg.eval_on_selector('#crib', 'e => e.textContent')
+        assert want.replace(' / ', ' · ') in crib and not re.search(r'undefined|null|NaN', crib), (cid, crib[:300])
+        assert pg.errs == [], pg.errs
+        ctx.close()
 
 def main():
     srv = serve()

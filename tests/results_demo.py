@@ -1,11 +1,13 @@
 """Demo results for every contest, for looking at the page (Lane's wording pass and visual review). Never published.
 
-    python3 tests/results_demo.py OUT.json nov4|nov13
+    python3 tests/results_demo.py OUT.json nov4|nov13|dec8
 
 Made-up numbers, run through the real rules (source/results_rules.py) with the real canvassers (source/results_map.json);
 every source is labeled "TEST DATA (not real results)". Guardrail: a contested partisan race is always too close to
 call, so no picture shows a real candidate in a party race winning or losing; nonpartisan local races get made-up
-leaders so Leading / Won / Didn't win can be seen.
+leaders so Leading / Won / Didn't win can be seen. The Dec 8 scene (the state canvass done) makes the state's races
+official, so a party race has a winner there: it is for the locked demo only, where every candidate's name is made up
+(source/build_demo.py); never use it with real names.
 """
 import json, pathlib, random, re, sys
 
@@ -55,7 +57,7 @@ def entry(cid, when):
     wi = [w["name"] for w in m.get("write_ins", [])]
     rows += [(w, rng.randint(200, 2000)) for w in wi]
     cv = MAP["canvassers"][m["canvasser"]]
-    local_done = when == "nov13" and cv["kind"] == "local"
+    local_done = when in ("nov13", "dec8") and cv["kind"] == "local" or when == "dec8" and cv["kind"] == "state"
     missing = ["Hays County"] if when == "nov4" and cid in PARTIAL else []
     slack = 565 if missing else 0
     n = int(re.search(r"vote for up to (\d)", c["title"]).group(1)) if "vote for up to" in c["title"] else 1
@@ -71,7 +73,7 @@ def entry(cid, when):
         v, leaders, runoff = R.unofficial(c["type"], rows, n, m["majority"], slack, wi, cid, needs)
         local_done = False
     total = sum(x for _, x in rows)
-    posted = "2026-11-04T08:41" if when == "nov4" else "2026-11-13T08:30"
+    posted = {"nov4": "2026-11-04T08:41", "nov13": "2026-11-13T08:30", "dec8": "2026-12-08T09:15"}[when]
     travis = None
     if m["source"] == "sos" and not m.get("travis_only") or (m["source"] == "counties" and len(m["electorate"]) > 1):
         tt = [round(x * rng.uniform(0.18, 0.3)) for _, x in rows[: len(check_results.pick_names(c))]]
@@ -82,7 +84,7 @@ def entry(cid, when):
             "sources": [[TEST, posted]], "missing": missing, "travis": travis, "canvasser": cv["label"],
             "canvass": {"kind": cv["kind"], "by": None if cv["kind"] == "legislature" else ("2026-12-07" if cv["kind"] == "state" else "2026-11-17"),
                         "on": "2026-11-12" if cid in ("c070", "c071") and when == "nov4" else None,
-                        "done": "2026-11-12" if local_done else None},
+                        "done": ("2026-12-07" if cv["kind"] == "state" else "2026-11-12") if local_done else None},
             "official_numbers": True, "changed": 1, "corrected": None, "note": None, "who": m.get("who"),
             "runoff_on": "2026-12-12" if v == "runoff" and local_done else None, "recount": None,
             "write_ins": bool(wi), "needs": "two_thirds" if needs == "two_thirds" else None}
@@ -90,10 +92,10 @@ def entry(cid, when):
 
 def scene(when):
     contests = {cid: entry(cid, when) for cid in KEY}
-    seq = 1 if when == "nov4" else 2
-    if seq == 2:
-        for e in contests.values():
-            e["changed"] = 2 if e["state"] == "official" else 1
+    seq = {"nov4": 1, "nov13": 2, "dec8": 3}[when]
+    for e in contests.values():
+        if seq > 1:
+            e["changed"] = 1 if e["state"] != "official" else 3 if e["canvass"]["kind"] == "state" else 2
     return {"seq": seq, "election": "2026-11-03", "withdrawn": False, "late_until": "2026-11-17", "contests": contests}
 
 
