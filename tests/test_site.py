@@ -5248,6 +5248,9 @@ def the_runoff_is_its_own_ballot(b):
     assert paper.startswith('RUNOFF · AUSTIN ISD · CONTEST 1 OF 1') and 'Vote for 1 · Runoff, Sat, Dec 12' in paper and 'On Nov 3 you skipped this race.' in paper, paper
     assert pg.get_attribute('.dk-row[data-rrow="c121"]', 'aria-current') == 'true'
     assert 'Kept as they were.' in pg.inner_text('#dk-notes')
+    pg.click('#dk-notes [data-rs="whyrun"]'); pg.wait_for_timeout(150)
+    assert pg.is_visible('#rs-why') and pg.evaluate("document.activeElement.id") == 'rs-whyrun' and 'the top two meet again in a runoff' in pg.inner_text('#rs-why'), 'How runoffs work (W105)'
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(100)
     pg.focus('#dk-paper'); pg.keyboard.press('2'); pg.wait_for_timeout(150)
     assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.runoffPicks'))") == {'c121': ['Candace L. Hunter']}
     assert cur(pg, 'c121') == ['__skip'], 'the Nov 3 record never changes'

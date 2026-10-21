@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-9cA7Q6PdOo0x8askQ+st/HhVe2IfAV8HPamHjYz0tYw='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-gKi+Dnk1dZG39t4jCC042JEZlw7OGgDu8yWFr4eYJ3g='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1134,6 +1134,8 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <p>Election night counts are unofficial. For about two weeks after Election Day, counties keep counting late mail ballots, ballots from overseas voters and the military, and provisional ballots once voters have confirmed them. Then the body that called each election (the county, a city council, a school board, a utility district’s board) meets to “canvass” the vote: it reviews the count and declares the result official. State and federal races are canvassed by the state between Nov 21 and Dec 7. The Governor and Lieutenant Governor races are canvassed by the Legislature in January. Ballotta shows each result as unofficial until its canvass, then marks it official.</p>
   <h3>Where do results come from?</h3>
   <p>From each county’s published results (Travis, Williamson, Bastrop and Hays) and the Texas Secretary of State, added up for contests that cross county lines. Ballotta updates them once or twice a day. It doesn’t call races: a “leader” is only who’s ahead in the count so far.</p>
+  <h3 id="rs-whyrun" tabindex="-1">What’s a runoff?</h3>
+  <p>Some offices need a majority: more than half the votes. Austin’s City Council, several other city councils and school boards, and ACC’s trustees are among them. When no one gets a majority, the top two meet again in a runoff. Any registered voter in that district or area can vote in it, whether or not they voted in November. The county sets the runoff’s early voting and vote centers, and fewer places are open than in November.</p>
 </dialog>
 <!--/RESULTS-->
 <!--/DESK-->
@@ -2737,6 +2739,7 @@ const results = (() => {
       const b = e.target.closest && e.target.closest('[data-rs]');
       if (!b) return;
       if (b.dataset.rs === 'why') why(); else if (b.dataset.rs === 'all') openAll();
+      else if (b.dataset.rs === 'whyrun') { why(); const h = $('rs-whyrun'); h.scrollIntoView({ block: 'start' }); h.focus({ preventScroll: true }); }   // How runoffs work (W105)
       else if (b.dataset.rs === 'tell') sendFeedback();
       else if (b.dataset.rs === 'go' && window.desk && desk.goTo) desk.goTo(b.dataset.c);
       else if (b.dataset.rs === 'rdecide' && window.desk) desk.rgo(b.dataset.c);   // the runoff (Phase 4)
@@ -2857,7 +2860,7 @@ const results = (() => {
   }
   function runoffNotes() {
     return '<section><h3>About this runoff</h3><a class="lnk" href="https://votetravis.gov/current-election-information/current-election/" target="_blank" rel="noopener"><span><b>Travis County runoff information</b><span>Dates, sample ballot, vote centers</span></span></a>'
-      + '<button type="button" class="lnk" data-rs="why"><span><b>How runoffs work</b><span>Why there’s a second round, and who can vote</span></span></button></section>'
+      + '<button type="button" class="lnk" data-rs="whyrun"><span><b>How runoffs work</b><span>Why there’s a second round, and who can vote</span></span></button></section>'
       + '<section><h3>Where the candidate links come from</h3><p>The League of Women Voters answers are from its Nov 3 guide. If the League publishes a runoff guide, we’ll link it instead.</p></section>'
       + '<section><h3>Your Nov 3 picks</h3><p>Kept as they were. Your runoff pick is saved separately, so nothing you choose here changes your Nov 3 record.</p></section>';
   }

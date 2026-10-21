@@ -248,7 +248,7 @@ the same day:
 - The pick counts stay as built (W96).
 - What's next says "See the runoff" instead of "Get ready" until Phase 4's runoff pages exist.
 
-## The runoff (Phase 4, Oct 21) — new, not yet approved
+## The runoff (Phase 4, Oct 21) — approved by Lane, Oct 21, 4:55 pm
 
 Most of the runoff's words come from the canvas boards LaptopRunoff, LaptopRunoffVote, PhoneRunoff, PhoneRunoffVote and
 RunoffStates, which Lane reviewed Oct 20–21: the menu group, Decide's "Undecided" / "Decided", the band's labels, the
@@ -269,3 +269,12 @@ paper ("Runoff · <place> · contest 1 of 1", "Vote for 1 · Runoff, Sat, Dec 12
 - **W104** The phone's bottom bar on the runoff's ballot: "Where to vote →".
 - **Links:** "Travis County runoff information" opens VoteTravis.gov's current-election page; "How runoffs work" opens the
   page's canvass explainer.
+- **W105** "How runoffs work" opens a new section of the canvass explainer, "What’s a runoff?": "Some offices need a
+  majority: more than half the votes. Austin’s City Council, several other city councils and school boards, and ACC’s
+  trustees are among them. When no one gets a majority, the top two meet again in a runoff. Any registered voter in that
+  district or area can vote in it, whether or not they voted in November. The county sets the runoff’s early voting and
+  vote centers, and fewer places are open than in November." (Lane approved a version that named "Austin's mayor"; the
+  mayor isn't on the 2026 ballot, so the sentence names the majority races that are: Austin, Manor and Pflugerville
+  councils, Austin ISD, ACC.)
+
+**Lane, Oct 21, 4:55 pm:** W98–W105 approved as built, one by one with alternatives.
