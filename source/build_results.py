@@ -306,10 +306,12 @@ def build(res=RES, mp=None, prev=None, key=None, since=None):
             if old is not None:
                 lines.append(f"- {title}: no longer shown ({cid})"); verdict_changed = True
             continue
-        hit = [stamps[tuple(x)] for x in old["sources"] if tuple(x) in stamps] if old is not None else []
+        # Rolled back: a source the published entry took from an excluded file now comes from an older one (or none).
+        now_t = dict(map(tuple, e["sources"]))
+        hit = [stamps[tuple(x)] for x in old["sources"] if tuple(x) in stamps and now_t.get(x[0], "") < x[1]] if old is not None else []
         if hit:
-            if all(e[k] == old[k] for k in ("choices", "state", "verdict", "leaders", "runoff", "travis", "missing")):
-                e["sources"] = old["sources"]
+            if all(e[k] == old[k] for k in ("choices", "travis", "missing")):
+                e["sources"] = old["sources"]          # the numbers read the same: nothing to correct, nothing goes back
             elif max(hit) > (old.get("corrected") or ""):
                 e["corrected"] = max(hit)
         moved = old is None or (e["state"], e["verdict"], e["leaders"], e["runoff"], e["note"]) != (old["state"], old["verdict"], old["leaders"], old["runoff"], old["note"])

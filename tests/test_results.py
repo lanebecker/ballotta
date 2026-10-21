@@ -418,6 +418,11 @@ def excluding_a_newest_file_goes_back_quietly_and_corrects_only_what_changed():
         four, ch = s.build(prev=three)
         e = four['contests']['c071']
         assert (e['state'], e['verdict'], e['corrected']) == ('official', 'failed', None), ('an ordinary change called a correction', e['corrected'])
+        # and a genuinely newer file after the rollback is new numbers, not a correction
+        z = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/15/2025 9:00:00 AM', 1).replace(b'State of Texas Proposition 1', b'State of Texas Proposition 1 (again)', 1)
+        r = P.parse_clarity(z); d = B.raw_dir(s.res, 'travis', r['posted'], z); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(z)
+        five, _ = s.build(prev=four)
+        assert five['contests']['c071']['corrected'] is None and dict(map(tuple, five['contests']['c071']['sources']))['Travis County'] == '2025-11-15T09:00'
     finally: s.close()
 
 @test
