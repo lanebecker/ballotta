@@ -5292,6 +5292,18 @@ def the_runoff_is_its_own_ballot(b):
     assert not pg.is_visible('#dk-rl') and not pg.is_visible('#dk-views [data-view="rdecide"]') and pg.query_selector('.dk-row[data-rrow]') is None
     assert pg.evaluate("desk.view()") == 'decide' and pg.errs == [], pg.errs
     ctx.close()
+    # a page left open past midnight (#164): the band counts down, and once the runoff has gone by its pages go too, with
+    # no error from a key pressed on the old page
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-12-11T23:58')
+    pg.click('#dk-views [data-view="rdecide"]'); pg.wait_for_timeout(150)
+    assert 'Tomorrow' in pg.inner_text('#rs-top .ro-band'), pg.inner_text('#rs-top')
+    pg.clock.run_for(3 * 60 * 1000); pg.wait_for_timeout(300)
+    assert 'Today' in pg.inner_text('#rs-top .ro-band') and pg.evaluate("desk.view()") == 'rdecide', pg.inner_text('#rs-top')
+    pg.clock.run_for(24 * 60 * 60 * 1000); pg.wait_for_timeout(300)
+    assert pg.evaluate("desk.view()") == 'decide' and not pg.is_visible('#dk-rl'), 'the day after: back to results'
+    pg.focus('#dk-paper'); pg.keyboard.press('1'); pg.wait_for_timeout(100)
+    assert pg.errs == [], pg.errs
+    ctx.close()
     # no runoff on this ballot: nothing of it
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
     assert not pg.is_visible('#dk-rl') and pg.query_selector('.dk-row[data-rrow]') is None and pg.errs == [], pg.errs

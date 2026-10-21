@@ -2343,6 +2343,9 @@ const results = (() => {
   // Asked on load, when the page comes back into view, and every 10 minutes in view, like version.json (the newer-release
   // check). no-store: never a browser cache; the offline copy (phones) marks a copy it kept, so the page can say so (W14).
   const EVERY = 10 * 60 * 1000;
+  // A new day on a page left open: everything dated is drawn again (the runoff's band and pages, the timeline, "Runoff
+  // held", the late-ballots line), keeping the reader's place; at midnight into Nov 4 the results are asked for (#164).
+  function newDay() { if (!live()) return; if (R && window.desk) { try { desk.reflow(''); } catch (e) {} } load(true); }
   function settle() { if (settled) return; settled = true; if (!R) redraw(false); }   // no results after all: the ballot again
   function load(force) {
     if (!live() || document.visibilityState === 'hidden' || (!force && Date.now() - asked < EVERY)) return;
@@ -2894,7 +2897,7 @@ const results = (() => {
   }
   const runoff = { list: runoffs, band: runoffBand, paper: runoffPaper, notes: runoffNotes, vote: runoffVote, crib: runoffCrib, pick: rpick, why: rwhy, cur: rcur, pair, row: rrow, state: rstate, reset() { RP = RW = null; }, date: () => { const rs = runoffs(); return rs.length ? dayLong(entry(rs[0].c.id).runoff_on) : ''; } };
   const paused = () => !!(R && R.withdrawn && live());
-  return { start, ribbon, on, paused, runoff, said, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
+  return { start, ribbon, on, paused, runoff, newDay, said, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
 })();
 window.results = results;
 /*/RESULTS*/
@@ -3163,7 +3166,9 @@ const desk = (() => {
   }
   // A pick: the ovals, the rail's line, the menu's count; focus stays where it was.
   function rrefresh() {
-    const c = results.runoff.list().find(b => b.c.id === rcurId()).c, v = results.runoff.cur(c);
+    const b = results.runoff.list().find(x => x.c.id === rcurId());
+    if (!b) { render(); return; }   // the runoff has gone by (a page left open past the day): back to results (#164)
+    const c = b.c, v = results.runoff.cur(c);
     P().querySelectorAll('[data-rpick]').forEach(btn => btn.setAttribute('aria-pressed', String(v[0] === btn.dataset.rpick)));
     rail();
   }
@@ -3531,7 +3536,9 @@ const desk = (() => {
     if (k === '/') { e.preventDefault(); $('dk-q').focus(); used('search'); return; }
 /*RESULTS*/
     if (ui.view === 'rdecide') {   // the runoff's ballot: 1 and 2 pick, S skips, R the reason, N where to vote (as before Nov 3)
-      const c = results.runoff.list().find(b => b.c.id === rcurId()).c, P2 = results.runoff.pair(c);
+      const rb = results.runoff.list().find(b => b.c.id === rcurId());
+      if (!rb) { render(); return; }   // the runoff has gone by (#164)
+      const c = rb.c, P2 = results.runoff.pair(c);
       if (e.repeat && /^[1-9s]$/.test(k)) return;
       if (/^[1-9]$/.test(k) && P2[+k - 1]) { e.preventDefault(); results.runoff.pick(c, P2[+k - 1]); rrefresh(); say({ text: cleanTitle(c) + ': ' + results.runoff.state(c) }); }
       else if (k === 's') { e.preventDefault(); results.runoff.pick(c, '__skip'); rrefresh(); say({ text: cleanTitle(c) + ': ' + results.runoff.state(c) }); }
@@ -3612,6 +3619,9 @@ const desk = (() => {
     cribOpts: () => ({ two_col: ui.two ? 'yes' : 'no', hide_unopposed: ui.hideCrib ? 'yes' : 'no' }),
     today(periodChanged) {  // a new day (#34): the header's line; the vote view only if the voting period changed
       $('dk-when').textContent = (after() && results.updated()) || whenLine();   // after the election, the results' time, as header() (#141)
+/*RESULTS*/
+      if (window.results) results.newDay();   // results depend on the date too: the band, the timeline, the runoff (#164)
+/*/RESULTS*/
       if (!periodChanged || ui.view !== 'vote' || !document.body.classList.contains('dk-app-on')) return;
       const inside = P().contains(document.activeElement);
       viewVote();  // a new list of vote centers: the old place in it is gone, so focus goes to the paper, never to another center's link (Pass 4)

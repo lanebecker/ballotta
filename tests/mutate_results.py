@@ -50,6 +50,7 @@ M = [
  ('R31 a two-thirds measure unsaid', PREV, "    if (e.needs === 'two_thirds') h +=", "    if (false) h +=", [A]),
  # after the election (docs/plans/2026-10-21-after-the-election.md)
  ('R32 never after the election', PREV, "  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled);", "  const after = () => false;", [T]),
+ ('R118 a new day changes nothing after the election', PREV, "      if (window.results) results.newDay();", "", [RO]),
  ('R114 editable while results load', PREV, "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled)", "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : false)", ['results_are_a_record_from_the_first_moment']),
  ('R115 stuck read-only with no results', PREV, "    }).catch(() => {}).finally(settle);", "    }).catch(() => {});", ['results_are_a_record_from_the_first_moment']),
  ('R116 an older file replaces a newer one', PREV, "      if (R && next.seq < R.seq && !saved) return;", "", ['results_are_a_record_from_the_first_moment']),
