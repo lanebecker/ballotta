@@ -64,7 +64,7 @@ deploy, and a short note to Lane of what to look at.
 ### Phase 3: At a glance, Print, and the full check (target Oct 30)
 *Built Oct 21 (items 1–2, the state check and the Dec 8 demo scene). Cold audit Oct 21
 (`docs/audits/2026-10-21-results-cold-audit.md`): 17 issues filed (#134–#150) and fixed the same day. New words W82–W96
-in the wording doc, for Lane. Still to come: Lane's word review and the release candidate.*
+in the wording doc, approved by Lane Oct 21. Still to come: the release candidate.*
 1. **At a glance:** Contest · Result · Your pick · Your reason; "Only contests I picked in"; read-only picks.
 2. **Print your results:** the crib sheet's layout with each contest's result beside your pick.
 3. **Lining figures, focus order, screen reader labels, every state on the "Pieces" board** (pause, partial, tie,

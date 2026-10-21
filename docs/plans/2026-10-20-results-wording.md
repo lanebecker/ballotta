@@ -182,7 +182,7 @@ approved all of them as built, Oct 21, 10:05 am** (asked one by one, each with a
   result says which, and when its numbers were posted." (The canvas said "We link to them on every result"; the page
   names each source and its time but doesn't link it, so Lane chose the accurate version.)
 
-## Phase 3 (Oct 21): At a glance and Print your results — new, not yet approved
+## Phase 3 (Oct 21): At a glance and Print your results — approved by Lane as built, Oct 21
 
 At a glance follows the canvas's board ("Your ballot's results", Contest · Result · Your pick · Your reason, "Only
 contests I picked in", "No pick", "—", "Showing 14 of 63. Results read the same for everyone; your picks and reasons are
@@ -209,7 +209,7 @@ only on this device."). These are the words the build added beyond the board:
 - **Demo** A third scene, "Tue, Dec 8 · state canvass done": the state's races official, the Governor and Lt. Governor
   still waiting on the Legislature.
 
-## The cold audit's fixes (Oct 21) — new, not yet approved
+## The cold audit's fixes (Oct 21) — approved by Lane as built, Oct 21
 
 Words the audit fixes (#135–#150, `docs/audits/2026-10-21-results-cold-audit.md`) added or changed:
 
@@ -237,3 +237,11 @@ Words the audit fixes (#135–#150, `docs/audits/2026-10-21-results-cold-audit.m
   so the paper agrees with the summary, which counts a recount as not settled.
 - **Removed:** "Saved on this device" from the top of a results paper; the second "You skipped this race." under Your
   choice; W8 ("Becomes official at the state canvass, Nov 21–Dec 7.") once W5 says it after late ballots.
+
+**Lane, Oct 21, 1:40 pm:** W82–W97 and the removals approved as built, asked one by one with alternatives. Also decided
+the same day:
+- "Share my picks" and "Clear my picks…" stay as they are after the election.
+- W59's ending is restored on All Travis County results: "Unofficial until each canvass. Why unofficial?", where the
+  last words open the canvass explainer.
+- The pick counts stay as built (W96).
+- What's next says "See the runoff" instead of "Get ready" until Phase 4's runoff pages exist.
