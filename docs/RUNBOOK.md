@@ -139,6 +139,13 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 2. Run the Results workflow once by hand (Actions → Results → Run workflow). Done: it fetched the SOS feed (the build
    job's log says `sos: filed …`), and a "Results updates" pull request exists or the log says nothing changed.
 
+3. The locked demo at **ballotta.org/demo/** (made-up names and results, for trying the results pages before they're
+   real). To turn it on: Settings → Secrets and variables → Actions → New repository secret, name `DEMO_PASSWORD`,
+   value a long password (four or five random words); then Actions → Pages → Run workflow. Every deploy after that
+   rebuilds it from the results branch (`results-build`, or `main` once that's gone). To change the password, update
+   the secret and run Pages again. To take the demo down, delete the secret and run Pages: the next deploy has no
+   /demo/. Nothing about it is committed, and if it fails, the site deploys without it.
+
 ## Election night, Nov 3 (after 7 pm)
 
 3. **The SOS time zone** (Task 1 finding 10): open the SOS results page and note the first "Last updated" time.
