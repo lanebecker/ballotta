@@ -6,6 +6,9 @@ LaptopRunoffVote, PhoneRunoff, PhoneRunoffVote and RunoffStates. Lane reviewed t
 demo as it lands. It must be live before the city's canvass (about Nov 12), when a runoff can first become official.
 Until then, What's next says "See the runoff" (Lane, Oct 21).*
 
+*Built Oct 21: steps 1–3 and the tests (the_runoff_is_its_own_ballot; mutants R103–R113). Steps 4 (demo scenes) and 6
+(the runoff's results) and the vote-center data are to come; the new words are W98–W104, for Lane.*
+
 ## What it is
 
 When a contest on your ballot is headed to an official runoff that hasn't been held yet (`verdict: runoff`, official,

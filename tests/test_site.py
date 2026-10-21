@@ -4862,7 +4862,7 @@ def results_show_on_the_phone_ballot(b):
     nx = pg.inner_text('.dk-rail .rs-lnext')
     assert 'WHAT’S NEXT' in nx and 'Runoff · Sat, Dec 12' in nx and 'Austin ISD Board of Trustees, District 1' in nx, nx
     pg.click('.dk-rail .rs-lnext'); pg.wait_for_timeout(200)
-    assert pg.get_attribute('#ph-list', 'aria-expanded') == 'false' and 'A runoff on Saturday, Dec 12' in pg.inner_text('#dk-paper'), pg.get_attribute('#ph-list', 'aria-expanded')
+    assert pg.get_attribute('#ph-list', 'aria-expanded') == 'false' and 'Vote for 1 · Runoff, Sat, Dec 12' in pg.inner_text('#dk-paper'), pg.get_attribute('#ph-list', 'aria-expanded')   # the runoff's Decide (Phase 4)
     ctx.close()
 
 @results_test
@@ -5127,7 +5127,7 @@ def results_turn_the_ballot_into_a_record(b):
     ctx.close()
     # an official runoff: What's next names it, and the contest says when
     ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00')
-    assert 'Runoff · Sat, Dec 12' in pg.inner_text('#rs-top .rs-sum .next') and 'See the runoff' in pg.inner_text('#rs-top .rs-sum .next'), pg.inner_text('#rs-top .rs-sum')   # "Get ready" waits for Phase 4 (Lane, Oct 21)
+    assert 'Runoff · Sat, Dec 12' in pg.inner_text('#rs-top .rs-sum .next') and 'Get ready' in pg.inner_text('#rs-top .rs-sum .next'), pg.inner_text('#rs-top .rs-sum')   # "Get ready" now that Phase 4's pages exist
     pg.evaluate("desk.openAll()"); pg.wait_for_timeout(150)
     meta = pg.inner_text('#dk-paper .dk-meta')
     assert meta.endswith('Unofficial until each canvass. Why unofficial?'), ('W59, restored (Lane, Oct 21)', meta)
@@ -5136,6 +5136,8 @@ def results_turn_the_ballot_into_a_record(b):
     pg.keyboard.press('Escape'); pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(150)
     assert 'Runoffs' in pg.inner_text('#rs-top .rs-tl') and pg.inner_text('.dk-row[data-row="c121"] small').startswith('Runoff: ')
     pg.click('#rs-top .rs-sum button.next'); pg.wait_for_timeout(100)
+    assert pg.evaluate("desk.view()") == 'rdecide', 'What’s next opens the runoff’s ballot (Phase 4)'
+    rs_go(pg, 'c121')
     r = pg.inner_text('#dk-paper')
     assert 'No one won a majority, so the top two meet again on Sat, Dec 12.' in r and 'A runoff on Saturday, Dec 12' in r and 'You skipped this race.' in r, r
     paper = pg.inner_text('#dk-paper')
@@ -5225,6 +5227,81 @@ def every_state_reads_in_at_a_glance_and_the_printout(b):
         assert want.replace(' / ', ' · ') in crib and not re.search(r'undefined|null|NaN', crib), (cid, crib[:300])
         assert pg.errs == [], pg.errs
         ctx.close()
+
+@results_test
+def the_runoff_is_its_own_ballot(b):
+    # Phase 4 (docs/plans/2026-10-21-the-runoff.md, the canvas's RunoffStates): while a runoff on your ballot is official
+    # and not yet held, the menu and the rail get a Runoff group, and its Decide, Where to vote and Print are a ballot of
+    # their own; runoff picks are kept apart, and Nov 3's never change.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00')
+    menu = [x.inner_text().replace('\n', ' ') for x in pg.query_selector_all('#dk-views > *') if x.is_visible()]
+    assert menu == ['Results', 'At a glance', 'All Travis County results', 'Print your results', 'RUNOFF · SAT, DEC 12 1 contest', 'Decide Undecided', 'Where to vote', 'Print your choices'], menu
+    assert pg.inner_text('.dk-row[data-rrow="c121"] small') == 'Bradley or Hunter · Undecided'
+    assert 'Get ready' in pg.inner_text('#rs-top .rs-sum .next')
+    r = rs_go(pg, 'c121')
+    assert 'Get ready for the runoff' in pg.inner_text('#dk-paper .rs-next') and 'Where to vote in the runoff' in pg.inner_text('#dk-paper .rs-next'), 'RunoffStates 4'
+    pg.click('#dk-paper .rs-next [data-rs="rdecide"]'); pg.wait_for_timeout(200)
+    band = pg.inner_text('#rs-top')
+    assert 'Saturday, Dec 12' in band and '28 days from today' in band and 'Any registered voter in Austin ISD District 1, whether or not you voted Nov 3' in band and 'Not posted yet' in band, band
+    paper = pg.inner_text('#dk-paper')
+    assert paper.startswith('RUNOFF · AUSTIN ISD · CONTEST 1 OF 1') and 'Vote for 1 · Runoff, Sat, Dec 12' in paper and 'On Nov 3 you skipped this race.' in paper, paper
+    assert pg.get_attribute('.dk-row[data-rrow="c121"]', 'aria-current') == 'true'
+    assert 'Kept as they were.' in pg.inner_text('#dk-notes')
+    pg.focus('#dk-paper'); pg.keyboard.press('2'); pg.wait_for_timeout(150)
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.runoffPicks'))") == {'c121': ['Candace L. Hunter']}
+    assert cur(pg, 'c121') == ['__skip'], 'the Nov 3 record never changes'
+    assert pg.get_attribute('#dk-paper [data-rpick="Candace L. Hunter"]', 'aria-pressed') == 'true'
+    assert pg.inner_text('.dk-row[data-rrow="c121"] small') == 'Candace L. Hunter' and 'Decided' in pg.inner_text('#dk-views [data-view="rdecide"]')
+    pg.keyboard.press('s'); pg.wait_for_timeout(100)
+    assert pg.inner_text('.dk-row[data-rrow="c121"] small') == 'Skipping'
+    pg.keyboard.press('1'); pg.wait_for_timeout(100)
+    pg.fill('#ro-w', 'Experience on the board'); pg.wait_for_timeout(100)
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.runoffWhys'))") == {'c121': 'Experience on the board'}
+    pg.focus('#dk-paper'); pg.keyboard.press('n'); pg.wait_for_timeout(200)
+    v = pg.inner_text('#dk-paper')
+    assert 'Where to vote in the runoff' in v and 'Travis County hasn’t posted runoff vote centers yet.' in v and 'Don’t go by the Nov 3 list' in v, v
+    pg.click('#dk-views [data-view="rcrib"]'); pg.wait_for_timeout(200)
+    pg.evaluate('() => { window.__printed = 0; window.print = () => { window.__printed++; }; }')
+    pg.check('#ro-cw'); pg.wait_for_timeout(100)
+    pg.click('#dk-notes [data-act="print"]'); pg.wait_for_timeout(100)
+    crib = pg.eval_on_selector('#crib', 'e => e.textContent')
+    assert pg.evaluate('window.__printed') == 1 and crib.startswith('My runoff choicesSat, Dec 12') and 'Cheryl Bradley' in crib and 'Experience on the board' in crib, crib
+    pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(150)
+    pg.evaluate('() => { window.__printed = 0; window.print = () => { window.__printed++; }; }')
+    pg.click('#dk-views [data-view="crib"]'); pg.wait_for_timeout(150); pg.click('#dk-notes [data-act="print"]'); pg.wait_for_timeout(100)
+    assert pg.eval_on_selector('#crib', 'e => e.textContent').startswith('My ballot’s results'), 'Print your results prints the results again'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    # a Nov 3 pick that made the runoff: said, and the oval starts empty
+    sc = fx.scene('runoff'); picks = dict(RS_PICKS, c121=['Cheryl Bradley'])
+    ctx, pg = rs_page(b, {'body': sc}, when='2026-11-14T09:00', picks=False)
+    pg.evaluate("p => localStorage.setItem('ballotta.picks', JSON.stringify(p))", picks); pg.reload(); pg.wait_for_timeout(600)
+    pg.click('#dk-views [data-view="rdecide"]'); pg.wait_for_timeout(150)
+    assert 'On Nov 3 you picked Cheryl Bradley, who’s in the runoff. It’s a new choice, so the oval starts empty.' in pg.inner_text('#dk-paper')
+    assert pg.query_selector('#dk-paper [data-rpick][aria-pressed="true"]') is None
+    ctx.close()
+    # after the runoff: no group, and a saved runoff view goes back to results
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00')
+    pg.click('#dk-views [data-view="rdecide"]'); pg.wait_for_timeout(150)
+    pg.clock.set_system_time(rs_when('2026-12-14T09:00')); pg.reload(); pg.wait_for_timeout(600)
+    assert not pg.is_visible('#dk-rl') and not pg.is_visible('#dk-views [data-view="rdecide"]') and pg.query_selector('.dk-row[data-rrow]') is None
+    assert pg.evaluate("desk.view()") == 'decide' and pg.errs == [], pg.errs
+    ctx.close()
+    # no runoff on this ballot: nothing of it
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    assert not pg.is_visible('#dk-rl') and pg.query_selector('.dk-row[data-rrow]') is None and pg.errs == [], pg.errs
+    ctx.close()
+    # the phone: the group in the list, a tap opens the runoff's ballot and closes the list
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00', phone=True)
+    pg.click('#ph-list'); pg.wait_for_timeout(150)
+    assert pg.is_visible('#dk-rl') and pg.is_visible('.dk-row[data-rrow="c121"]')
+    pg.click('.dk-row[data-rrow="c121"]'); pg.wait_for_timeout(250)
+    assert pg.get_attribute('#ph-list', 'aria-expanded') == 'false' and 'Vote for 1 · Runoff, Sat, Dec 12' in pg.inner_text('#dk-paper') and sideways(pg) <= 0
+    assert pg.inner_text('#ph-next') == 'Where to vote →'
+    pg.click('#ph-next'); pg.wait_for_timeout(200)
+    assert 'Travis County hasn’t posted runoff vote centers yet.' in pg.inner_text('#dk-paper') and not pg.is_visible('#ph-next')
+    ctx.close()
 
 def main():
     srv = serve()

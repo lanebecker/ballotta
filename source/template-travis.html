@@ -280,6 +280,29 @@ details.rs-fold summary::after{content:'';width:9px;height:9px;border-right:2px 
 details.rs-fold[open] summary::after{transform:rotate(225deg);margin-top:4px}
 details.rs-fold > div{display:flex;flex-direction:column;gap:10px;padding:0 0 14px}
 button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(--lc);font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+/* the runoff (Phase 4) */
+.dk-vl{display:flex;justify-content:space-between;margin:10px 10px 2px;padding-top:10px;border-top:1px solid rgba(255,249,241,.14);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);grid-column:1/-1}
+.dk-vl span{color:rgba(255,249,241,.65);letter-spacing:.04em;text-transform:none;font-weight:600;font-size:12px}
+.dk-views .ct{margin-left:auto;font-size:12px;font-weight:600;color:rgba(255,249,241,.7)}
+.ro-band{background:var(--plum);color:var(--ground);border-radius:10px;padding:20px 24px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
+.ro-band p{margin:0}
+.ro-band .ov{color:var(--lilac)}
+.ro-band .t{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:32px;font-weight:700;line-height:1.1;color:#fff;white-space:nowrap}
+.ro-band .when{font-size:14px;color:var(--lilac);margin-top:4px}
+.ro-band .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;border-left:1px solid rgba(255,249,241,.25);padding-left:26px}
+.ro-band .facts p{display:flex;flex-direction:column;gap:3px;font-size:15px;line-height:1.35}
+.ro-band .facts b{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--lilac)}
+@media screen and (max-width:1023.98px){
+  .ro-band{grid-template-columns:minmax(0,1fr);gap:14px;padding:16px 18px}
+  .ro-band .t{font-size:28px}
+  .ro-band .facts{grid-template-columns:minmax(0,1fr);gap:12px;border-left:none;padding-left:0;border-top:1px solid rgba(255,249,241,.25);padding-top:14px}
+}
+.ro-was{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--ground);border:1px solid var(--line);font-size:15px;color:var(--ink2)}
+.ro-was b{color:var(--ink)}
+.ro-was .dk-oval{margin-top:2px;width:24px;height:16px;border:none;background:var(--line2);flex-shrink:0}
+.ro-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ro-none{padding:16px 18px;border-radius:10px;background:var(--ground);border:1px solid var(--line)}
+.ro-none p{margin:0 0 8px}
 #crib .rs-prh span,.dk-page .rs-prh span{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#555}
 #crib .rs-pr,.dk-page .rs-pr{display:block;margin-top:2px;font-size:11px;font-weight:400;color:#333}   /* Print your results: the result under the contest */
 /* At a glance after the election: Contest · Result · Your pick · Your reason, read-only */
@@ -907,6 +930,12 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
       <button type="button" data-view="all" class="hidden"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>All Travis County results</button>
 <!--/RESULTS-->
       <button type="button" data-view="crib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Print your choices</button>
+<!--RESULTS-->
+      <p class="dk-vl hidden" id="dk-rl"></p>
+      <button type="button" data-view="rdecide" class="hidden"></button>
+      <button type="button" data-view="rvote" class="hidden"></button>
+      <button type="button" data-view="rcrib" class="hidden"></button>
+<!--/RESULTS-->
     </div>
     <div class="dk-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="dk-q" type="search" placeholder="Find a race or a name" aria-label="Find a race or a name" autocomplete="off"><span class="kbd" aria-hidden="true">/</span></div>
     <div class="dk-filt" id="dk-filt" role="group" aria-label="Show"><button type="button" data-f="all"></button><button type="button" data-f="und"></button><button type="button" data-f="why"></button></div>
@@ -1608,7 +1637,7 @@ function whyShown(t) { const a = Array.from(String(t || '').trim()); return a.le
 function cribHTML() {  // the crib sheet, for the phone page and the laptop's crib view alike (#38)
   const withWhy = $('withwhy').checked;
 /*RESULTS*/
-  if (window.results && results.after()) return results.crib(withWhy);   // after the election: Print your results
+  if (window.results && results.after()) return window.desk && desk.view() === 'rcrib' ? results.runoff.crib(withWhy) : results.crib(withWhy);   // after the election: Print your results, or the runoff's choices
 /*/RESULTS*/
   let html = '<div class="ch"><b style="font-size:15px">My ballot choices</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
   ballot.forEach(b => {/*DESK*/ try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}/*/DESK*/
@@ -2205,6 +2234,7 @@ function printCrib() {  // from either layout (#38)
     }, 150);
     return;
   }
+  renderCrib();   // what's printed is what the view shows (the runoff's choices, Print your results, or the crib sheet)
   track('crib_printed', /*DESK*/ window.desk ? desk.cribOpts() : /*/DESK*/ { two_col: 'no', hide_unopposed: 'no' }); window.print();
 }
 if (cantPrint()) { $('noprint').textContent = NO_PRINT; $('noprint').classList.remove('hidden'); }
@@ -2481,6 +2511,7 @@ const results = (() => {
     if (!R || !live() || !app || (!ballot.length && view !== 'all')) { box.classList.add('hidden'); return; }
     if (R.withdrawn) { box.className = 'rs-top'; box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; return; }  // W52
     if (view === 'all') { box.className = 'rs-top rs-band'; box.innerHTML = '<p class="rs-upd">' + esc(updated()) + '</p>' + timeline(); return; }   // (#149)
+    if (view && view[0] === 'r' && runoffs().length) { box.className = 'rs-top rs-band'; box.innerHTML = runoffBand(); return; }   // the runoff's pages: its band
     if (!ballot.some(b => R.contests[b.c.id])) { box.classList.add('hidden'); return; }
     let h = '';
     if (since) {
@@ -2582,7 +2613,7 @@ const results = (() => {
     const runs = runsAhead();
     if (runs.length) {
       const first = runs[0], d = entry(first.c.id).runoff_on;
-      h += '<button type="button" class="sx next" data-rs="go" data-c="' + esc(first.c.id) + '"><p class="ov">What’s next</p><div class="row"><p class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · See the runoff</span></p></div></button>';   // "Get ready" once Phase 4's runoff pages exist (Lane, Oct 21)
+      h += '<button type="button" class="sx next" data-rs="rdecide" data-c="' + esc(first.c.id) + '"><p class="ov">What’s next</p><div class="row"><p class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · Get ready</span></p></div></button>';   // the runoff's Decide (Phase 4)
     } else if (ballot.some(b => { const e = entry(b.c.id); return e && (e.verdict === 'may_runoff' || (e.verdict === 'runoff' && !isOfficial(e))); })) {
       h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">A runoff is possible<span>If no one wins a majority, the top two meet again in December.</span></p></div></div>';
     } else {
@@ -2611,7 +2642,8 @@ const results = (() => {
     if (!upcoming(c)) return '';
     const e = entry(c.id);
     return '<section class="rs-next" aria-label="What’s next"><p class="ov">What’s next</p><h2>A runoff on ' + esc(dow(e.runoff_on, true) + ', ' + md(e.runoff_on)) + '</h2><p>'
-      + esc(andList(names(c, e.runoff.length ? e.runoff : e.choices.filter(x => !x[3]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0])))) + '. It’s a new choice: your Nov 3 pick isn’t carried over.</p></section>';   // a tie that goes to a runoff names no pair: the two tied (#142)
+      + esc(andList(names(c, e.runoff.length ? e.runoff : e.choices.filter(x => !x[3]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0])))) + '. It’s a new choice: your Nov 3 pick isn’t carried over.</p>'
+      + '<div class="ro-acts"><button type="button" class="btn small" data-rs="rdecide" data-c="' + esc(c.id) + '">Get ready for the runoff</button><button type="button" class="btn secondary small" data-rs="rvote">Where to vote in the runoff</button></div></section>';   // RunoffStates 4   // a tie that goes to a runoff names no pair: the two tied (#142)
   }
   // The notes beside the result.
   function notes(c) {
@@ -2690,7 +2722,7 @@ const results = (() => {
     const opens = openPicks();
     let h = '<div class="rs-listsum"><p class="top"><b>' + off + '<small>/' + n + '</small></b><span>official results</span></p>';
     const runs = runsAhead();   // the phone's list has no summary band: What's next, when it's a runoff, goes here (#143)
-    if (runs.length) h += '<button type="button" class="rs-lnext" data-rs="go" data-c="' + esc(runs[0].c.id) + '"><span class="ov">What’s next</span><b>Runoff · ' + esc(dayLong(entry(runs[0].c.id).runoff_on)) + '</b><span>' + runWho(runs) + '</span></button>';
+    if (runs.length) h += '<button type="button" class="rs-lnext" data-rs="rdecide" data-c="' + esc(runs[0].c.id) + '"><span class="ov">What’s next</span><b>Runoff · ' + esc(dayLong(entry(runs[0].c.id).runoff_on)) + '</b><span>' + runWho(runs) + '</span></button>';
     if (oc.length) h += '<p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="three">'
       + pickWords(oc, opens).map(x => '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>';
     return h + '</div>';
@@ -2707,6 +2739,8 @@ const results = (() => {
       if (b.dataset.rs === 'why') why(); else if (b.dataset.rs === 'all') openAll();
       else if (b.dataset.rs === 'tell') sendFeedback();
       else if (b.dataset.rs === 'go' && window.desk && desk.goTo) desk.goTo(b.dataset.c);
+      else if (b.dataset.rs === 'rdecide' && window.desk) desk.rgo(b.dataset.c);   // the runoff (Phase 4)
+      else if (b.dataset.rs === 'rvote' && window.desk) desk.rvote();
     });
     try { wantAll = new URLSearchParams(location.search).has('results'); } catch (e) {}
     load(true);
@@ -2767,8 +2801,89 @@ const results = (() => {
       + '<table class="dk-tbl rs-gl"><thead><tr><th scope="col">Contest</th><th scope="col">Result</th><th scope="col">Your pick</th><th scope="col">Your reason</th></tr></thead><tbody>' + rows + '</tbody></table>'
       + '<p class="note">Showing ' + shown + ' of ' + n + '. Results read the same for everyone; your picks and reasons are only on this device.</p>';
   }
+  /* ----- the runoff (Phase 4, docs/plans/2026-10-21-the-runoff.md): a contest on your ballot headed to an official
+     runoff not yet held. Runoff picks and reasons are kept apart from Nov 3's, which never change. ----- */
+  const runoffs = () => ballot.filter(b => upcoming(b.c)).sort((a, b) => entry(a.c.id).runoff_on < entry(b.c.id).runoff_on ? -1 : 1);
+  const pair = (c) => { const e = entry(c.id); return e.runoff.length ? e.runoff : e.choices.filter(x => !x[3]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]); };
+  let RP = null, RW = null;
+  function rstore() {
+    if (RP) return;
+    const p = plain(LS.get('ballotta.runoffPicks', {})), w = plain(LS.get('ballotta.runoffWhys', {}));
+    RP = {}; RW = {};
+    Object.keys(p).forEach(id => { if (Array.isArray(p[id]) && p[id].length === 1 && isStr(p[id][0])) RP[id] = p[id]; });   // checked against the pair when used
+    Object.keys(w).forEach(id => { if (isStr(w[id])) RW[id] = w[id]; });
+  }
+  function rcur(c) { rstore(); const v = RP[c.id]; return v && (v[0] === '__skip' || pair(c).includes(v[0])) ? v : []; }
+  function rpick(c, val) { rstore(); const v = rcur(c); if (v[0] === val) delete RP[c.id]; else RP[c.id] = [val]; LS.set('ballotta.runoffPicks', RP); }
+  function rwhy(c, t) { rstore(); if (t === undefined) return RW[c.id] || ''; if (t.trim()) RW[c.id] = t; else delete RW[c.id]; LS.set('ballotta.runoffWhys', RW); }
+  const rstate = (c) => { const v = rcur(c); return !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : choice(c, v[0]); };
+  const rrow = (c) => { const v = rcur(c); return v.length ? rstate(c) : andList(names(c, pair(c)).map(surname)).replace(' and ', ' or ') + ' · Undecided'; };
+  const daysTo = (d) => Math.round((Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) - Date.UTC(+day().slice(0, 4), +day().slice(5, 7) - 1, +day().slice(8, 10))) / 864e5);
+  const area = (c) => { const m = cleanTitle(c).match(/District \d+|Place \d+/); return (c.entity ? c.entity + (m ? ' ' + m[0] : '') : m ? m[0] : cleanTitle(c)); };
+  // The plum band over the runoff's pages (the canvas's LaptopRunoff).
+  function runoffBand() {
+    const rs = runoffs(); if (!rs.length) return '';
+    const d = entry(rs[0].c.id).runoff_on, n = daysTo(d);
+    return '<section class="ro-band" aria-label="The runoff"><div><p class="ov">Runoff</p><p class="t">' + esc(dow(d, true) + ', ' + md(d)) + '</p><p class="when">'
+      + (n > 1 ? n + ' days from today' : n === 1 ? 'Tomorrow' : 'Today') + '</p></div><div class="facts">'
+      + '<p><b>Early voting</b>Not posted yet</p>'
+      + '<p><b>Who can vote</b>Any registered voter in ' + esc(area(rs[0].c)) + ', whether or not you voted Nov 3</p>'
+      + '<p><b>On your ballot</b>' + rs.length + (rs.length === 1 ? ' contest: ' : ' contests: ') + esc(rs.map(b => cleanTitle(b.c)).join('; ')) + '</p></div></section>';
+  }
+  // The runoff's ballot paper: the Nov 3 result as context, your Nov 3 pick, then a new choice.
+  function runoffPaper(c, i, n) {
+    const e = entry(c.id), P2 = pair(c), v = rcur(c), was = current(c.id), L = DATA.learn[c.id] || {};
+    const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level), t = cleanTitle(c);
+    let h = '<div class="dk-top"><span class="ov">Runoff · ' + esc(where) + ' · contest ' + (i + 1) + ' of ' + n + '</span><span class="note">Saved on this device</span></div>';
+    h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
+    h += '<p class="dk-meta">Vote for 1 · Runoff, ' + esc(dayLong(e.runoff_on)) + '</p>';
+    const tops = P2.map(nm => e.choices.find(x => x[0] === nm)).filter(Boolean), rest = e.choices.filter(x => !P2.includes(x[0]));
+    const restPct = Math.max(0, 100 - tops.reduce((a, x) => a + x[2], 0));
+    h += '<section class="rs" aria-label="The Nov 3 result"><p class="rs-st rs-off">Nov 3 · official · canvassed by ' + esc(e.canvasser) + ', ' + esc(md(e.canvass.done)) + '</p>'
+      + '<p class="rs-v">' + esc(verdict(c, e)) + '</p><div class="rs-bars">'
+      + tops.concat(rest.length ? [[rest.length === 1 ? rest[0][0] : rest.length + ' others', 0, restPct, false, true]] : []).map(x => '<div class="rs-b"><span class="rs-nm">' + esc(x[4] ? x[0] : choice(c, x[0])) + '</span>'
+        + '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span><span class="rs-vt">' + x[2].toFixed(1) + '%</span></div>').join('') + '</div></section>';
+    if (was.length) {
+      const w = was[0] === '__skip' ? '' : was.find(x => P2.includes(x)) || was[0];
+      h += '<div class="ro-was"><span class="dk-oval" aria-hidden="true"></span><span>' + (!w ? 'On Nov 3 you skipped this race. This is a new choice: pick, or skip it again.'
+        : P2.includes(w) ? 'On Nov 3 you picked <b>' + esc(choice(c, w)) + '</b>, who’s in the runoff. It’s a new choice, so the oval starts empty.'
+        : 'On Nov 3 you picked <b>' + esc(choice(c, w)) + '</b>, who didn’t make the runoff. This is a new choice: pick again, or skip it.') + '</span></div>';
+    }
+    h += '<div class="dk-lines">' + P2.map((o, k) => '<div class="dk-lw"><button type="button" class="dk-line" data-rpick="' + esc(o) + '" aria-pressed="' + (v[0] === o) + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(choice(c, o)) + '</span><span class="kbd" aria-hidden="true">' + (k + 1) + '</span></button>' + candLinks(L, o) + '</div>').join('') + '</div>';
+    h += '<button type="button" class="skip" data-rpick="__skip" aria-pressed="' + (v[0] === '__skip') + '">Skip this race <span class="kbd" aria-hidden="true">S</span></button>';
+    h += '<div class="dk-why"><label for="ro-w">Why? <span>Private unless you choose to share it</span><span class="kbd" aria-hidden="true">R</span></label><textarea id="ro-w" placeholder="Your reasoning, in your words">' + esc(rwhy(c)) + '</textarea></div>';
+    h += '<div class="dk-nav"><button type="button" class="btn secondary small" data-ract="back">← Back to results</button><button type="button" class="btn small" data-ract="vote">Next: where to vote in the runoff <span class="kbd" aria-hidden="true">N</span></button></div>';
+    return h;
+  }
+  function runoffNotes() {
+    return '<section><h3>About this runoff</h3><a class="lnk" href="https://votetravis.gov/current-election-information/current-election/" target="_blank" rel="noopener"><span><b>Travis County runoff information</b><span>Dates, sample ballot, vote centers</span></span></a>'
+      + '<button type="button" class="lnk" data-rs="why"><span><b>How runoffs work</b><span>Why there’s a second round, and who can vote</span></span></button></section>'
+      + '<section><h3>Where the candidate links come from</h3><p>The League of Women Voters answers are from its Nov 3 guide. If the League publishes a runoff guide, we’ll link it instead.</p></section>'
+      + '<section><h3>Your Nov 3 picks</h3><p>Kept as they were. Your runoff pick is saved separately, so nothing you choose here changes your Nov 3 record.</p></section>';
+  }
+  // Where to vote in the runoff: the county posts its own (shorter) list; until then, never the Nov 3 one.
+  function runoffVote() {
+    const rs = runoffs(); if (!rs.length) return '';
+    const d = entry(rs[0].c.id).runoff_on;
+    return '<span class="ov">Runoff · ' + esc(dayLong(d)) + '</span><h1>Where to vote in the runoff</h1>'
+      + '<div class="ro-none"><p><b>Travis County hasn’t posted runoff vote centers yet.</b></p><p>We’ll add them as soon as it does. Don’t go by the Nov 3 list: fewer places are open for a runoff.</p>'
+      + '<p><a href="https://votetravis.gov/current-election-information/current-election/" target="_blank" rel="noopener">Travis County Elections ↗</a></p></div>';
+  }
+  // Print your choices, for the runoff: the crib sheet's layout, the runoff contests only.
+  function runoffCrib(withWhy) {
+    const rs = runoffs(); if (!rs.length) return '';
+    const d = entry(rs[0].c.id).runoff_on;
+    let html = '<div class="ch"><b style="font-size:15px">My runoff choices</b><span style="font-size:11px">' + esc(dayLong(d)) + '</span></div>';
+    rs.forEach(b => {
+      const v = rcur(b.c);
+      html += '<div class="ln"><span>' + esc(cleanTitle(b.c)) + '</span><span>' + esc(!v.length || v[0] === '__skip' ? '______' : choice(b.c, v[0])) + '</span></div>';
+      if (withWhy && rwhy(b.c)) html += '<div class="why">' + esc(whyShown(rwhy(b.c))) + '</div>';
+    });
+    return html + '<p style="font-size:10px;margin-top:10px">Blank = no vote planned. Contests are in ballot order.</p>';
+  }
+  const runoff = { list: runoffs, band: runoffBand, paper: runoffPaper, notes: runoffNotes, vote: runoffVote, crib: runoffCrib, pick: rpick, why: rwhy, cur: rcur, pair, row: rrow, state: rstate, reset() { RP = RW = null; }, date: () => { const rs = runoffs(); return rs.length ? dayLong(entry(rs[0].c.id).runoff_on) : ''; } };
   const paused = () => !!(R && R.withdrawn && live());
-  return { start, ribbon, on, paused, said, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
+  return { start, ribbon, on, paused, runoff, said, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
 })();
 window.results = results;
 /*/RESULTS*/
@@ -2780,7 +2895,7 @@ window.results = results;
 const desk = (() => {
   const WIDE = window.matchMedia('(min-width: 1024px)');
   const saved = LS.get('ballotta.desk', {}) || {};
-  const ui = { view: ['decide', 'glance', 'vote', 'crib', 'all'].includes(saved.v) ? saved.v : 'decide', allNow: false, level: 'all', allF: 'all', cur: typeof saved.c === 'string' ? saved.c : '',
+  const ui = { rcur: '', view: ['decide', 'glance', 'vote', 'crib', 'all', 'rdecide', 'rvote', 'rcrib'].includes(saved.v) ? saved.v : 'decide', allNow: false, level: 'all', allF: 'all', cur: typeof saved.c === 'string' ? saved.c : '',
     filter: 'all', q: '', landing: false, addr: '', hideUnopp: false, mine: false, two: false, hideCrib: false, cmpFor: null };
   const P = () => $('dk-paper'), N = () => $('dk-notes');
   const save = () => LS.set('ballotta.desk', { v: ui.view, c: ui.cur });
@@ -2868,9 +2983,14 @@ const desk = (() => {
         return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + (A && v.length && v[0] !== '__skip' ? '<span class="dk-vh"> · you picked here</span>' : '') + '</small></span>' + fa + '</button>';   // the gold dot, for screen readers, once the line is the result (#148)
       }).join('');
     });
+/*RESULTS*/
+    const rs = A ? results.runoff.list() : [];
+    if (rs.length && !ui.q && ui.filter === 'all') html = '<div class="dk-g"><span>Runoff · ' + esc(results.runoff.date()) + '</span><span>' + rs.length + '</span></div>'
+      + rs.map(b => '<button type="button" class="dk-row" data-rrow="' + b.c.id + '"' + (ui.view === 'rdecide' && b.c.id === rcurId() ? ' aria-current="true"' : '') + '><span class="dk-d' + (results.runoff.cur(b.c).length && results.runoff.cur(b.c)[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(results.runoff.row(b.c)) + '</small></span></button>').join('') + html;
+/*/RESULTS*/
     if (A && html) html = results.listSum() + html;
     $('dk-out').innerHTML = html || '<p class="dk-empty">' + (ui.q ? 'Nothing matches “' + esc(ui.q) + '”.' : ui.filter === 'und' ? (A ? 'Nothing on your ballot is too close to call.' : 'Every contest is decided.') : (A ? 'No picks on this device.' : 'No reasons written yet.')) + '</p>';
-    $('dk-out').querySelectorAll('.dk-row').forEach(r => r.addEventListener('click', () => go(r.dataset.row, true)));
+    $('dk-out').querySelectorAll('.dk-row').forEach(r => r.addEventListener('click', () => r.dataset.rrow ? rgo(r.dataset.rrow, true) : go(r.dataset.row, true)));
   }
 
   // The menu after the election: Decide becomes Results, Where to vote steps aside, All Travis County results joins, and
@@ -2879,11 +2999,26 @@ const desk = (() => {
   const BAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>';
   function menuFor(A) {
     document.querySelectorAll('#dk-views button').forEach(b => {
-      if (!b.dataset.was) b.dataset.was = b.innerHTML;
       const v = b.dataset.view;
+      if (v[0] === 'r') return;   // the runoff group, below
+      if (!b.dataset.was) b.dataset.was = b.innerHTML;
       b.classList.toggle('hidden', A ? v === 'vote' : v === 'all');
       b.innerHTML = !A ? b.dataset.was : v === 'decide' ? BAR + 'Results' : v === 'crib' ? b.dataset.was.replace('Print your choices', 'Print your results') : b.dataset.was;
     });
+/*RESULTS*/
+    // The runoff (Phase 4): while a runoff on this ballot is official and not yet held, a group under the four results
+    // items with the three you used before Nov 3 (the canvas's RunoffStates).
+    const rs = A && ballot.length ? results.runoff.list() : [], gl = $('dk-rl');
+    gl.classList.toggle('hidden', !rs.length);
+    document.querySelectorAll('#dk-views [data-view^="r"]').forEach(b => b.classList.toggle('hidden', !rs.length));
+    if (rs.length) {
+      const icon = (v) => ((document.querySelector('#dk-views [data-view="' + v + '"]').dataset.was || '').match(/<svg[\s\S]*?<\/svg>/) || [''])[0];
+      gl.innerHTML = 'Runoff · ' + esc(results.runoff.date()) + '<span>' + rs.length + (rs.length === 1 ? ' contest' : ' contests') + '</span>';
+      document.querySelector('#dk-views [data-view="rdecide"]').innerHTML = icon('decide') + 'Decide<span class="ct">' + (rs.every(b => results.runoff.cur(b.c).length) ? 'Decided' : 'Undecided') + '</span>';
+      document.querySelector('#dk-views [data-view="rvote"]').innerHTML = icon('vote') + 'Where to vote';
+      document.querySelector('#dk-views [data-view="rcrib"]').innerHTML = icon('crib') + 'Print your choices';
+    }
+/*/RESULTS*/
   }
 
   // The rail on All Travis County results: the same menu, then search, filters and the levels as its list.
@@ -2923,10 +3058,13 @@ const desk = (() => {
     if (ballot.length && idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
     if (ui.view === 'all' && !after()) ui.view = 'decide';
     if (after() && ui.view === 'vote') ui.view = 'decide';   // Nov 3's Where to vote isn't in the menu after the election
+/*RESULTS*/
+    if (ui.view[0] === 'r' && !(after() && results.runoff.list().length)) ui.view = 'decide';   // no runoff to come: back to results
+/*/RESULTS*/
     if (ui.view === 'all') railAll(); else rail();
     P().dataset.c = ui.view === 'decide' && ballot.length ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
-    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' || ui.view === 'all' ? ' wide' : '');
-    ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib, all: viewAll })[ui.view]();
+    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' || ui.view === 'all' || ui.view === 'rvote' ? ' wide' : '');
+    ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib, all: viewAll/*RESULTS*/, rdecide: viewRDecide, rvote: viewRVote, rcrib: viewRCrib/*/RESULTS*/ })[ui.view]();
     if (app && friend && /*PHONE*/(true || /*/PHONE*/WIDE.matches/*PHONE*/)/*/PHONE*/ && ui.cmpFor !== friend) {
       // Counted when at least one of their races is on your ballot: once per page for links without a code, once per
       // browser for links with one (like share_opened). The detail tells it apart from the phone layout's Compare tap.
@@ -2999,6 +3137,35 @@ const desk = (() => {
     const fr = F && F.includes(val) ? '<div class="dk-fp"><span class="dk-fa">' + initial() + '</span><span><b>' + esc(friendName()) + ' picked this</b>' + (friend.W[c.id] ? ' · “' + esc(friend.W[c.id]) + '”' : '') + '</span></div>' : '';
     return '<div class="dk-lw"><button type="button" class="dk-line" data-c="' + c.id + '" data-pick="' + esc(val) + '" aria-pressed="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, val)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (k < 9 ? '<span class="kbd" aria-hidden="true">' + (k + 1) + '</span>' : '') + '</button>' + (links || '') + fr + '</div>';
   }
+/*RESULTS*/
+  /* ----- the runoff's pages (Phase 4): Decide, Where to vote and Print, for the runoff contests only ----- */
+  function rcurId() { const rs = results.runoff.list(); return rs.some(b => b.c.id === ui.rcur) ? ui.rcur : rs.length ? rs[0].c.id : ''; }
+  function rgo(cid, focus) { ui.rcur = cid; ui.view = 'rdecide'; save(); render(); if (WIDE.matches) window.scrollTo(0, 0); if (focus) P().focus({ preventScroll: true }); }
+  function viewRDecide() {
+    const rs = results.runoff.list(), id = rcurId(), i = rs.findIndex(b => b.c.id === id), c = rs[i].c;
+    P().innerHTML = results.runoff.paper(c, i, rs.length);
+    P().querySelectorAll('[data-rpick]').forEach(btn => btn.addEventListener('click', () => { results.runoff.pick(c, btn.dataset.rpick); rrefresh(); }));
+    const ta = $('ro-w'); fit(ta);
+    ta.addEventListener('input', () => { fit(ta); results.runoff.why(c, ta.value); });
+    P().querySelectorAll('[data-ract]').forEach(btn => btn.addEventListener('click', () => ract(btn.dataset.ract)));
+    N().innerHTML = results.runoff.notes();
+  }
+  // A pick: the ovals, the rail's line, the menu's count; focus stays where it was.
+  function rrefresh() {
+    const c = results.runoff.list().find(b => b.c.id === rcurId()).c, v = results.runoff.cur(c);
+    P().querySelectorAll('[data-rpick]').forEach(btn => btn.setAttribute('aria-pressed', String(v[0] === btn.dataset.rpick)));
+    rail();
+  }
+  function ract(a) { if (a === 'back') { ui.view = 'decide'; save(); render(); } else if (a === 'vote') { ui.view = 'rvote'; save(); render(); if (WIDE.matches) window.scrollTo(0, 0); } }
+  function viewRVote() { P().innerHTML = results.runoff.vote(); N().innerHTML = results.runoff.notes(); }
+  function viewRCrib() {
+    P().innerHTML = '<span class="ov">Runoff · ' + esc(results.runoff.date()) + '</span><h1>Print your choices</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p><div class="dk-page" id="dk-page">' + results.runoff.crib($('withwhy').checked) + '</div>';
+    N().innerHTML = '<section><h3>Print options</h3><div class="sw"><label for="ro-cw">Include my reasons</label><input type="checkbox" role="switch" id="ro-cw"' + ($('withwhy').checked ? ' checked' : '') + '></div></section>'
+      + '<button class="btn" type="button" data-act="print">Print your choices</button><p class="note">The printout has your runoff picks and, if you choose, your reasons. Nothing else.</p>';
+    $('ro-cw').addEventListener('change', () => { $('withwhy').checked = $('ro-cw').checked; renderCrib(); viewRCrib(); });
+    N().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
+  }
+/*/RESULTS*/
   // After the election, the paper is the result: your pick and reason with it, the ballot as you marked it, read-only.
   function viewResult() {
     const b = curB(), c = b.c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure', n = seats(c), opts = optionsOf(c), v = current(c.id), i = idx(c.id);
@@ -3351,6 +3518,17 @@ const desk = (() => {
     if (t && t !== document.body && !t.closest('#dk-paper')) return;  // single-key shortcuts only on the ballot paper (WCAG 2.1.4, audit #30)
     const used = (kind) => countOnce('k:' + kind, 'shortcut_used', { kind });
     if (k === '/') { e.preventDefault(); $('dk-q').focus(); used('search'); return; }
+/*RESULTS*/
+    if (ui.view === 'rdecide') {   // the runoff's ballot: 1 and 2 pick, S skips, R the reason, N where to vote (as before Nov 3)
+      const c = results.runoff.list().find(b => b.c.id === rcurId()).c, P2 = results.runoff.pair(c);
+      if (e.repeat && /^[1-9s]$/.test(k)) return;
+      if (/^[1-9]$/.test(k) && P2[+k - 1]) { e.preventDefault(); results.runoff.pick(c, P2[+k - 1]); rrefresh(); say({ text: cleanTitle(c) + ': ' + results.runoff.state(c) }); }
+      else if (k === 's') { e.preventDefault(); results.runoff.pick(c, '__skip'); rrefresh(); say({ text: cleanTitle(c) + ': ' + results.runoff.state(c) }); }
+      else if (k === 'r') { e.preventDefault(); $('ro-w').focus(); }
+      else if (k === 'n') { e.preventDefault(); ract('vote'); }
+      return;
+    }
+/*/RESULTS*/
     if (ui.view !== 'decide') return;
     if (after() && (/^[1-9]$/.test(k) || k === 's' || k === 'r')) return;   // picks are a record after the election
     if (e.repeat && (/^[1-9]$/.test(k) || k === 's')) return;  // a held key picks once (pick() toggles)
@@ -3373,7 +3551,10 @@ const desk = (() => {
 
   /* ----- hooks the shared code calls (the DESK one-liners in showBallot, refresh, renderCrib and openFriend) ----- */
   return {
-    render, goTo: (cid) => go(cid, true), after,
+    render, goTo: (cid) => go(cid, true), after, view: () => ui.view,
+/*RESULTS*/
+    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'),
+/*/RESULTS*/
     // A redraw the voter didn't ask for (new results arriving): the folds they had open, their place on the page and the
     // control they were on come back as they were, and the update is said politely (#140).
     reflow(text) {
@@ -3462,7 +3643,8 @@ const phone = (() => {
     $('ph-back').disabled = dec && i <= 0;
     // Everything decided: step through in order, then on to the crib sheet (the row under the paper is gone).
     $('ph-next').textContent = nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : A ? 'At a glance →' : 'Crib sheet →';   // after the election, the last contest leads to At a glance
-    $('ph-next').classList.toggle('hidden', (!nx && D.ui.view === (A ? 'glance' : 'crib')) || D.ui.view === 'all');   // All Travis County results isn't a step on your ballot (#150)
+    if (D.ui.view === 'rdecide') $('ph-next').textContent = 'Where to vote →';   // the runoff's ballot leads to its Where to vote (Phase 4)
+    $('ph-next').classList.toggle('hidden', (!nx && D.ui.view === (A ? 'glance' : 'crib')) || D.ui.view === 'all' || (D.ui.view[0] === 'r' && D.ui.view !== 'rdecide'));   // All Travis County results and the runoff's pages aren't steps on your ballot (#150)
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
   function savedSay() {
@@ -3500,6 +3682,7 @@ const phone = (() => {
   // The next undecided contest, never the one already open (it would go nowhere: Pass 1).
   function upcoming() { return D.upNext(); }  // the laptop's own rule, the contest left undecided included (#125)
   function next() {
+    if (D.ui.view === 'rdecide') { desk.rvote(); return; }   // the runoff's ballot, then where to vote in it (Phase 4)
     D.leave();
     const nx = upcoming(), i = D.idx(D.ui.cur);
     if (nx) { const was = D.ui.view; D.goOn(nx.c.id); if (was !== 'decide') track('view_opened', { view: 'decide' }); }  // as back() counts it (#76)

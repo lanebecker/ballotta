@@ -247,3 +247,25 @@ the same day:
   last words open the canvass explainer.
 - The pick counts stay as built (W96).
 - What's next says "See the runoff" instead of "Get ready" until Phase 4's runoff pages exist.
+
+## The runoff (Phase 4, Oct 21) — new, not yet approved
+
+Most of the runoff's words come from the canvas boards LaptopRunoff, LaptopRunoffVote, PhoneRunoff, PhoneRunoffVote and
+RunoffStates, which Lane reviewed Oct 20–21: the menu group, Decide's "Undecided" / "Decided", the band's labels, the
+paper ("Runoff · <place> · contest 1 of 1", "Vote for 1 · Runoff, Sat, Dec 12", the Nov 3 lines), "← Back to results",
+"Next: where to vote in the runoff", the notes, and the "not posted yet" page. The build added:
+
+- **W98** The band's early voting, until the county posts dates: "Not posted yet". (The canvas had a placeholder.)
+- **W99** The band's countdown: "28 days from today"; the day before, "Tomorrow"; on the day, "Today".
+- **W100** Who can vote: "Any registered voter in <the contest's place and district>, whether or not you voted Nov 3",
+  e.g. "in Austin ISD District 1" (the canvas: "in District 9"). With no district: the place alone ("in City of Austin").
+- **W101** On Nov 3 you skipped the race: "On Nov 3 you skipped this race. This is a new choice: pick, or skip it
+  again." (The canvas covered a pick that made the runoff and one that didn't.) With no Nov 3 pick: no line.
+- **W102** The runoff's printout: "My runoff choices" / "Sat, Dec 12"; the page "Runoff · Sat, Dec 12" / "Print your
+  choices" with the crib sheet's lead; under the button: "The printout has your runoff picks and, if you choose, your
+  reasons. Nothing else."
+- **W103** The result card's What's next, once Phase 4 exists: "Get ready for the runoff" / "Where to vote in the
+  runoff" (RunoffStates 4), and the summary's "· Get ready" again (Lane, Oct 21: once Phase 4's pages exist).
+- **W104** The phone's bottom bar on the runoff's ballot: "Where to vote →".
+- **Links:** "Travis County runoff information" opens VoteTravis.gov's current-election page; "How runoffs work" opens the
+  page's canvass explainer.

@@ -14,7 +14,12 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **The runoff** (Phase 4, `docs/plans/2026-10-21-the-runoff.md`): while a runoff on your ballot is official and not yet
+  held, the menu and the rail get a "Runoff · Sat, Dec 12" group with Decide, Where to vote and Print your choices, a
+  ballot of its own under a plum band (the date, days to go, early voting, who can vote). Runoff picks and reasons are
+  kept apart from Nov 3's, which never change; the result card's What's next opens it. Where to vote says the county
+  hasn't posted runoff vote centers yet, never the Nov 3 list.
 
 ## [1.4.0] — 2026-10-21
 

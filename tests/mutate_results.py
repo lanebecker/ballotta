@@ -16,6 +16,7 @@ W, X, O = 'withdrawn_results_hide_everything', 'a_bad_results_file_breaks_nothin
 A, C, N, E = 'all_travis_county_results_need_no_address', 'a_saved_copy_says_so', 'results_wait_for_nov_4', 'the_canvass_is_explained_from_the_results_and_the_menu'
 T = 'results_turn_the_ballot_into_a_record'
 V = 'every_state_reads_in_at_a_glance_and_the_printout'
+RO = 'the_runoff_is_its_own_ballot'
 M = [
  ('R1 results before Nov 4', PREV, 'const live = () => day() >= FROM;', 'const live = () => true;', [N]),
  ('R2 ?today= works on ballotta.org', PREV, "const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);", 'const LOCAL = true;', [O]),
@@ -67,7 +68,7 @@ M = [
  # Phase 3: At a glance and Print your results after the election
  ('R13 At a glance editable after', PREV, "    if (after()) {   // after the election: the results beside your picks", "    if (false) {   // after the election: the results beside your picks", [T]),
  ('R48 the pick filter ignored', PREV, "      if (mine && !picked(c)) return;\n", '', [T]),
- ('R49 the picks printed, not the results', PREV, "  if (window.results && results.after()) return results.crib(withWhy);", '', [T]),
+ ('R49 the picks printed, not the results', PREV, "  if (window.results && results.after()) return window.desk", "  if (false) return window.desk", [T]),
  ('R50 the printout never redrawn', PREV, "    try { renderCrib(); } catch (e) {}   // the printout", '', [T]),
  ('R51 a measure share misread', PREV, "f[2].toFixed(1) + '% '", "'50.0% '", [L]),
  ('R52 no canvass date in At a glance', PREV, "    return s + (cv.on ? ' · canvass ' + md(cv.on) : cv.by ? ' · canvass by ' + md(cv.by) : '');", "    return s;", [L]),
@@ -106,6 +107,17 @@ M = [
  ('R86 month 13', PREV, "TIME.test(x) && realDay(x) &&", "TIME.test(x) &&", [X]),
  ('R87 constructor is a contest', PREV, "Object.prototype.hasOwnProperty.call(BYID, cid) ? BYID[cid] : null", "BYID[cid]", [X]),
  ('R88 the phone count on All results', PREV, "    if (D.ui.view !== 'all') $('ph-count')", "    $('ph-count')", [P]),
+ # the runoff (Phase 4)
+ ('R103 no runoff group', PREV, "    gl.classList.toggle('hidden', !rs.length);", "    gl.classList.toggle('hidden', true);", [RO]),
+ ('R104 runoff picks over Nov 3\'s', PREV, "LS.set('ballotta.runoffPicks', RP);", "LS.set('ballotta.picks', RP);", [RO]),
+ ('R105 the Nov 3 pick carried over', PREV, "aria-pressed=\"' + (v[0] === o) + '\">", "aria-pressed=\"' + (v[0] === o || was.includes(o)) + '\">", [RO]),
+ ('R106 a pick in the runoff said to be out', PREV, "        : P2.includes(w) ? 'On Nov 3 you picked", "        : false ? 'On Nov 3 you picked", [RO]),
+ ('R107 the runoff keys pick nothing', PREV, "if (/^[1-9]$/.test(k) && P2[+k - 1])", "if (false)", [RO]),
+ ('R108 the runoff prints the results', PREV, "desk.view() === 'rcrib' ? results.runoff.crib(withWhy)", "false ? results.runoff.crib(withWhy)", [RO]),
+ ('R109 the runoff after it is held', PREV, "    if (ui.view[0] === 'r' && !(after() && results.runoff.list().length)) ui.view = 'decide';", "", [RO]),
+ ('R111 the phone Next to nowhere', PREV, "    if (D.ui.view === 'rdecide') { desk.rvote(); return; }", "", [RO]),
+ ('R112 a runoff row opens nothing', PREV, "r.dataset.rrow ? rgo(r.dataset.rrow, true) :", "false ? rgo(r.dataset.rrow, true) :", [RO]),
+ ('R113 days miscounted', PREV, "(n > 1 ? n + ' days from today'", "(n > 1 ? (n + 1) + ' days from today'", [RO]),
  # the fix verification's findings (Oct 21)
  ('R101 no word for no call', PREV, "    else if (e.no_call) h += '<p class=\"rs-v\">No call yet</p>", "    else if (false) h += '<p class=\"rs-v\">No call yet</p>", [V]),
  ('R102 no call reads as no result', PREV, "    if (e && e.no_call) return 'No call yet · Unofficial';   // W69", "", [V]),
@@ -115,7 +127,7 @@ M = [
  ('R91 a correction dated before the visit missed', PREV, "        if (e.corrected && e.corrected !== w[5]) since.corrected++;", "        if (false) since.corrected++;", [S]),
  ('R92 a recount pick lost on the paper', PREV, "    if (e.state === 'recount') return 'Your pick: ' + v.map(x => choice(c, x)).join(', ');", "", [V]),
  ('R94 a paused printout with no time', PREV, "'Printed ' + when(", "when(", [W]),
- ('R95 Next on All results on a phone', PREV, " || D.ui.view === 'all');   // All Travis County results isn't a step", ");   // All Travis County results isn't a step", [P]),
+ ('R95 Next on All results on a phone', PREV, " || D.ui.view === 'all' || (D.ui.view[0] === 'r'", " || (D.ui.view[0] === 'r'", [P]),
  ('R96 the phone fold misnamed while paused', PREV, "(results.paused() ? 'Calling races' : 'About this result')", "'About this result'", [P]),
  ('R97 zeros on All results while paused', PREV, "const counts = paused ? { all: 'All', und: 'Too close', why: 'Runoffs' } :", "const counts =", [W]),
  ('R98 the results Previous looks live', PREV, "  .dk-asmarked ~ .dk-nav .btn:disabled{opacity:.45;cursor:default}", "", [T]),
