@@ -107,6 +107,8 @@ M = [
  ('R87 constructor is a contest', PREV, "Object.prototype.hasOwnProperty.call(BYID, cid) ? BYID[cid] : null", "BYID[cid]", [X]),
  ('R88 the phone count on All results', PREV, "    if (D.ui.view !== 'all') $('ph-count')", "    $('ph-count')", [P]),
  # the fix verification's findings (Oct 21)
+ ('R101 no word for no call', PREV, "    else if (e.no_call) h += '<p class=\"rs-v\">No call yet</p>", "    else if (false) h += '<p class=\"rs-v\">No call yet</p>", [V]),
+ ('R102 no call reads as no result', PREV, "    if (e && e.no_call) return 'No call yet · Unofficial';   // W69", "", [V]),
  ('R100 W59 without its ending', PREV, " Unofficial until each canvass. <button type=\"button\" class=\"dk-link\" data-rs=\"why\">Why unofficial?</button></p>';", "</p>';", [T]),
  ('R89 W5 with W6 after late ballots', PREV, "    if (cv.kind === 'state') { if (day() <= R.late_until) h += ", "    if (cv.kind === 'state' && day() <= R.late_until) { h += ", [V]),
  ('R90 the band drawn twice on new results', PREV, "    if (!window.desk) top();", "    top();", [V]),

@@ -2298,6 +2298,7 @@ const results = (() => {
     if (!NOTES.includes(e.note) || ![null, 'district', 'area'].includes(e.who) || typeof e.write_ins !== 'boolean') return false;
     if (![null, 'two_thirds'].includes(e.needs) || (e.needs && c.type !== 'measure')) return false;
     if (!(e.recount === null || (isStr(e.recount) && /^https:\/\//.test(e.recount)))) return false;
+    if (![undefined, null, 'two_majorities', 'rule_unsettled'].includes(e.no_call) || (e.no_call && (e.verdict !== 'none' || !['unofficial', 'partial'].includes(e.state)))) return false;   // W69: a reason only on an unofficial count with no verdict
     return true;
   }
   function accept(j) {
@@ -2430,6 +2431,7 @@ const results = (() => {
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
     if (v) h += '<p class="rs-v">' + esc(v) + '</p>';
+    else if (e.no_call) h += '<p class="rs-v">No call yet</p><p class="rs-n">This one is decided at the canvass.</p>';   // W69 (Lane, Oct 21): numbers with no verdict, on purpose
     if (upcoming(c)) h += '<p class="rs-why">No one won a majority, so the top two meet again on ' + esc(dayLong(e.runoff_on)) + '.</p>';
     if (e.needs === 'two_thirds') h += '<p class="rs-n">Needs two-thirds of the vote to pass.</p>';   // W68: road bonds (Tex. Const. art. III §52(b))
     if (e.state !== 'counting') h += bars(c, e.choices, true);
@@ -2526,6 +2528,7 @@ const results = (() => {
   // A rail row's second line: the result in a few words, and whether it's official.
   function rowLine(c) {
     const e = entry(c.id);
+    if (e && e.no_call) return 'No call yet · Unofficial';   // W69
     if (!e || e.state === 'counting' || e.verdict === 'none') return R && R.withdrawn ? 'Results paused' : 'No result yet';
     let v = verdict(c, e);
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) v = 'Runoff: ' + andList(names(c, e.runoff).map(surname));
@@ -2731,6 +2734,7 @@ const results = (() => {
   // At a glance after the election (the canvas's At a glance board): Contest · Result · Your pick · Your reason, read-only.
   // The result's first line says what happened; the second, whether it's official, and when it was or will be.
   function glanceRes(c, e) {
+    if (e && e.no_call) return 'No call yet';   // W69
     if (!e || e.state === 'counting' || e.verdict === 'none') return null;
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return 'Runoff: ' + andList(names(c, e.runoff));
     return e.verdict === 'tied' ? 'Tied' : verdict(c, e);   // W25 is long: the contest's own page says what happens next

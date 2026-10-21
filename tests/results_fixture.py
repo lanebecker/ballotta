@@ -35,7 +35,7 @@ def entry(cid, state="unofficial", verdict="leading", votes=None, leaders=None, 
             "sources": srcs, "missing": list(missing), "travis": tv, "canvasser": canvasser,
             "canvass": {"kind": kind, "by": by, "on": on, "done": done}, "official_numbers": official_numbers,
             "changed": changed, "corrected": corrected, "note": note, "who": who, "runoff_on": runoff_on, "recount": recount,
-            "write_ins": bool(write_ins), "needs": None}
+            "write_ins": bool(write_ins), "needs": None, "no_call": None}
 
 
 def E(cid, over=None, **kw):

@@ -144,7 +144,9 @@ what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release
   own style ("Jade Simmons"), like every other name.
 - **W68** A measure that needs two-thirds of the vote (seven road bonds, Tex. Const. art. III §52(b)), a line under its
   verdict: "Needs two-thirds of the vote to pass." Without it, "Failing" beside 63% For reads as a mistake.
-- **W69 (a question, no words yet)** Three cases show the numbers with **no verdict word** on purpose, and the ribbon
+- **W69 (Lane, Oct 21: one line for all)** The result says "No call yet" over "This one is decided at the canvass.";
+  the rail and At a glance say "No call yet · Unofficial". `results.json` gives the reason (`no_call`:
+  `two_majorities` or `rule_unsettled`), which the page doesn't word separately. The question was: three cases show the numbers with **no verdict word** on purpose, and the ribbon
   says nothing about why: Del Valle ISD District 9 (majority or plurality unsettled) and six refunding road bonds
   (majority or two-thirds unsettled), when the two readings disagree; and ESD 4's annexation (c205), whose outcome needs
   separate majorities that one total can't show, until ESD 4 canvasses. Should the ribbon say something like "No call

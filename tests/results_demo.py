@@ -89,7 +89,9 @@ def entry(cid, when):
                         "done": ("2026-12-07" if cv["kind"] == "state" else "2026-11-12") if local_done else None},
             "official_numbers": True, "changed": 1, "corrected": None, "note": None, "who": m.get("who"),
             "runoff_on": "2026-12-12" if v == "runoff" and local_done else None, "recount": None,
-            "write_ins": bool(wi), "needs": "two_thirds" if needs == "two_thirds" else None}
+            "write_ins": bool(wi), "needs": "two_thirds" if needs == "two_thirds" else None,
+            "no_call": (None if state == "official" or v != "none" or not total else "two_majorities" if m.get("outcome_from_canvass")
+                        else "rule_unsettled" if "unsure" in (m.get("majority"), needs) else None)}   # W69, as build_results says it
 
 
 def scene(when):

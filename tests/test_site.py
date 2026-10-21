@@ -5165,7 +5165,12 @@ def every_state_reads_in_at_a_glance_and_the_printout(b):
         ('c071', put('c071', {'needs': 'two_thirds'}, verdict='failing', votes=[180000, 120000]), None, 'Failing / Unofficial · 60.0% for · needs two-thirds'),
         ('c121', fx.scene('runoff'), '2026-12-14T09:00', 'Runoff held Dec 12 · result not shown here / Official · Nov 13'),
         ('c117', base, None, 'No result yet'),
+        ('c069', put('c069', {'no_call': 'rule_unsettled'}, verdict='none', votes=[1000, 900]), None, 'No call yet / Unofficial · canvass by Nov 17'),   # W69
     ]
+    ctx, pg = rs_page(b, {'body': put('c069', {'no_call': 'rule_unsettled'}, verdict='none', votes=[1000, 900])})
+    assert pg.inner_text('.dk-row[data-row="c069"] small').startswith('No call yet · Unofficial'), pg.inner_text('.dk-row[data-row="c069"] small')
+    r = rs_go(pg, 'c069'); assert 'No call yet' in r and 'This one is decided at the canvass.' in r, ('W69 (Lane, Oct 21)', r)
+    ctx.close()
     # #142: an official tie is no longer "too close to call"; a recount is neither won nor lost, and the rail says so; two
     # counts that round alike get a second decimal; a tie that goes to a runoff is What's next
     ctx, pg = rs_page(b, {'body': put('c069', state='recount', verdict='won', votes=[10010, 9995], done='2026-11-12', recount='https://example.com/recount')})
