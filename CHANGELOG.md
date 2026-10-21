@@ -16,6 +16,41 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.4.0] — 2026-10-21
+
+### Added
+- **After the election, your ballot becomes a record of how it did** (`docs/plans/2026-10-21-after-the-election.md`,
+  the design Lane approved Oct 20–21). Nothing changes before Nov 4: from Nov 4 (Austin time), once `results.json`
+  has results, the page turns to results:
+  - The menu is Results · At a glance · All Travis County results · Print your results.
+  - Each contest's paper is its result: whether it's official, the verdict, neutral bars, How Travis County voted, your
+    pick and your reason with it, "Your choice" as you marked it (read-only), and what you read before voting, folded.
+  - A band at the top: "Your ballot" (official so far), "Your N picks" (won or leading, didn't win or behind, too close
+    or not settled), "What's next", "Since you last looked", and "Where things stand", from election night to the
+    Legislature.
+  - The rail says "N of M official" and each contest's result in a few words, with Too close and My picks filters.
+  - At a glance is Contest · Result · Your pick · Your reason, with "Only contests I picked in".
+  - Print your results puts each contest's result beside your pick.
+  - All Travis County results is its own page, with the levels as its list, search and filters. It needs no address
+    (from the landing page's "or see all Travis County results", or ballotta.org/results/).
+  - The phone: the same, with the summary at the top of the list and What's next when a runoff is coming.
+  - New results arriving while you read keep your place, what you opened and your focus, and are announced politely.
+  - "No call yet" when the numbers are in but the result is decided at the canvass (W69).
+  - The words are the approved wording cells W1–W97, `docs/plans/2026-10-20-results-wording.md`.
+- **A locked demo at ballotta.org/demo/**, for trying the results pages with made-up names and results: three scenes
+  (Nov 4, Nov 13, Dec 8), password-locked (AES-GCM; the password is a GitHub secret), kept out of search, its own
+  storage. Built by the Pages workflow from `source/build_demo.py` and `source/demo_lock.mjs`.
+
+### Fixed
+- A several-seat race's winners are "elected" (the results rules said "won"); one bad county file no longer stops the
+  results run; and the page refuses any results entry the drawing code can't show (the cold audit, #134–#150,
+  `docs/audits/2026-10-21-results-cold-audit.md`).
+
+### Tests
+- The results tests follow the after-election layout; every state on the canvas's Pieces board is checked through At
+  a glance and the printout; the demo is checked in a browser; 97 results mutants, all killed. Before Nov 4 the page
+  reads and looks the same as 1.3.1 in every view, laptop and phone (compared word for word and pixel for pixel).
+
 ## [1.3.1] — 2026-10-20
 
 ### Fixed
