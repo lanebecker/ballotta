@@ -45,6 +45,9 @@ An entry:
   write_ins    bool: declared write-in candidates are listed in choices (W45)
   needs        null | two_thirds: a measure that needs two-thirds of the vote to pass (road bonds, Tex. Const. art.
                III §52(b); W68)
+  no_call      null | two_majorities | rule_unsettled: why votes are shown with no verdict (W69): an outcome that needs
+               separate majorities one total can't show (ESD 4's annexation), or a rule not yet confirmed whose two
+               readings disagree; settled at the canvass
 """
 import json, pathlib, re, sys
 
@@ -58,7 +61,7 @@ NOTES = {None, "district_not_confirmed", "annex_both", "annex_district_rejected"
 KINDS = {"local", "state", "legislature"}
 TOP = {"seq", "election", "withdrawn", "late_until", "contests"}
 ENTRY = {"state", "verdict", "leaders", "runoff", "choices", "sources", "missing", "travis", "canvasser", "canvass",
-         "official_numbers", "changed", "corrected", "note", "who", "runoff_on", "recount", "write_ins", "needs"}
+         "official_numbers", "changed", "corrected", "note", "who", "runoff_on", "recount", "write_ins", "needs", "no_call"}
 # The verdicts each state may carry: an unofficial count never says won, passed or elected (Lane, Oct 20: "Won" only
 # when official), and an official one never says leading.
 ALLOWED = {
@@ -205,6 +208,8 @@ def check(obj, key, prev=None):
             bad.append(where + "recount must be an https link or null")
         if e["needs"] not in (None, "two_thirds") or (e["needs"] and c["type"] != "measure"):
             bad.append(where + "needs is null, or two_thirds on a measure")
+        if e["no_call"] not in (None, "two_majorities", "rule_unsettled") or (e["no_call"] and (e["verdict"] != "none" or e["state"] in ("official", "recount", "counting"))):
+            bad.append(where + "no_call is null, or a reason on an unofficial result with no verdict")
         if (e["state"] == "recount") != bool(e["recount"]):
             bad.append(where + "recount state exactly when there's a recount link")
     if prev is not None and not bad:
