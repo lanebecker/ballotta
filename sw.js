@@ -28,9 +28,11 @@ self.addEventListener('fetch', (e) => {
       const kept = await caches.open(CACHE).then((c) => c.match(key));  // only its own copies
       if (!kept) return net;  // nothing kept: wait for the network
       const page = r.mode === 'navigate' && (kept.headers.get('content-type') || '').startsWith('text/html');  // never an image or the manifest, even opened directly
-      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : kept;
+      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept;
     }));
 });
+// A kept results.json is marked as one (the page says "Saved copy · may be out of date").
+const savedCopy = (res) => { const h = new Headers(res.headers); h.set('x-ballotta-copy', 'saved'); return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }); };
 // A page answered from the kept copy says so, and why, before any of its scripts run (Lane, B4): <html data-copy="offline">,
 // "slow" or "error". It marks the document's own opening tag, whatever attributes it has, so a template change can't quietly stop it (#75).
 const said = (res, why) => res.text().then((t) => { const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');

@@ -46,6 +46,12 @@ OFFLINE = True
 # STREETS_LIVE = True; next/ then goes back to sending people on (docs/plans/2026-10-19-street-map.md, Task 9).
 # Promoted on 2026-10-19 (Lane): the main page has it, and next/ sends people on.
 STREETS_LIVE = True
+# Results on your ballot (Lane, Oct 20; docs/plans/2026-10-20-results.md): from Nov 4 (Austin time) the page reads
+# results.json, published beside it, and shows each contest's result on the ballot, in At a glance, and in "All Travis
+# County results" (results/ links there). The code is marked /*RESULTS*/ ... /*/RESULTS*/ and <!--RESULTS--> ...
+# <!--/RESULTS-->; False removes every marked block (the code rollback, released like any change). To hide results
+# without a release, publish results.json with "withdrawn": true (the kill switch; source/check_results.py).
+RESULTS_LIVE = True
 
 
 def marks(tag):
@@ -92,6 +98,10 @@ def strip_phone(html):
 
 def strip_streets(html):
     return strip_marked(html, 'STREETS')
+
+
+def strip_results(html):
+    return strip_marked(html, 'RESULTS')
 
 
 # ---- Content-Security-Policy (#36). Only the page's own inline scripts (by hash) and files from this site run; data
@@ -154,12 +164,26 @@ def sw_js(preview):
         keep = "['./', 'picks/']"           # and a hand-off page kept before is dropped, so it is never shown for the preview (Oct 19, Pass 2)
         js = js.replace(STALE_NEXT[0], STALE_NEXT[1], 1)
         assert STALE_NEXT[1] in js
+    if RESULTS_LIVE:   # a kept results.json says it's a kept copy (W14): the page then labels its results "Saved copy"
+        js = js.replace(SAVED_RESULTS[0], SAVED_RESULTS[1], 1)
+        assert SAVED_RESULTS[1] in js
+        js = js.replace(SAVED_RESULTS_FN[0], SAVED_RESULTS_FN[1], 1)
     return js.replace("'ballotta-1'", "'" + cache_prefix(preview) + "1'").replace("PREFIX", cache_prefix(preview)).replace("KEEP.map", keep + ".map")
 
 
 # While a preview is at next/, the main copy's install also deletes a kept next/ (the old hand-off page) before keeping the rest.
 STALE_NEXT = ("e.waitUntil(caches.open(CACHE).then((c) => Promise.all(",
               "e.waitUntil(caches.open(CACHE).then((c) => c.delete(new URL('next/', location.href).href).catch(() => {}).then(() => c)).then((c) => Promise.all(")
+
+
+# Results (Lane, Oct 20): when the offline copy answers for results.json (offline, slow, or a server error), its answer
+# carries x-ballotta-copy: saved, so the page can say the results it shows may be out of date. Nothing else changes.
+SAVED_RESULTS = ("      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : kept;\n",
+                 "      return page ? said(kept.clone(), bad ? 'error' : first).catch(() => kept) : u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept;\n")
+SAVED_RESULTS_FN = ("// A page answered from the kept copy says so,",
+                    "// A kept results.json is marked as one (the page says \"Saved copy · may be out of date\").\n"
+                    "const savedCopy = (res) => { const h = new Headers(res.headers); h.set('x-ballotta-copy', 'saved'); return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }); };\n"
+                    "// A page answered from the kept copy says so,")
 
 
 def sw_off_js(preview):
@@ -274,6 +298,24 @@ def picks_page():
             '<script>' + PICKS_JS + '</script>\n</body></html>\n')
 
 
+# ---- All Travis County results (Lane, Oct 20). ballotta.org/results/ is a link that opens the page's "All Travis County
+# results" view: this page hands any visitor on to ../?results (a query, never a #fragment, which the page keeps for
+# picks), replacing its own history entry. No tracker here; the page itself counts nothing for the query.
+RESULTS_JS = "location.replace(new URL('../', location.href).href + '?results');\n"
+RESULTS_TITLE = "Travis County results · Ballotta"
+
+
+def results_page():
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src ' + sha(RESULTS_JS)
+            + '; base-uri \'none\'; form-action \'none\'">\n'
+            '<title>' + RESULTS_TITLE + '</title><link rel="canonical" href="' + BASE_URL + '?results"></head>\n'
+            '<body>\n'
+            '<p>Opening <a href="../?results">all Travis County results on ballotta.org</a>…</p>\n'
+            '<script>' + RESULTS_JS + '</script>\n</body></html>\n')
+
+
 # next/manifest.webmanifest is left as it is (a preview, the street map's since Oct 19, links it again while it is up;
 # it installs as "Ballotta (preview)"): once no page links it, nothing can install from it, and a Home Screen
 # app installed from the preview opens next/, which sends it on. Rewriting its start_url or scope could merge the two
@@ -290,6 +332,8 @@ def outputs(preview):
            # What the live site runs (ballotta.org/version.json; the README's badge reads it). VERSION is the one source.
            "version.json": json.dumps({"version": check_release.version(ROOT)}) + "\n",
            "picks/index.html": picks_page()}   # where Share my picks links go: their own card (Lane, Oct 18)
+    if RESULTS_LIVE:
+        out["results/index.html"] = results_page()   # a link to All Travis County results (Lane, Oct 20)
     if PHONE_LIVE:
         out.update({"manifest.webmanifest": manifest(False), "sw.js": sw_js(False) if OFFLINE else sw_off_js(False)})
         if STREETS_LIVE:   # nothing in preview: next/ sends people on, and its worker removes itself
@@ -328,15 +372,19 @@ def census_page():
             '<title>Census address lookup</title></head><body>\n<script>' + CENSUS_JS + '</script>\n</body></html>\n')
 
 
-def build(preview=False, desk=None, phone=None, streets=None):
+def build(preview=False, desk=None, phone=None, streets=None, results=None, data_hook=None, hook=None):
     """desk: include the laptop layout (default: on for the preview, or once DESK_LIVE). phone: include the phone layout
     (default: on for the preview, or once PHONE_LIVE). The laptop-parity test builds with and without it. streets: the
-    street map (default: on for the preview, or once STREETS_LIVE; never without the laptop layout, which draws it)."""
+    street map (default: on for the preview, or once STREETS_LIVE; never without the laptop layout, which draws it).
+    data_hook(data) -> data and hook(html) -> html: the demo's changes (source/build_demo.py), to the page's data before it
+    is written in and to the finished page before its Content-Security-Policy is worked out, so the policy covers them."""
     desk = desk if desk is not None else (preview or DESK_LIVE)
     phone = phone if phone is not None else (preview or PHONE_LIVE)
     streets = streets if streets is not None else bool((preview or STREETS_LIVE) and desk)
+    results = results if results is not None else bool(RESULTS_LIVE and desk and phone)
     assert desk or not phone, "the phone layout is built on the laptop layout's code"
     assert desk or not streets, "the street map is drawn by the laptop layout's code"
+    assert (desk and phone) or not results, "results are drawn by the laptop and phone layouts' code"
     key = json.load(open(HERE / "answer_key.json", encoding="utf-8"))
     rules = json.load(open(HERE / "rules.json"))
     tlc = json.load(open(HERE / "tlc_precincts.json"))
@@ -350,13 +398,16 @@ def build(preview=False, desk=None, phone=None, streets=None):
     bad = [u for u in links if u and not re.match(r"https?://", u)]
     if bad:
         sys.exit(f"learn.json has links that are not http(s): {bad[:5]}")
-    data = script_json({"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites,
-                        "version": check_release.version(ROOT)})   # a page left open compares it with version.json (#105)
+    data = {"contests": contests, "rules": rules, "tlc": tlc, "learn": learn, "sites": sites,
+            "version": check_release.version(ROOT)}   # a page left open compares it with version.json (#105)
+    data = script_json(data_hook(data) if data_hook else data)
     html = (HERE / "template-travis.html").read_text(encoding="utf-8")
     if not desk:
         html = strip_desk(html)
     if not streets:   # before the phone layout's if/else below, never between them
         html = strip_streets(html)
+    if not results:   # likewise
+        html = strip_results(html)
     if not phone:
         html = strip_phone(html)
     else:
@@ -406,6 +457,8 @@ def build(preview=False, desk=None, phone=None, streets=None):
     if streets:
         html = html.replace("__STREETS__", script_json(json.load(open(HERE / "data/streets.json", encoding="utf-8")), compact=True), 1)
     html = html.replace("__DATA__", data, 1)
+    if hook:
+        html = hook(html)
     return html.replace("<!--CSP-->", csp_meta(html, phone), 1)  # last of all: it hashes the finished scripts (#36)
 
 
@@ -414,6 +467,8 @@ def build(preview=False, desk=None, phone=None, streets=None):
 STATIC = ("CNAME", "umami.js", "favicon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png",
           "og.png", "og-picks.png", "fonts/PublicSans-wght.woff2", "fonts/ZillaSlab-Bold.woff2", "fonts/ZillaSlab-SemiBold.woff2",
           "fonts/OFL.txt",                       # the fonts' license travels with them (#84)
+          "results.json",                        # the results the page reads from Nov 4 (source/check_results.py); exempt
+                                                 # from the bump rule (check_bumped.RESULTS), checked on its own instead
           "manifest.webmanifest",                # written only while the phone layout is live; a rollback keeps it for apps
           "next/manifest.webmanifest")           # the preview's: Home Screen apps added from it may still ask for it
 
@@ -464,6 +519,10 @@ def check():
         build(streets=False)          # the street map's rollback (after promotion), which runs every STREETS marker check
     except (AssertionError, SystemExit) as e:
         bad.append(f"the street map's rollback build fails: {e}")
+    try:
+        build(results=False)          # results' code rollback, which runs every RESULTS marker check
+    except (AssertionError, SystemExit) as e:
+        bad.append(f"the results rollback build fails: {e}")
     bad += [f"{f} is published but missing" for f in site_files() if not (ROOT / f).is_file()]
     return bad
 

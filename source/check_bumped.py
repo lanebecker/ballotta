@@ -17,6 +17,12 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'source'))
 
 
+# Results update once or twice a day from Nov 4 (Lane, Oct 20: exempt from the bump rule). results.json is published, but a
+# change to it alone isn't a release: source/check_results.py checks it instead, in both Pages jobs. Anything published
+# beside it still needs a bump.
+RESULTS = ("results.json",)
+
+
 def changed_since_tag(root=ROOT):
     """The published files that differ from tag v<VERSION>, or [] when that tag doesn't exist yet. Stops when VERSION is
     lower than a release already tagged (a bare `git revert` of a release: pages left open would never hear of it), or
@@ -36,7 +42,7 @@ def changed_since_tag(root=ROOT):
                  'A rollback is a forward release: see docs/RUNBOOK.md.')
     if git('rev-parse', '-q', '--verify', 'refs/tags/' + tag).returncode != 0:
         return tag, []
-    r = git('diff', '--name-only', tag, 'HEAD', '--', *[str(f) for f in build_site.site_files()])
+    r = git('diff', '--name-only', tag, 'HEAD', '--', *[str(f) for f in build_site.site_files() if f not in RESULTS])
     if r.returncode != 0:
         sys.exit(f'bump check: could not compare with {tag}: {r.stderr.strip()}')
     return tag, r.stdout.split()

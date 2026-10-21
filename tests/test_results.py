@@ -57,7 +57,7 @@ def vote_for_two_tests_the_cut_between_second_and_third():
     assert R.unofficial('candidate', V(('A', 5000), ('B', 4000), ('C', 3990)), seats=2)[0] == 'too_close'
     # a tie at the cut, official: state law decides
     assert R.official('candidate', V(('A', 5000), ('B', 4000), ('C', 4000)), seats=2) == ('tied', [], [])
-    assert R.official('candidate', V(('A', 5000), ('B', 4000), ('C', 3999)), seats=2) == ('won', ['A', 'B'], [])
+    assert R.official('candidate', V(('A', 5000), ('B', 4000), ('C', 3999)), seats=2) == ('elected', ['A', 'B'], [])   # several winners: elected (#135)
 
 @test
 def unopposed_only_without_a_declared_write_in():
@@ -69,7 +69,7 @@ def unopposed_only_without_a_declared_write_in():
     assert R.official('candidate', V(('A', 9000), ('W', 300)), write_ins=('W',)) == ('won', ['A'], [])
     # two seats, one candidate, one declared write-in: both can be elected; no index past the end
     assert R.unofficial('candidate', V(('A', 9000), ('W', 30)), seats=2, write_ins=('W',)) == ('leading', ['A', 'W'], [])
-    assert R.official('candidate', V(('A', 9000), ('W', 0)), seats=2, write_ins=('W',)) == ('won', ['A'], [])
+    assert R.official('candidate', V(('A', 9000), ('W', 0)), seats=2, write_ins=('W',)) == ('elected', ['A'], [])   # a several-seat race, one filled (#135)
 
 @test
 def measures_are_symmetric_around_half():
@@ -95,7 +95,7 @@ def road_bonds_need_two_thirds():
 @test
 def an_unsettled_threshold_gives_a_verdict_only_where_both_agree():
     u = lambda f, n=10000: R.unofficial('measure', V(('FOR', f), ('AGAINST', n - f)), needs='unsure')[0]
-    assert (u(7000), u(6000), u(4000)) == ('passing', 'too_close', 'failing')
+    assert (u(7000), u(6000), u(4000)) == ('passing', 'none', 'failing'), 'no call where they disagree (W69), not "too close"'
     o = lambda f, n=10000: R.official('measure', V(('FOR', f), ('AGAINST', n - f)), needs='unsure')[0]
     assert (o(7000), o(4000)) == ('passed', 'failed')
     try: o(6000); raise AssertionError('canvassed at 60% with the threshold unsettled was decided')
@@ -476,12 +476,34 @@ def an_outcome_one_total_cant_show_waits_for_the_canvass():
     try:
         mp = one_map(c205=M('1', canvasser='esd-4', outcome_from_canvass=True))
         e = B.build(res=res, mp=mp)[0]['contests']['c205']
-        assert (e['state'], e['verdict']) == ('unofficial', 'none'), '90% for, and still no call: two majorities, one total'
+        assert (e['state'], e['verdict'], e['no_call']) == ('unofficial', 'none', 'two_majorities'), '90% for, and still no call: two majorities, one total'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}}))
         try: B.build(res=res, mp=mp); raise AssertionError('canvassed without its outcome entered')
         except B.Problem as x: assert 'outcomes' in str(x), x
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}, 'outcomes': {'c205': 'failed'}}))
         assert B.build(res=res, mp=mp)[0]['contests']['c205']['verdict'] == 'failed', "the canvass's outcome, not the total's"
+    finally: shutil.rmtree(d)
+
+@test
+def an_unsettled_rule_says_why_there_is_no_call():
+    d, res = scratch_with([clarity({'1': ('Refunding road bonds', FA(600, 400)), '2': ('Road bonds', FA(700, 300))})])
+    try:
+        mp = one_map(c153=M('1', needs='unsure'), c150=M('2', needs='unsure'))
+        out, _ = B.build(res=res, mp=mp)
+        assert (out['contests']['c153']['verdict'], out['contests']['c153']['no_call']) == ('none', 'rule_unsettled'), '60%: a majority yes, two-thirds no'
+        assert (out['contests']['c150']['verdict'], out['contests']['c150']['no_call']) == ('passing', None), '70%: both agree'
+    finally: shutil.rmtree(d)
+
+@test
+def a_county_confirmed_absent_leaves_no_travis_breakdown():
+    d, res = scratch_with([clarity({'1': ('District 9', [('Rich Heyman', 600), ('Katie Kam', 300), ('Zohaib “Zo” Qadri', 50), ('Dave Thadani', 30), ('Kai Huang', 20)])})])
+    try:
+        m = M('1', canvasser='eastwood-mud', majority=True); m['electorate'] = ['travis', 'williamson', 'hays']; m['keys'] = {'travis': '1', 'williamson': None, 'hays': None}
+        e = B.build(res=res, mp=one_map(c070=m))[0]['contests']['c070']
+        assert e['state'] == 'partial' and e['travis'] is not None, 'before Nov 4 mapping: possible counties are missing'
+        m['keys'].update(williamson='absent', hays='absent')
+        e = B.build(res=res, mp=one_map(c070=m))[0]['contests']['c070']
+        assert e['state'] == 'unofficial' and e['travis'] is None and e['missing'] == [], 'decided in Travis alone: no breakdown'
     finally: shutil.rmtree(d)
 
 @test
@@ -539,6 +561,15 @@ def the_fetcher_files_what_it_gets_and_skips_what_fails():
         fetch, _ = net({sos: fx('sos-53815-travis.json'), 'https://wc.example/results': bad})
         out = FR.fetch_all(META, res=d, fetch=fetch)
         assert out[1][0] == 'williamson' and out[1][1] is None and 'disagree' in out[1][2], out
+        # a file that breaks its parser any other way (an HTML not-found page served as Hays's PDF; broken JSON from the
+        # state): that source's error, and the others still filed (#137)
+        d2 = pathlib.Path(tempfile.mkdtemp())
+        try:
+            fetch, _ = net({sos: b'{"not json', 'https://wc.example/results': fx('williamson-2025-11.html'),
+                            META['fetch']['hays'][0]: b'<html><body>Not Found</body></html>'})
+            out = FR.fetch_all(META, res=d2, fetch=fetch)
+            assert [(s, bool(p), bool(e)) for s, p, e in out] == [('sos', False, True), ('williamson', True, False), ('hays', False, True)], out
+        finally: shutil.rmtree(d2)
     finally: shutil.rmtree(d)
 
 

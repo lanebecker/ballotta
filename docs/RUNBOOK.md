@@ -142,9 +142,14 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 3. The locked demo at **ballotta.org/demo/** (made-up names and results, for trying the results pages before they're
    real). To turn it on: Settings → Secrets and variables → Actions → New repository secret, name `DEMO_PASSWORD`,
    value a long password (four or five random words); then Actions → Pages → Run workflow. Every deploy after that
-   rebuilds it from the results branch (`results-build`, or `main` once that's gone). To change the password, update
+   rebuilds it from the results branch (`results-build`, or `main` once that's gone). After 1.4.0, `results-build`
+   carries Phase 4 (the runoff), so the demo previews it; delete the branch once Phase 4 is merged. To change the password, update
    the secret and run Pages again. To take the demo down, delete the secret and run Pages: the next deploy has no
-   /demo/. Nothing about it is committed, and if it fails, the site deploys without it.
+   /demo/. Nothing about it is committed, and if it fails, the site deploys without it. Its scenes: Nov 4 (the morning
+   after), Nov 13 (local canvasses done), Dec 8 (state canvass done). It keeps everything under `demo:ballotta.*` keys,
+   so nothing done in the demo (Clear everything included) touches the real page's picks on the same browser.
+   **Once nothing more is coming on `results-build`**, delete that branch (or the demo keeps building from it and goes
+   stale, showing "A newer Ballotta is available").
 
 ## Election night, Nov 3 (after 7 pm)
 
@@ -153,7 +158,17 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
    `meta.sos_time_zone` to `"UTC"` in `source/results_map.json`. Done: posted times on the PR read as Austin evening.
 4. **Where the counties post:** put Williamson's Nov 3 results page address in `meta.fetch.williamson` and Hays's
    cumulative PDF addresses in `meta.fetch.hays` (both unofficial and, later, official). Done: the next run's log says
-   `williamson: filed …` and `hays: filed …`.
+   `williamson: filed …` and `hays: filed …`. Where to look (prepared Oct 21 from past elections; confirm each that
+   night, since the names can change):
+   - **Hays** posts PDFs under one folder per election. Nov 4, 2025's were
+     `https://www.egovlink.com/public_documents300/hayscounty/published_documents/departments/elections/results/2025/1104%20General/Cumulative%20Results%20Unofficial.pdf`
+     and, after its canvass, `…/Cumulative%20Results%2020251104%20Official.pdf`. So expect
+     `…/results/2026/1103%20General/Cumulative%20Results%20Unofficial.pdf` now and
+     `…/Cumulative%20Results%2020261103%20Official.pdf` later. Its May 2026 runoff used a different name
+     (`Cumulative%20Results%20-%2020260526%20Dem%20unofficial.pdf`), so check the folder's listing on hayscountytx.gov's
+     Elections page if the expected one 404s.
+   - **Williamson** posts one results page on livevoterturnout.com, linked from wilcotx.gov → Elections → Election
+     Results on the night. Its address includes an election number that isn't known until then; copy it from that link.
 
 ## Nov 4 morning: the first day
 

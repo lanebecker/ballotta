@@ -168,7 +168,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
             sources.append([rep["label"], rep["posted"]])
             if done and rep["posted"][:10] < done:
                 official_numbers = False                     # a county's file is from before the canvass
-            if county == "travis" and len(m["electorate"]) > 1:
+            if county == "travis" and sum(1 for k in m["electorate"] if m["keys"].get(k) != "absent") > 1:
                 tt = sum(v for _, v in rows[: len(names)])
                 travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]]
         if not any_county:
@@ -199,6 +199,12 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
             verdict, leaders, runoff = R.unofficial(kind, rows, n, m.get("majority", False), slack, write_ins, cid, needs)
     except ValueError as e:
         raise Problem(f"{where}: {e} (source/results_map.json)")
+    no_call = None                                   # W69: why votes show with no verdict
+    if not done and verdict == "none" and cast and slack is not None:
+        if m.get("outcome_from_canvass"):
+            no_call = "two_majorities"
+        elif "unsure" in (m.get("majority"), needs):
+            no_call = "rule_unsettled"
     if not done:
         state = "partial" if missing else ("counting" if cast == 0 and verdict != "unopposed" else "unofficial")
     return {
@@ -211,7 +217,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
         "official_numbers": official_numbers if done else True,
         "changed": 0, "corrected": (prev_entry or {}).get("corrected"), "note": None, "who": m.get("who"),
         "runoff_on": official.get("runoffs", {}).get(cid) if verdict in ("runoff", "may_runoff", "tied_runoff") else None,
-        "recount": recount, "write_ins": bool(write_ins), "needs": "two_thirds" if needs == "two_thirds" else None,
+        "recount": recount, "write_ins": bool(write_ins), "needs": "two_thirds" if needs == "two_thirds" else None, "no_call": no_call,
     }
 
 

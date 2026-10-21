@@ -529,6 +529,116 @@ def street_data_is_whole_and_in_view():
         assert street_problems(e), 'the check missed a damaged copy'
 
 
+
+# ---------------------------------------------------------------- results on your ballot (docs/plans/2026-10-20-results.md)
+def results_mods():
+    import importlib
+    import check_results
+    spec = importlib.util.spec_from_file_location('results_fixture', ROOT / 'tests/results_fixture.py')
+    fx = importlib.util.module_from_spec(spec); spec.loader.exec_module(fx)
+    return check_results, fx
+
+
+@test
+def the_published_results_file_and_every_scene_are_sound():
+    """results.json (the placeholder until Nov 4, then each day's) and the test scenes pass source/check_results.py."""
+    cr, fx = results_mods()
+    key = cr.answer_key()
+    assert cr.check(json.loads((ROOT / 'results.json').read_text(encoding='utf-8')), key) == []
+    for sc in ('mixed', 'official', 'withdrawn'):
+        assert cr.check(fx.scene(sc), key) == [], (sc, cr.check(fx.scene(sc), key))
+    r = subprocess.run([sys.executable, 'source/check_results.py'], cwd=str(ROOT), capture_output=True, text=True)
+    assert r.returncode == 0 and 'sound' in r.stdout, (r.stdout, r.stderr)
+
+
+@test
+def the_results_check_refuses_each_kind_of_wrong_file():
+    """Each rule the page relies on: refused on a copy that breaks it (the check is shown to catch each one)."""
+    import copy
+    cr, fx = results_mods()
+    key, good = cr.answer_key(), fx.scene('mixed')
+    def broken(f):
+        e = copy.deepcopy(good); f(e); return e
+    C = lambda e, cid: e['contests'][cid]
+    cases = {
+        'unofficial says won': lambda e: C(e, 'c071').update(verdict='passed'),
+        'official says leading': lambda e: C(e, 'c069').update(state='official', verdict='leading', leaders=['Selena Xie'], canvass={'kind': 'local', 'by': '2026-11-17', 'on': None, 'done': '2026-11-12'}),
+        'a leader who is not a choice': lambda e: C(e, 'c113').update(leaders=['Someone Else', 'Sarah Ponder']),
+        'choices out of ballot order': lambda e: C(e, 'c069')['choices'].reverse(),
+        'a party suffix in a name': lambda e: C(e, 'c001')['choices'][0].__setitem__(0, 'Ken Paxton (REP)'),
+        'a write-in before the ballot choices': lambda e: C(e, 'c001')['choices'].insert(0, C(e, 'c001')['choices'].pop()),
+        'write_ins flag wrong': lambda e: C(e, 'c001').update(write_ins=False),
+        'a measure with a write-in': lambda e: C(e, 'c071')['choices'].append(['Somebody', 5, 0.0, True]),
+        'partial without a missing county': lambda e: C(e, 'c072').update(missing=[]),
+        'a missing county without partial': lambda e: C(e, 'c071').update(missing=['Hays County']),
+        'zero votes name a verdict': lambda e: C(e, 'c117').update(state='unofficial', verdict='too_close'),
+        'counting with votes': lambda e: C(e, 'c117')['choices'][0].__setitem__(1, 3),
+        'a percent over 100': lambda e: C(e, 'c071')['choices'][0].__setitem__(2, 101),
+        'a posted time without a time': lambda e: C(e, 'c071')['sources'][0].__setitem__(1, '2026-11-04'),
+        'state canvass outside its window': lambda e: C(e, 'c001').update(state='official', verdict='tied', canvass={'kind': 'state', 'by': '2026-12-07', 'on': None, 'done': '2026-11-20'}),
+        'the Legislature before it meets': lambda e: C(e, 'c006').update(state='official', verdict='tied', canvass={'kind': 'legislature', 'by': None, 'on': None, 'done': '2026-12-01'}),
+        'official numbers flag on an unofficial result': lambda e: C(e, 'c071').update(official_numbers=False),
+        'changed after the file': lambda e: C(e, 'c071').update(changed=99),
+        'a contest not on Travis ballots': lambda e: e['contests'].__setitem__('c999', C(e, 'c071')),
+        'a recount link that is not https': lambda e: C(e, 'c071').update(recount='http://example.com'),
+        'a race said to pass': lambda e: C(e, 'c069').update(verdict='passing'),
+        'withdrawn not a boolean': lambda e: e.update(withdrawn='no'),
+        'an extra key': lambda e: C(e, 'c071').update(extra=1),
+        'runoff names one': lambda e: C(e, 'c121').update(verdict='runoff', runoff=['Cheryl Bradley']),
+        'won names two (#135)': lambda e: C(e, 'c113').update(state='official', verdict='won', leaders=['Sarah Ponder', 'Robert Johnson'], canvass={'kind': 'local', 'by': '2026-11-17', 'on': None, 'done': '2026-11-12'}),
+    }
+    missed = [n for n, f in cases.items() if not cr.check(broken(f), key)]
+    assert not missed, ('the check missed', missed)
+    prev = fx.scene('mixed')
+    same = copy.deepcopy(prev); same['seq'] += 1
+    assert cr.check(same, key, prev), 'seq went up with nothing changed'
+    up = copy.deepcopy(prev); up['contests']['c071']['choices'][0][1] += 10; up['contests']['c071']['choices'][0][2] = 60.0
+    assert cr.check(up, key, prev), 'a change without seq + 1'
+    up['seq'] = prev['seq'] + 1
+    assert cr.check(up, key, prev) == [], cr.check(up, key, prev)
+    back = copy.deepcopy(up); back['contests']['c071']['sources'][0][1] = '2026-11-03T20:00'
+    assert cr.check(back, key, up), 'a posted time went backwards'
+    back['contests']['c071']['corrected'] = '2026-11-05'; back['seq'] = up['seq'] + 1
+    assert cr.check(back, key, up) == [], ('a correction may go back', cr.check(back, key, up))
+
+
+@test
+def results_alone_need_no_new_version():
+    """Lane, Oct 20: results.json is exempt from the bump rule; anything published beside it still needs a bump."""
+    import shutil
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d) / 'r'
+        shutil.copytree(ROOT, d, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pdf', '.mutate-lock', '*.mutate-tmp', '_site'))
+        git = lambda *a: subprocess.run(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', *a], cwd=str(d), capture_output=True, text=True, check=True)
+        run = lambda: subprocess.run([sys.executable, 'source/check_bumped.py'], cwd=str(d), capture_output=True, text=True)
+        git('init', '-q'); git('add', '-A'); git('commit', '-qm', 'base'); git('tag', 'v' + (d / 'VERSION').read_text().strip())
+        bump = lambda: (d / 'results.json').write_text(re.sub(r'"seq":(\d+)', lambda m: '"seq":' + str(int(m.group(1)) + 1), (d / 'results.json').read_text(), count=1))   # whatever seq the file is at (the Results workflow has run)
+        bump(); git('commit', '-qam', 'results')
+        r = run(); assert r.returncode == 0, ('a results update alone needed a bump', r.stdout, r.stderr)
+        (d / 'index.html').write_text((d / 'index.html').read_text(encoding='utf-8').replace('<title>', '<title> ', 1), encoding='utf-8')
+        bump(); git('commit', '-qam', 'both')
+        r = run(); assert r.returncode != 0 and 'index.html' in r.stdout + r.stderr and 'results.json' not in r.stdout + r.stderr, ('the page beside it', r.stdout, r.stderr)
+
+
+@test
+def results_off_leaves_no_trace():
+    """RESULTS_LIVE = False (the code rollback): the page carries none of the results code, no results/ link page is
+    written, and the offline worker is exactly the one before results."""
+    import build_site as B
+    off = B.build(results=False)
+    assert 'rs-top' not in off and 'results.json' not in off and 'results_seen' not in off and '/*RESULTS*/' not in off
+    on = B.build()
+    assert ('rs-top' in on) == B.RESULTS_LIVE   # kept blocks keep their markers, as DESK and PHONE do
+    was = B.RESULTS_LIVE
+    try:
+        B.RESULTS_LIVE = False
+        assert 'results/index.html' not in B.outputs(False) and 'savedCopy' not in B.sw_js(False)
+    finally:
+        B.RESULTS_LIVE = was
+    if was:
+        assert 'results/index.html' in B.outputs(False) and B.sw_js(False).count("u.pathname.endsWith('/results.json') ? savedCopy(kept)") == 1
+
+
 if __name__ == '__main__':
     failed = 0
     for fn in TESTS:

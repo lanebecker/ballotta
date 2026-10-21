@@ -144,8 +144,106 @@ what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release
   own style ("Jade Simmons"), like every other name.
 - **W68** A measure that needs two-thirds of the vote (seven road bonds, Tex. Const. art. III §52(b)), a line under its
   verdict: "Needs two-thirds of the vote to pass." Without it, "Failing" beside 63% For reads as a mistake.
-- **W69 (a question, no words yet)** Three cases show the numbers with **no verdict word** on purpose, and the ribbon
+- **W69 (Lane, Oct 21: one line for all)** The result says "No call yet" over "This one is decided at the canvass.";
+  the rail and At a glance say "No call yet · Unofficial". `results.json` gives the reason (`no_call`:
+  `two_majorities` or `rule_unsettled`), which the page doesn't word separately. The question was: three cases show the numbers with **no verdict word** on purpose, and the ribbon
   says nothing about why: Del Valle ISD District 9 (majority or plurality unsettled) and six refunding road bonds
   (majority or two-thirds unsettled), when the two readings disagree; and ESD 4's annexation (c205), whose outcome needs
   separate majorities that one total can't show, until ESD 4 canvasses. Should the ribbon say something like "No call
   yet: this one is decided at the canvass"? (Each case is rare; ESD 4's is certain.)
+
+## After the election (Oct 21): words the build added, not on the canvas — for Lane
+
+The canvas (reviewed Oct 20–21) supplies most of the after-election words: the menu, "official results", "won or are
+leading", "didn’t win", "too close to call", "Where things stand" and its steps, "What’s next", "Your choice" (was "As you marked it"; Lane, Oct 21), "What
+you read before voting", "About this result", "Calling races", "Something look wrong? Tell us". These were new; **Lane
+approved all of them as built, Oct 21, 10:05 am** (asked one by one, each with alternatives):
+
+- **W71** Your picks, when some are unofficial and not leading: "are behind" (only those), "didn’t win or are behind"
+  (a mix). The canvas showed only "didn’t win", which would call an unofficial result too early.
+- **W72** Your picks that are neither won nor lost and not all too close (a runoff your pick is in, a race with no call
+  yet): "not settled yet".
+- **W73** No picks on this device: "Your picks" / "No picks on this device" / "Results are the same for everyone. Picks you
+  made here would show beside them."
+- **W74** What’s next, before any runoff is official but one is possible on your ballot: "A runoff is possible" / "If no
+  one wins a majority, the top two meet again in December." With nothing to come: "Nothing else on your ballot" /
+  "We’ll keep the results updated until each one is official."
+- **W75** Your ballot, all official: "Every result on your ballot is official".
+- **W76** Your reason, under your pick: "Your reason. Only you can see it." (The canvas had "Your reason, from Oct 24":
+  the page doesn't keep when a reason was written.)
+- **W77** Your choice (the read-only lines), with no pick: "No pick here on this device."; the rail's filters: "Too close", "My picks";
+  their empty states: "Nothing on your ballot is too close to call." / "No picks on this device."
+- **W78** About this result: "Made official Nov 12 by the Austin City Council." / "Unofficial until the Austin City
+  Council canvasses the vote."; Where the numbers come from: "<source>, posted <time>".
+- **W79** The phone's one line above the paper: "31 of 63 official · 6 of your 13 picks won or are leading", then
+  "Results updated <time>".
+- **W80** A rail row with no result: "No result yet" (or "Results paused"); a runoff row: "Runoff: Ortega and Price ·
+  Official" (surnames only, to fit).
+- **W81** On All Travis County results, a contest also on your ballot: "On your ballot · see your pick" (a link to it).
+- **FAQ** "Where do the numbers come from?": "Each county’s published results and the Texas Secretary of State. Every
+  result says which, and when its numbers were posted." (The canvas said "We link to them on every result"; the page
+  names each source and its time but doesn't link it, so Lane chose the accurate version.)
+
+## Phase 3 (Oct 21): At a glance and Print your results — approved by Lane as built, Oct 21
+
+At a glance follows the canvas's board ("Your ballot's results", Contest · Result · Your pick · Your reason, "Only
+contests I picked in", "No pick", "—", "Showing 14 of 63. Results read the same for everyone; your picks and reasons are
+only on this device."). These are the words the build added beyond the board:
+
+- **W82** At a glance, the Result column's second line, always built the same way: "Official · Nov 12" (the canvass
+  date); "Official · runoff Sat, Dec 12"; "Unofficial · canvass Nov 12" / "Unofficial · canvass by Nov 17" (a local
+  canvass); "Unofficial · state canvass Nov 21 – Dec 7"; "Unofficial · the Legislature, January"; a measure: "Official ·
+  58.0% for". Added: "· recount requested" (a recount), "· needs two-thirds" (a two-thirds measure). (The board showed
+  the canvass date on some unofficial rows and not others; the build shows it on every one.)
+- **W83** At a glance, a tie: "Tied" (W25 in full is too long for the column; the contest's page has it). Other ties
+  keep their wording ("Tied · goes to a runoff").
+- **W84** A pick skipped: "Skipped" (At a glance and the printout); a contest with no result: "No result yet" /
+  "Results paused".
+- **W85** Picks only, nothing to show: "No picks on this device."
+- **W86** The phone's At a glance, which has no column headings: "Your pick: …", "Your reason: …".
+- **W87** Print your results, on screen: "Print your results" / "Your ballot’s results" / "The results beside your
+  picks, on one page, as they stand now."; the button: "Print your results"; under it: "The printout has the results,
+  your picks and, if you choose, your reasons. Nothing else."
+- **W88** The printout: "My ballot’s results" / "Nov 3, 2026 · Results updated Nov 4, 8:41 am"; each contest's result
+  under its name ("Won: Grace Tran · Official · Nov 12"), the pick on the right ("—" for none); when paused: "Results are
+  paused while we check a problem with the latest numbers."; the footnote: "Your pick is on the right, the result under
+  each contest. Unofficial results can change until they’re canvassed. From ballotta.org; contests are in ballot order."
+- **Demo** A third scene, "Tue, Dec 8 · state canvass done": the state's races official, the Governor and Lt. Governor
+  still waiting on the Legislature.
+
+## The cold audit's fixes (Oct 21) — approved by Lane as built, Oct 21
+
+Words the audit fixes (#135–#150, `docs/audits/2026-10-21-results-cold-audit.md`) added or changed:
+
+- **W89** While results are paused: the rail's count and the phone's top bar read "Results paused" (not "0 of 11
+  official"), with no progress bar; on the ballot only "Too close" drops its number ("All 11" and "My picks 8" are
+  still true); on All Travis County results the filters are "All", "Too close", "Runoffs" with no numbers and no level
+  list; the phone's fold under the paper is "Calling races"; a printout says "Printed Nov 5, 9:02 am" where the update
+  time would be.
+- **W90** The summary's first card when none is official yet: "Still being counted or canvassed" (was "The rest are
+  still being counted or canvassed", which read oddly at 0 of 11).
+- **W91** A recount in the rail: "Won: Jeffery Bowen · Official · recount requested" (as W82 in At a glance).
+- **W92** A share that rounds to nothing: "<0.1%" (a write-in with 2,100 of millions), and two decimals when two
+  different counts would read the same ("50.04%" and "49.96%", not "50.0%" twice).
+- **W93** The printout's column labels: "Contest and result" / "Your pick".
+- **W94** The phone's list, when a runoff is coming: "What's next" / "Runoff · Sat, Dec 12" / the contest (as the
+  laptop's band).
+- **W95** Screen readers only: a move to a contest says "Contest 9 of 11: <title>. <the rail's result line>. <your pick
+  line>" (e.g. "Headed to a runoff … · Official. You skipped this race."), with "No pick here." in place of "No pick
+  yet."; a picked contest's rail row adds "· you picked here"; the paper is named "Your ballot’s results"; Print… says
+  "Print your results: print options, then the Print button."
+- **W96** Counting: "Your N picks" now counts each pick in a several-seat race (Sunset Valley's two picks are two), so
+  "1 of your 2 picks is leading" adds one to "won or are leading" and one to "behind", as the paper says. The rail's
+  "My picks" filter still counts contests (8), so the two can differ (9): say if you'd rather they match.
+- **W97** A recount, on the paper: "Your pick: Selena Xie" (W36, already approved) in place of "Your pick didn’t win.",
+  so the paper agrees with the summary, which counts a recount as not settled.
+- **Removed:** "Saved on this device" from the top of a results paper; the second "You skipped this race." under Your
+  choice; W8 ("Becomes official at the state canvass, Nov 21–Dec 7.") once W5 says it after late ballots.
+
+**Lane, Oct 21, 1:40 pm:** W82–W97 and the removals approved as built, asked one by one with alternatives. Also decided
+the same day:
+- "Share my picks" and "Clear my picks…" stay as they are after the election.
+- W59's ending is restored on All Travis County results: "Unofficial until each canvass. Why unofficial?", where the
+  last words open the canvass explainer.
+- The pick counts stay as built (W96).
+- What's next says "See the runoff" instead of "Get ready" until Phase 4's runoff pages exist.

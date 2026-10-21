@@ -22,6 +22,7 @@ BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_STREETS = '.dk-map .st-wat{' in (ROOT / PAGE).read_text(encoding='utf-8')   # the street map (next/ until STREETS_LIVE)
+HAS_RESULTS = 'id="rs-top"' in (ROOT / PAGE).read_text(encoding='utf-8')   # results on your ballot (RESULTS_LIVE, from 1.4.0)
 if not HAS_DESK and "location.replace(new URL('../'" in (ROOT / PAGE).read_text(encoding='utf-8'):   # promotion audit #5
     sys.exit(f'{PAGE} only sends people on to the main page now that the phone layout is live: test index.html')
 UMAMI_STUB = "window.__events=[];document.addEventListener('DOMContentLoaded',function(){window.umami={track:function(n,d){window.__events.push([n,d||{}]);}};},{once:true});"
@@ -1299,7 +1300,7 @@ def desk_help_menu_info_address_and_clear(b):
     pg.click('#dk-help'); pg.keyboard.press('Shift+Tab'); pg.keyboard.press('Escape')               # Escape from the button, menu open
     assert pg.is_hidden('#dk-menu'), 'Escape closes the menu from the Feedback & Info button too'
     pg.click('#dk-help')
-    for _ in range(6): pg.keyboard.press('Tab')                                                  # tab out of the menu
+    for _ in range(pg.locator('#dk-menu [role=menuitem]').count()): pg.keyboard.press('Tab')     # tab out of the menu, however many items it has
     pg.wait_for_selector('#dk-menu', state='hidden', timeout=2000)                              # leaving the menu with the keyboard closes it
     pg.click('#dk-help'); pg.click('[data-help="address"]')
     assert pg.is_visible('#start') and pg.is_visible('#dk-back') and pg.is_hidden('#dk-app')
@@ -2567,7 +2568,8 @@ def phone_menu_is_a_sheet(b):
     assert pg.get_attribute('#dk-help', 'aria-haspopup') == 'dialog' and pg.get_attribute('#dk-help', 'aria-controls') is None
     pg.click('#dk-help'); pg.wait_for_selector('#ph-menu[open]'); expect(pg.locator('#dk-menu')).to_be_hidden()
     got = pg.locator('#ph-mitems button b').all_inner_texts(); want = pg.locator('#dk-menu button b').all_text_contents()   # the laptop menu's own items
-    assert got == want[:4] + ['Add to your Home Screen'] + want[4:] and pg.locator('#ph-mitems hr').count() == 1, (got, want)
+    k = want.index('Change address') + 1                                                         # the phone adds Home Screen after Change address
+    assert got == want[:k] + ['Add to your Home Screen'] + want[k:] and pg.locator('#ph-mitems hr').count() == 1, (got, want)
     pg.locator('#ph-mitems button', has_text='How your privacy works').click()
     pg.wait_for_selector('#d-info[open]'); assert not pg.evaluate("document.getElementById('ph-menu').open")
     assert ['help_opened', {'item': 'privacy', 'layout': 'phone'}] in events(pg)
@@ -3086,7 +3088,7 @@ def laptop_unchanged_by_the_phone_code(b):
     # on the landing page and in each view. Both are built in memory from the template (as the phone-parity test does).
     m = build_module(); shots = {}
     for name, ph in (('_lp_plain.html', False), ('_lp_phone.html', True)):
-        html = m.build(phone=ph)
+        html = m.build(phone=ph, results=False)                                                 # results need the phone code, so leave them out of both
         for size in ({'width': 1440, 'height': 900}, {'width': 1024, 'height': 640}):
             ctx, pg = new_page(b, wide=True); ctx.route(f'**/{name}', (lambda h: lambda r: r.fulfill(status=200, content_type='text/html; charset=utf-8', body=h))(html))
             pg.set_viewport_size(size); pg.goto(f'http://127.0.0.1:{PORT}/{name}'); pg.wait_for_timeout(500)
@@ -4734,6 +4736,496 @@ def laptop_and_phone_why_box_grows_with_the_reason(b):
     assert sideways(pg) <= 0 and pg.errs == [], pg.errs
     ctx.close()
 
+# ---------------------------------------------------------------- results on your ballot (Lane, Oct 20; docs/plans/2026-10-20-results.md)
+# The page reads results.json from Nov 4, Austin time. Here it is served from tests/results_fixture.py's TEST DATA scenes,
+# only by this local server (never published). The ballot is a saved one, so no lookup is needed.
+RESULTS_TESTS = set()
+def results_test(fn): TESTS.append(fn); RESULTS_TESTS.add(fn.__name__); return fn
+def rs_fixtures():
+    spec = importlib.util.spec_from_file_location('results_fixture', ROOT / 'tests/results_fixture.py')
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m
+RS_BALLOT = {'pr': '142', 'b': [1, 6, 56, 69, 71, 72, 113, 117, 121, 124, 147], 'mode': 'exact', 'at': 0, 'pt': None, 'ln': []}
+RS_PICKS = {'c001': ['James Talarico'], 'c069': ['Selena Xie'], 'c071': ['AGAINST'], 'c072': ['FOR'], 'c113': ['Sarah Ponder', 'Charles Young'],
+            'c121': ['__skip'], 'c124': ['Jimmy Counihan'], 'c147': ['FOR'], 'c056': ['George Morales III']}
+def rs_when(s): return _dt.datetime.fromisoformat(s + '-06:00' if s >= '2026-11-01T02' else s + '-05:00')   # CST from Nov 1, 2 am
+def rs_page(b, serve, when='2026-11-05T09:00', phone=False, ballot=True, picks=True, url=None, sent=None):
+    """serve: {'body': str or dict, 'headers': {...}}, read at each request, so a test can change what the server says."""
+    ctx, pg = phone_page(b, sent=sent) if phone else new_page(b, sent=sent, wide=True)
+    if not phone:
+        errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.__dict__['errs'] = errs
+    asked = []; pg.__dict__['asked'] = asked
+    def answer(route):
+        asked.append(route.request.url)
+        body = serve['body']
+        route.fulfill(status=serve.get('status', 200), content_type='application/json', headers=serve.get('headers', {}),
+                      body=body if isinstance(body, str) else json.dumps(body))
+    ctx.route(re.compile(r'.*/results\.json(\?.*)?$'), answer)
+    t = rs_when(when)
+    if TODAY: pg.clock.set_system_time(t)
+    else: pg.clock.install(time=t)
+    pg.goto(BASE)
+    if ballot: pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify(b))", RS_BALLOT)
+    if picks: pg.evaluate("p => localStorage.setItem('ballotta.picks', JSON.stringify(p))", RS_PICKS)
+    pg.goto(url or BASE); pg.wait_for_timeout(600)
+    return ctx, pg
+def rs_go(pg, cid, phone=False):
+    if phone: pg.evaluate("id => desk.ph.go(id)", cid)
+    else: pg.click(f'.dk-row[data-row="{cid}"]')
+    pg.wait_for_timeout(100)
+    rib = pg.query_selector('#dk-paper .rs')
+    return rib.inner_text() if rib else ''
+
+@results_test
+def results_wait_for_nov_4(b):
+    # Before Nov 4 (Austin time) nothing changes: the page doesn't even ask for results.json; the landing card stays hidden.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-11-03T23:30')
+    assert pg.asked == [] and pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), (pg.asked,)
+    pg.click('.dk-row[data-row="c071"]'); assert pg.query_selector('#dk-paper .rs') is None
+    pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(300)
+    assert not pg.is_visible('#rs-or') and pg.inner_text('#go') == 'Show my ballot' and pg.asked == [] and pg.errs == [], (pg.asked, pg.errs)
+    ctx.close()
+
+@results_test
+def results_show_on_the_laptop_ballot(b):
+    fx = rs_fixtures(); sent = []
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, sent=sent)
+    top = pg.inner_text('#rs-top')
+    assert '0/11' in top and 'official results' in top and pg.inner_text('#dk-count') == '0 of 11 official', top
+    r = rs_go(pg, 'c071')
+    for w in ('Unofficial · TEST DATA (not real results), posted Nov 4, 8:41 am', 'Late mail, overseas and provisional ballots are still being counted.',
+              'Becomes official when the Austin City Council canvasses the vote, by Nov 17.', 'Passing', 'Your pick, Against, is behind.',
+              'HOW TRAVIS COUNTY VOTED', 'Travis County’s count only. The result above includes every county in this race.'):   # the heading is set in capitals
+        assert w in r, (w, r)
+    r = rs_go(pg, 'c069'); assert 'Too close to call' in r and 'Your pick: Selena Xie' in r and 'canvasses the vote on Nov 12.' in r and 'behind' not in r, r
+    r = rs_go(pg, 'c113'); assert 'Leading for 2 seats: Sarah Ponder, Robert Johnson' in r and '1 of your 2 picks is leading.' in r, r
+    r = rs_go(pg, 'c072'); assert 'Partial · Hays County’s count isn’t in yet' in r and 'Your pick, For, is behind.' in r, r
+    r = rs_go(pg, 'c117'); assert 'No votes reported yet' in r and 'Unofficial' not in r, r
+    r = rs_go(pg, 'c121'); assert 'May go to a runoff' in r and 'You skipped this race.' in r, r
+    r = rs_go(pg, 'c124'); assert 'Leading: Jimmy Counihan' in r and 'Your pick is leading.' in r and 'behind' not in r, r
+    r = rs_go(pg, 'c001')
+    assert 'Becomes official at the state canvass, Nov 21–Dec 7.' in r and 'Jade Simmons (write-in)' in r and 'Only votes for declared write-in candidates count.' in r, r
+    r = rs_go(pg, 'c006'); assert 'Becomes official when the Legislature canvasses the vote, after it meets Jan 12, 2027.' in r, r
+    # one neutral look: every bar the same color, no party words or marks in a ribbon
+    fills = set(pg.evaluate("[...document.querySelectorAll('#dk-paper .rs-bars:not(.rs-tv .rs-bars) .rs-tr i')].map(i => getComputedStyle(i).backgroundColor)"))
+    assert len(fills) == 1 and not re.search(r'Republican|Democratic|\(I\)|✓|✗', r), (fills, r)
+    # At a glance after the election (Phase 3): Contest · Result · Your pick · Your reason; the result says what happened,
+    # then whether it's official and when it will be
+    pg.click('#dk-views [data-view="glance"]')
+    heads = [x.inner_text() for x in pg.query_selector_all('.dk-tbl thead th')]
+    assert heads == ['CONTEST', 'RESULT', 'YOUR PICK', 'YOUR REASON'], heads
+    cells = [' / '.join(x.inner_text().split('\n')) for x in pg.query_selector_all('.rs-gl tr[data-tr] td:nth-child(2)')]
+    assert cells == ['Too close to call / Unofficial · state canvass Nov 21 – Dec 7', 'Too close to call / Unofficial · the Legislature, January',
+                     'Unopposed: George Morales III / Unofficial · canvass by Nov 17', 'Too close to call / Unofficial · canvass Nov 12',
+                     'Passing / Unofficial · 60.0% for', 'Failing / Unofficial · 39.1% for',
+                     'Leading for 2 seats: Sarah Ponder, Robert Johnson / Unofficial · canvass by Nov 17', 'No result yet',
+                     'May go to a runoff / Unofficial · canvass by Nov 17', 'Leading: Jimmy Counihan / Unofficial · canvass by Nov 17',
+                     'Failing / Unofficial · 21.1% for'], cells
+    assert all(x.get_attribute('colspan') == '4' for x in pg.query_selector_all('tr.dk-tg th'))
+    # nothing about the ballot is sent: one plain GET of the file, and only the bare event
+    assert [u for u in sent if 'results' in u] and all(u.endswith('/results.json') for u in sent if 'results' in u), [u for u in sent if 'results' in u]
+    assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'laptop'}]], events(pg)
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def results_show_on_the_phone_ballot(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, phone=True)
+    assert pg.is_visible('#rs-top .rs-compact') and pg.inner_text('#rs-top .rs-compact').startswith('0 of 11 official · 3 of your 9 picks won or are leading'), pg.inner_text('#rs-top')
+    assert not pg.is_visible('#rs-top .rs-sum') and pg.inner_text('#ph-count') == '0 of 11 official'
+    r = rs_go(pg, 'c113', phone=True); assert 'Leading for 2 seats' in r and '1 of your 2 picks is leading.' in r, r
+    assert sideways(pg) <= 0
+    r = rs_go(pg, 'c071', phone=True); assert 'Your pick, Against, is behind.' in r and sideways(pg) <= 0, r
+    pg.click('#ph-list'); sm = pg.inner_text('.dk-rail .rs-listsum')
+    assert sm.startswith('0/11') and 'YOUR 9 PICKS' in sm and 'won or are leading' in sm, sm   # the summary, small, at the top of the list
+    pg.click('#dk-views [data-view="all"]'); pg.wait_for_timeout(200)
+    assert pg.inner_text('#dk-paper h1') == 'All Travis County results' and sideways(pg) <= 0
+    assert 'Your pick' not in ''.join(x.inner_text() for x in pg.query_selector_all('#dk-paper .rs')), 'All Travis County results is nobody’s ballot'
+    assert pg.is_visible('#dk-paper [data-rs="go"]'), 'a contest on your ballot links to it'
+    assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'phone'}]], events(pg)
+    assert pg.errs == [], pg.errs
+    # #148: the results' small links are full-size targets on a phone
+    pg.evaluate("desk.openAll()"); pg.wait_for_timeout(200)
+    hs = pg.evaluate("[...document.querySelectorAll('#dk-paper .dk-link[data-rs]')].map(a => a.getBoundingClientRect().height)")
+    assert hs and min(hs) >= 44, hs
+    assert pg.inner_text('#ph-count').endswith(' official') and pg.inner_text('#ph-count') != '0 of 11 official', ('All Travis County results keeps its own count (#150)', pg.inner_text('#ph-count'))
+    assert not pg.is_visible('#ph-next'), 'no Next to a ballot step from All Travis County results (#150)'
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('withdrawn')}, phone=True)
+    rs_go(pg, 'c071', phone=True)
+    assert pg.inner_text('#ph-fold') == 'Calling races', ('paused: the fold named for what it holds (#145)', pg.inner_text('#ph-fold'))
+    ctx.close()
+    # #143: the phone's list says What's next when a runoff is coming, and takes you to it
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00', phone=True)
+    pg.click('#ph-list'); pg.wait_for_timeout(150)
+    nx = pg.inner_text('.dk-rail .rs-lnext')
+    assert 'WHAT’S NEXT' in nx and 'Runoff · Sat, Dec 12' in nx and 'Austin ISD Board of Trustees, District 1' in nx, nx
+    pg.click('.dk-rail .rs-lnext'); pg.wait_for_timeout(200)
+    assert pg.get_attribute('#ph-list', 'aria-expanded') == 'false' and 'A runoff on Saturday, Dec 12' in pg.inner_text('#dk-paper'), pg.get_attribute('#ph-list', 'aria-expanded')
+    ctx.close()
+
+@results_test
+def results_say_what_changed_since_you_last_looked(b):
+    fx = rs_fixtures(); serve = {'body': fx.scene('mixed')}
+    ctx, pg = rs_page(b, serve)
+    assert 'Since you last looked' not in pg.inner_text('#rs-top'), 'the first visit has nothing to compare'
+    serve['body'] = fx.scene('official'); pg.clock.set_system_time(rs_when('2026-12-03T09:00')); pg.reload(); pg.wait_for_timeout(600)
+    top = pg.inner_text('#rs-top')
+    assert '4/11' in top and 'Since you last looked: 4 results became official.' in top and pg.inner_text('#dk-count') == '4 of 11 official', top
+    r = rs_go(pg, 'c071'); assert r.startswith('Official · canvassed by the Austin City Council, Nov 12') and 'Passed' in r and 'Your pick, Against, didn’t win.' in r, r
+    r = rs_go(pg, 'c056'); assert 'Elected: George Morales III (unopposed)' in r and 'Your pick was elected.' in r, r
+    r = rs_go(pg, 'c001'); assert 'Official · canvassed by the state, Dec 2 · numbers are the last unofficial count' in r, r
+    r = rs_go(pg, 'c147'); assert 'Voters didn’t confirm this district (Proposition A failed), so it won’t be created.' in r, r
+    r = rs_go(pg, 'c069'); assert 'Late mail' not in r, ('after late_until, no late-ballot line', r)
+    pg.reload(); pg.wait_for_timeout(600)
+    assert 'Since you last looked' not in pg.inner_text('#rs-top'), 'nothing new the second time'
+    fixed = fx.scene('official'); fixed['seq'] = 6
+    e = fixed['contests']['c071']; e.update(verdict='failed', corrected='2026-12-03', changed=6)
+    e['choices'][0][1], e['choices'][1][1] = 120000, 180000; e['choices'][0][2], e['choices'][1][2] = 40.0, 60.0
+    serve['body'] = fixed; pg.reload(); pg.wait_for_timeout(600)
+    top = pg.inner_text('#rs-top')
+    assert 'Corrected since you last looked: 1 result. An earlier version on Ballotta was wrong.' in top, top
+    r = rs_go(pg, 'c071'); assert 'Corrected Dec 3: an earlier version on Ballotta was wrong.' in r and 'Your pick, Against, won.' in r, r
+    pg.clock.set_system_time(rs_when('2026-12-11T09:00')); pg.reload(); pg.wait_for_timeout(600)
+    assert 'Corrected Dec 3' not in rs_go(pg, 'c071'), 'the correction note fades after a week'
+    # #136: an old correction isn't news again; only races whose numbers moved count as new numbers
+    import copy
+    later = copy.deepcopy(fixed); later['seq'] = 7
+    later['contests']['c071']['choices'][0][1] += 50
+    serve['body'] = later; pg.reload(); pg.wait_for_timeout(600)
+    top = pg.inner_text('#rs-top')
+    assert 'Since you last looked: new numbers in 1 race.' in top and 'Corrected' not in top, top
+    # a new leader is a changed result, not just new numbers
+    lead = copy.deepcopy(later); lead['seq'] = 8
+    e = lead['contests']['c124']; other = [x[0] for x in e['choices'] if x[0] != e['leaders'][0]][0]
+    e['leaders'] = [other]; e['changed'] = 8
+    serve['body'] = lead; pg.reload(); pg.wait_for_timeout(600)
+    assert 'Since you last looked: 1 result changed.' in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')
+    # #140: results arriving while you read keep what you opened, your place and your focus, and say so politely
+    r = rs_go(pg, 'c071'); pg.click('#dk-paper details.rs-fold summary'); pg.focus('#dk-paper details.rs-fold summary')
+    pg.evaluate("window.scrollTo(0, 400)"); y0 = pg.evaluate("scrollY")
+    upd = copy.deepcopy(lead); upd['seq'] = 9; upd['contests']['c071']['sources'][0][1] = '2026-12-11T08:50'
+    serve['body'] = upd; pg.clock.run_for(11 * 60 * 1000); pg.evaluate("dispatchEvent(new Event('focus'))"); pg.wait_for_timeout(700)
+    assert pg.evaluate("document.querySelector('#dk-paper details.rs-fold').open"), 'the fold stays open'
+    assert pg.evaluate("document.activeElement.matches('#dk-paper details.rs-fold summary')"), pg.evaluate("document.activeElement.outerHTML.slice(0, 80)")
+    assert pg.evaluate("scrollY") == y0 and pg.inner_text('#dk-live').startswith('Results updated'), (pg.evaluate("scrollY"), y0, pg.inner_text('#dk-live'))
+    lead = upd
+    # results that arrive while the page is open are seen: the next visit doesn't announce them again
+    more = copy.deepcopy(lead); more['seq'] = 10; more['contests']['c069']['choices'][0][1] += 5
+    serve['body'] = more
+    pg.clock.run_for(11 * 60 * 1000); pg.evaluate("dispatchEvent(new Event('focus'))"); pg.wait_for_timeout(600)
+    pg.reload(); pg.wait_for_timeout(600)
+    assert 'Since you last looked' not in pg.inner_text('#rs-top'), ('seen while open, not news again', pg.inner_text('#rs-top'))
+    # a correction this device hasn't shown counts, whatever day it's dated (here before the last visit) (#136)
+    late = copy.deepcopy(more); late['seq'] += 1; late['contests']['c069']['corrected'] = '2026-11-20'; late['contests']['c069']['choices'][0][1] -= 3
+    serve['body'] = late; pg.reload(); pg.wait_for_timeout(600)
+    assert 'Corrected since you last looked: 1 result.' in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def withdrawn_results_hide_everything(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('withdrawn')})
+    assert pg.inner_text('#rs-top') == 'Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.'
+    assert rs_go(pg, 'c071') == '' and pg.locator('[data-rs="all"]:visible').count() == 0
+    assert pg.inner_text('#dk-count') == 'Results paused' and 'Too close' in [x.inner_text() for x in pg.query_selector_all('#dk-filt button')], ('no zeros that look like data (#145)', pg.inner_text('#dk-count'))
+    assert not pg.is_visible('.dk-rhd .dk-rbar'), 'no empty progress bar while paused'
+    assert 'Printed ' in pg.eval_on_selector('#crib', 'e => e.textContent'), 'a paused printout says when it was printed (#150)'
+    pg.evaluate("desk.openAll()"); pg.wait_for_timeout(150)
+    assert pg.inner_text('#dk-count') == 'Results paused' and [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All', 'Too close', 'Runoffs'] and not pg.query_selector('#dk-out [data-lv]'), 'All Travis County results while paused (#145)'
+    pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(150)
+    pg.click('#dk-views [data-view="glance"]')
+    assert {x.inner_text() for x in pg.query_selector_all('.rs-gl tr[data-tr] td:nth-child(2)')} == {'Results paused'}, 'no result in At a glance either'
+    pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(400)
+    assert not pg.is_visible('#rs-or') and pg.inner_text('.dk-tagline').startswith('Don’t wait') and pg.errs == [], pg.errs
+    ctx.close()
+    # a hurried pull that flips the switch but leaves every number in the file: still nothing shows
+    ctx, pg = rs_page(b, {'body': {**fx.scene('mixed'), 'withdrawn': True}})
+    assert pg.inner_text('#rs-top').startswith('Results are paused'), pg.inner_text('#rs-top')
+    assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c124') == '' and pg.locator('[data-rs="all"]:visible').count() == 0
+    pg.click('#dk-views [data-view="glance"]')
+    assert {x.inner_text() for x in pg.query_selector_all('.rs-gl tr[data-tr] td:nth-child(2)')} == {'Results paused'} and pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def a_bad_results_file_breaks_nothing(b):
+    # results.json is untrusted to the page: each malformed file shows nothing, and the ballot works as before; a single
+    # bad entry is left out, never the rest.
+    fx = rs_fixtures(); serve = {'body': 'not json'}
+    ctx, pg = rs_page(b, serve)
+    bad = ['not json', '[]', 'null', {'seq': -1}, dict(fx.scene('mixed'), election='2024-11-05'), dict(fx.scene('mixed'), contests=[]),
+           {'seq': 1, 'election': '2026-11-03', 'withdrawn': False, 'late_until': '2026-11-17', 'contests': {'c071': {'state': 'unofficial'}}}]
+    for body in bad:
+        serve['body'] = body; pg.reload(); pg.wait_for_timeout(400)
+        assert pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), body
+    pg.click('.dk-row[data-row="c147"]'); pg.click('#dk-paper .dk-line[data-pick="AGAINST"]')
+    assert cur(pg, 'c147') == ['AGAINST'], 'with no results the page accepts, picking still works'
+    one = fx.scene('mixed'); one['contests']['c071']['choices'].reverse()                    # out of ballot order
+    one['contests']['c069']['choices'][0][0] = '<img src=x onerror=alert(1)>'                  # not a ballot name
+    one['contests']['c113']['sources'][0][0] = '<b>Travis</b>'                                 # text, shown as text
+    serve['body'] = one; pg.reload(); pg.wait_for_timeout(500)
+    assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c069') == '', 'a bad entry is left out'
+    r = rs_go(pg, 'c113'); assert '<b>Travis</b>' in r and pg.query_selector('#dk-paper .rs b') is None, r
+    # #138: entries check_results would refuse, if that check were ever skipped: each left out, the rest shown, nothing thrown
+    two = fx.scene('mixed'); C = two['contests']
+    C['c071'].update(state='official', verdict='passed')                                       # official with no canvass day
+    C['c124']['leaders'] = []                                                                  # leading with no one leading
+    C['c069'].update(verdict='won', leaders=['Selena Xie'])                                    # won on an unofficial count
+    C['c113']['sources'][0][1] = '2026-13-04T08:41'                                            # month 13
+    C['constructor'] = C['c072']                                                               # not a contest
+    serve['body'] = two; pg.reload(); pg.wait_for_timeout(500)
+    for cid in ('c071', 'c124', 'c069', 'c113'):
+        assert rs_go(pg, cid) == '', ('left out', cid)
+    assert 'Failing' in rs_go(pg, 'c072'), 'the rest still shown'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def the_date_override_works_only_on_this_computer(b):
+    # ?today= is for Lane's local look at sample results (Task 6): on ballotta.org it does nothing.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-10-20T12:00', url=BASE + '?today=2026-11-06')
+    assert pg.asked and pg.is_visible('#rs-top'), 'on localhost the override opens the gate'
+    ctx.close()
+    ctx, pg = new_page(b, wide=True); asked = []
+    ctx.route('https://ballotta.org/**', lambda r: (asked.append(r.request.url) if r.request.url.split('?')[0].endswith('results.json') else None,
+              r.fulfill(path=str(ROOT / (urllib.parse.urlsplit(r.request.url).path.lstrip('/') or 'index.html')))))
+    if TODAY: pg.clock.set_system_time(rs_when('2026-10-20T12:00'))                              # the suite's own date may be past Nov 4
+    else: pg.clock.install(time=rs_when('2026-10-20T12:00'))
+    pg.goto('https://ballotta.org/index.html'); pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify(b))", RS_BALLOT)
+    pg.goto('https://ballotta.org/index.html?today=2026-11-06'); pg.wait_for_timeout(600)
+    assert asked == [] and not pg.is_visible('#rs-top'), ('ballotta.org ignores ?today=', asked)
+    ctx.close()
+
+@results_test
+def all_travis_county_results_need_no_address(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, ballot=False)
+    # the landing page after the election (the canvas, Oct 21)
+    assert pg.inner_text('.dk-tagline') == 'The results of the Nov 3, 2026 election, as they come in' and pg.inner_text('#start h1') == 'See how your ballot did'
+    assert pg.inner_text('#go') == 'Show my ballot’s results' and pg.is_visible('#rs-or'), pg.inner_text('#go')
+    assert 'Where things stand' in pg.inner_text('#rs-land-tl') and 'Are these results final?' in pg.inner_text('#dk-faq') and 'All 12,' in pg.inner_text('.dk-steps')
+    pg.click('#rs-or [data-rs="all"]'); pg.wait_for_timeout(200)
+    assert pg.evaluate("document.body.classList.contains('dk-app-on')") and pg.inner_text('#dk-paper h1') == 'All Travis County results'
+    assert pg.inner_text('.dk-rhd h2') == 'Travis County results' and pg.inner_text('#dk-count') == '12 contests · 0 official', pg.inner_text('#dk-count')
+    assert not pg.is_visible('.dk-foot'), 'no address: no picks to keep or print'
+    n = len(pg.query_selector_all('#dk-paper .rs-c')); assert n == 12, n
+    bond = pg.locator('#dk-paper .rs-c', has=pg.locator('.rs', has_text='Needs two-thirds of the vote to pass.'))   # W68, a road bond at 63%
+    assert bond.count() == 1 and 'Failing' in bond.inner_text() and 'Eastwood' in bond.inner_text(), bond.count()
+    assert 'Your pick' not in pg.inner_text('#dk-paper'), 'nobody’s ballot, even with picks saved here'
+    titles = lambda: [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs-c h4')]
+    pg.click('.dk-row[data-lv="City"]'); t = titles()
+    assert t and all('City of' in x for x in t), t
+    pg.click('.dk-row[data-lv="all"]'); pg.fill('#dk-q', 'Morales'); assert titles() == ['County Commissioner, Precinct 4'], titles()
+    pg.fill('#dk-q', 'commissioner'); assert titles() == ['County Commissioner, Precinct 4'], titles()   # a word only in the title
+    pg.fill('#dk-q', 'zzz'); assert 'Nothing matches' in pg.inner_text('#dk-paper')
+    pg.fill('#dk-q', ''); pg.click('#dk-filt [data-f="und"]'); assert len(titles()) == 4, titles()   # too close or may go to a runoff
+    pg.click('#dk-filt [data-f="all"]')
+    pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(200)   # no address: Results asks for one
+    assert not pg.evaluate("document.body.classList.contains('dk-app-on')") and pg.evaluate("document.activeElement.id") == 'street'
+    pg.goto(BASE.replace('index.html', 'results/')); pg.wait_for_timeout(800)
+    assert pg.url.endswith('/?results') and pg.inner_text('#dk-paper h1') == 'All Travis County results', pg.url
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def a_saved_copy_says_so(b):
+    # The offline copy marks a results.json it kept (x-ballotta-copy: saved, sw.js); the page says the results may be out of date.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed'), 'headers': {'x-ballotta-copy': 'saved'}})
+    assert 'Saved copy · may be out of date' in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')
+    ctx.close()
+    sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
+    assert "u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept" in sw and "h.set('x-ballotta-copy', 'saved')" in sw
+
+@results_test
+def the_canvass_is_explained_from_the_results_and_the_menu(b):
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    rs_go(pg, 'c071'); pg.click('#dk-notes [data-rs="why"]'); assert pg.evaluate("document.getElementById('rs-why').open")
+    assert 'Election night counts are unofficial.' in pg.inner_text('#rs-why') and 'It doesn’t call races' in pg.inner_text('#rs-why')
+    pg.keyboard.press('Escape')
+    pg.click('#dk-help'); pg.click('#dk-menu [data-help="results"]')
+    assert pg.evaluate("document.getElementById('rs-why').open") and events(pg)[-1] == ['help_opened', {'item': 'results', 'layout': 'laptop'}], events(pg)[-1:]
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def results_turn_the_ballot_into_a_record(b):
+    # After the election (docs/plans/2026-10-21-after-the-election.md): the menu, the rail, the summary and the timeline
+    # turn to results; the paper is the result, your pick and reason with it; the picks are read-only.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    pg.evaluate("w => localStorage.setItem('ballotta.whys', JSON.stringify(w))", {'c071': 'Parks need it'}); pg.reload(); pg.wait_for_timeout(600)
+    menu = [x.inner_text().strip() for x in pg.query_selector_all('#dk-views button') if x.is_visible()]
+    assert menu == ['Results', 'At a glance', 'All Travis County results', 'Print your results'], menu
+    cur0 = pg.get_attribute('.dk-row[aria-current="true"]', 'data-row')
+    assert pg.evaluate("getComputedStyle(document.querySelector('#dk-paper [data-act=prev]')).opacity") == '0.45', 'the results paper\'s Previous on contest 1 looks disabled (#150)'
+    assert cur0 == 'c001', ('a record opens at the top, not at the first contest without a pick (#146)', cur0)
+    assert pg.text_content('.dk-row[data-row="c071"] small').endswith(' · you picked here') and not pg.query_selector('.dk-row[data-row="c006"] .dk-vh'), 'picked rows say so to screen readers (#148)'
+    assert [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All 11', 'Too close 4', 'My picks 8']
+    assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', pg.inner_text('#dk-when')
+    pg.evaluate("desk.today(false)")   # what the midnight check runs on a page left open
+    assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', ('the results time past midnight (#141)', pg.inner_text('#dk-when'))
+    sm = pg.inner_text('#rs-top .rs-sum')
+    assert 'Still being counted or canvassed' in sm and 'The rest' not in sm, ('none official yet: not "the rest" (#150)', sm)
+    assert '0/11' in sm and 'YOUR 9 PICKS' in sm and 'A runoff is possible' in sm, sm   # Sunset Valley's two picks count as two (#144)
+    assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['3', '4', '2'], 'won or leading, behind (one of the two Sunset Valley picks), too close'
+    other = pg.evaluate("() => optionsOf(BYID['c124']).find(x => x !== 'Jimmy Counihan')")   # a one-seat pick that isn't leading
+    pg.evaluate("o => { const p = JSON.parse(localStorage.getItem('ballotta.picks')); p.c124 = [o]; localStorage.setItem('ballotta.picks', JSON.stringify(p)); }", other)
+    pg.reload(); pg.wait_for_timeout(600)
+    assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['2', '5', '2'], 'a pick behind in a leading race counts as behind'
+    pg.evaluate("p => localStorage.setItem('ballotta.picks', JSON.stringify(p))", RS_PICKS); pg.reload(); pg.wait_for_timeout(600)
+    assert pg.inner_text('#rs-top .rs-tl li.now b') == 'Late ballots and local canvasses'
+    assert pg.inner_text('.dk-row[data-row="c071"] small').startswith('Passing · Unofficial')
+    pg.click('#dk-filt [data-f="und"]')
+    assert [x.get_attribute('data-row') for x in pg.query_selector_all('.dk-row')] == ['c001', 'c006', 'c069', 'c121']
+    pg.click('#dk-filt [data-f="all"]')
+    r = rs_go(pg, 'c071')
+    assert 'Your pick, Against, is behind.' in r and 'Parks need it' in r and 'Your reason. Only you can see it.' in r, r
+    assert pg.query_selector('#dk-paper [data-pick]') is None and pg.query_selector('#dk-w') is None, 'read-only after the election'
+    assert pg.inner_text('#dk-paper .dk-ro .dk-line[data-on="true"]').startswith('Against')
+    pg.focus('#dk-paper'); pg.keyboard.press('1'); pg.keyboard.press('s')
+    assert cur(pg, 'c071') == ['AGAINST'], 'the picking keys do nothing after the election'
+    notes = pg.inner_text('#dk-notes')
+    assert 'ABOUT THIS RESULT' in notes and 'CALLING RACES' in notes and 'TEST DATA (not real results), posted Nov 4, 8:41 am' in notes, notes
+    assert pg.inner_text('#dk-next').startswith('Next: '), pg.inner_text('#dk-next')
+    pg.click('#dk-next'); pg.wait_for_timeout(100)
+    assert pg.get_attribute('.dk-row[aria-current="true"]', 'data-row') == 'c072', 'Next goes in ballot order'
+    pg.focus('#dk-paper'); pg.keyboard.press('j'); pg.wait_for_timeout(150)
+    live = pg.text_content('#dk-live')
+    assert live.startswith('Contest 7 of 11: City of Sunset Valley, Two City Council Member Seats. Leading for 2 seats: Sarah Ponder, Robert Johnson · Unofficial. 1 of your 2 picks is leading.'), ('a move says the result, then the pick (#148)', live)
+    assert pg.get_attribute('#dk-paper', 'aria-label') == 'Your ballot’s results'
+    pg.set_viewport_size({'width': 1100, 'height': 800}); pg.wait_for_timeout(150)   # a narrow laptop: the header has no room for the time (#149)
+    assert pg.is_visible('#rs-top .rs-upd') and pg.inner_text('#rs-top .rs-upd') == 'Results updated Nov 4, 8:41 am' and not pg.is_visible('#dk-when')
+    pg.set_viewport_size({'width': 1440, 'height': 900}); pg.wait_for_timeout(150)
+    assert not pg.is_visible('#rs-top .rs-upd') and pg.is_visible('#dk-when')
+    # At a glance is a record too (Lane, Oct 21): the pick and the reason are shown, nothing there changes them
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+    assert pg.query_selector('#dk-paper .dk-sel') is None, 'no pick menus after the election'
+    assert pg.query_selector('#dk-paper [data-why]') is None and pg.query_selector('#dk-paper td [data-go]') is None, 'no Edit, Add a reason or Choose'
+    row = pg.inner_text('#dk-paper tr[data-tr="c071"]')
+    assert 'Against' in row and 'Parks need it' in row, row
+    none = pg.evaluate("() => ballot.map(b => b.c.id).find(id => !current(id).length)")
+    assert none and 'No pick' in pg.inner_text('#dk-paper tr[data-tr="' + none + '"]'), none
+    assert cur(pg, 'c071') == ['AGAINST']
+    assert pg.inner_text('#dk-paper .dk-gh h1') == 'Your ballot’s results' and 'Showing 11 of 11.' in pg.inner_text('#dk-paper')
+    pg.check('#dk-mine'); pg.wait_for_timeout(100)
+    assert len(pg.query_selector_all('#dk-paper tr[data-tr]')) == 8 and 'Showing 8 of 11.' in pg.inner_text('#dk-paper'), 'only the contests picked in'
+    assert pg.evaluate("document.activeElement.id") == 'dk-mine'
+    pg.click('#dk-paper tr[data-tr="c071"] [data-go]'); pg.wait_for_timeout(100)
+    assert pg.get_attribute('.dk-row[aria-current="true"]', 'data-row') == 'c071' and 'Your pick, Against, is behind.' in pg.inner_text('#dk-paper')
+    # Print your results: the crib sheet's layout, each contest's result under it, the pick on the right
+    pg.click('#dk-views [data-view="crib"]'); pg.wait_for_timeout(100)
+    assert pg.inner_text('#dk-paper h1') == 'Your ballot’s results' and pg.inner_text('#dk-notes [data-act="print"]') == 'Print your results'
+    crib = pg.eval_on_selector('#crib', 'e => e.textContent')
+    assert crib.startswith('My ballot’s resultsNov 3, 2026 · Results updated Nov 4, 8:41 amContest and resultYour pick'), crib[:160]
+    assert 'City of Austin Proposition APassing · Unofficial · 60.0% for' in crib and 'Against' in crib and '______' not in crib, crib
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    # an official runoff: What's next names it, and the contest says when
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00')
+    assert 'Runoff · Sat, Dec 12' in pg.inner_text('#rs-top .rs-sum .next') and 'See the runoff' in pg.inner_text('#rs-top .rs-sum .next'), pg.inner_text('#rs-top .rs-sum')   # "Get ready" waits for Phase 4 (Lane, Oct 21)
+    pg.evaluate("desk.openAll()"); pg.wait_for_timeout(150)
+    meta = pg.inner_text('#dk-paper .dk-meta')
+    assert meta.endswith('Unofficial until each canvass. Why unofficial?'), ('W59, restored (Lane, Oct 21)', meta)
+    pg.click('#dk-paper .dk-meta [data-rs="why"]'); pg.wait_for_timeout(150)
+    assert pg.is_visible('#rs-why'), 'Why unofficial? opens the canvass explainer'
+    pg.keyboard.press('Escape'); pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(150)
+    assert 'Runoffs' in pg.inner_text('#rs-top .rs-tl') and pg.inner_text('.dk-row[data-row="c121"] small').startswith('Runoff: ')
+    pg.click('#rs-top .rs-sum button.next'); pg.wait_for_timeout(100)
+    r = pg.inner_text('#dk-paper')
+    assert 'No one won a majority, so the top two meet again on Sat, Dec 12.' in r and 'A runoff on Saturday, Dec 12' in r and 'You skipped this race.' in r, r
+    paper = pg.inner_text('#dk-paper')
+    assert paper.count('You skipped this race.') == 1 and 'Saved on this device' not in paper, ('said once; nothing saved to say (#150)', paper)
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+    g = pg.inner_text('#dk-paper tr[data-tr="c121"]')
+    assert 'Runoff: Cheryl Bradley and Candace L. Hunter' in g and 'Official · runoff Sat, Dec 12' in g and 'Skipped' in g, g
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def every_state_reads_in_at_a_glance_and_the_printout(b):
+    # Every state on the canvas's Pieces board, through At a glance and Print your results (Phase 3): the result in
+    # words, then official or not and when; nothing reads "undefined", and nothing breaks.
+    import copy
+    fx = rs_fixtures(); base = fx.scene('mixed')
+    def put(cid, extra=None, **kw):
+        sc = copy.deepcopy(base); sc['contests'][cid] = fx.entry(cid, **kw); sc['contests'][cid].update(extra or {}); return sc
+    cases = [
+        ('c069', put('c069', state='official', verdict='tied', votes=[10000, 10000], done='2026-11-12'), None, 'Tied / Official · Nov 12'),
+        ('c069', put('c069', state='official', verdict='tied_runoff', votes=[10000, 10000], done='2026-11-12'), None, 'Tied · goes to a runoff / Official · Nov 12'),
+        ('c071', put('c071', state='official', verdict='failed_tie', votes=[150000, 150000], done='2026-11-12'), None, 'Failed (tie vote) / Official · 50.0% for'),
+        ('c069', put('c069', state='recount', verdict='won', votes=[10010, 9995], done='2026-11-12', recount='https://example.com/recount'), None,
+         'Won: Jeffery Bowen / Official · Nov 12 · recount requested'),
+        ('c113', put('c113', state='official', verdict='elected', canvasser='the Sunset Valley City Council', votes=[400, 380, 120], leaders=['Sarah Ponder', 'Robert Johnson'], done='2026-11-12'), None,
+         'Elected: Sarah Ponder, Robert Johnson / Official · Nov 12'),
+        ('c071', put('c071', {'needs': 'two_thirds'}, verdict='failing', votes=[180000, 120000]), None, 'Failing / Unofficial · 60.0% for · needs two-thirds'),
+        ('c121', fx.scene('runoff'), '2026-12-14T09:00', 'Runoff held Dec 12 · result not shown here / Official · Nov 13'),
+        ('c117', base, None, 'No result yet'),
+        ('c069', put('c069', {'no_call': 'rule_unsettled'}, verdict='none', votes=[1000, 900]), None, 'No call yet / Unofficial · canvass by Nov 17'),   # W69
+    ]
+    ctx, pg = rs_page(b, {'body': put('c069', {'no_call': 'rule_unsettled'}, verdict='none', votes=[1000, 900])})
+    assert pg.inner_text('.dk-row[data-row="c069"] small').startswith('No call yet · Unofficial'), pg.inner_text('.dk-row[data-row="c069"] small')
+    r = rs_go(pg, 'c069'); assert 'No call yet' in r and 'This one is decided at the canvass.' in r, ('W69 (Lane, Oct 21)', r)
+    ctx.close()
+    # #142: an official tie is no longer "too close to call"; a recount is neither won nor lost, and the rail says so; two
+    # counts that round alike get a second decimal; a tie that goes to a runoff is What's next
+    ctx, pg = rs_page(b, {'body': put('c069', state='recount', verdict='won', votes=[10010, 9995], done='2026-11-12', recount='https://example.com/recount')})
+    assert pg.inner_text('.dk-row[data-row="c069"] small').startswith('Won: Jeffery Bowen · Official · recount requested'), pg.inner_text('.dk-row[data-row="c069"] small')
+    r = rs_go(pg, 'c069'); assert '10,010 · 50.04%' in r and '9,995 · 49.96%' in r, r
+    assert 'Your pick: Selena Xie' in r and 'didn’t win' not in r, ('a recount: the pick, not won or lost (#142)', r)
+    sm = [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three > div')]
+    assert sm == ['3\nwon or are leading', '4\nare behind', '2\nnot settled yet'], ('the recount pick (lost on the count) is open, not lost', sm)
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('official')}, when='2026-12-03T09:00')
+    assert 'Too close 3' in pg.inner_text('#dk-filt'), ('the canvassed Senate tie is not too close to call', pg.inner_text('#dk-filt'))
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': put('c069', {'runoff_on': '2026-12-12'}, state='official', verdict='tied_runoff', votes=[10000, 10000], done='2026-11-12')}, when='2026-11-14T09:00')
+    assert 'Runoff · Sat, Dec 12' in pg.inner_text('#rs-top .rs-sum .next') and 'Runoffs' in pg.inner_text('#rs-top .rs-tl'), pg.inner_text('#rs-top')
+    r = pg.inner_text('#dk-paper') if rs_go(pg, 'c069') is not None else ''
+    assert 'Jeffery Bowen and Selena Xie. It’s a new choice' in r, r
+    ctx.close()
+    # #147: a runoff elsewhere in the county isn't a step on this ballot's timeline (What's next says nothing's coming)
+    sc = copy.deepcopy(base); e = fx.entry('c070', state='official', verdict='runoff', done='2026-11-12', runoff_on='2026-12-12')
+    e['runoff'] = [e['choices'][0][0], e['choices'][1][0]]; sc['contests']['c070'] = e
+    ctx, pg = rs_page(b, {'body': sc}, when='2026-11-14T09:00')
+    assert 'Runoffs' not in pg.inner_text('#rs-top .rs-tl'), pg.inner_text('#rs-top .rs-tl')
+    pg.evaluate("desk.openAll()"); pg.wait_for_timeout(150)
+    assert 'Runoffs' in pg.inner_text('#rs-top .rs-tl'), 'the county-wide timeline keeps it'
+    ctx.close()
+    for day_ in ('2026-11-20T09:00', '2026-12-09T09:00'):   # after late ballots: W5 alone, not W5 with W8 or W6 (#150)
+        ctx, pg = rs_page(b, {'body': base}, when=day_)
+        r = rs_go(pg, 'c001')
+        assert 'Counting is finished in every county. The result becomes official at the state canvass.' in r and 'Nov 21–Dec 7' not in r and 'Becomes official when' not in r, (day_, r)
+        ctx.close()
+    # #140 and #147: a new file while the band's What's next has focus keeps it there; on All Travis County results the band
+    # stays the county's, not the ballot's
+    serve = {'body': fx.scene('runoff')}
+    ctx, pg = rs_page(b, serve, when='2026-11-14T09:00')
+    pg.focus('#rs-top .rs-sum button.next')
+    nxt = copy.deepcopy(serve['body']); nxt['seq'] += 1; nxt['contests']['c069']['choices'][0][1] += 5
+    serve['body'] = nxt; pg.clock.run_for(11 * 60 * 1000); pg.evaluate("dispatchEvent(new Event('focus'))"); pg.wait_for_timeout(600)
+    assert pg.evaluate("document.activeElement.matches('#rs-top .rs-sum button.next')"), pg.evaluate("document.activeElement.outerHTML.slice(0, 80)")
+    pg.evaluate("desk.openAll()"); pg.wait_for_timeout(150)
+    nxt2 = copy.deepcopy(nxt); nxt2['seq'] += 1; nxt2['contests']['c069']['choices'][0][1] += 5
+    serve['body'] = nxt2; pg.clock.run_for(11 * 60 * 1000); pg.evaluate("dispatchEvent(new Event('focus'))"); pg.wait_for_timeout(600)
+    band = pg.inner_text('#rs-top')
+    assert 'YOUR BALLOT' not in band.upper().split('WHERE THINGS STAND')[0] and 'Where things stand' in band, band
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    for cid, body, when, want in cases:
+        ctx, pg = rs_page(b, {'body': body}, **({'when': when} if when else {}))
+        pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+        got = ' / '.join(pg.inner_text(f'#dk-paper tr[data-tr="{cid}"] td:nth-child(2)').split('\n'))
+        assert got == want, (cid, got, want)
+        crib = pg.eval_on_selector('#crib', 'e => e.textContent')
+        assert want.replace(' / ', ' · ') in crib and not re.search(r'undefined|null|NaN', crib), (cid, crib[:300])
+        assert pg.errs == [], pg.errs
+        ctx.close()
+
 def main():
     srv = serve()
     failed = skipped = 0
@@ -4744,6 +5236,8 @@ def main():
                 skipped += 1; print('SKIP', fn.__name__, '- no laptop layout in', PAGE); continue
             if fn.__name__ in PHONE_TESTS and not HAS_PHONE:
                 skipped += 1; print('SKIP', fn.__name__, '- no phone layout in', PAGE); continue
+            if fn.__name__ in RESULTS_TESTS and not HAS_RESULTS:
+                skipped += 1; print('SKIP', fn.__name__, '- no results code in', PAGE, '(RESULTS_LIVE)'); continue
             if fn.__name__ in STREETS_TESTS and not HAS_STREETS:
                 skipped += 1; print('SKIP', fn.__name__, '- no street map in', PAGE, '(it is in next/index.html until STREETS_LIVE)'); continue
             try:
