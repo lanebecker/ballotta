@@ -147,6 +147,8 @@ def check(obj, key, prev=None):
             bad.append(where + "runoff names choices only with the runoff verdict")
         if e["verdict"] in ("leading", "won", "elected", "unopposed") and not e["leaders"]:
             bad.append(where + f"{e['verdict']} needs leaders")
+        if e["verdict"] == "won" and isinstance(e["leaders"], list) and len(e["leaders"]) > 1:
+            bad.append(where + "won names one winner; several are elected")
         if e["verdict"] in ("none", "too_close", "may_runoff", "runoff", "tied", "tied_legislature", "tied_runoff", "tied_second",
                             "passing", "failing", "passed", "failed", "failed_tie") and e["leaders"]:
             bad.append(where + f"{e['verdict']} names no leaders")

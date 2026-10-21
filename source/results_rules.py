@@ -143,10 +143,16 @@ def official(kind, votes, seats=1, majority=False, write_ins=(), cid=None, needs
             return "tied_second", [], []
         return "runoff", [], [r[0][0], r[1][0]]
     if len(r) <= seats:
-        return "won", [n for n, v in r if v], []
+        return won([n for n, v in r if v])
     if r[seats - 1][1] == r[seats][1]:
         return ("tied_legislature" if cid in LEGISLATURE_TIES else "tied"), [], []
-    return "won", [n for n, _ in r[:seats]], []
+    return won([n for n, _ in r[:seats]])
+
+
+def won(names):
+    """One winner "won"; several (a several-seat race) "elected", which the page says as "Elected: A, B" (W22). "won"
+    names one person: the page says "Won: <name>" (the cold audit, Oct 21, #135)."""
+    return ("elected" if len(names) > 1 else "won"), names, []
 
 
 def annex_note(district_passed, area_passed):

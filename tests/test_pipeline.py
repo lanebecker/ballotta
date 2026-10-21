@@ -585,6 +585,7 @@ def the_results_check_refuses_each_kind_of_wrong_file():
         'withdrawn not a boolean': lambda e: e.update(withdrawn='no'),
         'an extra key': lambda e: C(e, 'c071').update(extra=1),
         'runoff names one': lambda e: C(e, 'c121').update(verdict='runoff', runoff=['Cheryl Bradley']),
+        'won names two (#135)': lambda e: C(e, 'c113').update(state='official', verdict='won', leaders=['Sarah Ponder', 'Robert Johnson'], canvass={'kind': 'local', 'by': '2026-11-17', 'on': None, 'done': '2026-11-12'}),
     }
     missed = [n for n, f in cases.items() if not cr.check(broken(f), key)]
     assert not missed, ('the check missed', missed)

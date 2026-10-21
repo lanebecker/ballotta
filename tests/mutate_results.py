@@ -71,7 +71,7 @@ M = [
  ('R50 the printout never redrawn', PREV, "    try { renderCrib(); } catch (e) {}   // the printout", '', [T]),
  ('R51 a measure share misread', PREV, "f[2].toFixed(1) + '% '", "'50.0% '", [L]),
  ('R52 no canvass date in At a glance', PREV, "    return s + (cv.on ? ' · canvass ' + md(cv.on) : cv.by ? ' · canvass by ' + md(cv.by) : '');", "    return s;", [L]),
- ('R53 the runoff date left off', PREV, "    if (e.verdict === 'runoff' && e.runoff_on && day() <= e.runoff_on) return s + ' · runoff ' + dayLong(e.runoff_on) + rc;", '', [T]),
+ ('R53 the runoff date left off', PREV, "    if (['runoff', 'tied_runoff'].includes(e.verdict) && e.runoff_on && day() <= e.runoff_on) return s + ' · runoff ' + dayLong(e.runoff_on) + rc;", '', [T]),
  ('R54 a recount unsaid in At a glance', PREV, "rc = e.state === 'recount' ? ' · recount requested' : '';", "rc = '';", [V]),
  ('R55 two-thirds unsaid in At a glance', PREV, "(e.needs === 'two_thirds' ? ' · needs two-thirds' : '')", "''", [V]),
  ('R56 a tie at full length in At a glance', PREV, "    return e.verdict === 'tied' ? 'Tied' : verdict(c, e);", "    return verdict(c, e);", [V]),

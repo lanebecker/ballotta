@@ -51,8 +51,8 @@ def fetch_all(meta, res=B.RES, fetch=get):
             if decode:
                 data = decode(data)
             out.append((source, keep(res, source, data, name, parse), None))
-        except (OSError, urllib.error.URLError, P.BadFile, ValueError, KeyError) as e:
-            out.append((source, None, f"{url}: {e}"))
+        except Exception as e:   # anything one source's file does (a PDF library's own errors, broken JSON) is that source's error: the others still go (#137)
+            out.append((source, None, f"{url}: {type(e).__name__}: {e}"))
     eid = meta["sos_election"]
     zone = meta["sos_time_zone"]
     one("sos", f"{SOS}/election/{eid}", "election.json", lambda d: P.parse_sos(d, zone=zone))

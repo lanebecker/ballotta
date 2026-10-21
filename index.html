@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-8TWO8+j8h5iCqyBH6SULGyETS+gpavPA96lMVdIG8vE='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-zsoByBpLbdFY145K35IZ0Ge0vmRyyOsZrYe8cRhAtFI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2241,7 +2241,7 @@ const results = (() => {
   const VERDICTS = ['none', 'leading', 'too_close', 'may_runoff', 'runoff', 'won', 'elected', 'passing', 'failing', 'passed', 'failed',
     'failed_tie', 'unopposed', 'tied', 'tied_legislature', 'tied_runoff', 'tied_second'];
   const NOTES = [null, 'district_not_confirmed', 'annex_both', 'annex_district_rejected', 'annex_area_rejected', 'annex_both_rejected'];
-  let R = null, saved = false, asked = 0, since = null, counted = false, wantAll = false;
+  let R = null, saved = false, asked = 0, since = null, seenText = '', counted = false, wantAll = false;
   // The date gate, in Austin time. Only on this computer (localhost), ?today=YYYY-MM-DD stands in for the date, so Lane can
   // look at results before Nov 4 with sample data; ballotta.org ignores it.
   const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -2334,7 +2334,7 @@ const results = (() => {
       case 'runoff':
         if (e.runoff_on && day() > e.runoff_on) return 'Runoff held ' + md(e.runoff_on) + ' · result not shown here';  // W30
         return e.runoff.length ? 'Headed to a runoff: ' + andList(names(c, e.runoff)) : 'Headed to a runoff';          // W20
-      case 'won': return 'Won: ' + L[0];                                                                               // W21
+      case 'won': return 'Won: ' + andList(L);   // one name (check_results; several are "elected", #135); never one of several  // W21
       case 'elected': return 'Elected: ' + L.join(', ') + (unoppHere(c, e) && L.length === 1 ? ' (unopposed)' : '');  // W22, W24
       case 'passed': return 'Passed'; case 'failed': return 'Failed'; case 'failed_tie': return 'Failed (tie vote)';   // W23
       case 'unopposed': return 'Unopposed: ' + L.join(', ');                                                           // W24
@@ -2370,10 +2370,18 @@ const results = (() => {
     if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'Your pick is headed to the runoff.' : 'Your pick didn’t make the runoff.';  // W39
     return 'Your pick: ' + v.map(x => choice(c, x)).join(', ');                                                      // W36
   }
+  // A share as the bars say it: one decimal, or two when two different counts would read the same (10,010 and 9,995 are
+  // 50.04% and 49.96%, not 50.0% and 50.0%: #142); a share of votes that rounds to nothing is "<0.1%", never "0.0%" (#150).
+  function pctDigits(rows) {
+    const seen = {};
+    return rows.some(x => { const k = x[2].toFixed(1); if (k in seen && seen[k] !== x[1]) return true; seen[k] = x[1]; return false; }) ? 2 : 1;
+  }
+  const pctText = (x, d) => x[1] > 0 && +x[2].toFixed(d) === 0 ? '<' + (d === 2 ? '0.01' : '0.1') + '%' : x[2].toFixed(d) + '%';
   function bars(c, rows, wi) {
+    const d = pctDigits(rows);
     return '<div class="rs-bars">' + rows.map(x => '<div class="rs-b"><span class="rs-nm">' + esc(choice(c, x[0])) + (wi && x[3] ? ' <small>(write-in)</small>' : '') + '</span>'
       + '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span>'
-      + '<span class="rs-vt">' + x[1].toLocaleString('en-US') + ' · ' + x[2].toFixed(1) + '%</span></div>').join('') + '</div>';
+      + '<span class="rs-vt">' + x[1].toLocaleString('en-US') + ' · ' + pctText(x, d) + '</span></div>').join('') + '</div>';
   }
   const NOTE = {
     district_not_confirmed: 'Voters didn’t confirm this district (Proposition A failed), so it won’t be created.',   // W31
@@ -2404,22 +2412,29 @@ const results = (() => {
   const on = () => !!(R && live() && !R.withdrawn && Object.keys(R.contests).length);
 
   /* ----- the top line (W46–W52, W14) and "Since you last looked" ----- */
-  // What changed since this device last showed results, worked out once per page load (so a redraw doesn't drop it), then
-  // remembered: ballotta.resultsSeen holds only the last seq shown and the state of each contest then.
+  // What changed since this device last showed results, worked out once per page load (so a redraw doesn't drop it).
+  // ballotta.resultsSeen holds the last seq shown, the day, and each contest's state, verdict, leaders, runoff and vote
+  // total then; it's written on every redraw, so results seen while the page is open aren't announced again (#136).
+  const seenOf = (e) => [e.state, e.verdict, e.leaders, e.runoff, e.choices.reduce((a, x) => a + x[1], 0)];
   function sinceNow() {
-    if (since || !R || R.withdrawn || !ballot.length) return;
-    const seen = plain(LS.get('ballotta.resultsSeen', {})), was = plain(seen.v), ids = ballot.map(b => b.c.id).filter(id => R.contests[id]);
-    const now = Object.fromEntries(ids.map(id => [id, R.contests[id].state + '|' + R.contests[id].verdict]));
-    since = { official: 0, changed: 0, numbers: 0, corrected: 0 };
-    if (isNat(seen.seq) && seen.seq < R.seq) ids.forEach(id => {
-      const e = R.contests[id];
-      if (e.changed <= seen.seq && !(e.corrected && was[id])) { if (was[id]) since.numbers++; return; }
-      if (e.corrected && was[id] && was[id] !== now[id]) since.corrected++;
-      else if (isOfficial(e) && was[id] && !/^(official|recount)\|/.test(was[id])) since.official++;
-      else if (was[id] && was[id] !== now[id]) since.changed++;
-      else if (was[id]) since.numbers++;
-    });
-    LS.set('ballotta.resultsSeen', { seq: R.seq, v: now });
+    if (!R || R.withdrawn || !ballot.length) return;
+    const ids = ballot.map(b => b.c.id).filter(id => R.contests[id]);
+    const now = Object.fromEntries(ids.map(id => [id, seenOf(R.contests[id])]));
+    if (!since) {
+      const seen = plain(LS.get('ballotta.resultsSeen', {})), was = plain(seen.v), at = isStr(seen.at) && DATE.test(seen.at) ? seen.at : '';
+      since = { official: 0, changed: 0, numbers: 0, corrected: 0 };
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      if (isNat(seen.seq) && seen.seq < R.seq) ids.forEach(id => {
+        const e = R.contests[id], w = was[id], n = now[id];
+        if (!Array.isArray(w) || w.length !== 5) return;                                  // not shown here before
+        if (e.corrected && at && (e.corrected > at || (e.corrected === at && e.changed > seen.seq)) && !same(w, n)) since.corrected++;   // a correction since then, not an old one
+        else if (isOfficial(e) && !['official', 'recount'].includes(w[0])) since.official++;
+        else if (!same(w.slice(0, 4), n.slice(0, 4))) since.changed++;                    // a new verdict, leader or runoff pair
+        else if (w[4] !== n[4]) since.numbers++;                                          // only the numbers moved
+      });
+    }
+    const rec = { seq: R.seq, at: day(), v: now }, txt = JSON.stringify(rec);
+    if (txt !== seenText) { seenText = txt; LS.set('ballotta.resultsSeen', rec); }   // only when it changed: every write tells the other tabs
   }
   function top(view) {
     const box = $('rs-top');
@@ -2440,9 +2455,9 @@ const results = (() => {
       if (since.corrected) h += '<p class="rs-since"><i aria-hidden="true"></i>Corrected since you last looked: ' + since.corrected + (since.corrected === 1 ? ' result' : ' results') + '. An earlier version on Ballotta was wrong.</p>';  // W51
     }
     if (saved) h += '<p class="rs-saved">Saved copy · may be out of date</p>';   // W14
-    const off = ballot.filter(b => official(b.c)).length, oc = ballot.map(b => outcome(b.c)).filter(Boolean), up = oc.filter(o => o === 'up').length;
+    const off = ballot.filter(b => official(b.c)).length, oc = ballot.flatMap(b => outs(b.c)), up = oc.filter(o => o === 'up').length;
     const compact = '<p class="rs-compact"><b>' + off + ' of ' + ballot.length + ' official</b>' + (oc.length ? ' · ' + up + ' of your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + ' won or ' + (up === 1 ? 'is' : 'are') + ' leading' : '') + '<span>' + esc(updated()) + '</span></p>';
-    box.className = 'rs-top rs-band'; box.innerHTML = h + compact + summary() + timeline();
+    box.className = 'rs-top rs-band'; box.innerHTML = h + compact + summary() + timeline(true);
     if (!counted) { counted = true; track('results_seen'); }
   }
   function landing() {   // the landing page after the election (the canvas, Oct 21); back as it was if results go
@@ -2471,7 +2486,7 @@ const results = (() => {
   const dayLong = (d) => dow(d) + ', ' + md(d);                                       // "Sat, Dec 12"
   const surname = (n) => n.replace(/,?\s+(Jr\.?|Sr\.?|II|III|IV)$/, '').trim().split(/\s+/).pop();
   const official = (c) => { const e = entry(c.id); return !!e && isOfficial(e); };
-  const close = (c) => { const e = entry(c.id); return !!e && ['too_close', 'may_runoff', 'tied', 'tied_second'].includes(e.verdict); };
+  const close = (c) => { const e = entry(c.id); return !!e && !isOfficial(e) && ['too_close', 'may_runoff', 'tied', 'tied_second'].includes(e.verdict); };   // a canvassed tie isn't "too close to call" (#142)
   const picked = (c) => { const v = current(c.id); return v.length > 0 && v[0] !== '__skip'; };
   // A rail row's second line: the result in a few words, and whether it's official.
   function rowLine(c) {
@@ -2479,14 +2494,15 @@ const results = (() => {
     if (!e || e.state === 'counting' || e.verdict === 'none') return R && R.withdrawn ? 'Results paused' : 'No result yet';
     let v = verdict(c, e);
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) v = 'Runoff: ' + andList(names(c, e.runoff).map(surname));
-    else if (/^Tied/.test(v)) v = 'Tied';
-    return v + ' · ' + (isOfficial(e) ? 'Official' : 'Unofficial');
+    else if (e.verdict === 'tied') v = 'Tied';   // W25 in full is too long for a row; other ties keep what they say (#142)
+    return v + ' · ' + (isOfficial(e) ? 'Official' : 'Unofficial') + (e.state === 'recount' ? ' · recount requested' : '');
   }
   // The voter's pick against the result: 'up' (won, elected, passed, or leading), 'down' (didn't win), 'behind' (not
   // leading, still unofficial), 'open' (too close, a runoff to come, no call yet). null without a pick here.
-  function outcome(c) {
-    const e = entry(c.id), v = current(c.id);
+  function outcome(c, one) {
+    const e = entry(c.id), v = one ? [one] : current(c.id);
     if (!e || !v.length || v[0] === '__skip') return null;
+    if (e.state === 'recount') return 'open';   // a recount can change it: not won, not lost (#142)
     const V = e.verdict, hit = v.some(x => e.leaders.includes(x)), off = isOfficial(e);
     if (c.type === 'measure') {
       if (!['passing', 'failing', 'passed', 'failed', 'failed_tie'].includes(V)) return 'open';
@@ -2496,7 +2512,11 @@ const results = (() => {
     if (['won', 'elected', 'unopposed'].includes(V)) return hit ? 'up' : 'down';
     if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : 'down';
     return 'open';
-  }
+  }  // Each pick's outcome, for the summary's counts: in a several-seat race each pick counts on its own, so "1 of your 2
+  // picks is leading" adds one to "leading" and one to "behind", as the paper says (#144); a contest's picks otherwise count once.
+  const outs = (c) => { const v = current(c.id); return seats(c) > 1 && v.length > 1 && v[0] !== '__skip' ? v.map(x => outcome(c, x)).filter(Boolean) : [outcome(c)].filter(Boolean); };
+  const openPicks = () => ballot.flatMap(b => outs(b.c).filter(o => o === 'open').map(() => b));
+
   // The words for each count in the summary (W71, W72): singular for one.
   function pickWords(oc, opens) {
     const up = oc.filter(o => o === 'up').length, down = oc.filter(o => o === 'down').length, behind = oc.filter(o => o === 'behind').length, one = (n, a, b) => n === 1 ? a : b;
@@ -2504,15 +2524,15 @@ const results = (() => {
       [down + behind, !behind ? 'didn’t win' : !down ? one(behind, 'is behind', 'are behind') : one(down + behind, 'didn’t win or is behind', 'didn’t win or are behind')],
       [opens.length, opens.every(b => close(b.c)) ? 'too close to call' : 'not settled yet']];
   }
-  const upcoming = (c) => { const e = entry(c.id); return !!e && e.verdict === 'runoff' && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on; };
+  const upcoming = (c) => { const e = entry(c.id); return !!e && ['runoff', 'tied_runoff'].includes(e.verdict) && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on; };   // a tie that goes to a runoff too (#142)
   // The summary (option A, Lane Oct 20): your ballot, your picks, what's next.
   function summary() {
     const n = ballot.length, off = ballot.filter(b => official(b.c)).length;
-    const oc = ballot.map(b => outcome(b.c)).filter(Boolean), k = (x) => oc.filter(o => o === x).length;
+    const oc = ballot.flatMap(b => outs(b.c)), k = (x) => oc.filter(o => o === x).length;
     let h = '<section class="rs-sum" aria-label="Your ballot so far"><div class="sx"><p class="ov">Your ballot</p><div class="row"><p class="big">' + off + '<small>/' + n + '</small></p><p class="lb">official results<span>'
       + (off === n ? 'Every result on your ballot is official' : 'The rest are still being counted or canvassed') + '</span></p></div></div>';
     if (oc.length) {
-      const opens = ballot.filter(b => outcome(b.c) === 'open');
+      const opens = openPicks();
       h += '<div class="sx"><p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="row three">'
         + pickWords(oc, opens).map(x => '<div><b>' + x[0] + '</b><span class="lb">' + x[1] + '</span></div>').join('') + '</div></div>';
     } else {
@@ -2532,8 +2552,10 @@ const results = (() => {
   // Where things stand: the steps from election night to the Legislature, the current one marked.
   function newest() { return R ? Object.values(R.contests).flatMap(e => e.sources.map(s => s[1])).sort().pop() || '' : ''; }
   function updated() { const t = newest(); return t ? 'Results updated ' + when(t) : ''; }
-  function timeline() {
-    const d = day(), runs = R ? Object.values(R.contests).filter(e => e.verdict === 'runoff' && isOfficial(e) && e.runoff_on).map(e => e.runoff_on).sort() : [];
+  // mine: on the ballot's own views, only the ballot's runoffs; the landing and All Travis County results, the county's (#147).
+  function timeline(mine) {
+    const from = !R ? [] : mine ? ballot.map(b => R.contests[b.c.id]).filter(Boolean) : Object.values(R.contests);
+    const d = day(), runs = from.filter(e => ['runoff', 'tied_runoff'].includes(e.verdict) && isOfficial(e) && e.runoff_on).map(e => e.runoff_on).sort();
     const steps = [['Election night', 'Nov 3 · first counts', '2026-11-03'],
       ['Late ballots and local canvasses', 'To ' + md(R.late_until) + ' · cities, schools, county', R.late_until],
       ['State canvass', 'Nov 21 – Dec 7 · state and federal', '2026-12-07']]
@@ -2548,7 +2570,7 @@ const results = (() => {
     if (!upcoming(c)) return '';
     const e = entry(c.id);
     return '<section class="rs-next" aria-label="What’s next"><p class="ov">What’s next</p><h2>A runoff on ' + esc(dow(e.runoff_on, true) + ', ' + md(e.runoff_on)) + '</h2><p>'
-      + esc(andList(names(c, e.runoff))) + '. It’s a new choice: your Nov 3 pick isn’t carried over.</p></section>';
+      + esc(andList(names(c, e.runoff.length ? e.runoff : e.choices.filter(x => !x[3]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0])))) + '. It’s a new choice: your Nov 3 pick isn’t carried over.</p></section>';   // a tie that goes to a runoff names no pair: the two tied (#142)
   }
   // The notes beside the result.
   function notes(c) {
@@ -2623,8 +2645,8 @@ const results = (() => {
   // The summary, small, at the top of the phone's list (the canvas's phone board).
   function listSum() {
     if (!R || R.withdrawn || !live() || !ballot.length) return '';
-    const n = ballot.length, off = ballot.filter(b => official(b.c)).length, oc = ballot.map(b => outcome(b.c)).filter(Boolean), k = (x) => oc.filter(o => o === x).length;
-    const opens = ballot.filter(b => outcome(b.c) === 'open');
+    const n = ballot.length, off = ballot.filter(b => official(b.c)).length, oc = ballot.flatMap(b => outs(b.c)), k = (x) => oc.filter(o => o === x).length;
+    const opens = openPicks();
     let h = '<div class="rs-listsum"><p class="top"><b>' + off + '<small>/' + n + '</small></b><span>official results</span></p>';
     if (oc.length) h += '<p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="three">'
       + pickWords(oc, opens).map(x => '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>';
@@ -2675,7 +2697,7 @@ const results = (() => {
   function glanceWhen(c, e) {
     const cv = e.canvass, off = isOfficial(e), s = off ? 'Official' : 'Unofficial', rc = e.state === 'recount' ? ' · recount requested' : '';
     if (c.type === 'measure') { const f = e.choices[0]; return s + ' · ' + f[2].toFixed(1) + '% ' + choice(c, f[0]).toLowerCase() + (e.needs === 'two_thirds' ? ' · needs two-thirds' : '') + rc; }   // "58.0% for"
-    if (e.verdict === 'runoff' && e.runoff_on && day() <= e.runoff_on) return s + ' · runoff ' + dayLong(e.runoff_on) + rc;
+    if (['runoff', 'tied_runoff'].includes(e.verdict) && e.runoff_on && day() <= e.runoff_on) return s + ' · runoff ' + dayLong(e.runoff_on) + rc;
     if (off) return s + (cv.done ? ' · ' + md(cv.done) : '') + rc;
     if (cv.kind === 'state') return s + ' · state canvass Nov 21 – Dec 7';
     if (cv.kind === 'legislature') return s + ' · the Legislature, January';
@@ -3332,7 +3354,7 @@ const desk = (() => {
     cribSkip: (c) => ui.hideCrib && isUnopp(c),
     cribOpts: () => ({ two_col: ui.two ? 'yes' : 'no', hide_unopposed: ui.hideCrib ? 'yes' : 'no' }),
     today(periodChanged) {  // a new day (#34): the header's line; the vote view only if the voting period changed
-      $('dk-when').textContent = whenLine();
+      $('dk-when').textContent = (after() && results.updated()) || whenLine();   // after the election, the results' time, as header() (#141)
       if (!periodChanged || ui.view !== 'vote' || !document.body.classList.contains('dk-app-on')) return;
       const inside = P().contains(document.activeElement);
       viewVote();  // a new list of vote centers: the old place in it is gone, so focus goes to the paper, never to another center's link (Pass 4)

@@ -57,7 +57,7 @@ def vote_for_two_tests_the_cut_between_second_and_third():
     assert R.unofficial('candidate', V(('A', 5000), ('B', 4000), ('C', 3990)), seats=2)[0] == 'too_close'
     # a tie at the cut, official: state law decides
     assert R.official('candidate', V(('A', 5000), ('B', 4000), ('C', 4000)), seats=2) == ('tied', [], [])
-    assert R.official('candidate', V(('A', 5000), ('B', 4000), ('C', 3999)), seats=2) == ('won', ['A', 'B'], [])
+    assert R.official('candidate', V(('A', 5000), ('B', 4000), ('C', 3999)), seats=2) == ('elected', ['A', 'B'], [])   # several winners: elected (#135)
 
 @test
 def unopposed_only_without_a_declared_write_in():
@@ -539,6 +539,15 @@ def the_fetcher_files_what_it_gets_and_skips_what_fails():
         fetch, _ = net({sos: fx('sos-53815-travis.json'), 'https://wc.example/results': bad})
         out = FR.fetch_all(META, res=d, fetch=fetch)
         assert out[1][0] == 'williamson' and out[1][1] is None and 'disagree' in out[1][2], out
+        # a file that breaks its parser any other way (an HTML not-found page served as Hays's PDF; broken JSON from the
+        # state): that source's error, and the others still filed (#137)
+        d2 = pathlib.Path(tempfile.mkdtemp())
+        try:
+            fetch, _ = net({sos: b'{"not json', 'https://wc.example/results': fx('williamson-2025-11.html'),
+                            META['fetch']['hays'][0]: b'<html><body>Not Found</body></html>'})
+            out = FR.fetch_all(META, res=d2, fetch=fetch)
+            assert [(s, bool(p), bool(e)) for s, p, e in out] == [('sos', False, True), ('williamson', True, False), ('hays', False, True)], out
+        finally: shutil.rmtree(d2)
     finally: shutil.rmtree(d)
 
 
