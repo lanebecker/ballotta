@@ -2893,7 +2893,7 @@ const desk = (() => {
     h += results.ribbon(c) + results.nextBox(c);
 /*/RESULTS*/
     const raw = isM ? opts : c.choices.filter(x => x !== 'Write-in');
-    h += '<section class="dk-asmarked" aria-label="As you marked it"><span class="ov">As you marked it</span><ul class="dk-lines dk-ro' + (isM ? ' dk-mrow' : '') + '">' + opts.map((o, k) => {
+    h += '<section class="dk-asmarked" aria-label="Your choice"><span class="ov">Your choice</span><ul class="dk-lines dk-ro' + (isM ? ' dk-mrow' : '') + '">' + opts.map((o, k) => {
       const on = v.includes(o), m = isM ? null : raw[k].match(/\((REP|DEM|LIB|GRN)\)$/), sub = [m ? PARTY[m[1]] : '', on ? 'Your pick' : ''].filter(Boolean).join(' · ');
       return '<li class="dk-lw"><span class="dk-line" data-on="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span></span></li>';
     }).join('') + '</ul>' + (v[0] === '__skip' ? '<p class="note">You skipped this ' + (isM ? 'measure' : 'race') + '.</p>' : !v.length ? '<p class="note">No pick here on this device.</p>' : '') + '</section>';
@@ -2971,14 +2971,16 @@ const desk = (() => {
   }
   function viewGlance() {
     let rows = '', last = '';
+    const A = after();   // after the election the picks and reasons are a record: shown, not changed (Lane, Oct 21)
     ballot.forEach(b => {
       const c = b.c, id = c.id, v = current(id), L = DATA.learn[id] || {}, lw = (L.src || []).find(s => s.lwv);
       if (ui.hideUnopp && isUnopp(c)) return;
       if (c.level !== last) { last = c.level; rows += '<tr class="dk-tg"><th colspan="4" scope="colgroup">' + esc(LEVEL_LABEL[last] || last) + '</th></tr>'; }
-      const ctl = seats(c) > 1
+      const ctl = A ? (v.length ? esc(v[0] === '__skip' ? 'Skipped' : v.map(o => optLabel(c, o)).join(', ')) : '<span class="note">No pick</span>')
+        : seats(c) > 1
         ? esc(v.length ? (v[0] === '__skip' ? 'Skipping' : v.join(', ')) : 'Undecided') + ' · <button type="button" class="dk-link" data-go="' + id + '">Choose</button>'
         : '<select class="dk-sel" data-sel="' + id + '" aria-label="Your pick: ' + esc(cleanTitle(c)) + '"><option value="">Pick one…</option>' + optionsOf(c).map(o => '<option value="' + esc(o) + '"' + (v[0] === o ? ' selected' : '') + '>' + esc(optLabel(c, o)) + '</option>').join('') + '<option value="__skip"' + (v[0] === '__skip' ? ' selected' : '') + '>Skip</option></select>';
-      const why = hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
+      const why = A ? (hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span>' : '<span class="note">—</span>') : hasWhy(id) ? '<span class="dk-wt">' + esc(whyShown(whys[id])) + '</span> <button type="button" class="dk-link" data-go="' + id + '" data-why="1">Edit</button>' : '<button type="button" class="dk-link muted" data-go="' + id + '" data-why="1">Add a reason…</button>';
       rows += '<tr data-tr="' + id + '"><th scope="row"><button type="button" class="dk-link" data-go="' + id + '">' + esc(cleanTitle(c)) + '</button>' + (isUnopp(c) ? '<small>Unopposed</small>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th><td>' + ctl + '</td><td>' + why + '</td><td>' + (lw ? '<a href="' + esc(lw.u) + '" target="_blank" rel="noopener">League guide, p. ' + esc(lw.u.split('#page=')[1] || '') + '</a>' : '<span class="note">—</span>') + '</td></tr>';
     });
     P().innerHTML = '<div class="dk-gh"><div><span class="ov">At a glance</span><h1>Your whole ballot</h1></div><label class="dk-tog"><input type="checkbox" id="dk-hideu"' + (ui.hideUnopp ? ' checked' : '') + '> Hide unopposed races</label></div>' +

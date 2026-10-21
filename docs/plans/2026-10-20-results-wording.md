@@ -153,7 +153,7 @@ what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release
 ## After the election (Oct 21): words the build added, not on the canvas — for Lane
 
 The canvas (reviewed Oct 20–21) supplies most of the after-election words: the menu, "official results", "won or are
-leading", "didn’t win", "too close to call", "Where things stand" and its steps, "What’s next", "As you marked it", "What
+leading", "didn’t win", "too close to call", "Where things stand" and its steps, "What’s next", "Your choice" (was "As you marked it"; Lane, Oct 21), "What
 you read before voting", "About this result", "Calling races", "Something look wrong? Tell us". These were new; **Lane
 approved all of them as built, Oct 21, 10:05 am** (asked one by one, each with alternatives):
 
@@ -169,7 +169,7 @@ approved all of them as built, Oct 21, 10:05 am** (asked one by one, each with a
 - **W75** Your ballot, all official: "Every result on your ballot is official".
 - **W76** Your reason, under your pick: "Your reason. Only you can see it." (The canvas had "Your reason, from Oct 24":
   the page doesn't keep when a reason was written.)
-- **W77** As you marked it, with no pick: "No pick here on this device."; the rail's filters: "Too close", "My picks";
+- **W77** Your choice (the read-only lines), with no pick: "No pick here on this device."; the rail's filters: "Too close", "My picks";
   their empty states: "Nothing on your ballot is too close to call." / "No picks on this device."
 - **W78** About this result: "Made official Nov 12 by the Austin City Council." / "Unofficial until the Austin City
   Council canvasses the vote."; Where the numbers come from: "<source>, posted <time>".

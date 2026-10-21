@@ -5011,6 +5011,15 @@ def results_turn_the_ballot_into_a_record(b):
     assert pg.inner_text('#dk-next').startswith('Next: '), pg.inner_text('#dk-next')
     pg.click('#dk-next'); pg.wait_for_timeout(100)
     assert pg.get_attribute('.dk-row[aria-current="true"]', 'data-row') == 'c072', 'Next goes in ballot order'
+    # At a glance is a record too (Lane, Oct 21): the pick and the reason are shown, nothing there changes them
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+    assert pg.query_selector('#dk-paper .dk-sel') is None, 'no pick menus after the election'
+    assert pg.query_selector('#dk-paper [data-why]') is None and pg.query_selector('#dk-paper td [data-go]') is None, 'no Edit, Add a reason or Choose'
+    row = pg.inner_text('#dk-paper tr[data-tr="c071"]')
+    assert 'Against' in row and 'Parks need it' in row, row
+    none = pg.evaluate("() => ballot.map(b => b.c.id).find(id => !current(id).length)")
+    assert none and 'No pick' in pg.inner_text('#dk-paper tr[data-tr="' + none + '"]'), none
+    assert cur(pg, 'c071') == ['AGAINST']
     assert pg.errs == [], pg.errs
     ctx.close()
     # an official runoff: What's next names it, and the contest says when

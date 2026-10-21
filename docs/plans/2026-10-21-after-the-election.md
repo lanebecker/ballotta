@@ -17,7 +17,7 @@ for it alone.
 1. **The switch.** The page is in "after" mode when `results.on()`: from Nov 4 (Austin time), with a results file the
    page accepts, not withdrawn. Before that, nothing changes. If results are withdrawn (the kill switch), the page
    shows the pause message in the summary's place and stays in after mode.
-2. **Picks become a record.** In after mode the ballot paper's lines are read-only ("As you marked it"); picking keys
+2. **Picks become a record.** In after mode the ballot paper's lines are read-only ("Your choice"); picking keys
    (1–9, S, R) do nothing. Picks and reasons stay on the device as before, and Keep my picks still works.
 3. **The menu.** Results · At a glance · All Travis County results · Print your results; then, only while a runoff on
    your ballot is official and not yet held, a "Runoff · <date>" group with Decide · Where to vote · Print your choices.
@@ -43,7 +43,7 @@ deploy, and a short note to Lane of what to look at.
 3. **Top of the desk:** "Since you last looked" line, the summary band, and "Where things stand" (the timeline, its
    current step from the date and the canvass dates), replacing today's one-line results strip.
 4. **The results paper:** where · contest i of n; title; meta; the result (status, verdict, neutral bars, How Travis
-   County voted); your pick and your reason inside it; What's next for a runoff; As you marked it (read-only lines);
+   County voted); your pick and your reason inside it; What's next for a runoff; Your choice (read-only lines);
    "What you read before voting" folded. Previous / Next stay (J / K).
 5. **Notes:** About this result (who canvasses, when; How results become official), Where the numbers come from
    (sources and times), Calling races, Something look wrong? Tell us.
