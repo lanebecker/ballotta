@@ -656,6 +656,9 @@ def the_map_is_what_its_tables_write_and_covers_every_contest():
         if m.get('depends_on'): assert key[m['depends_on']]['type'] == 'measure' and key[m['depends_on']]['entity'] == key[cid]['entity'], cid
         if m.get('pair'): assert mp['contests'][m['pair']]['pair'] == cid and {m['who'], mp['contests'][m['pair']]['who']} == {'district', 'area'}, cid
         if m.get('write_ins'): assert 'Write-in' in key[cid]['choices'], (cid, 'a declared write-in where the ballot has no write-in line')
+        # and the reverse (#157): a write-in line means someone declared, so the contest is never "unopposed" for want of
+        # their name (c053 County Clerk: LaShawn Nash, from Ballotpedia; to confirm with Travis County Elections)
+        if 'Write-in' in key[cid]['choices']: assert m.get('write_ins'), (cid, 'a write-in line on the ballot and no declared write-in in the map')
     assert mp['contests']['c006']['canvasser'] == mp['contests']['c007']['canvasser'] == 'legislature'
 
 @test

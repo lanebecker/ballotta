@@ -883,7 +883,11 @@
    "keys": {
     "travis": null
    },
-   "write_ins": [],
+   "write_ins": [
+    {
+     "name": "LaShawn Nash"
+    }
+   ],
    "majority": false,
    "why": "general-election county offices: plurality, Elec. Code §2.001"
   },
