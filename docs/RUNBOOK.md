@@ -144,7 +144,11 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
    value a long password (four or five random words); then Actions → Pages → Run workflow. Every deploy after that
    rebuilds it from the results branch (`results-build`, or `main` once that's gone). To change the password, update
    the secret and run Pages again. To take the demo down, delete the secret and run Pages: the next deploy has no
-   /demo/. Nothing about it is committed, and if it fails, the site deploys without it.
+   /demo/. Nothing about it is committed, and if it fails, the site deploys without it. Its scenes: Nov 4 (the morning
+   after), Nov 13 (local canvasses done), Dec 8 (state canvass done). It keeps everything under `demo:ballotta.*` keys,
+   so nothing done in the demo (Clear everything included) touches the real page's picks on the same browser.
+   **After `results-build` is merged into main**, delete that branch (or the demo keeps building from it and goes
+   stale, showing "A newer Ballotta is available").
 
 ## Election night, Nov 3 (after 7 pm)
 

@@ -612,10 +612,11 @@ def results_alone_need_no_new_version():
         git = lambda *a: subprocess.run(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', *a], cwd=str(d), capture_output=True, text=True, check=True)
         run = lambda: subprocess.run([sys.executable, 'source/check_bumped.py'], cwd=str(d), capture_output=True, text=True)
         git('init', '-q'); git('add', '-A'); git('commit', '-qm', 'base'); git('tag', 'v' + (d / 'VERSION').read_text().strip())
-        (d / 'results.json').write_text((d / 'results.json').read_text().replace('"seq":0', '"seq":1')); git('commit', '-qam', 'results')
+        bump = lambda: (d / 'results.json').write_text(re.sub(r'"seq":(\d+)', lambda m: '"seq":' + str(int(m.group(1)) + 1), (d / 'results.json').read_text(), count=1))   # whatever seq the file is at (the Results workflow has run)
+        bump(); git('commit', '-qam', 'results')
         r = run(); assert r.returncode == 0, ('a results update alone needed a bump', r.stdout, r.stderr)
         (d / 'index.html').write_text((d / 'index.html').read_text(encoding='utf-8').replace('<title>', '<title> ', 1), encoding='utf-8')
-        (d / 'results.json').write_text((d / 'results.json').read_text().replace('"seq":1', '"seq":2')); git('commit', '-qam', 'both')
+        bump(); git('commit', '-qam', 'both')
         r = run(); assert r.returncode != 0 and 'index.html' in r.stdout + r.stderr and 'results.json' not in r.stdout + r.stderr, ('the page beside it', r.stdout, r.stderr)
 
 

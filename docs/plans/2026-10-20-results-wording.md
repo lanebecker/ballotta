@@ -208,3 +208,27 @@ only on this device."). These are the words the build added beyond the board:
   each contest. Unofficial results can change until they’re canvassed. From ballotta.org; contests are in ballot order."
 - **Demo** A third scene, "Tue, Dec 8 · state canvass done": the state's races official, the Governor and Lt. Governor
   still waiting on the Legislature.
+
+## The cold audit's fixes (Oct 21) — new, not yet approved
+
+Words the audit fixes (#135–#150, `docs/audits/2026-10-21-results-cold-audit.md`) added or changed:
+
+- **W89** While results are paused: the rail's count and the phone's top bar read "Results paused" (not "0 of 11
+  official"); the filters drop their numbers ("Too close"); the phone's fold under the paper is "Calling races".
+- **W90** The summary's first card when none is official yet: "Still being counted or canvassed" (was "The rest are
+  still being counted or canvassed", which read oddly at 0 of 11).
+- **W91** A recount in the rail: "Won: Jeffery Bowen · Official · recount requested" (as W82 in At a glance).
+- **W92** A share that rounds to nothing: "<0.1%" (a write-in with 2,100 of millions), and two decimals when two
+  different counts would read the same ("50.04%" and "49.96%", not "50.0%" twice).
+- **W93** The printout's column labels: "Contest and result" / "Your pick".
+- **W94** The phone's list, when a runoff is coming: "What's next" / "Runoff · Sat, Dec 12" / the contest (as the
+  laptop's band).
+- **W95** Screen readers only: a move to a contest says "Contest 9 of 11: <title>. <the rail's result line>. <your pick
+  line>" (e.g. "Headed to a runoff … · Official. You skipped this race."), with "No pick here." in place of "No pick
+  yet."; a picked contest's rail row adds "· you picked here"; the paper is named "Your ballot’s results"; Print… says
+  "Print your results: print options, then the Print button."
+- **W96** Counting: "Your N picks" now counts each pick in a several-seat race (Sunset Valley's two picks are two), so
+  "1 of your 2 picks is leading" adds one to "won or are leading" and one to "behind", as the paper says. The rail's
+  "My picks" filter still counts contests (8), so the two can differ (9): say if you'd rather they match.
+- **Removed:** "Saved on this device" from the top of a results paper; the second "You skipped this race." under Your
+  choice; W8 ("Becomes official at the state canvass, Nov 21–Dec 7.") once W5 says it after late ballots.

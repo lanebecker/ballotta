@@ -4,6 +4,9 @@ Two fresh agents audited `results-build` after Phase 3. One audited the code and
 
 ## Filed (survived)
 
+All fixed Oct 21: #134 in b1b5980; the rest in ba8d797 and a09b9a5, each with a test that fails without it and a
+mutant (R10–R11, R58–R88 in `tests/mutate_results.py`).
+
 | Issue | Finding | Source |
 |---|---|---|
 | #134 | Demo: Clear everything wiped the real page's ballot, picks and reasons. Fixed at once in b1b5980, since the demo is live. | code 1 |
