@@ -175,8 +175,12 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 5. Download Travis's and Bastrop's **Detail XML** (Clarity results page → Reports → Detail XML; `detailxml.zip`).
 6. **Map the county contests** (they get their keys only once the county posts): run
    `python3 source/build_results.py suggest detailxml.zip` (or ask Claude to). It prints each Ballotta contest with
-   the county contests whose choices fit. Confirm each and put the key in that contest's `keys` in
-   `source/results_map.json`. A contest with no key is shown as *partial* (that county missing), never as zero.
+   the county contests whose choices fit, best first (`17 = CITY OF AUSTIN PROPOSITION A`). Confirm each and copy
+   that whole `17 = …` into the contest's `keys` in `source/results_map.json`: the name is checked against every later
+   file, so a renumbered contest is held, not misread. "No fit" means none of the county's voters vote in it: confirm
+   from the county's ballot and set the key to `"absent"`. A contest with no key is shown as *partial* (that county
+   missing), never as zero. A file from another election (last year's, or the Dec 12 runoff's) is set aside in
+   `source/results/rejected/` with the reason, and the PR lists it.
 7. Then go on with the daily steps.
 
 ## Every day, Nov 4 → each canvass

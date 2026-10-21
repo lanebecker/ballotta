@@ -63,7 +63,7 @@ def rejected(res):
     return out
 
 
-def file_inbox(res=RES):
+def file_inbox(res=RES, election=None):
     """Each file in inbox/<county>/ is parsed, checked to be that county's, and moved to raw/<county>/<posted>-<hash8>/.
     A file already filed (same hash) is just removed from the inbox; one that isn't a usable file of that county is set
     aside (reject). Returns the paths filed."""
@@ -84,6 +84,9 @@ def file_inbox(res=RES):
             if rep["source"] != folder.name:
                 reject(res, folder.name, f, f"this is {rep['label']}'s file: upload it to inbox/{rep['source']}/")
                 continue
+            if election and rep.get("election") not in (None, election):
+                reject(res, folder.name, f, f"this is the file for the {rep['election']} election, not {election}")
+                continue
             d = raw_dir(res, rep["source"], rep["posted"], data)
             if not d.exists():
                 d.mkdir(parents=True)
@@ -97,9 +100,12 @@ def file_inbox(res=RES):
 # votes weeks ahead) is no result: published, it would say "No votes reported yet" from midnight Nov 4 until the first
 # real update was merged (the deep audit, #152). The workflow builds with it; the tests pass their own.
 POLLS_CLOSE = "2026-11-03T19:00"
+# Every file must be this election's, where the file says (all but Williamson's page do): last year's file, or the Dec 12
+# runoff's, is set aside (the deep audit, #158). The workflow passes it; the tests pass their own (their files are 2025's).
+ELECTION = "2026-11-03"
 
 
-def latest(res, source, excluded, since=None, held=None):
+def latest(res, source, excluded, since=None, held=None, election=None):
     """The newest report from one source (by the time posted inside the file), excluded files skipped, and any posted
     before `since`. Two different files posted at the same minute can't be told apart: a Problem, so Lane excludes the
     wrong one."""
@@ -118,6 +124,12 @@ def latest(res, source, excluded, since=None, held=None):
                 raise Problem(f"{rel}: {e} (add it to excluded.json with the reason)")
             rep["file"] = rel
             if since and rep["posted"] < since:
+                continue
+            if election and rep.get("election") not in (None, election):
+                msg = f"{rel}: the file for the {rep['election']} election, not {election}"
+                if held is None:
+                    raise Problem(msg + " (add it to excluded.json)")
+                held.append(msg + " (skipped; add it to excluded.json with the reason)")
                 continue
             best.append(rep)
     if not best:
@@ -144,9 +156,18 @@ def slice_of(rep, key, names, write_ins, spell, where):
     """One source's numbers for a contest, as [(pick name, votes)] in the page's order (ballot, then declared write-ins),
     plus registered voters. Every printed choice must be a ballot name, a declared write-in, or a generic write-in
     line (dropped: Ballotta never shows a ranked "Write-in" total); otherwise a Problem."""
+    key, named = (key.split(" = ", 1) + [None])[:2]
     c = rep["contests"].get(key)
     if c is None:
         raise Problem(f"{where}: {rep['label']}'s file has no contest {key!r} (fix the map's key)")
+    if rep["source"] in ("travis", "bastrop", "williamson"):
+        # a county's own contest number: kept with the county's name for it, so a renumbered file (or a mistyped
+        # number) is caught, not read as another contest (the deep audit, #158)
+        if named is None:
+            raise Problem(f"{where}: {rep['label']}'s key {key!r} needs the county's name for the contest, as suggest prints it: "
+                          f"\"{key} = {c['name']}\" (if that's the right contest)")
+        if P.norm(named) != P.norm(c["name"]):
+            raise Problem(f"{where}: {rep['label']}'s contest {key} is {c['name']!r} in this file, not {named!r} (fix the map's key)")
     every = names + write_ins
     got = {}
     for printed, votes in c["choices"]:
@@ -280,7 +301,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
 
 
 # ---------------------------------------------------------------- the whole file
-def build(res=RES, mp=None, prev=None, key=None, since=None):
+def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     """(results, changes): results.json's object, and {verdict_changed, lines} for the pull request."""
     mp = mp if mp is not None else load(ROOT / "source/results_map.json")
     key = key or check_results.answer_key()
@@ -291,7 +312,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None):
     held = []   # what couldn't be used this run, for the pull request: Lane fixes it, and nothing else waits (#153)
     reports = {}
     if not official.get("withdrawn"):   # the kill switch is read first: no file can hold up a withdrawal (#153)
-        reports = {s: latest(res, s, excluded, since, held) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
+        reports = {s: latest(res, s, excluded, since, held, election) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
         reports = {s: r for s, r in reports.items() if r is not None}
     contests = {}
     if not official.get("withdrawn"):
@@ -409,6 +430,8 @@ def suggest(path, mp=None):
     rep = next((f(data) for k, f in P.PARSERS.items() if k in ("clarity", "williamson", "hays") and _ok(f, data)), None)
     if rep is None:
         raise Problem(f"{path} isn't a county results file Ballotta reads")
+    if rep.get("election") not in (None, ELECTION):
+        raise Problem(f"{path} is the file for the {rep['election']} election, not {ELECTION}")
     key = check_results.answer_key()
     for cid, m in mp["contests"].items():
         if m["source"] != "counties" or rep["source"] not in m["electorate"] or m["keys"].get(rep["source"]):
@@ -441,12 +464,12 @@ def main(argv):
     cmd = argv[1] if len(argv) > 1 else "build"
     try:
         if cmd == "file-inbox":
-            for f in file_inbox():
+            for f in file_inbox(election=ELECTION):
                 print("filed", f.relative_to(ROOT))
         elif cmd == "build":
             arg = lambda k, d: pathlib.Path(argv[argv.index(k) + 1]) if k in argv else d
             out_path, prev_path = arg("--out", ROOT / "results.json"), arg("--prev", ROOT / "results.json")
-            obj, changes = build(prev=load(prev_path), since=POLLS_CLOSE)
+            obj, changes = build(prev=load(prev_path), since=POLLS_CLOSE, election=ELECTION)
             out_path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
             if "--changes" in argv:
                 arg("--changes", None).write_text(json.dumps(changes, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

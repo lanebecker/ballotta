@@ -1,6 +1,7 @@
 """Writes source/results_map.json: what each of the 214 contests is and where its numbers come from (docs/plans/
 2026-10-20-results.md, Task 2). Every fact is in the tables below with where it comes from; the JSON is never edited by
-hand except `keys` (filled the morning of Nov 4, when the counties post: `build_results.py suggest`) and `meta.fetch`.
+hand except `keys` (filled the morning of Nov 4, when the counties post, as `build_results.py suggest` prints them:
+"17 = <the county's name for the contest>", or "absent") and `meta.fetch`.
 
     python3 source/build_results_map.py           # writes the map, keeping keys and meta.fetch already in it
     python3 source/build_results_map.py --check   # the committed map is what this writes (a test runs it)

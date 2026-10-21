@@ -268,7 +268,8 @@ def hays_reads_every_contest_and_its_run_time():
 
 # ---------------------------------------------------------------- 3. the build, end to end on real files
 SENATE = next(k for k, c in P.parse_sos(fx('sos-53815-travis.json'))['contests'].items() if c['name'].strip() == 'U. S. SENATOR')
-PROPQ = next(k for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])
+PROPQ = next(f'{k} = {c["name"]}' for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])
+WC46 = '46 = ' + P.parse_williamson(fx('williamson-2025-11.html'))['contests']['46']['name']
 MAP = {
     'meta': {'election': '2026-11-03', 'sos_election': '53815', 'sos_time_zone': 'America/Chicago', 'late_until': '2026-11-17'},
     'canvassers': {'state': {'label': 'the state', 'kind': 'state'}, 'city-of-austin': {'label': 'the Austin City Council', 'kind': 'local'}},
@@ -277,7 +278,7 @@ MAP = {
                  'write_ins': [{'name': n} for n in ('Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons')]},
         # Prop Q (Nov 2025) stands in for Austin's Prop A (c071): three counties, real numbers
         'c071': {'source': 'counties', 'canvasser': 'city-of-austin', 'electorate': ['travis', 'williamson', 'hays'],
-                 'keys': {'travis': PROPQ, 'williamson': '46', 'hays': 'CITY OF AUSTIN PROPOSITION Q'}, 'registered': {'hays': 565}},
+                 'keys': {'travis': PROPQ, 'williamson': WC46, 'hays': 'CITY OF AUSTIN PROPOSITION Q'}, 'registered': {'hays': 565}},
     }}
 
 class Scratch:
@@ -461,10 +462,10 @@ def anything_unmapped_stops_the_build():
     finally: s.close()
 
 
-def clarity(contests, stamp='11/5/2026 9:00:00 AM CST', region='Travis'):
+def clarity(contests, stamp='11/5/2026 9:00:00 AM CST', region='Travis', election='11/3/2026'):
     """A valid Detail XML with chosen numbers: {key: (name, [(choice, votes)])}, one precinct, one vote type."""
     out = [f'<?xml version="1.0" encoding="utf-8"?><ElectionResult><Timestamp>{stamp}</Timestamp><ElectionName>Test</ElectionName>'
-           f'<ElectionDate>11/3/2026</ElectionDate><Region>{region}</Region><VoterTurnout totalVoters="5000" ballotsCast="0" voterTurnout="0">'
+           f'<ElectionDate>{election}</ElectionDate><Region>{region}</Region><VoterTurnout totalVoters="5000" ballotsCast="0" voterTurnout="0">'
            '<Precincts><Precinct name="101" totalVoters="5000" ballotsCast="0" voterTurnout="0" percentReporting="4" /></Precincts></VoterTurnout>']
     for k, (name, ch) in contests.items():
         out.append(f'<Contest key="{k}" text="{name}" voteFor="1" isQuestion="false" precinctsReporting="1" precinctsReported="1">')
@@ -497,7 +498,7 @@ def a_county_with_no_file_counts_from_the_canvass_and_final_files_are_official_n
     marks it final (official.json "final"), "numbers are the last unofficial count" (W11) goes away."""
     d, res = scratch_with([clarity({'1': ('Eastwood MUD Proposition A', FA(900, 100))})])
     try:
-        mp = one_map(c147=M('1', electorate=['travis', 'lee'], keys={'travis': '1', 'lee': None}, registered={'lee': 50}))
+        mp = one_map(c147=M('1 = Eastwood MUD Proposition A', electorate=['travis', 'lee'], keys={'travis': '1 = Eastwood MUD Proposition A', 'lee': None}, registered={'lee': 50}))
         e = B.build(res=res, mp=mp)[0]['contests']['c147']
         assert (e['state'], e['missing']) == ('partial', ['Lee County']), e
         (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': {'FOR': 10, 'AGAINST': 5}}}}))
@@ -532,6 +533,42 @@ def suggest_ranks_by_the_title_and_says_absent():
     finally: shutil.rmtree(d)
 
 @test
+def only_this_elections_files_are_read():
+    """#158: no parser checked the election date, so last year's file, or the Dec 12 runoff's, was read as Nov 3's."""
+    import json as J
+    real = J.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))['meta']['election']
+    assert B.ELECTION == real and B.POLLS_CLOSE.startswith(real), (B.ELECTION, B.POLLS_CLOSE, real)
+    d, res = scratch_with([])
+    try:
+        (res / 'inbox/travis/old.xml').write_bytes(clarity({'1': ('Prop', FA(1, 2))}, election='11/4/2025'))
+        (res / 'inbox/travis/runoff.xml').write_bytes(clarity({'1': ('Prop', FA(1, 2))}, stamp='12/13/2026 9:00:00 AM CST', election='12/12/2026'))
+        (res / 'inbox/travis/good.xml').write_bytes(clarity({'1': ('Prop', FA(5, 2))}))
+        filed = B.file_inbox(res, election=B.ELECTION)
+        assert [f.name for f in filed] == ['good.xml'] and sorted(p for p, _ in B.rejected(res)) == ['rejected/travis/old.xml', 'rejected/travis/runoff.xml'], (filed, B.rejected(res))
+        assert 'the 2026-12-12 election, not 2026-11-03' in dict(B.rejected(res))['rejected/travis/runoff.xml']
+        data = clarity({'1': ('Prop', FA(1, 2))}, stamp='12/13/2026 9:00:00 AM CST', election='12/12/2026')    # filed some other way
+        r = P.parse_clarity(data); raw = B.raw_dir(res, 'travis', r['posted'], data); raw.mkdir(parents=True); (raw / 'x.xml').write_bytes(data)
+        out, ch = B.build(res=res, mp=one_map(c148=M('1 = Prop')), election=B.ELECTION)
+        assert [x[1] for x in out['contests']['c148']['choices']] == [5, 2], 'the runoff file was read as Nov 3'
+        assert [l for l in ch['lines'] if 'HELD' in l and '2026-12-12 election' in l], ch['lines']
+    finally: shutil.rmtree(d)
+    f = lambda n: (ROOT / 'tests/fixtures/results' / n).read_bytes()
+    assert (P.parse_sos(f('sos-53815-travis.json'))['election'], P.parse_sos(f('sos-51031.json'))['election'], P.parse_hays(f('hays-2025-11-official.pdf'))['election'],
+            P.parse_sos_canvass(f('sos-58314-canvass.pdf'))['election']) == ('2026-11-03', '2025-11-04', '2025-11-04', '2026-05-26')
+
+@test
+def a_county_key_carries_the_countys_name_for_it():
+    """#158: a county's contest number alone can't be checked: a mistyped or renumbered key read another contest. The
+    key is written as suggest prints it, "17 = <the county's name>", and a file that disagrees holds the contest."""
+    d, res = scratch_with([clarity({'1': ('Road bonds', FA(700, 300)), '2': ('Refunding road bonds', FA(600, 400))})])
+    try:
+        for k, says in (('1', 'needs the county’s name'), ('2 = Road bonds', "is 'Refunding road bonds' in this file")):
+            out, ch = B.build(res=res, mp=one_map(c150=M(k)))
+            assert 'c150' not in out['contests'] and [l for l in ch['lines'] if 'HELD' in l and says.replace('’', "'") in l], (k, ch['lines'])
+        assert B.build(res=res, mp=one_map(c150=M('1 = ROAD  BONDS')))[0]['contests']['c150']['choices'][0][1] == 700, 'names compare as norm() reads them'
+    finally: shutil.rmtree(d)
+
+@test
 def clarity_times_in_utc_read_as_austin_time():
     assert P.parse_clarity(clarity({}, stamp='11/5/2026 3:00:00 PM UTC'))['posted'] == '2026-11-05T09:00'   # CST: UTC-6
     assert P.parse_clarity(clarity({}, stamp='10/30/2026 3:00:00 PM UTC'))['posted'] == '2026-10-30T10:00'  # CDT: UTC-5
@@ -541,7 +578,7 @@ def clarity_times_in_utc_read_as_austin_time():
 def a_failed_confirmation_marks_the_whole_district():
     d, res = scratch_with([clarity({'1': ('Confirmation', FA(300, 700)), '2': ('Bonds', FA(600, 400))})])
     try:
-        mp = one_map(c147=M('1'), c148=M('2', depends_on='c147'))
+        mp = one_map(c147=M('1 = Confirmation'), c148=M('2 = Bonds', depends_on='c147'))
         out, _ = B.build(res=res, mp=mp)
         assert out['contests']['c148']['note'] is None, 'failing (unofficial) is not yet failed'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-10'}}}))
@@ -554,7 +591,7 @@ def a_failed_confirmation_marks_the_whole_district():
 def an_annexation_gets_one_outcome_from_both_votes():
     d, res = scratch_with([clarity({'1': ('ESD 9 district', FA(400, 600)), '2': ('ESD 9 territory', FA(80, 20))})])
     try:
-        mp = one_map(c206=M('1', canvasser='esd-9', who='district', pair='c208'), c208=M('2', canvasser='esd-9', who='area', pair='c206'))
+        mp = one_map(c206=M('1 = ESD 9 district', canvasser='esd-9', who='district', pair='c208'), c208=M('2 = ESD 9 territory', canvasser='esd-9', who='area', pair='c206'))
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-9': {'canvassed': '2026-11-10'}}}))
         out, _ = B.build(res=res, mp=mp)
         assert [out['contests'][c]['note'] for c in ('c206', 'c208')] == ['annex_district_rejected'] * 2, out['contests']['c206']['note']
@@ -565,7 +602,7 @@ def an_annexation_gets_one_outcome_from_both_votes():
 def an_outcome_one_total_cant_show_waits_for_the_canvass():
     d, res = scratch_with([clarity({'1': ('ESD 4 annexation', FA(900, 100))})])
     try:
-        mp = one_map(c205=M('1', canvasser='esd-4', outcome_from_canvass=True))
+        mp = one_map(c205=M('1 = ESD 4 annexation', canvasser='esd-4', outcome_from_canvass=True))
         e = B.build(res=res, mp=mp)[0]['contests']['c205']
         assert (e['state'], e['verdict'], e['no_call']) == ('unofficial', 'none', 'two_majorities'), '90% for, and still no call: two majorities, one total'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}}))
@@ -579,7 +616,7 @@ def an_outcome_one_total_cant_show_waits_for_the_canvass():
 def an_unsettled_rule_says_why_there_is_no_call():
     d, res = scratch_with([clarity({'1': ('Refunding road bonds', FA(600, 400)), '2': ('Road bonds', FA(700, 300))})])
     try:
-        mp = one_map(c153=M('1', needs='unsure'), c150=M('2', needs='unsure'))
+        mp = one_map(c153=M('1 = Refunding road bonds', needs='unsure'), c150=M('2 = Road bonds', needs='unsure'))
         out, _ = B.build(res=res, mp=mp)
         assert (out['contests']['c153']['verdict'], out['contests']['c153']['no_call']) == ('none', 'rule_unsettled'), '60%: a majority yes, two-thirds no'
         assert (out['contests']['c150']['verdict'], out['contests']['c150']['no_call']) == ('passing', None), '70%: both agree'
@@ -589,7 +626,7 @@ def an_unsettled_rule_says_why_there_is_no_call():
 def a_county_confirmed_absent_leaves_no_travis_breakdown():
     d, res = scratch_with([clarity({'1': ('District 9', [('Rich Heyman', 600), ('Katie Kam', 300), ('Zohaib “Zo” Qadri', 50), ('Dave Thadani', 30), ('Kai Huang', 20)])})])
     try:
-        m = M('1', canvasser='eastwood-mud', majority=True); m['electorate'] = ['travis', 'williamson', 'hays']; m['keys'] = {'travis': '1', 'williamson': None, 'hays': None}
+        m = M('1 = District 9', canvasser='eastwood-mud', majority=True); m['electorate'] = ['travis', 'williamson', 'hays']; m['keys'] = {'travis': '1 = District 9', 'williamson': None, 'hays': None}
         e = B.build(res=res, mp=one_map(c070=m))[0]['contests']['c070']
         assert e['state'] == 'partial' and e['travis'] is not None, 'before Nov 4 mapping: possible counties are missing'
         m['keys'].update(williamson='absent', hays='absent')
@@ -601,7 +638,7 @@ def a_county_confirmed_absent_leaves_no_travis_breakdown():
 def a_generic_write_in_line_is_left_out():
     d, res = scratch_with([clarity({'1': ('Prop', [('FOR', 600), ('AGAINST', 400), ('Write-in', 7)])})])
     try:
-        e = B.build(res=res, mp=one_map(c148=M('1')))[0]['contests']['c148']
+        e = B.build(res=res, mp=one_map(c148=M('1 = Prop')))[0]['contests']['c148']
         assert [x[:2] for x in e['choices']] == [['FOR', 600], ['AGAINST', 400]] and e['choices'][0][2] == 60.0, e['choices']
     finally: shutil.rmtree(d)
 
@@ -611,7 +648,7 @@ def a_race_decided_in_travis_alone_has_no_travis_breakdown():
     try:
         data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
         raw = B.raw_dir(res, 'sos', r['posted'], data); raw.mkdir(parents=True); (raw / 'election.json').write_bytes(data)
-        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9'
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9 = U.S. Senator'
         assert B.build(res=res, mp=mp)[0]['contests']['c001']['travis'] == [['Ken Paxton', 9, 45.0], ['James Talarico', 10, 50.0], ['Ted Brown', 1, 5.0]]   # ballot order, not the file's
         mp['contests']['c001']['travis_only'] = True
         assert B.build(res=res, mp=mp)[0]['contests']['c001']['travis'] is None
