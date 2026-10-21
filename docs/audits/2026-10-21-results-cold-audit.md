@@ -56,3 +56,8 @@ rather than stacked under them (stacked took more height at 1024px, not less).
 - All Travis County results' subline leaves out approved W59's "Unofficial until each canvass. Why unofficial?". Restore it, or keep the canvas's version? (voter 27)
 - "What's next · Get ready" leads to a contest page with nothing to get ready with until Phase 4 lands. That's fine if Phase 4 lands before the city's canvass (about Nov 12), when a runoff first becomes official. Otherwise use "See the runoff". (voter 29)
 - W82–W88 and the words these fixes add still need approval. (voter 28)
+
+## Closed
+
+All 17 closed Oct 21, after the full run: 182/182 site tests, the results, pipeline and demo suites, and 97 of 97
+results mutants killed (R10–R11, R58–R100). Milestone 13: 0 open, 17 closed.
