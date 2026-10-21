@@ -392,6 +392,35 @@ def the_ledger_counts_changes_and_names_corrections():
     finally: s.close()
 
 @test
+def excluding_a_newest_file_goes_back_quietly_and_corrects_only_what_changed():
+    """#154: excluding a source's newest file never stops the build (posted times would go back); a contest that reads the
+    same keeps its sources, one that reads differently says Corrected once; an exclusion that never reached the published
+    file corrects nothing, then or later."""
+    s = Scratch()
+    try:
+        one, _ = s.build()
+        x = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/13/2025 9:00:00 AM', 1)
+        r = P.parse_clarity(x); d = B.raw_dir(s.res, 'travis', r['posted'], x); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(x)
+        two, _ = s.build(prev=one)
+        assert dict(map(tuple, two['contests']['c071']['sources']))['Travis County'] == '2025-11-13T09:00'
+        newest = (d / 'detailxml.xml').relative_to(s.res).as_posix()
+        s.exclude({'path': newest, 'reason': 'a botched update', 'date': '2026-11-14', 'contests': []})
+        three, ch = s.build(prev=two)   # no Problem: the posted time would go back, but nothing reads differently
+        assert three['contests']['c071']['sources'] == two['contests']['c071']['sources'] and three['contests']['c071']['corrected'] is None
+        assert not [l for l in ch['lines'] if l.startswith('- HELD')], ch['lines']
+        # an exclusion of a file the published copy never used: a later ordinary change isn't called a correction
+        y = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/10/2025 9:00:00 AM', 1)
+        r = P.parse_clarity(y); d = B.raw_dir(s.res, 'travis', r['posted'], y); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(y)
+        never = (d / 'detailxml.xml').relative_to(s.res).as_posix()
+        s.exclude({'path': newest, 'reason': 'a botched update', 'date': '2026-11-14', 'contests': []},
+                  {'path': never, 'reason': 'test', 'date': '2026-11-15', 'contests': ['c071']})
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12'}})
+        four, ch = s.build(prev=three)
+        e = four['contests']['c071']
+        assert (e['state'], e['verdict'], e['corrected']) == ('official', 'failed', None), ('an ordinary change called a correction', e['corrected'])
+    finally: s.close()
+
+@test
 def the_kill_switch_hides_everything_and_says_so():
     s = Scratch()
     try:

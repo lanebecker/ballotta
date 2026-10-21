@@ -287,10 +287,15 @@ def build(res=RES, mp=None, prev=None, key=None, since=None):
             if e is not None:
                 contests[cid] = e
         notes(contests, mp)
-    corrections = {}
-    for x in excluded.values():
-        for cid in x.get("contests", []):
-            corrections[cid] = max(corrections.get(cid, ""), x["date"])
+    # A correction is exactly this: what's published came from a file now excluded, and the contest now reads differently.
+    # Then it says so (W51), once; if it reads the same, it keeps its sources, so nothing appears to go back in time. An
+    # exclusion that never reached the published file corrects nothing, then or later (the deep audit, #154).
+    stamps = {}
+    for path, x in excluded.items():
+        parts = path.split("/")
+        if len(parts) >= 3 and parts[0] == "raw" and parts[1] in P.LABELS and len(parts[2]) >= 16:
+            st = (P.LABELS[parts[1]], parts[2][:13] + ":" + parts[2][14:16])
+            stamps[st] = max(stamps.get(st, ""), x["date"])
     out = {"seq": prev["seq"], "election": "2026-11-03", "withdrawn": bool(official.get("withdrawn")),
            "late_until": official.get("late_until", mp["meta"]["late_until"]), "contests": contests}
     lines, verdict_changed, fresh = [], False, 0
@@ -301,11 +306,15 @@ def build(res=RES, mp=None, prev=None, key=None, since=None):
             if old is not None:
                 lines.append(f"- {title}: no longer shown ({cid})"); verdict_changed = True
             continue
+        hit = [stamps[tuple(x)] for x in old["sources"] if tuple(x) in stamps] if old is not None else []
+        if hit:
+            if all(e[k] == old[k] for k in ("choices", "state", "verdict", "leaders", "runoff", "travis", "missing")):
+                e["sources"] = old["sources"]
+            elif max(hit) > (old.get("corrected") or ""):
+                e["corrected"] = max(hit)
         moved = old is None or (e["state"], e["verdict"], e["leaders"], e["runoff"], e["note"]) != (old["state"], old["verdict"], old["leaders"], old["runoff"], old["note"])
         if moved:
             verdict_changed = True
-            if old is not None and old["verdict"] != e["verdict"] and corrections.get(cid, "") > (old.get("corrected") or ""):
-                e["corrected"] = corrections[cid]
             if old is None and e["state"] == "counting":
                 fresh += 1                                # first seen, no votes yet: one summary line, not dozens
             else:
