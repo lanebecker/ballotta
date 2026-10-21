@@ -45,8 +45,41 @@ jobs:
       - name: The results back end (rules, parsers, build) before anything deploys
         run: python3 tests/test_results.py
 
+  # The results demo at /demo/ (Lane, Oct 20): the page as the results branch has it, with made-up names and results,
+  # encrypted with the DEMO_PASSWORD secret (source/build_demo.py, source/demo_lock.mjs). Its own job, read-only and
+  # without the deploy's credentials, since it runs the results branch's code; only the locked page leaves it, and
+  # nothing is committed. No secret, no demo. It can never hold up the live site: without it, the site deploys as before.
+  demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0          # every branch: the demo is built from the results branch
+      - name: Build the demo and lock it (none without the DEMO_PASSWORD secret)
+        id: lock
+        env:
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        run: |
+          if [ -z "$DEMO_PASSWORD" ]; then echo "::notice::No DEMO_PASSWORD secret, so no demo at /demo/"; exit 0; fi
+          branch=results-build
+          git rev-parse -q --verify "origin/$branch" >/dev/null || branch=main   # once results ship, main has it all
+          git worktree add -q --detach ../demo-src "origin/$branch"
+          python3 ../demo-src/source/build_demo.py ../demo.html
+          node ../demo-src/source/demo_lock.mjs ../demo.html locked/demo/index.html
+          rm ../demo.html
+          echo "built=yes" >> "$GITHUB_OUTPUT"
+          echo "::notice::Demo built from $branch ($(git -C ../demo-src rev-parse --short HEAD)), locked for /demo/"
+      - if: steps.lock.outputs.built == 'yes'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: demo-locked
+          path: locked
+          retention-days: 1
+
   deploy:
-    needs: pipeline
+    needs: [pipeline, demo]
     if: ${{ !cancelled() && (needs.pipeline.result == 'success' || (needs.pipeline.result == 'skipped' && inputs.skip_pipeline_tests)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -68,6 +101,13 @@ jobs:
         run: python3 source/check_results.py
       - name: Build the site folder
         run: python3 source/build_site.py --site _site
+      - name: The locked demo, if the demo job made one (its absence never stops the deploy)
+        if: ${{ needs.demo.result == 'success' }}
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: demo-locked
+          path: _site
       - name: Where Pages publishes from
         id: source
         env:
