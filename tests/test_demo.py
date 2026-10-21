@@ -31,7 +31,24 @@ check(not [n for n in real if n in html], "no real candidate's name anywhere in 
 check("fetch('results.json'" not in html, "the demo never asks for the real results")
 check('<meta name="robots" content="noindex">' in html and 'data-domains="preview.invalid"' in html, "search engines kept out; the tracker can't send")
 check("Demo · made-up results" in html and "TEST DATA (not real results)" in html, "labeled a demo on every screen, and in every result's source")
-check("localStorage.getItem('demo:' + k" in html and "sw.register(" not in html, "its own storage; no offline copy")
+check("'ballotta." not in html and "startsWith('demo:ballotta.')" in html and "sw.register(" not in html, "its own storage; no offline copy")
+
+# In a browser, on the real page's origin: the demo reads and writes only its own keys, and its Clear everything leaves
+# the real page's ballot, picks and reasons alone (the cold audit, Oct 21).
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    b = p.chromium.launch(); pg = b.new_page()
+    pg.route("https://ballotta.test/**", lambda r: r.fulfill(status=200, content_type="text/html", body=html) if r.request.url.endswith("/demo/") else r.fulfill(status=404, body=""))
+    pg.on("dialog", lambda d: d.accept())
+    real = {"ballotta.picks": '{"c001":["x"]}', "ballotta.whys": '{"c001":"mine"}', "ballotta.ballot": '{"pr":"142","b":[1]}'}
+    pg.goto("https://ballotta.test/demo/")
+    pg.evaluate("kv => { for (const k in kv) localStorage.setItem(k, kv[k]); localStorage.setItem('demo:ballotta.picks', '{}'); }", real)
+    pg.goto("https://ballotta.test/demo/"); pg.wait_for_timeout(300)
+    pg.evaluate("() => clearEverything()"); pg.wait_for_timeout(500)
+    left = pg.evaluate("() => Object.fromEntries(Object.keys(localStorage).map(k => [k, localStorage.getItem(k)]))")
+    check(all(left.get(k) == v for k, v in real.items()), "the demo's Clear everything leaves the real page's keys")
+    check(not [k for k in left if k.startswith("demo:ballotta.")], "and clears the demo's own")
+    b.close()
 check("League answers aren’t linked in the demo" in html and "LWVAA-VG-EN.pdf#page=2" not in html, "no League answers or guide pages under made-up names")
 
 with tempfile.TemporaryDirectory() as d:

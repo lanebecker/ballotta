@@ -140,9 +140,6 @@ def page():
             (re.search(r"^const today = \(\) => .*$", html, re.M).group(0), "const today = () => new Date(DEMO.now);  // the demo's scene (source/build_demo.py)"),
             # the scene's results, built in: the demo never asks for results.json
             ("fetch('results.json', { cache: 'no-store' })", "Promise.resolve(new Response(JSON.stringify(DEMO.results)))"),
-            # picks and reasons kept apart from the real page's (the same origin, ballotta.org)
-            ("localStorage.getItem(k", "localStorage.getItem('demo:' + k"),
-            ("localStorage.setItem(k,", "localStorage.setItem('demo:' + k,"),
             # no offline copy: the demo is one locked file, and the real page's copy is the real page's
             (build_site.SW_REGISTER, ""),
             # the League guide's answers are real candidates' words: not linked under made-up names
@@ -152,6 +149,13 @@ def page():
         for a, b in swaps:
             assert html.count(a) == 1, ("the demo expects this once in the page", a[:80], html.count(a))
             html = html.replace(a, b, 1)
+        # Everything the page keeps in this browser, kept apart from the real page's (the same origin, ballotta.org): every
+        # storage key the page names starts 'ballotta.', so each one becomes 'demo:ballotta.'. That covers reading and
+        # writing, and Clear everything, which removes keys by that start and so must never reach the real page's
+        # (the cold audit, Oct 21: before this, the demo's Clear everything wiped the visitor's real ballot).
+        n = html.count("'ballotta.")
+        assert n >= 40, ("the page's storage keys moved", n)
+        html = html.replace("'ballotta.", "'demo:ballotta.")
         assert '<meta name="robots" content="noindex">' in html and 'data-domains="preview.invalid"' in html
         assert "fetch('results.json'" not in html
         return html
