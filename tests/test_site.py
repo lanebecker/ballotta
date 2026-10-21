@@ -4756,6 +4756,7 @@ def rs_page(b, serve, when='2026-11-05T09:00', phone=False, ballot=True, picks=T
     asked = []; pg.__dict__['asked'] = asked
     def answer(route):
         asked.append(route.request.url)
+        if serve.get('hold') is not None: serve['hold'].append(route); return   # answered later by the test
         body = serve['body']
         route.fulfill(status=serve.get('status', 200), content_type='application/json', headers=serve.get('headers', {}),
                       body=body if isinstance(body, str) else json.dumps(body))
@@ -5304,6 +5305,38 @@ def the_runoff_is_its_own_ballot(b):
     assert pg.inner_text('#ph-next') == 'Where to vote →'
     pg.click('#ph-next'); pg.wait_for_timeout(200)
     assert 'Travis County hasn’t posted runoff vote centers yet.' in pg.inner_text('#dk-paper') and not pg.is_visible('#ph-next')
+    ctx.close()
+
+@results_test
+def results_are_a_record_from_the_first_moment(b):
+    # #152: from Nov 4 the page is read-only while results.json is on its way (a tap mustn't change a pick that's about to
+    # become a record); with no answer it's the ballot again; an older file never replaces a newer one.
+    fx = rs_fixtures()
+    serve = {'hold': [], 'body': fx.scene('mixed')}
+    ctx, pg = rs_page(b, serve)
+    assert serve['hold'], 'results.json was asked for'
+    assert pg.query_selector('#dk-paper [data-pick]') is None and pg.query_selector('#dk-w') is None, 'read-only while results load'
+    pg.focus('#dk-paper'); pg.keyboard.press('2')
+    assert cur(pg, 'c001') == ['James Talarico'], 'the picking keys do nothing while results load'
+    route = serve['hold'].pop(); serve['hold'] = None
+    route.fulfill(status=200, content_type='application/json', body=json.dumps(fx.scene('mixed'))); pg.wait_for_timeout(500)
+    assert pg.inner_text('#dk-count') == '0 of 11 official' and pg.errs == [], (pg.inner_text('#dk-count'), pg.errs)
+    ctx.close()
+    # no answer at all (the network fails): the ballot again, editable
+    ctx, pg = rs_page(b, {'status': 500, 'body': ''})
+    pg.wait_for_timeout(300)
+    assert pg.query_selector('#dk-paper [data-pick]') is not None and pg.errs == [], 'with no results the Nov 3 ballot is back'
+    ctx.close()
+    # an older file after a newer one: ignored, and what this device has seen doesn't go back
+    serve = {'body': fx.scene('official')}
+    ctx, pg = rs_page(b, serve, when='2026-12-03T09:00')
+    assert pg.inner_text('#dk-count') == '4 of 11 official'
+    serve['body'] = fx.scene('mixed'); pg.clock.run_for(11 * 60 * 1000); pg.evaluate("dispatchEvent(new Event('focus'))"); pg.wait_for_timeout(500)
+    assert pg.inner_text('#dk-count') == '4 of 11 official', ('an older file replaced a newer one', pg.inner_text('#dk-count'))
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.resultsSeen')).seq") == 5
+    pg.reload(); pg.wait_for_timeout(600)
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.resultsSeen')).seq") == 5, 'seen never goes back to an older seq'
+    assert pg.errs == [], pg.errs
     ctx.close()
 
 def main():

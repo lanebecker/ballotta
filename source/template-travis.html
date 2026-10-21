@@ -2343,17 +2343,20 @@ const results = (() => {
   // Asked on load, when the page comes back into view, and every 10 minutes in view, like version.json (the newer-release
   // check). no-store: never a browser cache; the offline copy (phones) marks a copy it kept, so the page can say so (W14).
   const EVERY = 10 * 60 * 1000;
+  function settle() { if (settled) return; settled = true; if (!R) redraw(false); }   // no results after all: the ballot again
   function load(force) {
     if (!live() || document.visibilityState === 'hidden' || (!force && Date.now() - asked < EVERY)) return;
     asked = Date.now();
+    if (!settled) setTimeout(settle, 8000);
     fetch('results.json', { cache: 'no-store' }).then(r => r.ok ? r.json().then(j => [j, r.headers.get('x-ballotta-copy') === 'saved']) : null).then(got => {
       if (!got) return;
       const next = accept(got[0]);
       if (!next) return;
+      if (R && next.seq < R.seq && !saved) return;   // an older file (a lagging cache, a kept copy) never replaces a newer one (#152)
       const changed = !R || next.seq !== R.seq || got[1] !== saved, news = !!R;
       R = next; saved = got[1];
       if (changed) redraw(news);
-    }).catch(() => {});
+    }).catch(() => {}).finally(settle);
   }
   function redraw(news) {
     try { if (window.desk) { if (news) desk.reflow(updated()); else desk.render(); } } catch (e) {}   // the laptop render ends by drawing the top line (top())
@@ -2502,6 +2505,8 @@ const results = (() => {
         else if (w[4] !== n[4]) since.numbers++;                                          // only the numbers moved
       });
     }
+    const old = plain(LS.get('ballotta.resultsSeen', {}));
+    if (isNat(old.seq) && old.seq > R.seq) return;   // what this device has seen never goes back to an older file (#152)
     const rec = { seq: R.seq, at: day(), v: now }, txt = JSON.stringify(rec);
     if (txt !== seenText) { seenText = txt; LS.set('ballotta.resultsSeen', rec); }   // only when it changed: every write tells the other tabs
   }
@@ -2550,7 +2555,10 @@ const results = (() => {
   /* ----- after the election (Lane, Oct 21; docs/plans/2026-10-21-after-the-election.md): the page as a record of the
      ballot. From Nov 4, with a file the page accepts (the pause included), the laptop and phone layouts show results
      where the ballot was filled in: the rail counts what's official, the paper is the result, the picks are read-only. */
-  const after = () => !!(R && live() && (R.withdrawn || Object.keys(R.contests).length));   // a file with nothing usable changes nothing
+  // From Nov 4, until the first answer about results.json (or 8 s), the page is already a record, read-only: the Nov 3
+  // ballot was editable for that moment, and a tap could change a pick just before it became a record (#152).
+  let settled = false;
+  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled);   // a file with nothing usable changes nothing
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], DAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dow = (d, long) => (long ? DAYS_LONG : DAYS)[new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10))).getUTCDay()];
   const dayLong = (d) => dow(d) + ', ' + md(d);                                       // "Sat, Dec 12"

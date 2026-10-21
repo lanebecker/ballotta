@@ -49,7 +49,11 @@ M = [
  ('R30 asked before the gate', PREV, "    if (!live() || document.visibilityState === 'hidden' ||", "    if (document.visibilityState === 'hidden' ||", [N]),
  ('R31 a two-thirds measure unsaid', PREV, "    if (e.needs === 'two_thirds') h +=", "    if (false) h +=", [A]),
  # after the election (docs/plans/2026-10-21-after-the-election.md)
- ('R32 never after the election', PREV, "  const after = () => !!(R && live() && (R.withdrawn || Object.keys(R.contests).length));", "  const after = () => false;", [T]),
+ ('R32 never after the election', PREV, "  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled);", "  const after = () => false;", [T]),
+ ('R114 editable while results load', PREV, "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled)", "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : false)", ['results_are_a_record_from_the_first_moment']),
+ ('R115 stuck read-only with no results', PREV, "    }).catch(() => {}).finally(settle);", "    }).catch(() => {});", ['results_are_a_record_from_the_first_moment']),
+ ('R116 an older file replaces a newer one', PREV, "      if (R && next.seq < R.seq && !saved) return;", "", ['results_are_a_record_from_the_first_moment']),
+ ('R117 seen goes back', PREV, "    if (isNat(old.seq) && old.seq > R.seq) return;", "", ['results_are_a_record_from_the_first_moment']),
  ('R33 picks editable after', PREV, "    if (after()) return viewResult();\n", '', [T]),
  ('R34 picking keys after', PREV, "    if (after() && (/^[1-9]$/.test(k) || k === 's' || k === 'r')) return;", '', [T]),
  ('R35 decided counted as official', PREV, "done = ballot.filter(b => A ? results.official(b.c) : decided(b.c.id)).length, paused", "done = ballot.filter(b => decided(b.c.id)).length, paused", [T, L, S]),

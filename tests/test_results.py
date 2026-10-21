@@ -527,6 +527,19 @@ def a_race_decided_in_travis_alone_has_no_travis_breakdown():
     finally: shutil.rmtree(d)
 
 
+@test
+def nothing_posted_before_the_polls_close_is_a_result():
+    """#152: the SOS feed lists every contest weeks ahead with no votes; published, the page would say "No votes reported
+    yet" from midnight Nov 4. The workflow's build skips any report posted before 7 pm on Election Day."""
+    s = Scratch()
+    try:
+        before = B.build(res=s.res, mp=MAP, since=B.POLLS_CLOSE)[0]
+        assert before["contests"] == {}, len(before["contests"])
+        assert s.build()[0]["contests"], "without the cutoff the same files are results (the tests' own)"
+        assert B.POLLS_CLOSE == "2026-11-03T19:00"
+        assert "since=POLLS_CLOSE" in (ROOT / 'source/build_results.py').read_text(), 'the workflow (the command line) builds with it'
+    finally: s.close()
+
 # ---------------------------------------------------------------- 4. the fetcher, with a stand-in network
 def net(pages):
     asked = []

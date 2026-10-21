@@ -72,9 +72,16 @@ def file_inbox(res=RES):
     return filed
 
 
-def latest(res, source, excluded):
-    """The newest report from one source (by the time posted inside the file), excluded files skipped. Two different
-    files posted at the same minute can't be told apart: a Problem, so Lane excludes the wrong one."""
+# Polls close at 7 pm Austin time on Election Day. A report posted before then (the SOS feed lists every contest with no
+# votes weeks ahead) is no result: published, it would say "No votes reported yet" from midnight Nov 4 until the first
+# real update was merged (the deep audit, #152). The workflow builds with it; the tests pass their own.
+POLLS_CLOSE = "2026-11-03T19:00"
+
+
+def latest(res, source, excluded, since=None):
+    """The newest report from one source (by the time posted inside the file), excluded files skipped, and any posted
+    before `since`. Two different files posted at the same minute can't be told apart: a Problem, so Lane excludes the
+    wrong one."""
     best = []
     for d in sorted((res / "raw" / source).glob("*")) if (res / "raw" / source).exists() else []:
         for f in sorted(d.iterdir()):
@@ -86,6 +93,8 @@ def latest(res, source, excluded):
             except P.BadFile as e:
                 raise Problem(f"{rel}: {e} (add it to excluded.json with the reason)")
             rep["file"] = rel
+            if since and rep["posted"] < since:
+                continue
             best.append(rep)
     if not best:
         return None
@@ -222,7 +231,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
 
 
 # ---------------------------------------------------------------- the whole file
-def build(res=RES, mp=None, prev=None, key=None):
+def build(res=RES, mp=None, prev=None, key=None, since=None):
     """(results, changes): results.json's object, and {verdict_changed, lines} for the pull request."""
     mp = mp if mp is not None else load(ROOT / "source/results_map.json")
     key = key or check_results.answer_key()
@@ -230,7 +239,7 @@ def build(res=RES, mp=None, prev=None, key=None):
     official = load(res / "official.json", {}) or {}
     excluded = {x["path"]: x for x in load(res / "excluded.json", []) or []}
     ZONE[0] = mp["meta"]["sos_time_zone"]
-    reports = {s: latest(res, s, excluded) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
+    reports = {s: latest(res, s, excluded, since) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
     reports = {s: r for s, r in reports.items() if r is not None}
     contests = {}
     if not official.get("withdrawn"):
@@ -355,7 +364,7 @@ def main(argv):
         elif cmd == "build":
             arg = lambda k, d: pathlib.Path(argv[argv.index(k) + 1]) if k in argv else d
             out_path, prev_path = arg("--out", ROOT / "results.json"), arg("--prev", ROOT / "results.json")
-            obj, changes = build(prev=load(prev_path))
+            obj, changes = build(prev=load(prev_path), since=POLLS_CLOSE)
             out_path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
             if "--changes" in argv:
                 arg("--changes", None).write_text(json.dumps(changes, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
