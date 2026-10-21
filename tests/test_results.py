@@ -14,6 +14,7 @@
 5. The map (source/results_map.json, written by source/build_results_map.py): every contest, every canvasser, every
    county known; the 42 SOS contests against the live Nov 3 feed, write-ins included, through a full build.
 """
+import contextlib
 import pathlib, sys, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -488,6 +489,47 @@ def one_map(**contests):
 
 M = lambda key, **k: {'source': 'counties', 'canvasser': k.pop('canvasser', 'eastwood-mud'), 'electorate': ['travis'], 'keys': {'travis': key}, **k}
 FA = lambda f, a: [('FOR', f), ('AGAINST', a)]
+
+@test
+def a_county_with_no_file_counts_from_the_canvass_and_final_files_are_official_numbers():
+    """#155: ACC's Caldwell and Lee never post a file: at ACC's canvass Lane types their counts into official.json's
+    "counted", and the contest is official (no stop). #156: a county's final file is posted before the canvass; once Lane
+    marks it final (official.json "final"), "numbers are the last unofficial count" (W11) goes away."""
+    d, res = scratch_with([clarity({'1': ('Eastwood MUD Proposition A', FA(900, 100))})])
+    try:
+        mp = one_map(c147=M('1', electorate=['travis', 'lee'], keys={'travis': '1', 'lee': None}, registered={'lee': 50}))
+        e = B.build(res=res, mp=mp)[0]['contests']['c147']
+        assert (e['state'], e['missing']) == ('partial', ['Lee County']), e
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': {'FOR': 10, 'AGAINST': 5}}}}))
+        out, ch = B.build(res=res, mp=mp)
+        e = out['contests']['c147']
+        assert (e['state'], e['verdict'], [x[1] for x in e['choices']]) == ('official', 'passed', [910, 105]), e
+        assert ['the eastwood-mud board’s canvass', '2026-11-12T12:00'] in e['sources'] and not [l for l in ch['lines'] if 'HELD' in l]
+        assert e['official_numbers'] is False, 'the Travis file is from before the canvass and not marked final'
+        for bad in ({'FOR': 10, 'AGIANST': 5}, {'FOR': '10', 'AGAINST': 5}):
+            (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': bad}}}))
+            out, ch = B.build(res=res, mp=mp, prev=out)
+            assert out['contests']['c147']['state'] == 'official' and [l for l in ch['lines'] if 'HELD' in l and 'counted' in l], (bad, ch['lines'])
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': {'FOR': 10, 'AGAINST': 5}}}, 'final': {'travis': '2026-11-05'}}))
+        assert B.build(res=res, mp=mp)[0]['contests']['c147']['official_numbers'] is True, 'a final file: the official numbers'
+    finally: shutil.rmtree(d)
+
+@test
+def suggest_ranks_by_the_title_and_says_absent():
+    """#158: every measure fits FOR/AGAINST, so the title (and its proposition letter) ranks the guesses; #155: a contest
+    a county's file doesn't have is offered as "absent"."""
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        f = d / 'w.xml'
+        f.write_bytes(clarity({'7': ('CITY OF AUSTIN PROPOSITION B', FA(1, 1)), '8': ('CITY OF AUSTIN PROPOSITION A', FA(1, 1)),
+                               '9': ('MAYOR', [('Somebody Else', 3)])}))
+        mp = one_map(c071=M(None, canvasser='eastwood-mud'), c001=M(None))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out): B.suggest(f, mp)
+        lines = dict(l.split(' ', 1) for l in out.getvalue().splitlines())
+        assert lines['c071'].split(': ', 1)[1].startswith('8 = CITY OF AUSTIN PROPOSITION A'), lines['c071']
+        assert 'set its key to "absent"' in lines['c001'], lines['c001']
+    finally: shutil.rmtree(d)
 
 @test
 def clarity_times_in_utc_read_as_austin_time():

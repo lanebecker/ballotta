@@ -202,7 +202,12 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
     (after Jan 12, 2027, Governor and Lt. Governor) is `"legislature"`. Done: the PR lists those contests as official.
     A canvass date outside its legal window is refused.
     After a canvass, download that county's file once more: until the files are from on or after the canvass, the
-    contest says "numbers are the last unofficial count".
+    contest says "numbers are the last unofficial count". If a county's last file is final but posted before the
+    canvass, say so instead: `"final": {"travis": "2026-11-14"}` (the date of that final file).
+    A county that posts no file Ballotta reads (ACC's Caldwell and Lee): type its canvassed counts from the canvass
+    record, `"counted": {"c147": {"lee": {"FOR": 10, "AGAINST": 5}}}`. Until those are in, the contest is held at
+    its last state and the PR says which county is missing. A county with none of the contest's voters: set its key
+    in `source/results_map.json` to `"absent"`.
 
 ## When something is wrong
 

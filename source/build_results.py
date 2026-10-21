@@ -197,6 +197,19 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
             rep, key = reports.get(county), m["keys"].get(county)
             if key == "absent":                          # confirmed from that county's own file: none of its voters vote here
                 continue
+            hand = official.get("counted", {}).get(cid, {}).get(county)
+            if (rep is None or not key) and hand and done:
+                # a county that never posts a file (Caldwell and Lee, for ACC): its count from the canvass, typed into
+                # official.json's "counted" by Lane (the deep audit, #155)
+                odd = sorted(set(hand) - set(names + write_ins))
+                if odd or not all(isinstance(v, int) and v >= 0 for v in hand.values()):
+                    raise Problem(f"{where}: official.json's counted for {P.LABELS[county]}: {odd or 'counts must be whole numbers'}"
+                                  f" (the names are {names + write_ins})")
+                for n in names + write_ins:
+                    total[n] += hand.get(n, 0)
+                any_county = True
+                sources.append([f"{cvr['label']}’s canvass", done + "T12:00"])
+                continue
             if rep is None or not key:
                 missing.append(P.LABELS[county])
                 reg = m.get("registered", {}).get(county)
@@ -207,8 +220,12 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
             for n, v in rows:
                 total[n] += v
             sources.append([rep["label"], rep["posted"]])
-            if done and rep["posted"][:10] < done:
-                official_numbers = False                     # a county's file is from before the canvass
+            # W11 ("numbers are the last unofficial count") only while a county's file is older than its final count:
+            # counties post their final files before the bodies canvass from them, so the canvass date can't be the
+            # test. Final = Hays's PDF says "Official", or the date in official.json's "final" for that county (#156).
+            fin = official.get("final", {}).get(county)
+            if done and not (rep.get("official") or (fin and rep["posted"][:10] >= fin) or rep["posted"][:10] >= done):
+                official_numbers = False
             if county == "travis" and sum(1 for k in m["electorate"] if m["keys"].get(k) != "absent") > 1:
                 tt = sum(v for _, v in rows[: len(names)])
                 travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]]
@@ -399,7 +416,18 @@ def suggest(path, mp=None):
         names = set(map(P.norm, check_results.pick_names(key[cid])))
         fits = [(k, c["name"]) for k, c in rep["contests"].items()
                 if names <= {P.norm(n) for n, _ in c["choices"]} | ({"FOR", "AGAINST"} if key[cid]["type"] == "measure" else set())]
-        print(f"{cid} {key[cid]['title']}: " + ("; ".join(f"{k} = {n}" for k, n in fits[:4]) or "no fit"))
+        fits.sort(key=lambda kn: -likeness(key[cid]["title"], kn[1]))   # FOR/AGAINST fits every measure: the title decides (#158)
+        print(f"{cid} {key[cid]['title']}: " + ("; ".join(f"{k} = {n}" for k, n in fits[:4])
+              or f"no fit: if none of this county's voters vote here, set its key to \"absent\""))
+
+
+WORD = re.compile(r"[A-Z0-9]+")
+def likeness(title, name):
+    """How alike a ballot title and a county's contest name read: shared words, a shared proposition letter or number
+    counting most ("Proposition A" is not "Proposition B", whatever else they share)."""
+    a, b = set(WORD.findall(P.norm(title))), set(WORD.findall(P.norm(name)))
+    pa, pb = re.search(r"PROPOSITION ([A-Z0-9]+)", P.norm(title)), re.search(r"PROPOSITION ([A-Z0-9]+)", P.norm(name))
+    return len(a & b) + (10 if pa and pb and pa.group(1) == pb.group(1) else -10 if pa and pb else 0)
 
 
 def _ok(f, data):
