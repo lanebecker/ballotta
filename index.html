@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-NrNn6b89FCEpDSuxyv6ro6YfEhOekor2cgdhlVz/t0U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-8Dewsjj/56QErCinxuy6cUcqDKiAUurRzJ5sJYCJRVs='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -452,7 +452,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   .dk-prompts button{padding:3px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
   .dk-nav{display:flex;justify-content:space-between;align-items:center;gap:12px}
   .dk-nav .btn{max-width:72%;min-width:0}
-  .dk-nav .btn:disabled{opacity:.45;cursor:default}   /* Previous on contest 1 looked live (#150) */
+  .dk-asmarked ~ .dk-nav .btn:disabled{opacity:.45;cursor:default}   /* the results paper's Previous on contest 1 looked live (#150); the ballot's own is unchanged */
   .dk-nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .dk-fcta,.dk-fchip,.dk-fbox,.dk-fp{overflow-wrap:anywhere;min-width:0}  /* #23 */
   .dk-fchip{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;padding:4px 12px 4px 4px;border-radius:999px;background:var(--lilac);color:var(--plum);font-size:13px;font-weight:600}
@@ -2302,7 +2302,7 @@ const results = (() => {
   }
   function accept(j) {
     if (!j || typeof j !== 'object' || Array.isArray(j) || !isNat(j.seq) || j.election !== '2026-11-03' || typeof j.withdrawn !== 'boolean'
-        || !isStr(j.late_until) || !DATE.test(j.late_until) || !j.contests || typeof j.contests !== 'object' || Array.isArray(j.contests)) return null;
+        || !isStr(j.late_until) || !DATE.test(j.late_until) || !realDay(j.late_until) || !j.contests || typeof j.contests !== 'object' || Array.isArray(j.contests)) return null;
     const contests = {};
     Object.keys(j.contests).forEach(cid => { if (entryOK(cid, j.contests[cid])) contests[cid] = j.contests[cid]; });  // a bad entry is left out, never the whole file
     return { seq: j.seq, withdrawn: j.withdrawn, late_until: j.late_until, contests };
@@ -2325,7 +2325,8 @@ const results = (() => {
   function redraw(news) {
     try { if (window.desk) { if (news) desk.reflow(updated()); else desk.render(); } } catch (e) {}   // the laptop render ends by drawing the top line (top())
     try { renderCrib(); } catch (e) {}   // the printout: the results beside the picks once they're in
-    top(); landing();
+    if (!window.desk) top();   // the laptop's render drew the band for its own view; again here would undo the focus it kept (#140) and draw the ballot's band on All Travis County results (#147)
+    landing();
     if (wantAll && on()) { wantAll = false; openAll(); }   // ballotta.org/?results (the results/ link)
   }
 
@@ -2345,7 +2346,7 @@ const results = (() => {
     if (day() <= R.late_until) h += '<p class="rs-n">Late mail, overseas and provisional ballots are still being counted.</p>';   // W4
     else if (e.canvass.kind === 'state') h += '<p class="rs-n">Counting is finished in every county. The result becomes official at the state canvass.</p>';  // W5
     const cv = e.canvass;
-    if (cv.kind === 'state' && day() <= R.late_until) h += '<p class="rs-n">Becomes official at the state canvass, Nov 21–Dec 7.</p>';     // W8; after late_until W5 says it (#150)
+    if (cv.kind === 'state') { if (day() <= R.late_until) h += '<p class="rs-n">Becomes official at the state canvass, Nov 21–Dec 7.</p>'; }   // W8; after late_until W5 says it, alone (#150)
     else if (cv.kind === 'legislature') h += '<p class="rs-n">Becomes official when the Legislature canvasses the vote, after it meets Jan 12, 2027.</p>';  // W9
     else h += '<p class="rs-n">Becomes official when ' + esc(e.canvasser) + ' canvasses the vote' + (cv.on ? ' on ' + esc(md(cv.on)) : cv.by ? ', by ' + esc(md(cv.by)) : '') + '.</p>';  // W6, W7
     return h;
@@ -2376,6 +2377,7 @@ const results = (() => {
     const v = current(c.id);
     if (!v.length) return '';
     if (v[0] === '__skip') return c.type === 'measure' ? 'You skipped this measure.' : 'You skipped this race.';     // W42
+    if (e.state === 'recount') return 'Your pick: ' + v.map(x => choice(c, x)).join(', ');   // W36: a recount can change it, as the summary counts it (#142)
     const V = e.verdict, lead = e.leaders, mineIn = v.filter(n => lead.includes(n)).length, n = v.length;
     if (c.type === 'measure') {
       const side = 'Your pick, ' + choice(c, v[0]) + ', ';
@@ -2406,15 +2408,15 @@ const results = (() => {
   // A share as the bars say it: one decimal, or two when two different counts would read the same (10,010 and 9,995 are
   // 50.04% and 49.96%, not 50.0% and 50.0%: #142); a share of votes that rounds to nothing is "<0.1%", never "0.0%" (#150).
   function pctDigits(rows) {
-    const seen = {};
-    return rows.some(x => { const k = x[2].toFixed(1); if (k in seen && seen[k] !== x[1]) return true; seen[k] = x[1]; return false; }) ? 2 : 1;
+    const top = [...rows].sort((a, b) => b[1] - a[1]).slice(0, 2);
+    return top.length === 2 && top[0][1] !== top[1][1] && top[0][2].toFixed(1) === top[1][2].toFixed(1) ? 2 : 1;   // the top two only
   }
-  const pctText = (x, d) => x[1] > 0 && +x[2].toFixed(d) === 0 ? '<' + (d === 2 ? '0.01' : '0.1') + '%' : x[2].toFixed(d) + '%';
+  const pctText = (x, d, total) => { const p = d === 2 && total ? 100 * x[1] / total : x[2]; return x[1] > 0 && +p.toFixed(d) === 0 ? '<' + (d === 2 ? '0.01' : '0.1') + '%' : p.toFixed(d) + '%'; };   // two decimals from the votes: the file keeps two
   function bars(c, rows, wi) {
-    const d = pctDigits(rows);
+    const d = pctDigits(rows), total = rows.reduce((a, x) => a + x[1], 0);
     return '<div class="rs-bars">' + rows.map(x => '<div class="rs-b"><span class="rs-nm">' + esc(choice(c, x[0])) + (wi && x[3] ? ' <small>(write-in)</small>' : '') + '</span>'
       + '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span>'
-      + '<span class="rs-vt">' + x[1].toLocaleString('en-US') + ' · ' + pctText(x, d) + '</span></div>').join('') + '</div>';
+      + '<span class="rs-vt">' + x[1].toLocaleString('en-US') + ' · ' + pctText(x, d, total) + '</span></div>').join('') + '</div>';
   }
   const NOTE = {
     district_not_confirmed: 'Voters didn’t confirm this district (Proposition A failed), so it won’t be created.',   // W31
@@ -2448,7 +2450,7 @@ const results = (() => {
   // What changed since this device last showed results, worked out once per page load (so a redraw doesn't drop it).
   // ballotta.resultsSeen holds the last seq shown, the day, and each contest's state, verdict, leaders, runoff and vote
   // total then; it's written on every redraw, so results seen while the page is open aren't announced again (#136).
-  const seenOf = (e) => [e.state, e.verdict, e.leaders, e.runoff, e.choices.reduce((a, x) => a + x[1], 0)];
+  const seenOf = (e) => [e.state, e.verdict, [...e.leaders].sort(), [...e.runoff].sort(), e.choices.reduce((a, x) => a + x[1], 0), e.corrected];   // pairs as sets: two winners trading places isn't a change
   function sinceNow() {
     if (!R || R.withdrawn || !ballot.length) return;
     const ids = ballot.map(b => b.c.id).filter(id => R.contests[id]);
@@ -2459,8 +2461,8 @@ const results = (() => {
       const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
       if (isNat(seen.seq) && seen.seq < R.seq) ids.forEach(id => {
         const e = R.contests[id], w = was[id], n = now[id];
-        if (!Array.isArray(w) || w.length !== 5) return;                                  // not shown here before
-        if (e.corrected && at && (e.corrected > at || (e.corrected === at && e.changed > seen.seq)) && !same(w, n)) since.corrected++;   // a correction since then, not an old one
+        if (!Array.isArray(w) || w.length !== 6) return;                                  // not shown here before
+        if (e.corrected && e.corrected !== w[5]) since.corrected++;                       // a correction this device hasn't shown, whatever day it's dated
         else if (isOfficial(e) && !['official', 'recount'].includes(w[0])) since.official++;
         else if (!same(w.slice(0, 4), n.slice(0, 4))) since.changed++;                    // a new verdict, leader or runoff pair
         else if (w[4] !== n[4]) since.numbers++;                                          // only the numbers moved
@@ -2476,7 +2478,7 @@ const results = (() => {
     const app = document.body.classList.contains('dk-app-on');
     if (!R || !live() || !app || (!ballot.length && view !== 'all')) { box.classList.add('hidden'); return; }
     if (R.withdrawn) { box.className = 'rs-top'; box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; return; }  // W52
-    if (view === 'all') { box.className = 'rs-top rs-band'; box.innerHTML = timeline(); return; }
+    if (view === 'all') { box.className = 'rs-top rs-band'; box.innerHTML = '<p class="rs-upd">' + esc(updated()) + '</p>' + timeline(); return; }   // (#149)
     if (!ballot.some(b => R.contests[b.c.id])) { box.classList.add('hidden'); return; }
     let h = '';
     if (since) {
@@ -2577,7 +2579,7 @@ const results = (() => {
     const runs = runsAhead();
     if (runs.length) {
       const first = runs[0], d = entry(first.c.id).runoff_on;
-      h += '<button type="button" class="sx next" data-rs="go" data-c="' + esc(first.c.id) + '"><p class="ov">What’s next</p><div class="row"><p class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · Get ready</span></p></div></button>';
+      h += '<button type="button" class="sx next" data-rs="go" data-c="' + esc(first.c.id) + '"><p class="ov">What’s next</p><div class="row"><p class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · See the runoff</span></p></div></button>';   // "Get ready" once Phase 4's runoff pages exist (Lane, Oct 21)
     } else if (ballot.some(b => { const e = entry(b.c.id); return e && (e.verdict === 'may_runoff' || (e.verdict === 'runoff' && !isOfficial(e))); })) {
       h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">A runoff is possible<span>If no one wins a majority, the top two meet again in December.</span></p></div></div>';
     } else {
@@ -2632,7 +2634,7 @@ const results = (() => {
   function allPage(st) {   // st: { q, level, filter }
     const mine = new Set(ballot.map(b => b.c.id)), have = contestsWithResults();
     let h = '<div class="dk-top"><span class="ov">Nov 3, 2026 general election</span><span class="note">No address needed</span></div><h1>All Travis County results</h1>'
-      + '<p class="dk-meta">Every contest on a Travis County ballot, from each county’s published results and the Texas Secretary of State, added up where a contest crosses county lines.</p>';
+      + '<p class="dk-meta">Every contest on a Travis County ballot, from each county’s published results and the Texas Secretary of State, added up where a contest crosses county lines. Unofficial until each canvass. <button type="button" class="dk-link" data-rs="why">Why unofficial?</button></p>';   // W59's ending, restored (Lane, Oct 21)
     if (R && R.withdrawn) return h + '<p class="note">Results are paused while we check a problem with the latest numbers.</p>';   // W52
     if (!have.length) return h + '<p class="note">No results yet. The first numbers arrive the morning of Nov 4.</p>';   // W61
     const q = st.q.toLowerCase();
@@ -2712,7 +2714,7 @@ const results = (() => {
   // Print your results: the crib sheet's layout, each contest's result under it, your pick on the right.
   function crib(withWhy) {
     const t = updated();
-    let html = '<div class="ch"><b style="font-size:15px">My ballot’s results</b><span style="font-size:11px">Nov 3, 2026' + (t ? ' · ' + esc(t) : '') + '</span></div>'
+    let html = '<div class="ch"><b style="font-size:15px">My ballot’s results</b><span style="font-size:11px">Nov 3, 2026 · ' + esc(t || 'Printed ' + when(iso(today()) + 'T' + String(today().getHours()).padStart(2, '0') + ':' + String(today().getMinutes()).padStart(2, '0'))) + '</span></div>'   // no update time (paused): when it was printed (#150)
       + '<div class="ln rs-prh"><span>Contest and result</span><span>Your pick</span></div>', last = '';   // the pick column named, so a pick never reads as the winner (#150)
     if (R && R.withdrawn) html += '<p class="why">Results are paused while we check a problem with the latest numbers.</p>';
     ballot.forEach(b => {
@@ -2843,7 +2845,7 @@ const desk = (() => {
     railTitle('Your ballot');
     const A = after(), n = ballot.length, done = ballot.filter(b => A ? results.official(b.c) : decided(b.c.id)).length, paused = A && results.paused();
     $('dk-count').textContent = paused ? 'Results paused' : done + ' of ' + n + (A ? ' official' : ' decided');   // no zeros that look like data while paused (#145)
-    $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%';
+    $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%'; $('dk-bar').parentNode.classList.toggle('hidden', paused);
     menuFor(A);
     document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
     const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).length }
@@ -2890,7 +2892,7 @@ const desk = (() => {
     const k = results.allCounts(), paused = results.paused();
     $('dk-count').textContent = paused ? 'Results paused' : k.n + ' contests · ' + k.off + ' official';
     const pc = $('ph-count'); if (pc) pc.textContent = paused ? 'Results paused' : k.off + ' of ' + k.n + ' official';
-    $('dk-bar').style.width = (k.n ? Math.round(100 * k.off / k.n) : 0) + '%';
+    $('dk-bar').style.width = (k.n ? Math.round(100 * k.off / k.n) : 0) + '%'; $('dk-bar').parentNode.classList.toggle('hidden', paused);
     menuFor(true);
     document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === 'all' ? 'page' : 'false'));
     const counts = paused ? { all: 'All', und: 'Too close', why: 'Runoffs' } : { all: 'All ' + k.n, und: 'Too close ' + k.close, why: 'Runoffs ' + k.runoffs };
@@ -3456,7 +3458,7 @@ const phone = (() => {
     $('ph-back').disabled = dec && i <= 0;
     // Everything decided: step through in order, then on to the crib sheet (the row under the paper is gone).
     $('ph-next').textContent = nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : A ? 'At a glance →' : 'Crib sheet →';   // after the election, the last contest leads to At a glance
-    $('ph-next').classList.toggle('hidden', !nx && D.ui.view === (A ? 'glance' : 'crib'));
+    $('ph-next').classList.toggle('hidden', (!nx && D.ui.view === (A ? 'glance' : 'crib')) || D.ui.view === 'all');   // All Travis County results isn't a step on your ballot (#150)
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
   function savedSay() {

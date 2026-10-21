@@ -78,14 +78,13 @@ M = [
  # the cold audit's fixes (Oct 21, #135-#150)
  ('R58 a new leader is only new numbers', PREV, "else if (!same(w.slice(0, 4), n.slice(0, 4))) since.changed++;", "else if (!same(w.slice(0, 2), n.slice(0, 2))) since.changed++;", [S]),
  ('R59 every race has new numbers', PREV, "else if (w[4] !== n[4]) since.numbers++;", "else since.numbers++;", [S]),
- ('R60 an old correction is news again', PREV, "(e.corrected > at || (e.corrected === at && e.changed > seen.seq))", "true", [S]),
  ('R61 what is seen while open is forgotten', PREV, "if (txt !== seenText) { seenText = txt;", "if (!seenText) { seenText = txt;", [S]),
  ('R62 new results wipe the reader\'s place', PREV, "if (news) desk.reflow(updated()); else desk.render();", "desk.render();", [S]),
  ('R63 the header loses the results time at midnight', PREV, "(after() && results.updated()) || whenLine();   // after the election, the results' time, as header() (#141)", "whenLine();", [T]),
  ('R64 a canvassed tie is too close to call', PREV, "!!e && !isOfficial(e) && ['too_close'", "!!e && ['too_close'", [V]),
  ('R65 a recount reads as lost', PREV, "    if (e.state === 'recount') return 'open';", "", [V]),
  ('R66 the rail hides a recount', PREV, "(isOfficial(e) ? 'Official' : 'Unofficial') + (e.state === 'recount' ? ' · recount requested' : '');", "(isOfficial(e) ? 'Official' : 'Unofficial');", [V]),
- ('R67 two close counts read alike', PREV, "seen[k] = x[1]; return false; }) ? 2 : 1;", "seen[k] = x[1]; return false; }) ? 1 : 1;", [V]),
+ ('R67 two close counts read alike', PREV, "top[0][2].toFixed(1) === top[1][2].toFixed(1) ? 2 : 1;", "top[0][2].toFixed(1) === top[1][2].toFixed(1) ? 1 : 1;", [V]),
  ('R68 a tie that goes to a runoff is not next', PREV, "['runoff', 'tied_runoff'].includes(e.verdict) && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on;", "e.verdict === 'runoff' && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on;", [V]),
  ('R69 the county\'s runoffs on your timeline', PREV, "summary() + timeline(true);", "summary() + timeline();", [V]),
  ('R70 a split several-seat race counts once', PREV, "seats(c) > 1 && v.length > 1 && v[0] !== '__skip' ? v.map(x => outcome(c, x))", "false ? v.map(x => outcome(c, x))", [T]),
@@ -99,7 +98,7 @@ M = [
  ('R78 no time on a narrow laptop', PREV, "  .rs-upd{display:block;margin:0;", "  .rs-upd{display:none;margin:0;", [T]),
  ('R79 skipped said twice', PREV, "v[0] === '__skip' && !(window.results && results.entry(c.id))", "v[0] === '__skip'", [T]),
  ('R80 the rest when none are official', PREV, ": off ? 'The rest are still being counted or canvassed' : 'Still being counted or canvassed')", ": 'The rest are still being counted or canvassed')", [T]),
- ('R81 W5 and W8 together', PREV, "if (cv.kind === 'state' && day() <= R.late_until)", "if (cv.kind === 'state')", [V]),
+ ('R81 W5 and W8 together', PREV, "{ if (day() <= R.late_until) h += '<p class=\"rs-n\">Becomes official at the state canvass", "{ if (true) h += '<p class=\"rs-n\">Becomes official at the state canvass", [V]),
  ('R82 the printout\'s pick unlabeled', PREV, "      + '<div class=\"ln rs-prh\"><span>Contest and result</span><span>Your pick</span></div>', last = '';", "      , last = '';", [T]),
  ('R83 official without a canvass day', PREV, "    if ((e.state === 'official' || e.state === 'recount') && !cv.done) return false;", "", [X]),
  ('R84 any verdict in any state', PREV, " || !ALLOWED[e.state].includes(e.verdict)) return false;", ") return false;", [X]),
@@ -107,6 +106,18 @@ M = [
  ('R86 month 13', PREV, "TIME.test(x) && realDay(x) &&", "TIME.test(x) &&", [X]),
  ('R87 constructor is a contest', PREV, "Object.prototype.hasOwnProperty.call(BYID, cid) ? BYID[cid] : null", "BYID[cid]", [X]),
  ('R88 the phone count on All results', PREV, "    if (D.ui.view !== 'all') $('ph-count')", "    $('ph-count')", [P]),
+ # the fix verification's findings (Oct 21)
+ ('R100 W59 without its ending', PREV, " Unofficial until each canvass. <button type=\"button\" class=\"dk-link\" data-rs=\"why\">Why unofficial?</button></p>';", "</p>';", [T]),
+ ('R89 W5 with W6 after late ballots', PREV, "    if (cv.kind === 'state') { if (day() <= R.late_until) h += ", "    if (cv.kind === 'state' && day() <= R.late_until) { h += ", [V]),
+ ('R90 the band drawn twice on new results', PREV, "    if (!window.desk) top();", "    top();", [V]),
+ ('R91 a correction dated before the visit missed', PREV, "        if (e.corrected && e.corrected !== w[5]) since.corrected++;", "        if (false) since.corrected++;", [S]),
+ ('R92 a recount pick lost on the paper', PREV, "    if (e.state === 'recount') return 'Your pick: ' + v.map(x => choice(c, x)).join(', ');", "", [V]),
+ ('R94 a paused printout with no time', PREV, "'Printed ' + when(", "when(", [W]),
+ ('R95 Next on All results on a phone', PREV, " || D.ui.view === 'all');   // All Travis County results isn't a step", ");   // All Travis County results isn't a step", [P]),
+ ('R96 the phone fold misnamed while paused', PREV, "(results.paused() ? 'Calling races' : 'About this result')", "'About this result'", [P]),
+ ('R97 zeros on All results while paused', PREV, "const counts = paused ? { all: 'All', und: 'Too close', why: 'Runoffs' } :", "const counts =", [W]),
+ ('R98 the results Previous looks live', PREV, "  .dk-asmarked ~ .dk-nav .btn:disabled{opacity:.45;cursor:default}", "", [T]),
+ ('R99 an empty bar while paused', PREV, "$('dk-bar').parentNode.classList.toggle('hidden', paused);\n    menuFor(A);", "\n    menuFor(A);", [W]),
 ]
 if __name__ == '__main__':
     R.main(M)

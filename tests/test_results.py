@@ -69,7 +69,7 @@ def unopposed_only_without_a_declared_write_in():
     assert R.official('candidate', V(('A', 9000), ('W', 300)), write_ins=('W',)) == ('won', ['A'], [])
     # two seats, one candidate, one declared write-in: both can be elected; no index past the end
     assert R.unofficial('candidate', V(('A', 9000), ('W', 30)), seats=2, write_ins=('W',)) == ('leading', ['A', 'W'], [])
-    assert R.official('candidate', V(('A', 9000), ('W', 0)), seats=2, write_ins=('W',)) == ('won', ['A'], [])
+    assert R.official('candidate', V(('A', 9000), ('W', 0)), seats=2, write_ins=('W',)) == ('elected', ['A'], [])   # a several-seat race, one filled (#135)
 
 @test
 def measures_are_symmetric_around_half():

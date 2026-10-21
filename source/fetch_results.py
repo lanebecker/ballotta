@@ -59,7 +59,7 @@ def fetch_all(meta, res=B.RES, fetch=get):
     filed = out[-1][1] or next(iter(sorted((res / "raw/sos").glob("*/election.json"), reverse=True)), None)
     try:
         has_canvass = filed is not None and P.parse_sos(filed.read_bytes(), zone=zone)["canvass_report"]
-    except P.BadFile:
+    except Exception:   # an old filed feed this parser can't read never stops the run (#137)
         has_canvass = False
     if has_canvass:
         one("sos_canvass", f"{SOS}/electionReports/{eid}/OfficialCanvassReport/pdf", "official-canvass.pdf",

@@ -214,7 +214,10 @@ only on this device."). These are the words the build added beyond the board:
 Words the audit fixes (#135–#150, `docs/audits/2026-10-21-results-cold-audit.md`) added or changed:
 
 - **W89** While results are paused: the rail's count and the phone's top bar read "Results paused" (not "0 of 11
-  official"); the filters drop their numbers ("Too close"); the phone's fold under the paper is "Calling races".
+  official"), with no progress bar; on the ballot only "Too close" drops its number ("All 11" and "My picks 8" are
+  still true); on All Travis County results the filters are "All", "Too close", "Runoffs" with no numbers and no level
+  list; the phone's fold under the paper is "Calling races"; a printout says "Printed Nov 5, 9:02 am" where the update
+  time would be.
 - **W90** The summary's first card when none is official yet: "Still being counted or canvassed" (was "The rest are
   still being counted or canvassed", which read oddly at 0 of 11).
 - **W91** A recount in the rail: "Won: Jeffery Bowen · Official · recount requested" (as W82 in At a glance).
@@ -230,5 +233,7 @@ Words the audit fixes (#135–#150, `docs/audits/2026-10-21-results-cold-audit.m
 - **W96** Counting: "Your N picks" now counts each pick in a several-seat race (Sunset Valley's two picks are two), so
   "1 of your 2 picks is leading" adds one to "won or are leading" and one to "behind", as the paper says. The rail's
   "My picks" filter still counts contests (8), so the two can differ (9): say if you'd rather they match.
+- **W97** A recount, on the paper: "Your pick: Selena Xie" (W36, already approved) in place of "Your pick didn’t win.",
+  so the paper agrees with the summary, which counts a recount as not settled.
 - **Removed:** "Saved on this device" from the top of a results paper; the second "You skipped this race." under Your
   choice; W8 ("Becomes official at the state canvass, Nov 21–Dec 7.") once W5 says it after late ballots.

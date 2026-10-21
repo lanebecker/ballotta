@@ -4,8 +4,13 @@ Two fresh agents audited `results-build` after Phase 3. One audited the code and
 
 ## Filed (survived)
 
-All fixed Oct 21: #134 in b1b5980; the rest in ba8d797 and a09b9a5, each with a test that fails without it and a
-mutant (R10–R11, R58–R88 in `tests/mutate_results.py`).
+All fixed Oct 21: #134 in b1b5980; the rest in ba8d797 and a09b9a5. A fresh agent then checked each fix against its
+issue's text (SPEC) and for quality: two failed (#140: focus in the band was still lost, because the redraw drew the band
+twice; #150: W5 fell through to W6, and two bullets weren't done) and seven had concerns (#135 seats, #136 corrections
+dated before the visit, #142 the paper during a recount and two decimals for the top two only, #145, #147, #149 the
+All page's time, the paused printout). All of those are fixed in the next commit, each with a test and a mutant
+(R10–R11, R58–R99 in `tests/mutate_results.py`). Not changed: #149's counts sit beside their labels, one per line,
+rather than stacked under them (stacked took more height at 1024px, not less).
 
 | Issue | Finding | Source |
 |---|---|---|
