@@ -227,6 +227,82 @@ dialog.rs-all .rs-lv{margin-top:14px}
 dialog.rs-all .rs-c h4{margin:12px 0 0;font-size:16px;line-height:1.3}
 dialog.rs-all .rs-c .rs{margin-top:8px}
 @media screen and (min-width:1024px){ dialog.rs-all{max-width:760px} }
+.rs-why{font-size:14px;color:var(--ink2)}
+/* ---------- after the election (Lane, Oct 21; docs/plans/2026-10-21-after-the-election.md): the page as a record ---------- */
+.rs-top.rs-band{padding:0;border:none;background:transparent;gap:12px}
+.rs-since{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ok)}
+.rs-since i{width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.rs-saved{font-size:13px;font-weight:600;color:var(--warn)}
+.rs-compact{display:none}
+.rs-sum{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(0,1.15fr);gap:12px}
+.rs-sum .sx{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 18px 14px;display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;color:var(--ink);min-width:0}
+.rs-sum .row{flex:1;display:flex;align-items:center;gap:14px;min-height:54px}
+.rs-sum .big{flex-shrink:0;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-weight:700;font-size:42px;line-height:1;white-space:nowrap;color:var(--ink)}
+.rs-sum .big small{font-size:24px;font-weight:600;color:var(--muted)}
+.rs-sum .lb{font-size:14px;font-weight:600;line-height:1.3;color:var(--ink)}
+.rs-sum .lb span{display:block;margin-top:3px;font-size:13px;font-weight:400;color:var(--muted)}
+.rs-sum .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.rs-sum .three > div{display:flex;align-items:center;gap:12px;padding:0 16px;border-left:1px solid var(--line);min-width:0}
+.rs-sum .three > div:first-child{padding-left:0;border-left:none}
+.rs-sum .three b{flex-shrink:0;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-weight:700;font-size:42px;line-height:1;color:var(--ink)}
+.rs-sum .three .lb{font-weight:500;color:var(--ink2);min-height:2.6em}
+.rs-sum .next{border-color:var(--lc)}
+.rs-sum button.next{cursor:pointer}
+.rs-sum .next .t{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-weight:700;font-size:22px;line-height:1.15;color:var(--ink)}
+.rs-sum .next .t span{display:block;margin-top:6px;font-family:'Public Sans',system-ui,sans-serif;font-size:14px;font-weight:600;color:var(--ink)}
+.rs-sum button.next .t span{text-decoration:underline;text-underline-offset:3px}
+.rs-tl{display:flex;flex-direction:column;gap:10px;padding:12px 16px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.rs-tl .hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.rs-tl .hd b{color:var(--ink)}
+.rs-tl ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.rs-tl li{position:relative;padding:20px 10px 0 0}
+.rs-tl li::before{content:'';position:absolute;top:6px;left:0;right:0;height:2px;background:var(--track)}
+.rs-tl li.done::before{background:var(--plum)}
+.rs-tl li.now::before{background:linear-gradient(90deg,var(--plum) 50%,var(--track) 50%)}
+.rs-tl li i{position:absolute;top:0;left:0;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--lc);box-sizing:border-box}
+.rs-tl li.done i{background:var(--plum);border-color:var(--plum)}
+.rs-tl li.now i{background:var(--gold);border-color:var(--plum)}
+.rs-tl li b{display:block;font-size:13px;line-height:1.3;color:var(--ink)}
+.rs-tl li span{display:block;font-size:12px;color:var(--muted);line-height:1.35}
+.rs-mine{border-top:1px solid var(--divider);padding-top:10px;margin-top:4px;display:flex;flex-direction:column;gap:4px}
+.rs-mine q{font-style:italic;color:var(--ink2);font-size:14px}
+.rs-next{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--lc);border-radius:12px;background:#fff}
+.rs-next h2{font-size:22px}
+.rs-next p{font-size:15px;color:var(--ink2)}
+.dk-asmarked{display:flex;flex-direction:column;gap:8px}
+.dk-ro{list-style:none;margin:0;padding:0}
+.dk-ro .dk-line{cursor:default}
+.dk-ro .dk-line[data-on=true] .dk-oval{border:none;background:var(--ink)}
+details.rs-fold{border-top:1px solid var(--line)}
+details.rs-fold summary{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;font-size:15px;font-weight:600;cursor:pointer;list-style:none}
+details.rs-fold summary::-webkit-details-marker{display:none}
+details.rs-fold summary::after{content:'';width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 0;flex-shrink:0}
+details.rs-fold[open] summary::after{transform:rotate(225deg);margin-top:4px}
+details.rs-fold > div{display:flex;flex-direction:column;gap:10px;padding:0 0 14px}
+button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(--lc);font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+@media screen and (min-width:1024px){
+  .dk-ro .dk-lw:has(.dk-line[data-on=true]){background:linear-gradient(90deg,var(--warnsoft),#fff 70%);margin:0 -16px;padding:4px 16px;border-radius:6px}
+  .dk-ro.dk-mrow .dk-lw:has(.dk-line[data-on=true]){margin:0;padding:4px 12px}
+}
+@media screen and (max-width:1023.98px){
+  .dk-ro .dk-lw:has(.dk-line[data-on=true]){background:linear-gradient(90deg,var(--warnsoft),#fff 70%);margin:0 -10px;padding:2px 10px;border-radius:6px}
+  .dk-ro.dk-mrow .dk-lw:has(.dk-line[data-on=true]){margin:0;padding:2px 10px}
+  .rs-top.rs-band{margin-bottom:10px}
+  .rs-band .rs-sum,.rs-band .rs-tl{display:none}   /* the phone shows one line here; the summary and timeline are in the list (Phase 2) */
+  .rs-compact{display:block;padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .rs-compact b{color:var(--ink)}
+  .rs-compact span{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
+  .rs-sum{grid-template-columns:minmax(0,1fr);gap:8px}
+  .rs-sum .big,.rs-sum .three b{font-size:32px}
+  .rs-sum .row{min-height:0}
+  .rs-sum .three > div{flex-direction:column;align-items:flex-start;gap:4px;padding:0 10px}
+  .rs-tl ol{grid-template-columns:minmax(0,1fr)}
+  .rs-tl li{padding:0 0 12px 26px}
+  .rs-tl li::before{top:14px;bottom:0;left:6px;right:auto;width:2px;height:auto}
+  .rs-tl li:last-child::before{display:none}
+  .rs-tl li.now::before{background:linear-gradient(180deg,var(--plum) 50%,var(--track) 50%)}
+  .rs-tl li i{top:2px}
+}
 /*/RESULTS*/
 /*DESK*/
 /* ---------- laptop layout (1024px and wider); phones and printouts never see any of this ---------- */
@@ -782,6 +858,9 @@ dialog.rs-all .rs-c .rs{margin-top:8px}
       <button type="button" data-view="decide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Decide</button>
       <button type="button" data-view="glance"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>At a glance</button>
       <button type="button" data-view="vote"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Where to vote</button>
+<!--RESULTS-->
+      <button type="button" data-view="all" class="hidden"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>All Travis County results</button>
+<!--/RESULTS-->
       <button type="button" data-view="crib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Print your choices</button>
     </div>
     <div class="dk-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="dk-q" type="search" placeholder="Find a race or a name" aria-label="Find a race or a name" autocomplete="off"><span class="kbd" aria-hidden="true">/</span></div>
@@ -794,7 +873,7 @@ dialog.rs-all .rs-c .rs{margin-top:8px}
     <div class="dk-say hidden" id="dk-say" role="status"><span></span><button type="button" class="dk-link" aria-label="Dismiss this message">Dismiss</button></div>
     <div class="dk-nudge hidden" id="dk-nudge" data-nudge-box><span role="status"></span><span class="row"><button class="btn small" type="button" data-nudge="keep">Send myself a link</button><button class="dk-link" type="button" data-nudge="dismiss">Not now</button></span><!--PHONE--><button class="dk-link ph-home ph-only" type="button" id="ph-home-nudge">Or add Ballotta to your Home Screen: it keeps your picks longer</button><!--/PHONE--></div>
 <!--RESULTS-->
-    <div class="rs-top hidden" id="rs-top" role="status"></div>
+    <div class="rs-top hidden" id="rs-top"></div>
 <!--/RESULTS-->
     <article class="dk-paper" id="dk-paper" tabindex="-1" aria-label="Ballot paper"></article>
 <!--PHONE-->
@@ -1087,6 +1166,7 @@ EVENTS.backup_nudge.action = ONE_OF('shown', 'keep', 'dismiss', 'home');
 /*RESULTS*/
 EVENTS.help_opened.item = ONE_OF('feedback', 'privacy', 'about', 'address', 'clear', 'clearall', 'results');
 EVENTS.results_seen = {};
+EVENTS.view_opened.view = ONE_OF('decide', 'glance', 'vote', 'crib', 'all');
 /*/RESULTS*/
 const LAYOUT = ONE_OF('phone', 'laptop');
 const dropped = [];  // what clean() removed: kept in this page only, so the tests can prove our own calls never trip it
@@ -2279,13 +2359,17 @@ const results = (() => {
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
     if (v) h += '<p class="rs-v">' + esc(v) + '</p>';
+    if (upcoming(c)) h += '<p class="rs-why">No one won a majority, so the top two meet again on ' + esc(dayLong(e.runoff_on)) + '.</p>';
     if (e.needs === 'two_thirds') h += '<p class="rs-n">Needs two-thirds of the vote to pass.</p>';   // W68: road bonds (Tex. Const. art. III §52(b))
     if (e.state !== 'counting') h += bars(c, e.choices, true);
     if (e.write_ins) h += '<p class="rs-n">Declared write-in candidates are listed by name. Only votes for declared write-in candidates count.</p>';  // W45
     if (e.note) h += '<p class="rs-n rs-key">' + NOTE[e.note] + '</p>';
     if (e.recount) h += '<p class="rs-n rs-key">Recount requested · <a href="' + esc(e.recount) + '" target="_blank" rel="noopener">Details</a></p>';  // W29
     if (e.corrected && day() <= iso(new Date(+e.corrected.slice(0, 4), +e.corrected.slice(5, 7) - 1, +e.corrected.slice(8, 10) + 7))) h += '<p class="rs-n rs-key">Corrected ' + esc(md(e.corrected)) + ': an earlier version on Ballotta was wrong.</p>';  // W51
-    if (withPick !== false) { const m = mine(c, e); if (m) h += '<p class="rs-you">' + esc(m) + '</p>'; }
+    if (withPick !== false) {   // your pick, and your reason with it (Lane, Oct 21: the reason belongs with the result)
+      const m = mine(c, e), w = picked(c) && typeof whys[c.id] === 'string' && whys[c.id].trim() ? whys[c.id] : '';
+      if (m) h += '<div class="rs-mine"><p class="rs-you">' + esc(m) + '</p>' + (w ? '<p><q>' + esc(whyShown(w)) + '</q></p><p class="rs-n">Your reason. Only you can see it.</p>' : '') + '</div>';
+    }
     if (e.travis) h += '<div class="rs-tv"><h3>How Travis County voted</h3><p class="rs-n">Travis County’s count only. The result above includes every county in this race.</p>' + bars(c, e.travis.map(x => [x[0], x[1], x[2], false]), false) + '</div>';  // W43, W44
     return h + '</section>';
   }
@@ -2330,22 +2414,21 @@ const results = (() => {
     sinceNow();
     const app = document.body.classList.contains('dk-app-on');
     if (!R || !live() || !app || !ballot.length) { box.classList.add('hidden'); return; }
-    if (R.withdrawn) { box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; box.classList.remove('hidden'); return; }  // W52
-    const es = ballot.map(b => R.contests[b.c.id]).filter(Boolean);
-    if (!es.length) { box.classList.add('hidden'); return; }
-    const off = es.filter(isOfficial).length, oldest = es.filter(e => !isOfficial(e)).flatMap(e => e.sources.map(s => s[1])).sort()[0];
-    let h = '<p><b>Results:</b> ' + (off === es.length ? 'all ' + es.length + ' official' : off + ' of ' + es.length + ' official' + (oldest ? ' · oldest numbers posted ' + esc(when(oldest)) : ''))   // W46, W47
-      + (saved ? ' · Saved copy · may be out of date' : '')                                                            // W14
-      + ' · <button type="button" class="dk-link" data-rs="why">Why unofficial?</button> · <button type="button" class="dk-link" data-rs="all">All Travis County results</button></p>';
+    if (R.withdrawn) { box.className = 'rs-top'; box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; return; }  // W52
+    if (!ballot.some(b => R.contests[b.c.id])) { box.classList.add('hidden'); return; }
+    let h = '';
     if (since) {
       const s = [];
       if (since.official) s.push(since.official + (since.official === 1 ? ' result became official.' : ' results became official.'));   // W48
       if (since.changed) s.push(since.changed + (since.changed === 1 ? ' result changed.' : ' results changed.'));     // W50
       if (since.numbers && !since.official && !since.changed) s.push('new numbers in ' + since.numbers + (since.numbers === 1 ? ' race.' : ' races.'));  // W49
-      if (s.length) h += '<p>Since you last looked: ' + s.join(' ') + '</p>';
-      if (since.corrected) h += '<p>Corrected since you last looked: ' + since.corrected + (since.corrected === 1 ? ' result' : ' results') + '. An earlier version on Ballotta was wrong.</p>';  // W51
+      if (s.length) h += '<p class="rs-since"><i aria-hidden="true"></i>Since you last looked: ' + s.join(' ') + '</p>';
+      if (since.corrected) h += '<p class="rs-since"><i aria-hidden="true"></i>Corrected since you last looked: ' + since.corrected + (since.corrected === 1 ? ' result' : ' results') + '. An earlier version on Ballotta was wrong.</p>';  // W51
     }
-    box.innerHTML = h; box.classList.remove('hidden');
+    if (saved) h += '<p class="rs-saved">Saved copy · may be out of date</p>';   // W14
+    const off = ballot.filter(b => official(b.c)).length, oc = ballot.map(b => outcome(b.c)).filter(Boolean), up = oc.filter(o => o === 'up').length;
+    const compact = '<p class="rs-compact"><b>' + off + ' of ' + ballot.length + ' official</b>' + (oc.length ? ' · ' + up + ' of your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + ' won or ' + (up === 1 ? 'is' : 'are') + ' leading' : '') + '<span>' + esc(updated()) + '</span></p>';
+    box.className = 'rs-top rs-band'; box.innerHTML = h + compact + summary() + timeline();
     if (!counted) { counted = true; track('results_seen'); }
   }
   function landing() {
@@ -2379,6 +2462,102 @@ const results = (() => {
   }
   function why() { $('rs-why').showModal(); }
 
+  /* ----- after the election (Lane, Oct 21; docs/plans/2026-10-21-after-the-election.md): the page as a record of the
+     ballot. From Nov 4, with a file the page accepts (the pause included), the laptop and phone layouts show results
+     where the ballot was filled in: the rail counts what's official, the paper is the result, the picks are read-only. */
+  const after = () => !!(R && live() && (R.withdrawn || Object.keys(R.contests).length));   // a file with nothing usable changes nothing
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], DAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dow = (d, long) => (long ? DAYS_LONG : DAYS)[new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10))).getUTCDay()];
+  const dayLong = (d) => dow(d) + ', ' + md(d);                                       // "Sat, Dec 12"
+  const surname = (n) => n.replace(/,?\s+(Jr\.?|Sr\.?|II|III|IV)$/, '').trim().split(/\s+/).pop();
+  const official = (c) => { const e = entry(c.id); return !!e && isOfficial(e); };
+  const close = (c) => { const e = entry(c.id); return !!e && ['too_close', 'may_runoff', 'tied', 'tied_second'].includes(e.verdict); };
+  const picked = (c) => { const v = current(c.id); return v.length > 0 && v[0] !== '__skip'; };
+  // A rail row's second line: the result in a few words, and whether it's official.
+  function rowLine(c) {
+    const e = entry(c.id);
+    if (!e || e.state === 'counting' || e.verdict === 'none') return R && R.withdrawn ? 'Results paused' : 'No result yet';
+    let v = verdict(c, e);
+    if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) v = 'Runoff: ' + andList(names(c, e.runoff).map(surname));
+    else if (/^Tied/.test(v)) v = 'Tied';
+    return v + ' · ' + (isOfficial(e) ? 'Official' : 'Unofficial');
+  }
+  // The voter's pick against the result: 'up' (won, elected, passed, or leading), 'down' (didn't win), 'behind' (not
+  // leading, still unofficial), 'open' (too close, a runoff to come, no call yet). null without a pick here.
+  function outcome(c) {
+    const e = entry(c.id), v = current(c.id);
+    if (!e || !v.length || v[0] === '__skip') return null;
+    const V = e.verdict, hit = v.some(x => e.leaders.includes(x)), off = isOfficial(e);
+    if (c.type === 'measure') {
+      if (!['passing', 'failing', 'passed', 'failed', 'failed_tie'].includes(V)) return 'open';
+      return (V === 'passing' || V === 'passed') === (v[0] === 'FOR') ? 'up' : off ? 'down' : 'behind';
+    }
+    if (V === 'leading') return hit ? 'up' : 'behind';
+    if (['won', 'elected', 'unopposed'].includes(V)) return hit ? 'up' : 'down';
+    if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : 'down';
+    return 'open';
+  }
+  const upcoming = (c) => { const e = entry(c.id); return !!e && e.verdict === 'runoff' && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on; };
+  // The summary (option A, Lane Oct 20): your ballot, your picks, what's next.
+  function summary() {
+    const n = ballot.length, off = ballot.filter(b => official(b.c)).length;
+    const oc = ballot.map(b => outcome(b.c)).filter(Boolean), k = (x) => oc.filter(o => o === x).length;
+    let h = '<section class="rs-sum" aria-label="Your ballot so far"><div class="sx"><p class="ov">Your ballot</p><div class="row"><p class="big">' + off + '<small>/' + n + '</small></p><p class="lb">official results<span>'
+      + (off === n ? 'Every result on your ballot is official' : 'The rest are still being counted or canvassed') + '</span></p></div></div>';
+    if (oc.length) {
+      const down = k('down'), behind = k('behind'), opens = ballot.filter(b => outcome(b.c) === 'open');
+      const downWord = !behind ? 'didn’t win' : !down ? 'are behind' : 'didn’t win or are behind';
+      const openWord = opens.every(b => close(b.c)) ? 'too close to call' : 'not settled yet';
+      h += '<div class="sx"><p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="row three">'
+        + [[k('up'), 'won or are leading'], [down + behind, downWord], [opens.length, openWord]].map(x => '<div><b>' + x[0] + '</b><span class="lb">' + x[1] + '</span></div>').join('') + '</div></div>';
+    } else {
+      h += '<div class="sx"><p class="ov">Your picks</p><div class="row"><p class="lb">No picks on this device<span>Results are the same for everyone. Picks you made here would show beside them.</span></p></div></div>';
+    }
+    const runs = ballot.filter(b => upcoming(b.c)).sort((a, b) => entry(a.c.id).runoff_on < entry(b.c.id).runoff_on ? -1 : 1);
+    if (runs.length) {
+      const first = runs[0], d = entry(first.c.id).runoff_on;
+      h += '<button type="button" class="sx next" data-rs="go" data-c="' + esc(first.c.id) + '"><p class="ov">What’s next</p><div class="row"><p class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + esc(cleanTitle(first.c)) + (runs.length > 1 ? ' and ' + (runs.length - 1) + ' more' : '') + ' · Get ready</span></p></div></button>';
+    } else if (ballot.some(b => { const e = entry(b.c.id); return e && (e.verdict === 'may_runoff' || (e.verdict === 'runoff' && !isOfficial(e))); })) {
+      h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">A runoff is possible<span>If no one wins a majority, the top two meet again in December.</span></p></div></div>';
+    } else {
+      h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">Nothing else on your ballot<span>We’ll keep the results updated until each one is official.</span></p></div></div>';
+    }
+    return h + '</section>';
+  }
+  // Where things stand: the steps from election night to the Legislature, the current one marked.
+  function newest() { return R ? Object.values(R.contests).flatMap(e => e.sources.map(s => s[1])).sort().pop() || '' : ''; }
+  function updated() { const t = newest(); return t ? 'Results updated ' + when(t) : ''; }
+  function timeline() {
+    const d = day(), runs = R ? Object.values(R.contests).filter(e => e.verdict === 'runoff' && isOfficial(e) && e.runoff_on).map(e => e.runoff_on).sort() : [];
+    const steps = [['Election night', 'Nov 3 · first counts', '2026-11-03'],
+      ['Late ballots and local canvasses', 'To ' + md(R.late_until) + ' · cities, schools, county', R.late_until],
+      ['State canvass', 'Nov 21 – Dec 7 · state and federal', '2026-12-07']]
+      .concat(runs.length ? [['Runoffs', dayLong(runs[runs.length - 1]), runs[runs.length - 1]]] : [])
+      .concat([['The Legislature', 'January · Governor, Lt. Governor', '2027-01-31']]);
+    const now = steps.findIndex(s => d <= s[2]);
+    return '<section class="rs-tl" aria-label="Where things stand"><div class="hd"><b>Where things stand</b></div><ol style="--n:' + steps.length + '">'
+      + steps.map((s, i) => '<li class="' + (i < now || now < 0 ? 'done' : i === now ? 'now' : '') + '"' + (i === now ? ' aria-current="step"' : '') + '><i aria-hidden="true"></i><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>').join('') + '</ol></section>';
+  }
+  // What's next, on a contest headed to an official runoff.
+  function nextBox(c) {
+    if (!upcoming(c)) return '';
+    const e = entry(c.id);
+    return '<section class="rs-next" aria-label="What’s next"><p class="ov">What’s next</p><h2>A runoff on ' + esc(dow(e.runoff_on, true) + ', ' + md(e.runoff_on)) + '</h2><p>'
+      + esc(andList(names(c, e.runoff))) + '. It’s a new choice: your Nov 3 pick isn’t carried over.</p></section>';
+  }
+  // The notes beside the result.
+  function notes(c) {
+    const e = entry(c.id);
+    let h = '';
+    if (e) {
+      h += '<section><h3>About this result</h3><p>' + (isOfficial(e) ? 'Made official ' + esc(md(e.canvass.done)) + ' by ' + esc(e.canvasser) + '.' : 'Unofficial until ' + esc(e.canvasser) + ' canvasses the vote.') + '</p>'
+        + '<button type="button" class="lnk" data-rs="why"><span><b>How results become official</b><span>Counting, canvasses and runoffs</span></span></button></section>';
+      h += '<section><h3>Where the numbers come from</h3>' + e.sources.map(s => '<p>' + esc(s[0]) + ', posted ' + esc(when(s[1])) + '</p>').join('') + '</section>';
+    }
+    h += '<section><h3>Calling races</h3><p>Ballotta doesn’t call races. Until a contest is canvassed, a “leader” is only who’s ahead in the count so far.</p></section>';
+    return h + '<p class="note"><button type="button" class="dk-link" data-rs="tell">Something look wrong? Tell us</button></p>';
+  }
+
   /* ----- start ----- */
   function start() {
     $('rs-q').addEventListener('input', () => { ui.q = $('rs-q').value.trim(); drawAll(); });
@@ -2390,6 +2569,8 @@ const results = (() => {
       const b = e.target.closest && e.target.closest('[data-rs]');
       if (!b) return;
       if (b.dataset.rs === 'why') why(); else if (b.dataset.rs === 'all') openAll();
+      else if (b.dataset.rs === 'tell') sendFeedback();
+      else if (b.dataset.rs === 'go' && window.desk && desk.goTo) desk.goTo(b.dataset.c);
     });
     try { wantAll = new URLSearchParams(location.search).has('results'); } catch (e) {}
     load(true);
@@ -2407,7 +2588,7 @@ const results = (() => {
     tbl.querySelectorAll('tr.dk-tg th').forEach(x => { x.colSpan = 5; });
     tbl.querySelectorAll('tr[data-tr]').forEach(tr => { const c = BYID[tr.dataset.tr], td = document.createElement('td'); td.className = 'rs-cell'; td.textContent = c ? cell(c) : '—'; tr.children[1].after(td); });
   }
-  return { start, ribbon, cell, on, top, why, openAll, glance, entry, accept, landing };
+  return { start, ribbon, cell, on, top, why, openAll, glance, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes };
 })();
 window.results = results;
 /*/RESULTS*/
@@ -2428,6 +2609,8 @@ const desk = (() => {
   const decided = (cid) => current(cid).length > 0;
   const hasWhy = (cid) => typeof whys[cid] === 'string' && whys[cid].trim() !== '';
   const isUnopp = (c) => c.type !== 'measure' && optionsOf(c).length === 1;
+  // After the election (docs/plans/2026-10-21-after-the-election.md): the page as a record of the ballot (results.after()).
+  const after = () => false/*RESULTS*/ || !!(window.results && results.after())/*/RESULTS*/;
   const initial = () => esc((friend && friend.name ? friend.name : '?').charAt(0).toUpperCase());
   const possessive = () => esc(friend && friend.name ? friend.name + '’s' : 'your friend’s');
   // A reason box grows to fit what's in it (CSS min-height still sets the smallest size).
@@ -2469,35 +2652,55 @@ const desk = (() => {
     $('dk-share').classList.toggle('hidden', !n);
     $('dk-loc').innerHTML = n ? (lastLookup.precinct ? '<b>Precinct ' + esc(String(lastLookup.precinct)) + '</b>' : '<b>Your ballot</b>') + (ui.addr ? ' · ' + esc(ui.addr) : '') + ' · <button type="button" class="dk-link" id="dk-change">change</button>' : 'Travis County · Nov 3, 2026 election';
     if (n) $('dk-change').addEventListener('click', toLanding);
-    $('dk-when').textContent = whenLine();
+    $('dk-when').textContent = (after() && results.updated()) || whenLine();
   }
   function matches(b) {
-    if (ui.filter === 'und' && decided(b.c.id)) return false;
-    if (ui.filter === 'why' && !hasWhy(b.c.id)) return false;
+    if (after()) {   // after the election: Too close, My picks
+      if (ui.filter === 'und' && !results.close(b.c)) return false;
+      if (ui.filter === 'why' && !results.picked(b.c)) return false;
+    } else {
+      if (ui.filter === 'und' && decided(b.c.id)) return false;
+      if (ui.filter === 'why' && !hasWhy(b.c.id)) return false;
+    }
     return !ui.q || (cleanTitle(b.c) + ' ' + optionsOf(b.c).join(' ')).toLowerCase().includes(ui.q.toLowerCase());
   }
   function rail() {
-    const n = ballot.length, done = ballot.filter(b => decided(b.c.id)).length;
-    $('dk-count').textContent = done + ' of ' + n + ' decided';
+    const A = after(), n = ballot.length, done = ballot.filter(b => A ? results.official(b.c) : decided(b.c.id)).length;
+    $('dk-count').textContent = done + ' of ' + n + (A ? ' official' : ' decided');
     $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%';
+    menuFor(A);
     document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
-    const counts = { all: 'All ' + n, und: 'Undecided ' + (n - done), why: 'Reasons ' + ballot.filter(b => hasWhy(b.c.id)).length };
+    const counts = A ? { all: 'All ' + n, und: 'Too close ' + ballot.filter(b => results.close(b.c)).length, why: 'My picks ' + ballot.filter(b => results.picked(b.c)).length }
+      : { all: 'All ' + n, und: 'Undecided ' + (n - done), why: 'Reasons ' + ballot.filter(b => hasWhy(b.c.id)).length };
     document.querySelectorAll('#dk-filt button').forEach(b => { b.textContent = counts[b.dataset.f]; b.setAttribute('aria-pressed', b.dataset.f === ui.filter ? 'true' : 'false'); });
     const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));
     let html = '';
     LEVELS.filter(L => byLevel[L]).forEach(L => {
       const all = byLevel[L], shown = all.filter(matches);
       if (!shown.length) return;
-      html += '<div class="dk-g"><span>' + esc(LEVEL_LABEL[L] || L) + '</span><span>' + all.filter(b => decided(b.c.id)).length + '/' + all.length + '</span></div>';
+      html += '<div class="dk-g"><span>' + esc(LEVEL_LABEL[L] || L) + '</span><span>' + all.filter(b => A ? results.official(b.c) : decided(b.c.id)).length + '/' + all.length + '</span></div>';
       html += shown.map(b => {
-        const id = b.c.id, v = current(id), sub = !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : v.map(x => optLabel(b.c, x)).join(', ');
+        const id = b.c.id, v = current(id), sub = A ? results.rowLine(b.c) : !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : v.map(x => optLabel(b.c, x)).join(', ');
         const fp = friend && friend.P[id] ? esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) : '';  // read out as "Maya picked …" (#32)
         const fa = fp ? '<span class="dk-fa' + (samePick(id) ? '' : ' diff') + '" aria-hidden="true" title="' + possessive() + ' pick: ' + fp + '">' + initial() + '</span><span class="dk-vh">' + esc(friendName()) + ' picked ' + fp + '</span>' : '';
         return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + '</small></span>' + fa + '</button>';
       }).join('');
     });
-    $('dk-out').innerHTML = html || '<p class="dk-empty">' + (ui.q ? 'Nothing matches “' + esc(ui.q) + '”.' : ui.filter === 'und' ? 'Every contest is decided.' : 'No reasons written yet.') + '</p>';
+    $('dk-out').innerHTML = html || '<p class="dk-empty">' + (ui.q ? 'Nothing matches “' + esc(ui.q) + '”.' : ui.filter === 'und' ? (A ? 'Nothing on your ballot is too close to call.' : 'Every contest is decided.') : (A ? 'No picks on this device.' : 'No reasons written yet.')) + '</p>';
     $('dk-out').querySelectorAll('.dk-row').forEach(r => r.addEventListener('click', () => go(r.dataset.row, true)));
+  }
+
+  // The menu after the election: Decide becomes Results, Where to vote steps aside, All Travis County results joins, and
+  // Print your choices becomes Print your results. Each button keeps its words from before, to go back to if results are
+  // ever pulled before Nov 4 is over (they never are after it: the pause keeps this menu).
+  const BAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>';
+  function menuFor(A) {
+    document.querySelectorAll('#dk-views button').forEach(b => {
+      if (!b.dataset.was) b.dataset.was = b.innerHTML;
+      const v = b.dataset.view;
+      b.classList.toggle('hidden', A ? v === 'vote' : v === 'all');
+      b.innerHTML = !A ? b.dataset.was : v === 'decide' ? BAR + 'Results' : v === 'crib' ? b.dataset.was.replace('Print your choices', 'Print your results') : b.dataset.was;
+    });
   }
 
   /* ----- views ----- */
@@ -2508,6 +2711,7 @@ const desk = (() => {
 /*/RESULTS*/
     if (!ballot.length) /*PHONE*/{ if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/return;/*PHONE*/ }/*/PHONE*/
     if (idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
+    if (after() && ui.view === 'vote') ui.view = 'decide';   // Nov 3's Where to vote isn't in the menu after the election
     rail();
     P().dataset.c = ui.view === 'decide' ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
     $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' ? ' wide' : '');
@@ -2565,13 +2769,14 @@ const desk = (() => {
   // contest by contest: Next keeps going in order instead of pointing back at it, which made Next alternate between the
   // two forever (round-2 #28, #125). From another view (At a glance, the crib sheet), Next undecided names it again, and
   // any other move, a new ballot or Clear my picks forgets it (Pass 1): left lives only while Next carries on.
-  function upNext() { const nx = nextUndecided(ui.cur, left); return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }
+  function upNext() { if (after()) return null; const nx = nextUndecided(ui.cur, left); return nx && !(ui.view === 'decide' && nx.c.id === ui.cur) ? nx : null; }
   function leave() { if (ui.view === 'decide' && !upNext() && !decided(ui.cur)) left = ui.cur; }
-  function inOrder() { const i = idx(ui.cur); return ui.view === 'decide' && nextUndecided(ui.cur) && i < ballot.length - 1 ? ballot[i + 1] : null; }
+  function inOrder() { const i = idx(ui.cur); return ui.view === 'decide' && (after() || nextUndecided(ui.cur)) && i < ballot.length - 1 ? ballot[i + 1] : null; }
   function nextLabel() {
     const nx = upNext(), io = !nx && inOrder(), k = ' <span class="kbd" aria-hidden="true">N</span>';
     if (nx) return '<span class="dk-nt">Next undecided: ' + esc(cleanTitle(nx.c)) + '</span>' + k;
     if (io) return '<span class="dk-nt">Next: ' + esc(cleanTitle(io.c)) + '</span>' + k;
+    if (after()) return '<span class="dk-nt">Last contest · see At a glance</span>' + k;
     return nextUndecided(ui.cur) ? '<span class="dk-nt">Last contest · see At a glance</span>' + k : '<span class="dk-nt">All decided · see At a glance</span>';
   }
   function line(c, val, sub, k, links) {
@@ -2579,7 +2784,38 @@ const desk = (() => {
     const fr = F && F.includes(val) ? '<div class="dk-fp"><span class="dk-fa">' + initial() + '</span><span><b>' + esc(friendName()) + ' picked this</b>' + (friend.W[c.id] ? ' · “' + esc(friend.W[c.id]) + '”' : '') + '</span></div>' : '';
     return '<div class="dk-lw"><button type="button" class="dk-line" data-c="' + c.id + '" data-pick="' + esc(val) + '" aria-pressed="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, val)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (k < 9 ? '<span class="kbd" aria-hidden="true">' + (k + 1) + '</span>' : '') + '</button>' + (links || '') + fr + '</div>';
   }
+  // After the election, the paper is the result: your pick and reason with it, the ballot as you marked it, read-only.
+  function viewResult() {
+    const b = curB(), c = b.c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure', n = seats(c), opts = optionsOf(c), v = current(c.id), i = idx(c.id);
+    const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level);
+    let h = '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span><span class="note">Saved on this device</span></div>';
+    const t = cleanTitle(c);
+    h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
+    if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</div>';
+    if (b.conf === 'medium') h += '<span class="flag">Double-check</span><p class="note">' + esc(b.note || 'Not yet confirmed for your address.') + '</p>';
+/*RESULTS*/
+    h += results.ribbon(c) + results.nextBox(c);
+/*/RESULTS*/
+    const raw = isM ? opts : c.choices.filter(x => x !== 'Write-in');
+    h += '<section class="dk-asmarked" aria-label="As you marked it"><span class="ov">As you marked it</span><ul class="dk-lines dk-ro' + (isM ? ' dk-mrow' : '') + '">' + opts.map((o, k) => {
+      const on = v.includes(o), m = isM ? null : raw[k].match(/\((REP|DEM|LIB|GRN)\)$/), sub = [m ? PARTY[m[1]] : '', on ? 'Your pick' : ''].filter(Boolean).join(' · ');
+      return '<li class="dk-lw"><span class="dk-line" data-on="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span></span></li>';
+    }).join('') + '</ul>' + (v[0] === '__skip' ? '<p class="note">You skipped this ' + (isM ? 'measure' : 'race') + '.</p>' : !v.length ? '<p class="note">No pick here on this device.</p>' : '') + '</section>';
+    let read = '';
+    if (isM && c.text) read += '<div class="sub"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
+    if (isM && L.plain) read += '<div class="sub"><span class="ov">In plain words</span><p>' + esc(L.plain) + '</p></div>';
+    if (!isM) read += opts.map(o => { const l = candLinks(L, o); return l ? '<div><b>' + esc(optLabel(c, o)) + '</b>' + l + '</div>' : ''; }).join('');
+    if (L.src && L.src.length) read += srcHTML(L.src);
+    if (read) h += '<details class="rs-fold"><summary>What you read before voting</summary><div>' + read + '</div></details>';
+    h += '<div class="dk-nav"><button type="button" class="btn secondary small" data-act="prev"' + (i <= 0 ? ' disabled' : '') + '><span class="kbd" aria-hidden="true">K</span> Previous</button><button type="button" class="btn small" data-act="next" id="dk-next">' + nextLabel() + '</button></div>';
+    P().innerHTML = h;
+    P().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
+/*RESULTS*/
+    N().innerHTML = results.notes(c);
+/*/RESULTS*/
+  }
   function viewDecide() {
+    if (after()) return viewResult();
     const b = curB(), c = b.c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure', n = seats(c), opts = optionsOf(c), cur = current(c.id), i = idx(c.id);
     const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level);
     let h = friend ? '<div class="dk-fchip"><span class="dk-fa">' + initial() + '</span>Showing ' + possessive() + ' picks · <button type="button" class="dk-link" data-act="hidefriend">Hide</button></div>' : '';
@@ -2866,7 +3102,10 @@ const desk = (() => {
   $('dk-say').querySelector('button').addEventListener('click', () => $('dk-say').classList.add('hidden'));
   const once = new Set();  // counted once per visit (page load), so a busy keyboard doesn't count 63 times
   const countOnce = (key, name, data) => { if (!once.has(key)) { once.add(key); track(name, data); } };
-  document.querySelectorAll('#dk-views button').forEach(btn => btn.addEventListener('click', (e) => { setView(btn.dataset.view, e.detail > 0); track('view_opened', { view: btn.dataset.view }); }));
+  document.querySelectorAll('#dk-views button').forEach(btn => btn.addEventListener('click', (e) => {
+    if (btn.dataset.view === 'all') { if (window.results) results.openAll(); track('view_opened', { view: 'all' }); return; }
+    setView(btn.dataset.view, e.detail > 0); track('view_opened', { view: btn.dataset.view });
+  }));
   document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { ui.filter = btn.dataset.f; rail(); countOnce('f:' + btn.dataset.f, 'filter_used', { filter: btn.dataset.f }); }));
   $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); rail(); countOnce('search', 'search_used'); });
   if ('IntersectionObserver' in window) {  // did the FAQ scroll into view? once per visit, after a scroll (a tall window shows it at once)
@@ -2889,6 +3128,7 @@ const desk = (() => {
     const used = (kind) => countOnce('k:' + kind, 'shortcut_used', { kind });
     if (k === '/') { e.preventDefault(); $('dk-q').focus(); used('search'); return; }
     if (ui.view !== 'decide') return;
+    if (after() && (/^[1-9]$/.test(k) || k === 's' || k === 'r')) return;   // picks are a record after the election
     if (e.repeat && (/^[1-9]$/.test(k) || k === 's')) return;  // a held key picks once (pick() toggles)
     const b = curB();
     if (/^[1-9]$/.test(k)) { const o = optionsOf(b.c)[+k - 1]; if (o !== undefined) { e.preventDefault(); if (pick(b.c.id, o) !== false) announce(b.c); used('pick'); } }
@@ -2909,7 +3149,7 @@ const desk = (() => {
 
   /* ----- hooks the shared code calls (the DESK one-liners in showBallot, refresh, renderCrib and openFriend) ----- */
   return {
-    render,/*PHONE*/ ph: { ui, go, goOn, setView, act, nextUndecided, idx, curB, decided, upNext, leave },/*/PHONE*/
+    render, goTo: (cid) => go(cid, true), after,/*PHONE*/ ph: { ui, go, goOn, setView, act, nextUndecided, idx, curB, decided, upNext, leave, after },/*/PHONE*/
     ballot(meta) {
       ui.landing = false; left = null;
       $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)
@@ -2934,7 +3174,8 @@ const desk = (() => {
     refresh() {
       if (!ballot.length) return;
       rail();
-      if (ui.view === 'decide' && $('dk-next')) { $('dk-next').innerHTML = nextLabel(); notesDecide(); }
+      if (ui.view === 'decide' && after()) viewResult();
+      else if (ui.view === 'decide' && $('dk-next')) { $('dk-next').innerHTML = nextLabel(); notesDecide(); }
       else if (ui.view === 'crib') cribPaper();
     },
     cribSkip: (c) => ui.hideCrib && isUnopp(c),
@@ -2976,13 +3217,14 @@ const phone = (() => {
     if (!ballot.length) return;
     const n = ballot.length, done = ballot.filter(b => D.decided(b.c.id)).length, nx = upcoming();
     const dec = D.ui.view === 'decide', i = D.idx(D.ui.cur);
-    $('ph-count').textContent = done + ' of ' + n + ' decided';  // the paper's top line says which contest; this fits a 320px phone
+    const A = D.after && D.after(), off = A ? ballot.filter(b => results.official(b.c)).length : 0;
+    $('ph-count').textContent = A ? off + ' of ' + n + ' official' : done + ' of ' + n + ' decided';  // the paper's top line says which contest; this fits a 320px phone
     $('ph-back').textContent = dec ? '← Previous' : '← Contest ' + (i + 1);
     $('ph-back').setAttribute('aria-label', dec ? 'Previous contest' : 'Contest ' + (i + 1) + ', go back');
     $('ph-back').disabled = dec && i <= 0;
     // Everything decided: step through in order, then on to the crib sheet (the row under the paper is gone).
-    $('ph-next').textContent = nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : 'Crib sheet →';
-    $('ph-next').classList.toggle('hidden', !nx && D.ui.view === 'crib');
+    $('ph-next').textContent = nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : A ? 'At a glance →' : 'Crib sheet →';   // after the election, the last contest leads to At a glance
+    $('ph-next').classList.toggle('hidden', !nx && D.ui.view === (A ? 'glance' : 'crib'));
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
   function savedSay() {
@@ -2996,7 +3238,7 @@ const phone = (() => {
     bar();
     if (dec) {
       const c = D.curB().c, L = DATA.learn[c.id] || {};
-      const what = c.type === 'measure' ? 'Sources' : L.office ? 'About this office · Learn more' : 'Learn more';
+      const what = D.after && D.after() ? 'About this result' : c.type === 'measure' ? 'Sources' : L.office ? 'About this office · Learn more' : 'Learn more';
       $('ph-fold').textContent = (friend ? 'You and ' + friendName() + ' · ' : '') + what;
       $('ph-fold').setAttribute('aria-expanded', foldOpen ? 'true' : 'false');
       $('dk-notes').classList.toggle('ph-open', foldOpen);
@@ -3024,7 +3266,7 @@ const phone = (() => {
     const nx = upcoming(), i = D.idx(D.ui.cur);
     if (nx) { const was = D.ui.view; D.goOn(nx.c.id); if (was !== 'decide') track('view_opened', { view: 'decide' }); }  // as back() counts it (#76)
     else if (D.ui.view === 'decide' && i < ballot.length - 1) D.goOn(ballot[i + 1].c.id);
-    else { D.setView('crib'); track('view_opened', { view: 'crib' }); }
+    else { const v = D.after && D.after() ? 'glance' : 'crib'; D.setView(v); track('view_opened', { view: v }); }
   }
   function back() {
     if (D.ui.view === 'decide') D.act('prev');

@@ -149,3 +149,31 @@ what was on your ballot, for Travis county?" Answered: yes, in the Nov 3 release
   (majority or two-thirds unsettled), when the two readings disagree; and ESD 4's annexation (c205), whose outcome needs
   separate majorities that one total can't show, until ESD 4 canvasses. Should the ribbon say something like "No call
   yet: this one is decided at the canvass"? (Each case is rare; ESD 4's is certain.)
+
+## After the election (Oct 21): words the build added, not on the canvas — for Lane
+
+The canvas (reviewed Oct 20–21) supplies most of the after-election words: the menu, "official results", "won or are
+leading", "didn’t win", "too close to call", "Where things stand" and its steps, "What’s next", "As you marked it", "What
+you read before voting", "About this result", "Calling races", "Something look wrong? Tell us". These are new, **not yet
+approved**:
+
+- **W71** Your picks, when some are unofficial and not leading: "are behind" (only those), "didn’t win or are behind"
+  (a mix). The canvas showed only "didn’t win", which would call an unofficial result too early.
+- **W72** Your picks that are neither won nor lost and not all too close (a runoff your pick is in, a race with no call
+  yet): "not settled yet".
+- **W73** No picks on this device: "Your picks" / "No picks on this device" / "Results are the same for everyone. Picks you
+  made here would show beside them."
+- **W74** What’s next, before any runoff is official but one is possible on your ballot: "A runoff is possible" / "If no
+  one wins a majority, the top two meet again in December." With nothing to come: "Nothing else on your ballot" /
+  "We’ll keep the results updated until each one is official."
+- **W75** Your ballot, all official: "Every result on your ballot is official".
+- **W76** Your reason, under your pick: "Your reason. Only you can see it." (The canvas had "Your reason, from Oct 24":
+  the page doesn't keep when a reason was written.)
+- **W77** As you marked it, with no pick: "No pick here on this device."; the rail's filters: "Too close", "My picks";
+  their empty states: "Nothing on your ballot is too close to call." / "No picks on this device."
+- **W78** About this result: "Made official Nov 12 by the Austin City Council." / "Unofficial until the Austin City
+  Council canvasses the vote."; Where the numbers come from: "<source>, posted <time>".
+- **W79** The phone's one line above the paper: "31 of 63 official · 6 of your 13 picks won or are leading", then
+  "Results updated <time>".
+- **W80** A rail row with no result: "No result yet" (or "Results paused"); a runoff row: "Runoff: Ortega and Price ·
+  Official" (surnames only, to fit).

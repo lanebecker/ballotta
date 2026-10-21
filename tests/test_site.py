@@ -4791,7 +4791,7 @@ def results_show_on_the_laptop_ballot(b):
     fx = rs_fixtures(); sent = []
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, sent=sent)
     top = pg.inner_text('#rs-top')
-    assert top.startswith('Results: 0 of 11 official · oldest numbers posted Nov 4, 7:55 am · Why unofficial? · All Travis County results'), top
+    assert '0/11' in top and 'official results' in top and pg.inner_text('#dk-count') == '0 of 11 official', top
     r = rs_go(pg, 'c071')
     for w in ('Unofficial · TEST DATA (not real results), posted Nov 4, 8:41 am', 'Late mail, overseas and provisional ballots are still being counted.',
               'Becomes official when the Austin City Council canvasses the vote, by Nov 17.', 'Passing', 'Your pick, Against, is behind.',
@@ -4825,11 +4825,12 @@ def results_show_on_the_laptop_ballot(b):
 def results_show_on_the_phone_ballot(b):
     fx = rs_fixtures()
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, phone=True)
-    assert pg.is_visible('#rs-top') and 'Results: 0 of 11 official' in pg.inner_text('#rs-top')
+    assert pg.is_visible('#rs-top .rs-compact') and pg.inner_text('#rs-top .rs-compact').startswith('0 of 11 official · 3 of your 8 picks won or are leading'), pg.inner_text('#rs-top')
+    assert not pg.is_visible('#rs-top .rs-sum') and pg.inner_text('#ph-count') == '0 of 11 official'
     r = rs_go(pg, 'c113', phone=True); assert 'Leading for 2 seats' in r and '1 of your 2 picks is leading.' in r, r
     assert sideways(pg) <= 0
     r = rs_go(pg, 'c071', phone=True); assert 'Your pick, Against, is behind.' in r and sideways(pg) <= 0, r
-    pg.click('#rs-top [data-rs="all"]'); assert pg.evaluate("document.getElementById('rs-all').open")
+    pg.click('#ph-list'); pg.click('#dk-views [data-view="all"]'); assert pg.evaluate("document.getElementById('rs-all').open")
     assert 'Your pick' not in pg.inner_text('#rs-list'), 'All Travis County results is nobody’s ballot'
     assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'phone'}]], events(pg)
     assert pg.errs == [], pg.errs
@@ -4842,7 +4843,7 @@ def results_say_what_changed_since_you_last_looked(b):
     assert 'Since you last looked' not in pg.inner_text('#rs-top'), 'the first visit has nothing to compare'
     serve['body'] = fx.scene('official'); pg.clock.set_system_time(rs_when('2026-12-03T09:00')); pg.reload(); pg.wait_for_timeout(600)
     top = pg.inner_text('#rs-top')
-    assert 'Results: 4 of 11 official' in top and 'Since you last looked: 4 results became official.' in top, top
+    assert '4/11' in top and 'Since you last looked: 4 results became official.' in top and pg.inner_text('#dk-count') == '4 of 11 official', top
     r = rs_go(pg, 'c071'); assert r.startswith('Official · canvassed by the Austin City Council, Nov 12') and 'Passed' in r and 'Your pick, Against, didn’t win.' in r, r
     r = rs_go(pg, 'c056'); assert 'Elected: George Morales III (unopposed)' in r and 'Your pick was elected.' in r, r
     r = rs_go(pg, 'c001'); assert 'Official · canvassed by the state, Dec 2 · numbers are the last unofficial count' in r, r
@@ -4890,14 +4891,14 @@ def a_bad_results_file_breaks_nothing(b):
     for body in bad:
         serve['body'] = body; pg.reload(); pg.wait_for_timeout(400)
         assert pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), body
+    pg.click('.dk-row[data-row="c147"]'); pg.click('#dk-paper .dk-line[data-pick="AGAINST"]')
+    assert cur(pg, 'c147') == ['AGAINST'], 'with no results the page accepts, picking still works'
     one = fx.scene('mixed'); one['contests']['c071']['choices'].reverse()                    # out of ballot order
     one['contests']['c069']['choices'][0][0] = '<img src=x onerror=alert(1)>'                  # not a ballot name
     one['contests']['c113']['sources'][0][0] = '<b>Travis</b>'                                 # text, shown as text
     serve['body'] = one; pg.reload(); pg.wait_for_timeout(500)
     assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c069') == '', 'a bad entry is left out'
     r = rs_go(pg, 'c113'); assert '<b>Travis</b>' in r and pg.query_selector('#dk-paper .rs b') is None, r
-    pg.click('.dk-row[data-row="c147"]'); pg.click('#dk-paper .dk-line[data-pick="AGAINST"]')
-    assert cur(pg, 'c147') == ['AGAINST'], 'picking still works'
     assert pg.errs == [], pg.errs
     ctx.close()
 
@@ -4956,11 +4957,53 @@ def a_saved_copy_says_so(b):
 def the_canvass_is_explained_from_the_results_and_the_menu(b):
     fx = rs_fixtures()
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
-    pg.click('#rs-top [data-rs="why"]'); assert pg.evaluate("document.getElementById('rs-why').open")
+    rs_go(pg, 'c071'); pg.click('#dk-notes [data-rs="why"]'); assert pg.evaluate("document.getElementById('rs-why').open")
     assert 'Election night counts are unofficial.' in pg.inner_text('#rs-why') and 'It doesn’t call races' in pg.inner_text('#rs-why')
     pg.keyboard.press('Escape')
     pg.click('#dk-help'); pg.click('#dk-menu [data-help="results"]')
     assert pg.evaluate("document.getElementById('rs-why').open") and events(pg)[-1] == ['help_opened', {'item': 'results', 'layout': 'laptop'}], events(pg)[-1:]
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def results_turn_the_ballot_into_a_record(b):
+    # After the election (docs/plans/2026-10-21-after-the-election.md): the menu, the rail, the summary and the timeline
+    # turn to results; the paper is the result, your pick and reason with it; the picks are read-only.
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    pg.evaluate("w => localStorage.setItem('ballotta.whys', JSON.stringify(w))", {'c071': 'Parks need it'}); pg.reload(); pg.wait_for_timeout(600)
+    menu = [x.inner_text().strip() for x in pg.query_selector_all('#dk-views button') if x.is_visible()]
+    assert menu == ['Results', 'At a glance', 'All Travis County results', 'Print your results'], menu
+    assert [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All 11', 'Too close 4', 'My picks 8']
+    assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', pg.inner_text('#dk-when')
+    sm = pg.inner_text('#rs-top .rs-sum')
+    assert '0/11' in sm and 'YOUR 8 PICKS' in sm and 'A runoff is possible' in sm, sm
+    assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['3', '3', '2'], 'won or leading, behind, too close'
+    assert pg.inner_text('#rs-top .rs-tl li.now b') == 'Late ballots and local canvasses'
+    assert pg.inner_text('.dk-row[data-row="c071"] small') == 'Passing · Unofficial'
+    pg.click('#dk-filt [data-f="und"]')
+    assert [x.get_attribute('data-row') for x in pg.query_selector_all('.dk-row')] == ['c001', 'c006', 'c069', 'c121']
+    pg.click('#dk-filt [data-f="all"]')
+    r = rs_go(pg, 'c071')
+    assert 'Your pick, Against, is behind.' in r and 'Parks need it' in r and 'Your reason. Only you can see it.' in r, r
+    assert pg.query_selector('#dk-paper [data-pick]') is None and pg.query_selector('#dk-w') is None, 'read-only after the election'
+    assert pg.inner_text('#dk-paper .dk-ro .dk-line[data-on="true"]').startswith('Against')
+    pg.focus('#dk-paper'); pg.keyboard.press('1'); pg.keyboard.press('s')
+    assert cur(pg, 'c071') == ['AGAINST'], 'the picking keys do nothing after the election'
+    notes = pg.inner_text('#dk-notes')
+    assert 'ABOUT THIS RESULT' in notes and 'CALLING RACES' in notes and 'TEST DATA (not real results), posted Nov 4, 8:41 am' in notes, notes
+    assert pg.inner_text('#dk-next').startswith('Next: '), pg.inner_text('#dk-next')
+    pg.click('#dk-next'); pg.wait_for_timeout(100)
+    assert pg.get_attribute('.dk-row[aria-current="true"]', 'data-row') == 'c072', 'Next goes in ballot order'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    # an official runoff: What's next names it, and the contest says when
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00')
+    assert 'Runoff · Sat, Dec 12' in pg.inner_text('#rs-top .rs-sum .next'), pg.inner_text('#rs-top .rs-sum')
+    assert 'Runoffs' in pg.inner_text('#rs-top .rs-tl') and pg.inner_text('.dk-row[data-row="c121"] small').startswith('Runoff: ')
+    pg.click('#rs-top .rs-sum button.next'); pg.wait_for_timeout(100)
+    r = pg.inner_text('#dk-paper')
+    assert 'No one won a majority, so the top two meet again on Sat, Dec 12.' in r and 'A runoff on Saturday, Dec 12' in r and 'You skipped this race.' in r, r
     assert pg.errs == [], pg.errs
     ctx.close()
 

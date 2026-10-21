@@ -72,6 +72,11 @@ def scene(name="mixed"):
         e["c117"] = entry("c117", state="counting", verdict="none", votes=[0, 0], canvasser="the ACC Board of Trustees")
     if name == "withdrawn":
         return {"seq": 3, "election": "2026-11-03", "withdrawn": True, "late_until": "2026-11-17", "contests": {}}
+    if name == "runoff":   # the official scene, with the AISD trustee race made official as a runoff on Sat, Dec 12
+        out = scene("official"); r = out["contests"]["c121"]
+        r.update(state="official", verdict="runoff", runoff=[r["choices"][0][0], r["choices"][1][0]], runoff_on="2026-12-12", changed=out["seq"])
+        r["canvass"]["done"] = "2026-11-13"
+        return out
     seq = 5 if name == "official" else 2
     for v in e.values():
         v["changed"] = min(v["changed"], seq)

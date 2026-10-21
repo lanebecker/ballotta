@@ -14,6 +14,7 @@ PREV, BLD, SW = R.PREV, R.BLD, ROOT / 'sw.js'
 L, P, S = 'results_show_on_the_laptop_ballot', 'results_show_on_the_phone_ballot', 'results_say_what_changed_since_you_last_looked'
 W, X, O = 'withdrawn_results_hide_everything', 'a_bad_results_file_breaks_nothing', 'the_date_override_works_only_on_this_computer'
 A, C, N, E = 'all_travis_county_results_need_no_address', 'a_saved_copy_says_so', 'results_wait_for_nov_4', 'the_canvass_is_explained_from_the_results_and_the_menu'
+T = 'results_turn_the_ballot_into_a_record'
 M = [
  ('R1 results before Nov 4', PREV, 'const live = () => day() >= FROM;', 'const live = () => true;', [N]),
  ('R2 ?today= works on ballotta.org', PREV, "const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);", 'const LOCAL = true;', [O]),
@@ -28,7 +29,7 @@ M = [
  ('R11 what was seen is never kept', PREV, "    LS.set('ballotta.resultsSeen', { seq: R.seq, v: now });\n", '', [S]),
  ('R12 withdrawn ignored', PREV, 'const entry = (cid) => (R && !R.withdrawn && live() ?', 'const entry = (cid) => (R && live() ?', [W]),
  ('R13 a Result column with nothing in it', PREV, "  function glance(paper) {\n    if (!on()) return;\n", "  function glance(paper) {\n", [W]),
- ('R14 a pick line on nobody\'s ballot', PREV, "    if (withPick !== false) { const m = mine(c, e);", "    if (true) { const m = mine(c, e);", [A, P]),
+ ('R14 a pick line on nobody\'s ballot', PREV, "    if (withPick !== false) {   // your pick", "    if (true) {   // your pick", [A, P]),
  ('R15 results counted at every redraw', PREV, "    if (!counted) { counted = true; track('results_seen'); }\n  }\n  function landing() {", "    track('results_seen');\n  }\n  function landing() {", [L, P]),
  ('R16 a saved copy unsaid', PREV, "r.headers.get('x-ballotta-copy') === 'saved'", 'false', [C]),
  ('R17 the offline copy marks nothing', SW, "u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept", "u.pathname.endsWith('/results.json') ? kept : kept", [C]),   # the built file; a stale build is the pipeline's catch
@@ -46,6 +47,18 @@ M = [
  ('R29 a bad file breaks the page', PREV, '    Object.keys(j.contests).forEach(cid => { if (entryOK(cid, j.contests[cid])) contests[cid] = j.contests[cid]; });', '    Object.keys(j.contests).forEach(cid => { contests[cid] = j.contests[cid]; });', [X]),
  ('R30 asked before the gate', PREV, "    if (!live() || document.visibilityState === 'hidden' ||", "    if (document.visibilityState === 'hidden' ||", [N]),
  ('R31 a two-thirds measure unsaid', PREV, "    if (e.needs === 'two_thirds') h +=", "    if (false) h +=", [A]),
+ # after the election (docs/plans/2026-10-21-after-the-election.md)
+ ('R32 never after the election', PREV, "  const after = () => !!(R && live() && (R.withdrawn || Object.keys(R.contests).length));", "  const after = () => false;", [T]),
+ ('R33 picks editable after', PREV, "    if (after()) return viewResult();\n", '', [T]),
+ ('R34 picking keys after', PREV, "    if (after() && (/^[1-9]$/.test(k) || k === 's' || k === 'r')) return;", '', [T]),
+ ('R35 decided counted as official', PREV, "done = ballot.filter(b => A ? results.official(b.c) : decided(b.c.id)).length;", "done = ballot.filter(b => decided(b.c.id)).length;", [T, L, S]),
+ ('R36 everything too close', PREV, "['too_close', 'may_runoff', 'tied', 'tied_second'].includes(e.verdict)", 'true', [T]),
+ ('R37 behind counted as leading', PREV, "    if (V === 'leading') return hit ? 'up' : 'behind';", "    if (V === 'leading') return 'up';", [T]),
+ ('R38 the timeline stuck at the start', PREV, "    const now = steps.findIndex(s => d <= s[2]);", "    const now = 0;", [T]),
+ ('R39 an official runoff unsaid', PREV, "!!e.runoff_on && day() <= e.runoff_on;", "!!e.runoff_on && day() > e.runoff_on;", [T]),
+ ('R40 Next skips to the undecided', PREV, "  function upNext() { if (after()) return null; ", "  function upNext() { ", [T]),
+ ('R41 the reason left out', PREV, "(w ? '<p><q>'", "(false ? '<p><q>'", [T]),
+ ('R42 the whole summary on a phone', PREV, ".rs-band .rs-sum,.rs-band .rs-tl{display:none}", ".rs-band .rs-x{display:none}", [P]),
 ]
 if __name__ == '__main__':
     R.main(M)
