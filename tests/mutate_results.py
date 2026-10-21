@@ -38,11 +38,11 @@ M = [
  ('R20 declared write-ins unexplained', PREV, "    if (e.write_ins) h +=", "    if (false) h +=", [L]),
  ('R21 no Travis breakdown', PREV, '    if (e.travis) h +=', '    if (false) h +=', [L]),
  ('R22 the menu item opens nothing', PREV, "    if (item) item.addEventListener('click', why);\n", '', [E]),
- ('R23 no landing card', PREV, "    if (box) box.classList.toggle('hidden', !on());", "    if (box) box.classList.add('hidden');", [A]),
+ ('R23 no way to all results from the landing', PREV, "    if (or) or.classList.toggle('hidden', !A);", "    if (or) or.classList.add('hidden');", [A]),
  ('R24 ?results ignored', PREV, '    if (wantAll && on()) { wantAll = false; openAll(); }', '    if (false) { wantAll = false; openAll(); }', [A]),
  ('R25 the Legislature called the state', PREV, "    else if (cv.kind === 'legislature') h +=", "    else if (false) h +=", [L]),
  ('R26 parties colored', PREV, '.rs-tr i{display:block;height:100%;background:var(--lc)}', '.rs-tr i{display:block;height:100%;background:var(--lc)}.rs-b:nth-child(2) .rs-tr i{background:#007BBD}', [L]),
- ('R27 a level button filters nothing', PREV, "(ui.level === 'all' || c.level === ui.level)", 'true', [A]),
+ ('R27 a level button filters nothing', PREV, "(st.level === 'all' || c.level === st.level)", 'true', [A]),
  ('R28 search finds nothing new', PREV, "(!q || (c.title + ' ' + optionsOf(c).join(' ')", "(!q || ('' + ' ' + ''", [A]),
  ('R29 a bad file breaks the page', PREV, '    Object.keys(j.contests).forEach(cid => { if (entryOK(cid, j.contests[cid])) contests[cid] = j.contests[cid]; });', '    Object.keys(j.contests).forEach(cid => { contests[cid] = j.contests[cid]; });', [X]),
  ('R30 asked before the gate', PREV, "    if (!live() || document.visibilityState === 'hidden' ||", "    if (document.visibilityState === 'hidden' ||", [N]),
@@ -59,6 +59,11 @@ M = [
  ('R40 Next skips to the undecided', PREV, "  function upNext() { if (after()) return null; ", "  function upNext() { ", [T]),
  ('R41 the reason left out', PREV, "(w ? '<p><q>'", "(false ? '<p><q>'", [T]),
  ('R42 the whole summary on a phone', PREV, ".rs-band .rs-sum,.rs-band .rs-tl{display:none}", ".rs-band .rs-x{display:none}", [P]),
+ ('R43 the landing unchanged after', PREV, "      .forEach(([el, h]) => A ? swapIn(el, h) : swapOut(el));", "      .forEach(() => {});", [A]),
+ ('R44 no address, no page', PREV, "(ballot.length > 0 || (after() && ui.allNow && ui.view === 'all'))", "(ballot.length > 0)", [A]),
+ ('R45 a level row does nothing', PREV, "r.addEventListener('click', () => { ui.level = r.dataset.lv; render();", "r.addEventListener('click', () => { render();", [A]),
+ ('R46 no summary in the phone list', PREV, "    if (A && html) html = results.listSum() + html;", '', [P]),
+ ('R47 the filter ignored on the page', PREV, "&& (st.filter === 'all' || (st.filter === 'und' ? close(c) : RUNOFFISH.includes(entry(c.id).verdict)))", '', [A]),
 ]
 if __name__ == '__main__':
     R.main(M)

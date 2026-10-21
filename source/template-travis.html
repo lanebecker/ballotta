@@ -217,16 +217,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 .rs-tv .rs-tr i{background:var(--line2)}
 .rs-top{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
 .rs-top b{color:var(--ink)}
-.rs-land{gap:10px}
 .rs-cell{white-space:nowrap}
-dialog.rs-all input[type=search]{width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:1px solid var(--lc);background:#fff;font:inherit;color:var(--ink)}
-dialog.rs-all .rs-lvls{display:flex;flex-wrap:wrap;gap:6px}
-dialog.rs-all .rs-lvls button{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);background:#fff;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-dialog.rs-all .rs-lvls button[aria-pressed=true]{background:var(--plum);border-color:var(--plum);color:#fff}
-dialog.rs-all .rs-lv{margin-top:14px}
-dialog.rs-all .rs-c h4{margin:12px 0 0;font-size:16px;line-height:1.3}
-dialog.rs-all .rs-c .rs{margin-top:8px}
-@media screen and (min-width:1024px){ dialog.rs-all{max-width:760px} }
 .rs-why{font-size:14px;color:var(--ink2)}
 /* ---------- after the election (Lane, Oct 21; docs/plans/2026-10-21-after-the-election.md): the page as a record ---------- */
 .rs-top.rs-band{padding:0;border:none;background:transparent;gap:12px}
@@ -274,6 +265,15 @@ dialog.rs-all .rs-c .rs{margin-top:8px}
 .dk-ro .dk-line{cursor:default}
 .dk-ro .dk-line[data-on=true] .dk-oval{border:none;background:var(--ink)}
 details.rs-fold{border-top:1px solid var(--line)}
+.rs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;align-items:start}
+.rs-c{display:flex;flex-direction:column;gap:8px;min-width:0}
+.rs-c h4{margin:0;font-size:16px;line-height:1.3}
+.rs-c .rs{margin:0}
+.rs-lvh{margin-top:6px}
+.rs-or{text-align:center;font-size:15px;color:var(--ink2)}
+.rs-land-tl{grid-column:1/-1}
+.rs-listsum{display:none}
+body:not(.dk-has) .dk-foot{display:none}   /* no address: no picks to keep or print */
 details.rs-fold summary{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;font-size:15px;font-weight:600;cursor:pointer;list-style:none}
 details.rs-fold summary::-webkit-details-marker{display:none}
 details.rs-fold summary::after{content:'';width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 0;flex-shrink:0}
@@ -288,6 +288,20 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   .dk-ro .dk-lw:has(.dk-line[data-on=true]){background:linear-gradient(90deg,var(--warnsoft),#fff 70%);margin:0 -10px;padding:2px 10px;border-radius:6px}
   .dk-ro.dk-mrow .dk-lw:has(.dk-line[data-on=true]){margin:0;padding:2px 10px}
   .rs-top.rs-band{margin-bottom:10px}
+  .rs-grid{grid-template-columns:minmax(0,1fr)}
+  .rs-land-tl{margin-top:8px}
+  .dk-rail .rs-listsum{display:flex;flex-direction:column;gap:8px;margin:4px 14px 10px;background:var(--card);color:var(--ink);border-radius:10px;padding:12px 14px}
+  .rs-listsum .ov{margin-bottom:-4px}
+  .rs-listsum .top{display:flex;align-items:baseline;gap:10px}
+  .rs-listsum .top b{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:30px;line-height:1}
+  .rs-listsum .top b small{font-size:18px;color:var(--muted);font-weight:600}
+  .rs-listsum .top span{font-size:14px;font-weight:600}
+  .rs-listsum .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);padding-top:10px}
+  .rs-listsum .three div{display:flex;flex-direction:column;padding:0 8px;border-left:1px solid var(--line)}
+  .rs-listsum .three div:first-child{padding-left:0;border-left:none}
+  .rs-listsum .three b{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:26px;line-height:1}
+  .rs-listsum .three span{font-size:12px;line-height:1.3;color:var(--ink2)}
+  body.dk-app-on:not(.dk-has) .ph-bar{display:none !important}   /* All Travis County results with no address: nothing to step through */
   .rs-band .rs-sum,.rs-band .rs-tl{display:none}   /* the phone shows one line here; the summary and timeline are in the list (Phase 2) */
   .rs-compact{display:block;padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
   .rs-compact b{color:var(--ink)}
@@ -908,9 +922,6 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 <!--PHONE-->
   <div class="ph-paste ph-only" id="ph-paste"><p><b>Made picks in Safari?</b> This Home Screen app keeps its own copy, so bring them over with the private link you copied (from <b>Copy my picks link</b> or <b>Keep my picks</b>).</p><button class="btn secondary" type="button" id="ph-paste-open">Paste my picks link</button></div>
 <!--/PHONE-->
-<!--RESULTS-->
-  <div class="card rs-land hidden" id="rs-land"><p><b>The Nov 3 results are coming in.</b> Look up your address to see how your ballot did, or see every contest.</p><button class="btn secondary" type="button" id="rs-land-go">See all Travis County results</button></div>
-<!--/RESULTS-->
   <section class="card" id="lookup" aria-labelledby="lk">
     <h2 id="lk" class="hidden">Your address</h2>
     <div id="lookupmsg" class="status warn hidden"></div>
@@ -920,6 +931,9 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
       <div class="field"><label for="zip">ZIP</label><input id="zip" type="text" inputmode="numeric" placeholder="78701" autocomplete="postal-code"></div>
     </div>
     <button class="btn" id="go" type="button">Show my ballot</button>
+<!--RESULTS-->
+    <p class="rs-or hidden" id="rs-or">or <button type="button" class="dk-link" data-rs="all">see all Travis County results</button></p>
+<!--/RESULTS-->
     <div id="status" class="status hidden" role="status"></div>
     <div id="units" class="unit hidden"></div>
     <p class="note">Your browser sends your address straight to Travis County's public map server (and, if the county can't match it, the U.S. Census geocoder) to find your districts. Ballotta never receives your address, and your picks and reasons stay in this browser. We count anonymous taps, like “a share link was opened”, and how quickly pages load, never your address or your picks. If your browser sends Do Not Track or Global Privacy Control, we count nothing at all.</p>
@@ -930,6 +944,9 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
     <div><span class="ov">2 · Neutral sources beside each choice</span><p class="lead">League of Women Voters answers, campaign sites and official measure text, the same way for every candidate.</p></div>
     <div><span class="ov">3 · Print it, keep it, share it</span><p class="lead">A crib sheet for the booth (phones must be off where you vote), a private link to yourself, and a link for friends.</p></div>
   </aside>
+<!--RESULTS-->
+  <div class="rs-land-tl hidden" id="rs-land-tl"></div>
+<!--/RESULTS-->
   <section class="dk-faq" id="dk-faq" aria-labelledby="dk-faqh">
     <h2 id="dk-faqh">What’s going on here?</h2>
     <div class="dk-faqgrid">
@@ -1052,13 +1069,6 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <div class="dk-info" id="dk-info"></div>
 </dialog>
 <!--RESULTS-->
-<dialog class="sheet rs-all" id="rs-all" aria-labelledby="rs-allh">
-  <div class="sheethead"><h2 id="rs-allh" style="font-size:26px">All Travis County results</h2><button type="button" class="x" data-close>Close</button></div>
-  <p class="note">Every contest on Travis County ballots, from each county’s published results and the Texas Secretary of State. Unofficial until each canvass. <button type="button" class="dk-link" data-rs="why">Why unofficial?</button></p>
-  <div class="field"><label for="rs-q">Search</label><input id="rs-q" type="search" placeholder="A contest or a name" autocomplete="off"></div>
-  <div class="rs-lvls" id="rs-levels" role="group" aria-label="Show"></div>
-  <div id="rs-list"></div>
-</dialog>
 <dialog class="sheet" id="rs-why" aria-labelledby="rs-whyh">
   <div class="sheethead"><h2 id="rs-whyh" style="font-size:26px">What’s a canvass?</h2><button type="button" class="x" data-close>Close</button></div>
   <p>Election night counts are unofficial. For about two weeks after Election Day, counties keep counting late mail ballots, ballots from overseas voters and the military, and provisional ballots once voters have confirmed them. Then the body that called each election (the county, a city council, a school board, a utility district’s board) meets to “canvass” the vote: it reviews the count and declares the result official. State and federal races are canvassed by the state between Nov 21 and Dec 7. The Governor and Lieutenant Governor races are canvassed by the Legislature in January. Ballotta shows each result as unofficial until its canvass, then marks it official.</p>
@@ -2272,7 +2282,6 @@ const results = (() => {
     try { if (window.desk) desk.render(); } catch (e) {}   // the laptop render ends by drawing the top line (top())
     top(); landing();
     if (wantAll && on()) { wantAll = false; openAll(); }   // ballotta.org/?results (the results/ link)
-    else if ($('rs-all').open) drawAll();
   }
 
   /* ----- what one contest's ribbon says ----- */
@@ -2408,13 +2417,14 @@ const results = (() => {
     });
     LS.set('ballotta.resultsSeen', { seq: R.seq, v: now });
   }
-  function top() {
+  function top(view) {
     const box = $('rs-top');
     if (!box) return;
     sinceNow();
     const app = document.body.classList.contains('dk-app-on');
-    if (!R || !live() || !app || !ballot.length) { box.classList.add('hidden'); return; }
+    if (!R || !live() || !app || (!ballot.length && view !== 'all')) { box.classList.add('hidden'); return; }
     if (R.withdrawn) { box.className = 'rs-top'; box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; return; }  // W52
+    if (view === 'all') { box.className = 'rs-top rs-band'; box.innerHTML = timeline(); return; }
     if (!ballot.some(b => R.contests[b.c.id])) { box.classList.add('hidden'); return; }
     let h = '';
     if (since) {
@@ -2431,33 +2441,19 @@ const results = (() => {
     box.className = 'rs-top rs-band'; box.innerHTML = h + compact + summary() + timeline();
     if (!counted) { counted = true; track('results_seen'); }
   }
-  function landing() {
-    const box = $('rs-land');
-    if (box) box.classList.toggle('hidden', !on());
+  function landing() {   // the landing page after the election (the canvas, Oct 21); back as it was if results go
+    const A = on(), q = (sel) => document.querySelector(sel), grid = q('#dk-faq .dk-faqgrid'), was = !!grid && grid.dataset.was !== undefined;
+    [[q('.dk-tagline'), esc(LAND.tag)], [q('.dk-sub'), esc(LAND.sub)], [q('#start h1'), esc(LAND.h1)], [q('#start h1 + .lead'), esc(LAND.lead)], [$('go'), esc(LAND.go)],
+     [q('.dk-steps'), steps()], [grid, LAND.faq.map(f => '<div class="dk-q"><h3>' + esc(f[0]) + '</h3><p>' + esc(f[1]) + '</p></div>').join('')]]
+      .forEach(([el, h]) => A ? swapIn(el, h) : swapOut(el));
+    const or = $('rs-or'), tl = $('rs-land-tl');
+    if (or) or.classList.toggle('hidden', !A);
+    if (tl) { tl.innerHTML = A ? timeline() : ''; tl.classList.toggle('hidden', !A); }
+    if (A !== was) phoneFaq();
   }
-
-  /* ----- All Travis County results (Lane, Oct 20): every contest, nobody's ballot ----- */
-  const ui = { q: '', level: 'all' };
-  function drawAll() {
-    const list = $('rs-list'), lv = $('rs-levels');
-    const have = DATA.contests.filter(c => entry(c.id));
-    const levels = LEVELS.filter(L => have.some(c => c.level === L));
-    lv.innerHTML = ['all'].concat(levels).map(L => '<button type="button" data-lv="' + esc(L) + '" aria-pressed="' + (ui.level === L) + '">' + esc(L === 'all' ? 'All' : LEVEL_LABEL[L] || L) + '</button>').join('');
-    lv.querySelectorAll('[data-lv]').forEach(b => b.addEventListener('click', () => { ui.level = b.dataset.lv; drawAll(); }));
-    if (!have.length) { list.innerHTML = '<p class="note">No results yet. The first numbers arrive the morning of Nov 4.</p>'; return; }
-    const q = ui.q.toLowerCase();
-    const shown = have.filter(c => (ui.level === 'all' || c.level === ui.level) && (!q || (c.title + ' ' + optionsOf(c).join(' ') + ' ' + (entry(c.id).choices.map(x => x[0]).join(' '))).toLowerCase().includes(q)));
-    let h = '', last = '';
-    shown.forEach(c => {
-      if (c.level !== last) { last = c.level; h += '<h3 class="rs-lv">' + esc(LEVEL_LABEL[last] || last) + '</h3>'; }
-      h += '<article class="rs-c"><h4>' + esc(cleanTitle(c)) + '</h4>' + ribbon(c, false) + '</article>';
-    });
-    list.innerHTML = h || '<p class="note">Nothing matches “' + esc(ui.q) + '”.</p>';
-  }
-  function openAll() {
+  function openAll() {   // All Travis County results is a page (Phase 2): the laptop layout draws it, on both widths
     if (!on()) return;
-    drawAll();
-    if (!$('rs-all').open) $('rs-all').showModal();
+    if (window.desk && desk.openAll) desk.openAll();
     if (!counted) { counted = true; track('results_seen'); }
   }
   function why() { $('rs-why').showModal(); }
@@ -2497,6 +2493,13 @@ const results = (() => {
     if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : 'down';
     return 'open';
   }
+  // The words for each count in the summary (W71, W72): singular for one.
+  function pickWords(oc, opens) {
+    const up = oc.filter(o => o === 'up').length, down = oc.filter(o => o === 'down').length, behind = oc.filter(o => o === 'behind').length, one = (n, a, b) => n === 1 ? a : b;
+    return [[up, one(up, 'won or is leading', 'won or are leading')],
+      [down + behind, !behind ? 'didn’t win' : !down ? one(behind, 'is behind', 'are behind') : one(down + behind, 'didn’t win or is behind', 'didn’t win or are behind')],
+      [opens.length, opens.every(b => close(b.c)) ? 'too close to call' : 'not settled yet']];
+  }
   const upcoming = (c) => { const e = entry(c.id); return !!e && e.verdict === 'runoff' && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on; };
   // The summary (option A, Lane Oct 20): your ballot, your picks, what's next.
   function summary() {
@@ -2505,11 +2508,9 @@ const results = (() => {
     let h = '<section class="rs-sum" aria-label="Your ballot so far"><div class="sx"><p class="ov">Your ballot</p><div class="row"><p class="big">' + off + '<small>/' + n + '</small></p><p class="lb">official results<span>'
       + (off === n ? 'Every result on your ballot is official' : 'The rest are still being counted or canvassed') + '</span></p></div></div>';
     if (oc.length) {
-      const down = k('down'), behind = k('behind'), opens = ballot.filter(b => outcome(b.c) === 'open');
-      const downWord = !behind ? 'didn’t win' : !down ? 'are behind' : 'didn’t win or are behind';
-      const openWord = opens.every(b => close(b.c)) ? 'too close to call' : 'not settled yet';
+      const opens = ballot.filter(b => outcome(b.c) === 'open');
       h += '<div class="sx"><p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="row three">'
-        + [[k('up'), 'won or are leading'], [down + behind, downWord], [opens.length, openWord]].map(x => '<div><b>' + x[0] + '</b><span class="lb">' + x[1] + '</span></div>').join('') + '</div></div>';
+        + pickWords(oc, opens).map(x => '<div><b>' + x[0] + '</b><span class="lb">' + x[1] + '</span></div>').join('') + '</div></div>';
     } else {
       h += '<div class="sx"><p class="ov">Your picks</p><div class="row"><p class="lb">No picks on this device<span>Results are the same for everyone. Picks you made here would show beside them.</span></p></div></div>';
     }
@@ -2558,10 +2559,76 @@ const results = (() => {
     return h + '<p class="note"><button type="button" class="dk-link" data-rs="tell">Something look wrong? Tell us</button></p>';
   }
 
+  /* ----- All Travis County results, as a page (Lane, Oct 20: "Feels like it needs a full page, not a random popup") ----- */
+  const RUNOFFISH = ['runoff', 'may_runoff', 'tied_runoff', 'tied_second'];
+  const contestsWithResults = () => DATA.contests.filter(c => entry(c.id));
+  function allLevels() {   // the rail's list: Everything, then each level, with how many are official
+    const have = contestsWithResults(), row = (cs) => ({ n: cs.length, off: cs.filter(official).length });
+    return [['all', 'Everything', row(have)]].concat(LEVELS.filter(L => have.some(c => c.level === L)).map(L => [L, LEVEL_LABEL[L] || L, row(have.filter(c => c.level === L))]));
+  }
+  function allCounts() { const have = contestsWithResults(); return { n: have.length, off: have.filter(official).length, close: have.filter(close).length, runoffs: have.filter(c => RUNOFFISH.includes(entry(c.id).verdict)).length }; }
+  function allPage(st) {   // st: { q, level, filter }
+    const mine = new Set(ballot.map(b => b.c.id)), have = contestsWithResults();
+    let h = '<div class="dk-top"><span class="ov">Nov 3, 2026 general election</span><span class="note">No address needed</span></div><h1>All Travis County results</h1>'
+      + '<p class="dk-meta">Every contest on a Travis County ballot, from each county’s published results and the Texas Secretary of State, added up where a contest crosses county lines.</p>';
+    if (R && R.withdrawn) return h + '<p class="note">Results are paused while we check a problem with the latest numbers.</p>';   // W52
+    if (!have.length) return h + '<p class="note">No results yet. The first numbers arrive the morning of Nov 4.</p>';   // W61
+    const q = st.q.toLowerCase();
+    const shown = have.filter(c => (st.level === 'all' || c.level === st.level)
+      && (st.filter === 'all' || (st.filter === 'und' ? close(c) : RUNOFFISH.includes(entry(c.id).verdict)))
+      && (!q || (c.title + ' ' + optionsOf(c).join(' ') + ' ' + entry(c.id).choices.map(x => x[0]).join(' ')).toLowerCase().includes(q)));
+    if (!shown.length) return h + '<p class="note">' + (q ? 'Nothing matches “' + esc(st.q) + '”.' : 'Nothing here right now.') + '</p>';
+    LEVELS.forEach(L => {
+      const cs = shown.filter(c => c.level === L);
+      if (!cs.length) return;
+      h += '<h3 class="rs-lvh">' + esc(LEVEL_LABEL[L] || L) + ' · ' + cs.length + (cs.length === 1 ? ' contest' : ' contests') + '</h3><div class="rs-grid">'
+        + cs.map(c => '<article class="rs-c"><h4>' + esc(cleanTitle(c)) + '</h4>' + ribbon(c, false)
+          + (mine.has(c.id) ? '<p class="rs-n"><button type="button" class="dk-link" data-rs="go" data-c="' + esc(c.id) + '">On your ballot · see your pick</button></p>' : '') + '</article>').join('') + '</div>';
+    });
+    return h + '<p class="note">Ballotta doesn’t call races, and isn’t affiliated with Travis County or any campaign. <button type="button" class="dk-link" data-rs="why">How results become official</button></p>';
+  }
+
+  /* ----- the landing page after the election (the canvas, Oct 21) ----- */
+  const LAND = {
+    tag: 'The results of the Nov 3, 2026 election, as they come in',
+    sub: 'Election night numbers are unofficial. Over the next few weeks late ballots are counted and each contest is made official. Ballotta follows every contest on Travis County ballots until every race has been decided.',
+    h1: 'See how your ballot did', lead: 'Enter the address where you’re registered.', go: 'Show my ballot’s results',
+    faq: [['Are these results final?', 'Not until they’re canvassed. Each city, school district and the county certifies its own contests; the state certifies state and federal ones. Every result says which it is.'],
+      ['Where do the numbers come from?', 'Each county’s published results and the Texas Secretary of State. Every result says which, and when its numbers were posted.'],
+      ['Does Ballotta call races?', 'No. Until a contest is canvassed, a “leader” is only who’s ahead in the count so far, and “too close to call” means late ballots could still change it.'],
+      ['What happens to my address and picks?', 'Same as before the election: your address goes from your browser to the county’s map server, and your picks and reasons stay in this browser.']],
+  };
+  function steps() {
+    const n = contestsWithResults().length;
+    return [['1 · How your ballot did', 'Every contest on your ballot, what happened in each, and how your picks fared if you made them here.'],
+      ['2 · Every Travis County contest', 'All ' + n + ', from U.S. Senate to utility districts, added up where a contest crosses county lines. No address needed.'],
+      ['3 · Until it’s official', 'Timed updates through each canvass, labeled unofficial until the body that certifies it says so. Ballotta doesn’t call races.']]
+      .map(s => '<div><span class="ov">' + esc(s[0]) + '</span><p class="lead">' + esc(s[1]) + '</p></div>').join('');
+  }
+  function swapIn(el, html) { if (!el) return; if (el.dataset.was === undefined) el.dataset.was = el.innerHTML; if (el.innerHTML !== html) el.innerHTML = html; }
+  function swapOut(el) { if (el && el.dataset.was !== undefined) { el.innerHTML = el.dataset.was; delete el.dataset.was; } }
+  function phoneFaq() {   // the phone's folds are copied from the laptop's questions (as phone.faq() does at load)
+    const box = $('ph-faq');
+    if (!box) return;
+    box.querySelectorAll('details').forEach(d => d.remove());
+    $('dk-faq').querySelectorAll('.dk-q').forEach(q => {
+      const d = document.createElement('details'), s = document.createElement('summary');
+      s.append(q.querySelector('h3').cloneNode(true)); d.append(s, q.querySelector('p').cloneNode(true)); box.append(d);
+    });
+  }
+  // The summary, small, at the top of the phone's list (the canvas's phone board).
+  function listSum() {
+    if (!R || R.withdrawn || !live() || !ballot.length) return '';
+    const n = ballot.length, off = ballot.filter(b => official(b.c)).length, oc = ballot.map(b => outcome(b.c)).filter(Boolean), k = (x) => oc.filter(o => o === x).length;
+    const opens = ballot.filter(b => outcome(b.c) === 'open');
+    let h = '<div class="rs-listsum"><p class="top"><b>' + off + '<small>/' + n + '</small></b><span>official results</span></p>';
+    if (oc.length) h += '<p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="three">'
+      + pickWords(oc, opens).map(x => '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>';
+    return h + '</div>';
+  }
+
   /* ----- start ----- */
   function start() {
-    $('rs-q').addEventListener('input', () => { ui.q = $('rs-q').value.trim(); drawAll(); });
-    $('rs-land-go').addEventListener('click', openAll);
     // Feedback & Info's "About election results" (the laptop's handler counts it as help_opened; the phone's sheet clicks it).
     const item = document.querySelector('#dk-menu [data-help="results"]');
     if (item) item.addEventListener('click', why);
@@ -2588,7 +2655,7 @@ const results = (() => {
     tbl.querySelectorAll('tr.dk-tg th').forEach(x => { x.colSpan = 5; });
     tbl.querySelectorAll('tr[data-tr]').forEach(tr => { const c = BYID[tr.dataset.tr], td = document.createElement('td'); td.className = 'rs-cell'; td.textContent = c ? cell(c) : '—'; tr.children[1].after(td); });
   }
-  return { start, ribbon, cell, on, top, why, openAll, glance, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes };
+  return { start, ribbon, cell, on, top, why, openAll, glance, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
 })();
 window.results = results;
 /*/RESULTS*/
@@ -2600,7 +2667,7 @@ window.results = results;
 const desk = (() => {
   const WIDE = window.matchMedia('(min-width: 1024px)');
   const saved = LS.get('ballotta.desk', {}) || {};
-  const ui = { view: ['decide', 'glance', 'vote', 'crib'].includes(saved.v) ? saved.v : 'decide', cur: typeof saved.c === 'string' ? saved.c : '',
+  const ui = { view: ['decide', 'glance', 'vote', 'crib', 'all'].includes(saved.v) ? saved.v : 'decide', allNow: false, level: 'all', allF: 'all', cur: typeof saved.c === 'string' ? saved.c : '',
     filter: 'all', q: '', landing: false, addr: '', hideUnopp: false, two: false, hideCrib: false, cmpFor: null };
   const P = () => $('dk-paper'), N = () => $('dk-notes');
   const save = () => LS.set('ballotta.desk', { v: ui.view, c: ui.cur });
@@ -2640,7 +2707,8 @@ const desk = (() => {
 
   /* ----- frame: which screen, header, rail ----- */
   function mode() {
-    const app = ballot.length > 0 && !ui.landing, cls = document.body.classList;
+    // All Travis County results needs no address: without a ballot it's the app too, once asked for on this visit.
+    const app = !ui.landing && (ballot.length > 0 || (after() && ui.allNow && ui.view === 'all')), cls = document.body.classList;
     cls.toggle('dk-app-on', app);
     cls.toggle('dk-has', ballot.length > 0);
     cls.toggle('dk-friend', !app && !!friend);
@@ -2665,6 +2733,7 @@ const desk = (() => {
     return !ui.q || (cleanTitle(b.c) + ' ' + optionsOf(b.c).join(' ')).toLowerCase().includes(ui.q.toLowerCase());
   }
   function rail() {
+    railTitle('Your ballot');
     const A = after(), n = ballot.length, done = ballot.filter(b => A ? results.official(b.c) : decided(b.c.id)).length;
     $('dk-count').textContent = done + ' of ' + n + (A ? ' official' : ' decided');
     $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%';
@@ -2686,6 +2755,7 @@ const desk = (() => {
         return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + '</small></span>' + fa + '</button>';
       }).join('');
     });
+    if (A && html) html = results.listSum() + html;
     $('dk-out').innerHTML = html || '<p class="dk-empty">' + (ui.q ? 'Nothing matches “' + esc(ui.q) + '”.' : ui.filter === 'und' ? (A ? 'Nothing on your ballot is too close to call.' : 'Every contest is decided.') : (A ? 'No picks on this device.' : 'No reasons written yet.')) + '</p>';
     $('dk-out').querySelectorAll('.dk-row').forEach(r => r.addEventListener('click', () => go(r.dataset.row, true)));
   }
@@ -2703,19 +2773,45 @@ const desk = (() => {
     });
   }
 
+  // The rail on All Travis County results: the same menu, then search, filters and the levels as its list.
+  function railTitle(t) {
+    const h = document.querySelector('.dk-rhd h2'); if (h) h.textContent = t;
+    const pb = document.querySelector('#ph-list b'); if (pb) pb.textContent = t;
+  }
+  function railAll() {
+    railTitle('Travis County results');
+    const k = results.allCounts();
+    $('dk-count').textContent = k.n + ' contests · ' + k.off + ' official';
+    const pc = $('ph-count'); if (pc) pc.textContent = k.off + ' of ' + k.n + ' official';
+    $('dk-bar').style.width = (k.n ? Math.round(100 * k.off / k.n) : 0) + '%';
+    menuFor(true);
+    document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === 'all' ? 'page' : 'false'));
+    const counts = { all: 'All ' + k.n, und: 'Too close ' + k.close, why: 'Runoffs ' + k.runoffs };
+    document.querySelectorAll('#dk-filt button').forEach(b => { b.textContent = counts[b.dataset.f]; b.setAttribute('aria-pressed', b.dataset.f === ui.allF ? 'true' : 'false'); });
+    $('dk-out').innerHTML = '<div class="dk-g"><span>By level</span></div>' + results.allLevels().map(([L, name, r]) =>
+      '<button type="button" class="dk-row" data-lv="' + esc(L) + '"' + (L === ui.level ? ' aria-current="true"' : '') + '><span class="dk-rt"><b>' + esc(name) + '</b><small>' + r.n + (r.n === 1 ? ' contest · ' : ' contests · ') + r.off + ' official</small></span></button>').join('');
+    $('dk-out').querySelectorAll('[data-lv]').forEach(r => r.addEventListener('click', () => { ui.level = r.dataset.lv; render(); if (WIDE.matches) window.scrollTo(0, 0); }));
+  }
+  function viewAll() {
+    P().innerHTML = results.allPage({ q: ui.q, level: ui.level, filter: ui.allF });
+    N().innerHTML = '';
+  }
+  function listChanged() { if (ui.view === 'all') { railAll(); viewAll(); } else rail(); }
+
   /* ----- views ----- */
   function render() {
     const app = mode(); header();
 /*RESULTS*/
-    try { results.top(); } catch (e) {}
+    try { results.top(ui.view); } catch (e) {}
 /*/RESULTS*/
-    if (!ballot.length) /*PHONE*/{ if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/return;/*PHONE*/ }/*/PHONE*/
-    if (idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
+    if (!ballot.length && !(app && ui.view === 'all')) /*PHONE*/{ if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/return;/*PHONE*/ }/*/PHONE*/
+    if (ballot.length && idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
+    if (ui.view === 'all' && !after()) ui.view = 'decide';
     if (after() && ui.view === 'vote') ui.view = 'decide';   // Nov 3's Where to vote isn't in the menu after the election
-    rail();
-    P().dataset.c = ui.view === 'decide' ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
-    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' ? ' wide' : '');
-    ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib })[ui.view]();
+    if (ui.view === 'all') railAll(); else rail();
+    P().dataset.c = ui.view === 'decide' && ballot.length ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
+    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' || ui.view === 'all' ? ' wide' : '');
+    ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib, all: viewAll })[ui.view]();
     if (app && friend && /*PHONE*/(true || /*/PHONE*/WIDE.matches/*PHONE*/)/*/PHONE*/ && ui.cmpFor !== friend) {
       // Counted when at least one of their races is on your ballot: once per page for links without a code, once per
       // browser for links with one (like share_opened). The detail tells it apart from the phone layout's Compare tap.
@@ -3103,11 +3199,12 @@ const desk = (() => {
   const once = new Set();  // counted once per visit (page load), so a busy keyboard doesn't count 63 times
   const countOnce = (key, name, data) => { if (!once.has(key)) { once.add(key); track(name, data); } };
   document.querySelectorAll('#dk-views button').forEach(btn => btn.addEventListener('click', (e) => {
-    if (btn.dataset.view === 'all') { if (window.results) results.openAll(); track('view_opened', { view: 'all' }); return; }
+    if (!ballot.length && btn.dataset.view !== 'all') { toLanding(); return; }   // All Travis County results with no address: the rest need one
+    if (btn.dataset.view === 'all') ui.allNow = true;
     setView(btn.dataset.view, e.detail > 0); track('view_opened', { view: btn.dataset.view });
   }));
-  document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { ui.filter = btn.dataset.f; rail(); countOnce('f:' + btn.dataset.f, 'filter_used', { filter: btn.dataset.f }); }));
-  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); rail(); countOnce('search', 'search_used'); });
+  document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { if (ui.view === 'all') ui.allF = btn.dataset.f; else ui.filter = btn.dataset.f; listChanged(); countOnce('f:' + btn.dataset.f, 'filter_used', { filter: btn.dataset.f }); }));
+  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); listChanged(); countOnce('search', 'search_used'); });
   if ('IntersectionObserver' in window) {  // did the FAQ scroll into view? once per visit, after a scroll (a tall window shows it at once)
     const arm = () => {
       if (document.body.classList.contains('dk-app-on')) return;  // a scroll in the app doesn't count: only one on the landing page
@@ -3117,7 +3214,7 @@ const desk = (() => {
     };
     window.addEventListener('scroll', arm, { passive: true });
   }
-  $('dk-q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('dk-q').value = ''; ui.q = ''; rail(); } });
+  $('dk-q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('dk-q').value = ''; ui.q = ''; listChanged(); } });
   document.addEventListener('keydown', (e) => {
     if (!WIDE.matches || !ballot.length || ui.landing || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || e.isComposing) return;
     if (document.querySelector('dialog[open]') || !$('dk-menu').classList.contains('hidden')) return;
@@ -3149,7 +3246,8 @@ const desk = (() => {
 
   /* ----- hooks the shared code calls (the DESK one-liners in showBallot, refresh, renderCrib and openFriend) ----- */
   return {
-    render, goTo: (cid) => go(cid, true), after,/*PHONE*/ ph: { ui, go, goOn, setView, act, nextUndecided, idx, curB, decided, upNext, leave, after },/*/PHONE*/
+    render, goTo: (cid) => go(cid, true), after,
+    openAll() { ui.allNow = true; ui.landing = false; left = null; ui.view = 'all'; save(); render(); window.scrollTo(0, 0); },/*PHONE*/ ph: { ui, go, goOn, setView, act, nextUndecided, idx, curB, decided, upNext, leave, after },/*/PHONE*/
     ballot(meta) {
       ui.landing = false; left = null;
       $('dk-say').classList.add('hidden');  // a new ballot: an older link's notice no longer applies (#40)
@@ -3246,7 +3344,7 @@ const phone = (() => {
       $('ph-fold').classList.toggle('hidden', ![...$('dk-notes').children].some(e => getComputedStyle(e).display !== 'none' && e.textContent.trim()));
     }
     const top = $('dk-paper').querySelector('.dk-top .note'), pr = $('dk-loc').querySelector('b');  // the precinct left the top bar
-    if (top) top.textContent = (NARROW.matches && app && pr && /\d/.test(pr.textContent) ? pr.textContent + ' · ' : '') + 'Saved on this device';
+    if (top && D.ui.view === 'decide') top.textContent = (NARROW.matches && app && pr && /\d/.test(pr.textContent) ? pr.textContent + ' · ' : '') + 'Saved on this device';
     // A new contest or view, however it came (the bar, the list, a name in At a glance, a new ballot): start at its top.
     const key = app ? D.ui.view + ':' + D.ui.cur : '';
     if (key && key !== lastKey && NARROW.matches && !booting) moved();

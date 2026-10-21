@@ -4783,7 +4783,7 @@ def results_wait_for_nov_4(b):
     assert pg.asked == [] and pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), (pg.asked,)
     pg.click('.dk-row[data-row="c071"]'); assert pg.query_selector('#dk-paper .rs') is None
     pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(300)
-    assert not pg.is_visible('#rs-land') and pg.asked == [] and pg.errs == [], (pg.asked, pg.errs)
+    assert not pg.is_visible('#rs-or') and pg.inner_text('#go') == 'Show my ballot' and pg.asked == [] and pg.errs == [], (pg.asked, pg.errs)
     ctx.close()
 
 @results_test
@@ -4830,8 +4830,12 @@ def results_show_on_the_phone_ballot(b):
     r = rs_go(pg, 'c113', phone=True); assert 'Leading for 2 seats' in r and '1 of your 2 picks is leading.' in r, r
     assert sideways(pg) <= 0
     r = rs_go(pg, 'c071', phone=True); assert 'Your pick, Against, is behind.' in r and sideways(pg) <= 0, r
-    pg.click('#ph-list'); pg.click('#dk-views [data-view="all"]'); assert pg.evaluate("document.getElementById('rs-all').open")
-    assert 'Your pick' not in pg.inner_text('#rs-list'), 'All Travis County results is nobody’s ballot'
+    pg.click('#ph-list'); sm = pg.inner_text('.dk-rail .rs-listsum')
+    assert sm.startswith('0/11') and 'YOUR 8 PICKS' in sm and 'won or are leading' in sm, sm   # the summary, small, at the top of the list
+    pg.click('#dk-views [data-view="all"]'); pg.wait_for_timeout(200)
+    assert pg.inner_text('#dk-paper h1') == 'All Travis County results' and sideways(pg) <= 0
+    assert 'Your pick' not in ''.join(x.inner_text() for x in pg.query_selector_all('#dk-paper .rs')), 'All Travis County results is nobody’s ballot'
+    assert pg.is_visible('#dk-paper [data-rs="go"]'), 'a contest on your ballot links to it'
     assert [e for e in events(pg) if e[0] == 'results_seen'] == [['results_seen', {'layout': 'phone'}]], events(pg)
     assert pg.errs == [], pg.errs
     ctx.close()
@@ -4868,15 +4872,15 @@ def withdrawn_results_hide_everything(b):
     fx = rs_fixtures()
     ctx, pg = rs_page(b, {'body': fx.scene('withdrawn')})
     assert pg.inner_text('#rs-top') == 'Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.'
-    assert rs_go(pg, 'c071') == '' and pg.query_selector('[data-rs="all"]') is None
+    assert rs_go(pg, 'c071') == '' and pg.locator('[data-rs="all"]:visible').count() == 0
     pg.click('#dk-views [data-view="glance"]'); assert pg.query_selector('.rs-cell') is None and 'RESULT' not in pg.inner_text('.dk-tbl thead')
     pg.evaluate("localStorage.removeItem('ballotta.ballot')"); pg.reload(); pg.wait_for_timeout(400)
-    assert not pg.is_visible('#rs-land') and pg.errs == [], pg.errs
+    assert not pg.is_visible('#rs-or') and pg.inner_text('.dk-tagline').startswith('Don’t wait') and pg.errs == [], pg.errs
     ctx.close()
     # a hurried pull that flips the switch but leaves every number in the file: still nothing shows
     ctx, pg = rs_page(b, {'body': {**fx.scene('mixed'), 'withdrawn': True}})
     assert pg.inner_text('#rs-top').startswith('Results are paused'), pg.inner_text('#rs-top')
-    assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c124') == '' and pg.query_selector('[data-rs="all"]') is None
+    assert rs_go(pg, 'c071') == '' and rs_go(pg, 'c124') == '' and pg.locator('[data-rs="all"]:visible').count() == 0
     pg.click('#dk-views [data-view="glance"]'); assert pg.query_selector('.rs-cell') is None and pg.errs == [], pg.errs
     ctx.close()
 
@@ -4923,23 +4927,30 @@ def the_date_override_works_only_on_this_computer(b):
 def all_travis_county_results_need_no_address(b):
     fx = rs_fixtures()
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, ballot=False)
-    assert pg.is_visible('#rs-land') and 'See all Travis County results' in pg.inner_text('#rs-land')
-    pg.click('#rs-land-go'); assert pg.evaluate("document.getElementById('rs-all').open")
-    n = len(pg.query_selector_all('#rs-list .rs-c')); assert n == 12, n
-    bond = pg.locator('#rs-list .rs-c', has=pg.locator('.rs', has_text='Needs two-thirds of the vote to pass.'))   # W68, a road bond at 63%
+    # the landing page after the election (the canvas, Oct 21)
+    assert pg.inner_text('.dk-tagline') == 'The results of the Nov 3, 2026 election, as they come in' and pg.inner_text('#start h1') == 'See how your ballot did'
+    assert pg.inner_text('#go') == 'Show my ballot’s results' and pg.is_visible('#rs-or'), pg.inner_text('#go')
+    assert 'Where things stand' in pg.inner_text('#rs-land-tl') and 'Are these results final?' in pg.inner_text('#dk-faq') and 'All 12,' in pg.inner_text('.dk-steps')
+    pg.click('#rs-or [data-rs="all"]'); pg.wait_for_timeout(200)
+    assert pg.evaluate("document.body.classList.contains('dk-app-on')") and pg.inner_text('#dk-paper h1') == 'All Travis County results'
+    assert pg.inner_text('.dk-rhd h2') == 'Travis County results' and pg.inner_text('#dk-count') == '12 contests · 0 official', pg.inner_text('#dk-count')
+    assert not pg.is_visible('.dk-foot'), 'no address: no picks to keep or print'
+    n = len(pg.query_selector_all('#dk-paper .rs-c')); assert n == 12, n
+    bond = pg.locator('#dk-paper .rs-c', has=pg.locator('.rs', has_text='Needs two-thirds of the vote to pass.'))   # W68, a road bond at 63%
     assert bond.count() == 1 and 'Failing' in bond.inner_text() and 'Eastwood' in bond.inner_text(), bond.count()
-    assert 'Your pick' not in pg.inner_text('#rs-list'), 'nobody’s ballot, even with picks saved here'
-    pg.click('#rs-levels [data-lv="City"]'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
-    assert titles and all('City of' in t for t in titles), titles
-    pg.click('#rs-levels [data-lv="all"]'); pg.fill('#rs-q', 'Morales'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]
-    assert titles == ['County Commissioner, Precinct 4'], titles
-    pg.fill('#rs-q', 'commissioner'); titles = [x.inner_text() for x in pg.query_selector_all('#rs-list .rs-c h4')]   # a word only in the title
-    assert titles == ['County Commissioner, Precinct 4'], titles
-    pg.fill('#rs-q', 'zzz'); assert 'Nothing matches' in pg.inner_text('#rs-list')
-    pg.keyboard.press('Escape'); pg.keyboard.press('Escape')   # in a search box the first Escape clears it (the browser's own), the second closes
-    assert not pg.evaluate("document.getElementById('rs-all').open")
+    assert 'Your pick' not in pg.inner_text('#dk-paper'), 'nobody’s ballot, even with picks saved here'
+    titles = lambda: [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs-c h4')]
+    pg.click('.dk-row[data-lv="City"]'); t = titles()
+    assert t and all('City of' in x for x in t), t
+    pg.click('.dk-row[data-lv="all"]'); pg.fill('#dk-q', 'Morales'); assert titles() == ['County Commissioner, Precinct 4'], titles()
+    pg.fill('#dk-q', 'commissioner'); assert titles() == ['County Commissioner, Precinct 4'], titles()   # a word only in the title
+    pg.fill('#dk-q', 'zzz'); assert 'Nothing matches' in pg.inner_text('#dk-paper')
+    pg.fill('#dk-q', ''); pg.click('#dk-filt [data-f="und"]'); assert len(titles()) == 4, titles()   # too close or may go to a runoff
+    pg.click('#dk-filt [data-f="all"]')
+    pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(200)   # no address: Results asks for one
+    assert not pg.evaluate("document.body.classList.contains('dk-app-on')") and pg.evaluate("document.activeElement.id") == 'street'
     pg.goto(BASE.replace('index.html', 'results/')); pg.wait_for_timeout(800)
-    assert pg.url.endswith('/?results') and pg.evaluate("document.getElementById('rs-all').open"), pg.url
+    assert pg.url.endswith('/?results') and pg.inner_text('#dk-paper h1') == 'All Travis County results', pg.url
     assert pg.errs == [], pg.errs
     ctx.close()
 
