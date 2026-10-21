@@ -45,9 +45,28 @@ def raw_dir(root, source, posted, data):
     return root / "raw" / source / (posted.replace(":", "-") + "-" + hashlib.sha256(data).hexdigest()[:8])
 
 
+def reject(res, folder, f, why):
+    """A file Ballotta can't use is moved to rejected/<county>/ with a .why.txt beside it: the run goes on, and the
+    pull request lists it until Lane deletes it (the deep audit, #153; RUNBOOK step 11)."""
+    d = res / "rejected" / folder
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f.name).write_bytes(f.read_bytes())
+    (d / (f.name + ".why.txt")).write_text(why + "\n", encoding="utf-8")
+    f.unlink()
+
+
+def rejected(res):
+    """[(path, why)] for every file set aside, for the pull request."""
+    out = []
+    for w in sorted((res / "rejected").glob("*/*.why.txt")) if (res / "rejected").exists() else []:
+        out.append((w.relative_to(res).as_posix()[: -len(".why.txt")], w.read_text(encoding="utf-8").strip()))
+    return out
+
+
 def file_inbox(res=RES):
     """Each file in inbox/<county>/ is parsed, checked to be that county's, and moved to raw/<county>/<posted>-<hash8>/.
-    A file already filed (same hash) is just removed from the inbox. Returns the paths filed."""
+    A file already filed (same hash) is just removed from the inbox; one that isn't a usable file of that county is set
+    aside (reject). Returns the paths filed."""
     filed = []
     for folder in sorted((res / "inbox").glob("*")):
         if not folder.is_dir():
@@ -59,10 +78,12 @@ def file_inbox(res=RES):
             kind = "williamson" if folder.name == "williamson" else "hays" if folder.name == "hays" else "clarity"
             try:
                 rep = P.PARSERS[kind](data)
-            except P.BadFile as e:
-                raise Problem(f"inbox/{folder.name}/{f.name}: {e}")
+            except Exception as e:   # any way a file can fail to parse: set aside, never a stopped run
+                reject(res, folder.name, f, f"not a {folder.name} results file Ballotta reads: {type(e).__name__}: {e}")
+                continue
             if rep["source"] != folder.name:
-                raise Problem(f"inbox/{folder.name}/{f.name} is {rep['label']}'s file: move it to inbox/{rep['source']}/")
+                reject(res, folder.name, f, f"this is {rep['label']}'s file: upload it to inbox/{rep['source']}/")
+                continue
             d = raw_dir(res, rep["source"], rep["posted"], data)
             if not d.exists():
                 d.mkdir(parents=True)
@@ -78,7 +99,7 @@ def file_inbox(res=RES):
 POLLS_CLOSE = "2026-11-03T19:00"
 
 
-def latest(res, source, excluded, since=None):
+def latest(res, source, excluded, since=None, held=None):
     """The newest report from one source (by the time posted inside the file), excluded files skipped, and any posted
     before `since`. Two different files posted at the same minute can't be told apart: a Problem, so Lane excludes the
     wrong one."""
@@ -90,7 +111,10 @@ def latest(res, source, excluded, since=None):
                 continue
             try:
                 rep = P.PARSERS[SOURCE_OF[source]](f.read_bytes(), **({"zone": ZONE[0]} if source == "sos" else {}))
-            except P.BadFile as e:
+            except Exception as e:   # one bad file: skipped and listed, the source's other files still used (#153)
+                if held is not None:
+                    held.append(f"{rel}: {e} (skipped; add it to excluded.json with the reason)")
+                    continue
                 raise Problem(f"{rel}: {e} (add it to excluded.json with the reason)")
             rep["file"] = rel
             if since and rep["posted"] < since:
@@ -99,8 +123,16 @@ def latest(res, source, excluded, since=None):
     if not best:
         return None
     best.sort(key=lambda r: r["posted"])
-    if len(best) > 1 and best[-1]["posted"] == best[-2]["posted"]:
-        raise Problem(f"{best[-2]['file']} and {best[-1]['file']} were both posted at {best[-1]['posted']}: exclude one")
+    top = [r for r in best if r["posted"] == best[-1]["posted"]]
+    if len(top) > 1:
+        body = lambda r: {k: v for k, v in r.items() if k != "file"}
+        if any(body(r) != body(top[0]) for r in top):   # different files in one minute can't be told apart: this source waits
+            msg = f"{', '.join(r['file'] for r in top)} were all posted at {best[-1]['posted']} and differ: exclude one"
+            if held is None:
+                raise Problem(msg)
+            held.append(msg + f" ({source} held at its previous file)")
+            older = [r for r in best if r["posted"] < best[-1]["posted"]]
+            return older[-1] if older else None
     return best[-1]
 
 
@@ -239,12 +271,19 @@ def build(res=RES, mp=None, prev=None, key=None, since=None):
     official = load(res / "official.json", {}) or {}
     excluded = {x["path"]: x for x in load(res / "excluded.json", []) or []}
     ZONE[0] = mp["meta"]["sos_time_zone"]
-    reports = {s: latest(res, s, excluded, since) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
-    reports = {s: r for s, r in reports.items() if r is not None}
+    held = []   # what couldn't be used this run, for the pull request: Lane fixes it, and nothing else waits (#153)
+    reports = {}
+    if not official.get("withdrawn"):   # the kill switch is read first: no file can hold up a withdrawal (#153)
+        reports = {s: latest(res, s, excluded, since, held) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
+        reports = {s: r for s, r in reports.items() if r is not None}
     contests = {}
     if not official.get("withdrawn"):
         for cid, m in mp["contests"].items():
-            e = entry(cid, key[cid], m, reports, official, mp["canvassers"], prev["contests"].get(cid))
+            try:
+                e = entry(cid, key[cid], m, reports, official, mp["canvassers"], prev["contests"].get(cid))
+            except Problem as p:
+                held.append(f"{key[cid]['title']} ({cid}): {p} (shown as last published)")
+                e = prev["contests"].get(cid)   # the last published entry stands; or not shown, if there was none
             if e is not None:
                 contests[cid] = e
         notes(contests, mp)
@@ -283,6 +322,10 @@ def build(res=RES, mp=None, prev=None, key=None, since=None):
         lines.insert(0, f"- {fresh} contest{'s' if fresh > 1 else ''} now shown, no votes yet")
     if out["seq"] != prev["seq"] and not verdict_changed:
         lines.append("- Numbers only: no result changed")
+    held += [f"{p}: {why} (set aside; delete it once dealt with)" for p, why in rejected(res)]
+    if held:   # never a self-merge while something waits on Lane
+        verdict_changed = True
+        lines[:0] = ["- HELD: " + h for h in held]
     if out["withdrawn"] != prev.get("withdrawn"):
         verdict_changed = True
         lines.insert(0, "- RESULTS WITHDRAWN (the kill switch): every result is hidden" if out["withdrawn"] else "- Results restored (the kill switch is off)")

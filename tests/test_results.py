@@ -305,8 +305,13 @@ def downloads_are_filed_by_county_and_posted_time():
         assert not [f for f in (s.res / 'inbox/travis').iterdir()], 'the inbox is emptied'
         (s.res / 'inbox/travis/again.xml').write_bytes(fx('travis-2025-11-detail.xml')); assert B.file_inbox(s.res) == [], 'the same file twice is filed once'
         (s.res / 'inbox/bastrop/detailxml.xml').write_bytes(fx('travis-2025-11-detail.xml'))
-        try: B.file_inbox(s.res); raise AssertionError('a Travis file in the Bastrop folder was filed')
-        except B.Problem as e: assert 'inbox/travis/' in str(e), e
+        assert B.file_inbox(s.res) == [] and not s.raw('bastrop'), 'a Travis file in the Bastrop folder was filed'
+        assert B.rejected(s.res) == [('rejected/bastrop/detailxml.xml', 'this is Travis County’s file: upload it to inbox/travis/')] or 'inbox/travis/' in B.rejected(s.res)[0][1], B.rejected(s.res)
+        assert not list((s.res / 'inbox/bastrop').iterdir()), 'set aside, so the next run goes on (#153)'
+        (s.res / 'inbox/hays/oops.pdf').write_bytes(b'<html>rate limited</html>')
+        B.file_inbox(s.res)
+        out, ch = s.build()
+        assert out['contests'] and any(l.startswith('- HELD: rejected/hays/oops.pdf') for l in ch['lines']) and ch['verdict_changed'], ch['lines'][:3]
     finally: s.close()
 
 @test
@@ -348,8 +353,9 @@ def official_only_through_its_own_canvasser():
     s = Scratch()
     try:
         s.official(canvasses={'state': {'canvassed': '2026-12-02'}})
-        try: s.build(); raise AssertionError('canvassed with no votes loaded was accepted')
-        except B.Problem as e: assert 'c001' in str(e) and 'no votes' in str(e), e
+        out, ch = s.build()
+        assert 'c001' not in out['contests'] and any('(c001)' in l and 'no votes' in l and l.startswith('- HELD: ') for l in ch['lines']), 'canvassed with no votes loaded was accepted'
+        assert out['contests']['c071'] and ch['verdict_changed'], 'the rest goes on, and Lane sees it (#153)'
         mp = copy.deepcopy(MAP); del mp['contests']['c001']
         e = s.build(mp=mp)[0]['contests']['c071']; assert e['state'] == 'unofficial', 'the state canvass never makes a city measure official'
         s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12', 'link': 'https://example.org'}})
@@ -398,16 +404,25 @@ def the_kill_switch_hides_everything_and_says_so():
 def anything_unmapped_stops_the_build():
     s = Scratch()
     try:
+        # each held, never dropped silently, and nothing else waits (#153): the contest stays as last published
+        held = lambda ch, *w: [l for l in ch['lines'] if l.startswith('- HELD: ') and all(x in l for x in w)]
+        good, _ = s.build()
         mp = copy.deepcopy(MAP); mp['contests']['c001']['write_ins'] = mp['contests']['c001']['write_ins'][:3]
-        try: s.build(mp=mp); raise AssertionError('a write-in the map lacks was dropped silently')
-        except B.Problem as e: assert 'JADE SIMMONS' in str(e), e
+        out, ch = s.build(mp=mp, prev=good)
+        assert held(ch, 'JADE SIMMONS', '(c001)'), 'a write-in the map lacks was dropped silently'
+        assert out['contests']['c001'] == good['contests']['c001'] and ch['verdict_changed'], 'held at the last published entry'
         mp = copy.deepcopy(MAP); mp['contests']['c071']['keys']['williamson'] = '999'
-        try: s.build(mp=mp); raise AssertionError('a key the file lacks was accepted')
-        except B.Problem as e: assert "'999'" in str(e), e
+        out, ch = s.build(mp=mp)
+        assert held(ch, "'999'", '(c071)') and 'c071' not in out['contests'] and out['contests']['c001'], 'a key the file lacks was accepted'
         data = fx('sos-53815-travis.json').replace(b'"Version"', b' "Version"'); r = P.parse_sos(data)
         d = B.raw_dir(s.res, 'sos', r['posted'], data); d.mkdir(parents=True); (d / 'election.json').write_bytes(data)
-        try: s.build(); raise AssertionError('two different files posted the same minute were accepted')
-        except B.Problem as e: assert 'exclude one' in str(e), e
+        assert not held(s.build()[1], 'exclude one'), 'the same contents re-stamped in the same minute are one report (#153)'
+        x = fx('travis-2025-11-detail.xml'); diff = x.replace(b'State of Texas Proposition 1', b'State of Texas Proposition 1 (as printed again)', 1)
+        assert diff != x; r = P.parse_clarity(diff)
+        d2 = B.raw_dir(s.res, 'travis', r['posted'], diff); d2.mkdir(parents=True); (d2 / 'detailxml.xml').write_bytes(diff)
+        out, ch = s.build()
+        assert held(ch, 'exclude one', 'travis held'), 'two different files posted the same minute were accepted'
+        assert out['contests']['c001'], 'the SOS goes on while Travis waits'
     finally: s.close()
 
 
@@ -478,8 +493,8 @@ def an_outcome_one_total_cant_show_waits_for_the_canvass():
         e = B.build(res=res, mp=mp)[0]['contests']['c205']
         assert (e['state'], e['verdict'], e['no_call']) == ('unofficial', 'none', 'two_majorities'), '90% for, and still no call: two majorities, one total'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}}))
-        try: B.build(res=res, mp=mp); raise AssertionError('canvassed without its outcome entered')
-        except B.Problem as x: assert 'outcomes' in str(x), x
+        out, ch = B.build(res=res, mp=mp)
+        assert any('outcomes' in l and l.startswith('- HELD: ') for l in ch['lines']) and 'c205' not in out['contests'], 'canvassed without its outcome entered'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}, 'outcomes': {'c205': 'failed'}}))
         assert B.build(res=res, mp=mp)[0]['contests']['c205']['verdict'] == 'failed', "the canvass's outcome, not the total's"
     finally: shutil.rmtree(d)
