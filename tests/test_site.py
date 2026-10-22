@@ -1490,7 +1490,9 @@ def desk_launch_audit_fixes(b):
     pg.focus('#dk-help'); pg.keyboard.press('2')                                                       # #30: not while on a header button…
     pg.focus('.dk-row[data-row="c002"]'); pg.keyboard.press('s')                                       # …or a rail row (WCAG 2.1.4)
     assert cur(pg, 'c001') == [], cur(pg, 'c001')
-    pg.click('.dk-row[data-row="c001"]'); pg.keyboard.press('2')                                       # on the paper: yes, and said out loud
+    pg.click('.dk-row[data-row="c001"]')                                                               # the move is said first, so the
+    pg.wait_for_function("/No pick yet/.test(document.getElementById('dk-live').textContent)", timeout=2000)   # pick's own words are its key's (F5, #182)
+    pg.keyboard.press('2')                                                                             # on the paper: yes, and said out loud
     assert cur(pg, 'c001') == ['James Talarico']
     live = pg.locator('#dk-live'); assert live.get_attribute('aria-live') == 'polite'
     pg.wait_for_function("document.getElementById('dk-live').textContent.includes('James Talarico')", timeout=2000)
@@ -1525,6 +1527,13 @@ def desk_launch_audit_fixes(b):
     r = box(pg, '#dk-say'); assert r['y'] >= 0 and r['y'] + r['height'] <= 900, ('the warning is on screen', r)
     pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)'); lookup_wide(pg)              # Change address, then a new lookup
     assert pg.is_hidden('#dk-say'), 'no stale warning after Change address'
+    pg.evaluate("location.hash = '#s=not-a-real-payload-3'"); pg.wait_for_selector('#dk-say:not(.hidden)', timeout=5000)   # and with no new lookup (#182):
+    pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)'); pg.click('#dk-back'); pg.wait_for_selector('body.dk-app-on')
+    assert pg.is_hidden('#dk-say'), 'Change address, then back to the ballot: the old warning came back (F17)'
+    pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)')
+    pg.evaluate("location.hash = '#s=not-a-real-payload-4'"); pg.wait_for_function("!document.getElementById('lookupmsg').classList.contains('hidden')", timeout=5000)
+    pg.click('#dk-back'); pg.wait_for_selector('body.dk-app-on')
+    assert pg.is_hidden('#dk-say'), 'a warning the landing page already showed was shown again in the app (F15)'
     ctx.close()
     ctx, pg = new_page(b, wide=True); pg.goto(BASE + '#s=not-a-real-payload')                       # on the landing page the form shows it
     pg.wait_for_selector('#lookupmsg:not(.hidden)'); lookup_wide(pg)
