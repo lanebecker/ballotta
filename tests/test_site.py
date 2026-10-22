@@ -5296,9 +5296,13 @@ def several_runoffs_step_through_and_each_names_its_voters(b):
     assert pg.evaluate('desk.view()') == 'rvote', pg.evaluate('desk.view()')
     w = who()
     assert 'City of Austin District 8' in w and 'Austin ISD District 1' in w, ('Where to vote names every runoff’s voters', w)
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('runoffs')}, when='2026-11-14T09:00', phone=True)   # the phone's Next steps too
+    pg.evaluate("desk.rgo('c069')"); pg.wait_for_timeout(200); pg.click('#ph-next'); pg.wait_for_timeout(200)
+    assert pg.evaluate('desk.view()') == 'rdecide' and 'contest 2 of 2' in pg.inner_text('#dk-paper .dk-top').lower(), pg.evaluate('desk.view()')
     place = pg.evaluate("results.runoff.area({id: 'c096', title: 'City of Pflugerville, Council Member, Place 4', entity: 'City of Pflugerville'})")
     assert place == 'City of Pflugerville', ('an at-large Place is the whole city', place)
-    assert pg.errs == [], pg.errs
     ctx.close()
 
 @results_test
@@ -5409,6 +5413,33 @@ def the_runoff_pages_hold_their_layout(b):
     pg.set_viewport_size({'width': 1024, 'height': 800}); pg.wait_for_timeout(200)
     widths = pg.eval_on_selector_all('#rs-top .ro-band .facts p', 'ps => ps.map(p => p.getBoundingClientRect().width)')
     assert min(widths) >= 180, ('the facts squeezed at 1024px', widths)
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def lanes_runoff_calls_oct_21(b):
+    """Lane, Oct 21: #169 a runoff with no date yet says so in What's next (W111); #177 on an unofficial count the pick
+    line says "so far" (W112); #167 on the runoff's pages Clear my picks clears the runoff's picks only (W110)."""
+    fx = rs_fixtures()
+    body = fx.scene('runoff'); body['contests']['c121']['runoff_on'] = None
+    ctx, pg = rs_page(b, {'body': body}, when='2026-11-14T09:00')
+    nxt = pg.inner_text('#rs-top .rs-sum .next')
+    assert 'A runoff is coming' in nxt and 'The date isn’t set yet. We’ll add it, and the runoff’s pages, once it is.' in nxt, nxt
+    ctx.close()
+    body = fx.scene('mixed'); e = body['contests']['c069']
+    e.update(verdict='runoff', leaders=[], runoff=['Selena Xie', 'Jeffery Bowen'])
+    ctx, pg = rs_page(b, {'body': body}, when='2026-11-05T09:00')
+    rs_go(pg, 'c069')
+    assert 'Your pick is in the runoff so far.' in pg.inner_text('#dk-paper'), pg.inner_text('#dk-paper')[:400]
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-11-14T09:00')
+    pg.evaluate("desk.rgo('c121')"); pg.wait_for_timeout(150); pg.click('#dk-paper [data-rpick="Cheryl Bradley"]'); pg.wait_for_timeout(100)
+    before = pg.evaluate("localStorage.getItem('ballotta.picks')")
+    asked = []; pg.on('dialog', lambda d: (asked.append(d.message), d.accept()))
+    pg.evaluate("document.getElementById('reset').click()"); pg.wait_for_timeout(200)
+    assert asked == ['Clear your runoff picks and reasons? Your Nov 3 picks stay.'], asked
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.runoffPicks'))") == {} and pg.evaluate("localStorage.getItem('ballotta.picks')") == before
+    assert pg.get_attribute('#dk-paper [data-rpick="Cheryl Bradley"]', 'aria-pressed') == 'false'
     assert pg.errs == [], pg.errs
     ctx.close()
 

@@ -289,3 +289,21 @@ Two source names voters see in a result's "Where the numbers come from" and its 
 - **W107** The state's Official Canvass Report, apart from its election-night feed: "Texas Secretary of State’s
   canvass" (the feed stays "Texas Secretary of State"). Two names, so the report, printed before the feed's last
   update, isn't read as the feed's time going backwards (#163).
+- **W108** Two or more runoffs: the band on the runoff's Where to vote and Print says "In each race, any registered
+  voter in its area (City of Austin District 8; Austin ISD District 1), whether or not you voted Nov 3". Each race's
+  Decide names that race's own area (W100). An at-large Place is the whole city ("in City of Pflugerville").
+- **W109** The runoff's Print in an iPhone Home Screen app: "Printing doesn’t work in a Home Screen app, and runoff
+  picks stay in this app. To print them, open ballotta.org in Safari, pick there and print from there."
+
+**Lane, Oct 21:** W106–W109 approved as written.
+
+Lane's calls the same day (AskUserQuestion), and the words they need:
+
+- **W110** (#167) On the runoff's pages, Clear my picks clears the runoff's picks only: "Clear your runoff picks and
+  reasons? Your Nov 3 picks stay." Elsewhere it clears Nov 3's, as before.
+- **W111** (#169) An official runoff with no date set yet, or a tie for its second spot: What's next says "A runoff is
+  coming" / "The date isn’t set yet. We’ll add it, and the runoff’s pages, once it is."
+- **W112** (#177) On an unofficial count, W39 makes no call: "Your pick is in the runoff so far." / "Your pick isn’t in
+  the runoff so far." Official: W39 as before.
+- **#160** One PR stays: no separate numbers-only path. The PR (and digest) says "New numbers in N other races wait
+  with it: merge as soon as you can." when a verdict change holds numbers back.

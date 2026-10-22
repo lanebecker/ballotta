@@ -138,6 +138,8 @@ jobs:
           import json, sys
           c = json.load(open(sys.argv[1]))
           print(("**A state or verdict changed: Lane merges (by 9 am).**" if c["verdict_changed"] else "Numbers only: this merges itself (Lane's answer 4).") + "\n")
+          if c.get("numbers_waiting"):   # one PR holds everything (Lane, Oct 21, #160): say what's held with it
+              print(f"**New numbers in {c['numbers_waiting']} other race{'s' if c['numbers_waiting'] > 1 else ''} wait with it: merge as soon as you can.**\n")
           print("\n".join(c["lines"]) or "- no changes")
           print("\nFiles read:\n" + "\n".join("- " + f for f in c["files"]))
           if c.get("fetch"):

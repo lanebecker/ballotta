@@ -329,6 +329,7 @@ def three_counties_make_one_unofficial_result():
         sen = out['contests']['c001']                                          # the live Nov 3 feed: no votes yet
         assert (sen['state'], sen['verdict']) == ('counting', 'none') and [x[0] for x in sen['choices'] if x[3]] == ['Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons']
         assert out['seq'] == 1 and ch['verdict_changed'] and check_results_ok(out)
+        assert ch['numbers_waiting'] == 0, 'everything new here is a verdict'
         # the change list, in plain words: first-seen contests with no votes are one line
         assert ch['lines'] == ['- 1 contest now shown, no votes yet', '- City of Austin Proposition A: Failing (unofficial) (c071)'], ch['lines']
     finally: s.close()
@@ -382,6 +383,10 @@ def the_ledger_counts_changes_and_names_corrections():
         two, ch = s.build(prev=one)
         assert two['seq'] == 2 and two['contests']['c071']['changed'] == 2 and two['contests']['c001']['changed'] == 1 and ch['verdict_changed']
         assert '- City of Austin Proposition A: Failing (unofficial) → Failed (official) (c071)' in ch['lines'], ch['lines']
+        # #160: one PR holds everything, so it says when new numbers in other races wait with a verdict change
+        old = copy.deepcopy(one); old['contests']['c001']['choices'][0][1] = 7       # c001's numbers then differed from now
+        _, ch = s.build(prev=old)
+        assert ch['verdict_changed'] and ch['numbers_waiting'] == 1, ch.get('numbers_waiting')
         # Hays's file was bad: excluded, the verdict moves (official -> partial is refused, so take the canvass back too)
         s.official()
         hays = s.raw('hays')[0]
@@ -839,7 +844,7 @@ def the_workflows_keep_what_the_audit_fixed():
     y = (ROOT / '.github/workflows/results.yml').read_text(encoding='utf-8')
     for must in ('--match-head-commit "$HEAD"', "grep -vE '^(source/results/(inbox|raw|rejected)/|source/results/ledger\\.json$|results\\.json$)'",
                  '!= "$(cat "$A/base.txt")"', 'c["verdict_changed"] or moved', '--require-hashes -r requirements-results.txt',
-                 'git diff --cached --binary --no-renames', '--report "$RUNNER_TEMP/fetch.json"', '--fetch "$RUNNER_TEMP/fetch.json"'):
+                 'git diff --cached --binary --no-renames', '--report "$RUNNER_TEMP/fetch.json"', '--fetch "$RUNNER_TEMP/fetch.json"', 'c.get("numbers_waiting")'):
         assert must in y, must
     pin = lambda text, name: re.search(rf'^{name}==(\S+)', text, re.M | re.I).group(1)
     r, h = (ROOT / 'requirements.txt').read_text(), (ROOT / 'requirements-results.txt').read_text()

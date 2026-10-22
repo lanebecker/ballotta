@@ -348,7 +348,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
             stamps[st] = max(stamps.get(st, ""), x["date"])
     out = {"seq": prev["seq"], "election": "2026-11-03", "withdrawn": bool(official.get("withdrawn")),
            "late_until": official.get("late_until", mp["meta"]["late_until"]), "contests": contests}
-    lines, verdict_changed, fresh = [], False, 0
+    lines, verdict_changed, fresh, numbers = [], False, 0, 0
     for cid in sorted(set(contests) | set(seen["contests"])):
         e, old = contests.get(cid), seen["contests"].get(cid)
         title = key[cid]["title"]
@@ -372,6 +372,8 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
             else:
                 lines.append(f"- {title}: " + (f"{word(old)} → " if old else "") + word(e) + f" ({cid})")
         e["changed"] = -1 if moved else old["changed"]
+        if not moved and (e["choices"], e["travis"]) != (old["choices"], old["travis"]):
+            numbers += 1                                  # new numbers only: they wait if anything else waits for Lane (#160)
     same = {k: v for k, v in out.items() if k != "seq"}
     was = {k: v for k, v in prev.items() if k != "seq"}
     if strip_changed(same) != strip_changed(was) or any(e["changed"] == -1 for e in contests.values()):
@@ -393,7 +395,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     bad = check_results.check(out, key, dict(seen, seq=prev["seq"]) if seen.get("contests") or prev.get("seq") else None)
     if bad:
         raise Problem("the built file fails the check: " + "; ".join(bad[:10]))
-    return out, {"verdict_changed": verdict_changed, "seq": out["seq"], "lines": lines,
+    return out, {"verdict_changed": verdict_changed, "seq": out["seq"], "lines": lines, "numbers_waiting": numbers if verdict_changed else 0,
                  "files": sorted(r["file"] for r in reports.values())}
 
 

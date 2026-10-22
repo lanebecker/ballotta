@@ -192,7 +192,8 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
    upload's commit is on `results/next`. Williamson, Hays and the SOS come by themselves (7:15 am and 5:15 pm).
 9. The workflow runs on the upload and updates the "Results updates" pull request with a plain-words change list.
    - **"Numbers only"**: it merged itself and posted the list on the pinned "Results updates" issue. Nothing to do.
-   - **"A state or verdict changed"**: read the list and **merge by 9 am**, every day at the same time. Hold a merge only
+   - **"A state or verdict changed"**: read the list and **merge by 9 am**, every day at the same time; sooner when the
+     PR says new numbers wait with it (one PR holds everything, so numbers-only updates wait too). Hold a merge only
      for an error in the data, and say why in the pull request. Use **Create a merge commit** (never squash or rebase),
      and don't click **Delete branch** afterward (if it happens, the Results workflow recreates `results/next` from
      main). Done: Pages deployed (Actions → Pages, green).

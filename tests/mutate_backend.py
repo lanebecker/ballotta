@@ -61,6 +61,7 @@ M = [
     ("B52 a hand count with no time of its own", BUILD, 'if not (isinstance(at, str) and check_results.TIME.match(at) and at[:10] >= done):', 'if False:'),
     ("B53 the map compared as text", MAP, 'json.loads(OUT.read_text(encoding="utf-8")) != json.loads(new)', 'OUT.read_text(encoding="utf-8") != new'),
     ("B54 a hand-set registration dropped", MAP, '        if was.get("registered"):', '        if False:'),
+    ("B56 numbers waiting behind a verdict not counted", BUILD, '            numbers += 1 ', '            numbers += 0 '),
     ("B55 a restore forgets what voters saw before the pause", BUILD, 'seen = dict(prev, contests=load(ledger, {}) or {}) if prev.get("withdrawn")', 'seen = prev if True or prev.get("withdrawn")'),
     ("B27 seq never moves", BUILD, '        out["seq"] = prev["seq"] + 1\n', '        out["seq"] = prev["seq"]\n'),
     ("B28 a generic write-in line counted", BUILD, 'if P.norm(printed) in GENERIC_WRITE_IN:', "if False:"),

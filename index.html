@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-kYxqHXRkv/cxENk+qA03ldQX+PbcTkcYm5zuavVDJp0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-uXZOvG2I8h3o7xdarXbh40TlUlDOz/LSGkK0AdTC+fg='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2288,7 +2288,14 @@ window.addEventListener('storage', (e) => {   // #165: as #92 does for Nov 3's, 
   if (window.desk) try { desk.rsync(); } catch (err) {}
 });
 /*/RESULTS*/
-function clearPicks() { if (confirm('Clear all your picks and reasons?')) { clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
+function clearPicks() {
+/*RESULTS*/
+  if (window.results && window.desk && desk.view()[0] === 'r' && results.runoff.list().length) {   // the runoff's pages: its picks only (W110, Lane, Oct 21)
+    if (confirm('Clear your runoff picks and reasons? Your Nov 3 picks stay.')) { track('cleared', { what: 'picks' }); LS.set('ballotta.runoffPicks', {}); LS.set('ballotta.runoffWhys', {}); results.runoff.reset(); desk.render(); }
+    return;
+  }
+/*/RESULTS*/
+  if (confirm('Clear all your picks and reasons?')) { clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
 $('reset').addEventListener('click', clearPicks);
 
 /*RESULTS*/
@@ -2449,7 +2456,8 @@ const results = (() => {
       if (n === 1) return mineIn ? 'Your pick was elected.' : 'Your pick didn’t win.';
       return mineIn === n ? n + ' of your picks were elected.' : mineIn ? mineIn + ' of your ' + n + ' picks ' + (mineIn === 1 ? 'was' : 'were') + ' elected.' : 'None of your picks were elected.';  // W41
     }
-    if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'Your pick is headed to the runoff.' : 'Your pick didn’t make the runoff.';  // W39
+    if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return isOfficial(e) ? (v.some(x => e.runoff.includes(x)) ? 'Your pick is headed to the runoff.' : 'Your pick didn’t make the runoff.')   // W39
+      : v.some(x => e.runoff.includes(x)) ? 'Your pick is in the runoff so far.' : 'Your pick isn’t in the runoff so far.';   // W112: no call on an unofficial count (Lane, Oct 21)
     return 'Your pick: ' + v.map(x => choice(c, x)).join(', ');                                                      // W36
   }
   // What a screen reader hears on moving to a contest after the election: the result, then your pick (#148).
@@ -2623,7 +2631,10 @@ const results = (() => {
   }
   const upcoming = (c) => { const e = entry(c.id); return !!e && ['runoff', 'tied_runoff'].includes(e.verdict) && isOfficial(e) && !!e.runoff_on && day() <= e.runoff_on; };   // a tie that goes to a runoff too (#142)
   // The ballot's official runoffs still to come, soonest first; and the line that names them.
-  const runsAhead = () => ballot.filter(b => upcoming(b.c)).sort((a, b) => entry(a.c.id).runoff_on < entry(b.c.id).runoff_on ? -1 : 1);
+  const runsAhead = () => ballot.filter(b => upcoming(b.c)).sort((a, b) => entry(a.c.id).runoff_on.localeCompare(entry(b.c.id).runoff_on));   // same day: ballot order (#166)
+  // Official, headed to a runoff (or a tie for its second spot), with no date set yet (#169)
+  const undated = () => ballot.some(b => { const e = entry(b.c.id); return !!e && ['runoff', 'tied_runoff', 'tied_second'].includes(e.verdict) && isOfficial(e) && !e.runoff_on; });
+  const UNDATED = ['A runoff is coming', 'The date isn’t set yet. We’ll add it, and the runoff’s pages, once it is.'];   // W111 (Lane, Oct 21)
   const runWho = (runs) => esc(cleanTitle(runs[0].c)) + (runs.length > 1 ? ' and ' + (runs.length - 1) + ' more' : '');
   // The summary (option A, Lane Oct 20): your ballot, your picks, what's next.
   function summary() {
@@ -2642,6 +2653,8 @@ const results = (() => {
     if (runs.length) {
       const first = runs[0], d = entry(first.c.id).runoff_on;
       h += '<button type="button" class="sx next" data-rs="rdecide" data-c="' + esc(first.c.id) + '"><span class="ov">What’s next</span><span class="row"><span class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · Get ready</span></span></span></button>';   // the runoff's Decide (Phase 4); spans: a button holds no paragraphs (#172)
+    } else if (undated()) {
+      h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">' + UNDATED[0] + '<span>' + UNDATED[1] + '</span></p></div></div>';
     } else if (ballot.some(b => { const e = entry(b.c.id); return e && (e.verdict === 'may_runoff' || (e.verdict === 'runoff' && !isOfficial(e))); })) {
       h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">A runoff is possible<span>If no one wins a majority, the top two meet again in December.</span></p></div></div>';
     } else {
@@ -2752,6 +2765,7 @@ const results = (() => {
     let h = '<div class="rs-listsum"><p class="top"><b>' + off + '<small>/' + n + '</small></b><span>official results</span></p>';
     const runs = runsAhead();   // the phone's list has no summary band: What's next, when it's a runoff, goes here (#143)
     if (runs.length) h += '<button type="button" class="rs-lnext" data-rs="rdecide" data-c="' + esc(runs[0].c.id) + '"><span class="ov">What’s next</span><b>Runoff · ' + esc(dayLong(entry(runs[0].c.id).runoff_on)) + '</b><span>' + runWho(runs) + '</span></button>';
+    else if (undated()) h += '<div class="rs-lnext"><span class="ov">What’s next</span><b>' + UNDATED[0] + '</b><span>' + UNDATED[1] + '</span></div>';   // (#169)
     if (oc.length) h += '<p class="ov">Your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + '</p><div class="three">'
       + pickWords(oc, opens).map(x => '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>';
     return h + '</div>';
@@ -3624,7 +3638,7 @@ const desk = (() => {
   return {
     render, goTo: (cid) => go(cid, true), after, view: () => ui.view,
 /*RESULTS*/
-    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'), rsync,
+    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'), rnext: () => ract('next'), rsync,
 /*/RESULTS*/
     // A redraw the voter didn't ask for (new results arriving): the folds they had open, their place on the page and the
     // control they were on come back as they were, and the update is said politely (#140).
@@ -3757,7 +3771,7 @@ const phone = (() => {
   // The next undecided contest, never the one already open (it would go nowhere: Pass 1).
   function upcoming() { return D.upNext(); }  // the laptop's own rule, the contest left undecided included (#125)
   function next() {
-    if (D.ui.view === 'rdecide') { desk.rvote(); return; }   // the runoff's ballot, then where to vote in it (Phase 4)
+    if (D.ui.view === 'rdecide') { desk.rnext(); return; }   // the runoff's ballot, contest by contest, then where to vote in it (Phase 4, #166)
     D.leave();
     const nx = upcoming(), i = D.idx(D.ui.cur);
     if (nx) { const was = D.ui.view; D.goOn(nx.c.id); if (was !== 'decide') track('view_opened', { view: 'decide' }); }  // as back() counts it (#76)
