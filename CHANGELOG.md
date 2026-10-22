@@ -14,12 +14,58 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-10-22
+
 ### Added
 - **The runoff** (Phase 4, `docs/plans/2026-10-21-the-runoff.md`): while a runoff on your ballot is official and not yet
   held, the menu and the rail get a "Runoff · Sat, Dec 12" group with Decide, Where to vote and Print your choices, a
   ballot of its own under a plum band (the date, days to go, early voting, who can vote). Runoff picks and reasons are
   kept apart from Nov 3's, which never change; the result card's What's next opens it. Where to vote says the county
-  hasn't posted runoff vote centers yet, never the Nov 3 list.
+  hasn't posted runoff vote centers yet, never the Nov 3 list. With several runoffs, Previous and Next (and J, K, N)
+  step through them, and the band names each race's own voters and date (W100, W108). On the phone, the main view
+  names the runoff, and the bottom bar steps back through its contests to the results.
+- "What's a runoff?" in the canvass explainer (W105).
+- A runoff with no date yet says so in What's next (W111). After the runoff, its contest links to the county for the
+  result, over bars labeled "Nov 3 result" (W113); from the day before, the band and Where to vote send voters to the
+  county (W114).
+
+### Changed
+- On an unofficial count, a runoff pick line says "so far" (W112) and the summary doesn't count it as "didn't win".
+- On the runoff's pages, Clear my picks clears the runoff's picks only (W110); its reason box says "Private · kept on
+  this device" (W115); its printout prints "Undecided" for an undecided race (W116); in an iPhone Home Screen app its
+  Print note says runoff picks stay in the app (W109).
+- The results pipeline (from the deep audit, `docs/audits/2026-10-21-deep/`):
+  - Nothing posted before the polls close is a result, and the published file starts empty (#152).
+  - One bad file, key or contest holds only itself, listed in the PR as HELD; files the build can't use are set aside
+    in `source/results/rejected/`; the kill switch is read first; while paused, what voters saw is kept (#153).
+  - An excluded file rolls back quietly; "Corrected" only when the published numbers came from it and now differ, and
+    that waits for Lane (#154).
+  - Counties with no file (ACC's Caldwell and Lee) count from the canvass record, with its own time (W106) (#155); a
+    county's final file is the official numbers (#156); County Clerk's declared write-in (#157).
+  - Only Nov 3's files are read; county keys carry the county's name for the contest; `suggest` ranks by title and
+    covers the statewide races' Travis breakdown (#158).
+  - Workflows: the self-merge merges only the commit it checked; the publish job takes back only results and checks
+    the verdicts itself; the build job's packages are pinned by hash; Pages takes one page from the demo's branch (#159).
+  - One PR stays (Lane): it says when new numbers wait behind a verdict change (#160).
+  - Fetching retries, never fails the run, reports each source in the PR, and checks the SOS feed's time zone and
+    election date (#161).
+  - Hand edits to the map are kept; the runbook matches the code; the schedule runs to Dec 20 (#162).
+  - Parsers: Hays's report with any number of vote types; empty Williamson contests refused; the state's canvass report
+    is its own source (W107); the SOS's Green party codes (#163).
+
+### Fixed
+- A page left open past midnight redraws what's dated (#164).
+- The runoff's pages: picks across two tabs (#165); several runoffs (#166); printing, Ctrl+P included (#168); a tie that
+  went to a runoff after its day (#169); the phone (#171); focus, names and announcements (#172); layout at 1024px and
+  a gap under the band (#173); the runoff's views in the counts (#174); a saved runoff view after a rollback (#176).
+- Small fixes (#177): the caret on new results; the timeline in date order; All Travis County results no longer uses up
+  "Since you last looked"; a past canvass date isn't said as if to come; a friend's initials leave the rail after the
+  election; result lines in the rail wrap; even lines around a link on the phone.
+
+### Tests
+- Results: 56 tests (from 44), with fixtures from the Nov 2025 special's SOS feed and canvass report. Back-end mutants
+  B33–B61 (61 in all). Site: 200 tests (from 184). Page mutants R114–R136 (132 in all). `mutate_backend` takes the
+  clone's mutation lock.
 
 ## [1.4.0] — 2026-10-21
 
