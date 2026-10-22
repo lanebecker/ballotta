@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-mMoMIVs/q77nhbfGFkUDbyA/B+DJHSnHGq+RLL0t0vw='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-Tuu+PidaZU84OjwkBVeDLm+K9BXqTNu9G1ZoaZGo/2g='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2117,15 +2117,16 @@ const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].
 const RESERVED_WORDS = new RegExp('(?<![\\p{L}\\p{N}])(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
   'tax ?office'].map(fold).join('|') + ')(?![\\p{L}\\p{N}])', 'u');
 const cut30 = (t) => [...t].slice(0, 30).join('');  // 30 characters, never half of one (#93: an emoji is two UTF-16 units)
-// Letters in boxes and circles (🅖🅞🅟, 🄶, 🅶) and regional indicator letters read as the plain capitals; NFKC leaves them (#127).
-const unbox = (t) => t.replace(/[\u{1F130}-\u{1F149}\u{1F150}-\u{1F169}\u{1F170}-\u{1F189}\u{1F1E6}-\u{1F1FF}]/gu,
-  ch => { const c = ch.codePointAt(0); return String.fromCharCode(65 + (c >= 0x1F1E6 ? c - 0x1F1E6 : (c - 0x1F130) % 32)); });
+// Letters in boxes and circles (🅖🅞🅟, 🄶, 🅶) read as the plain capitals; NFKC leaves them (#127). (Regional indicator
+// letters are LOOKALIKE's already.)
+const unbox = (t) => t.replace(/[\u{1F130}-\u{1F149}\u{1F150}-\u{1F169}\u{1F170}-\u{1F189}]/gu, ch => String.fromCharCode(65 + (ch.codePointAt(0) - 0x1F130) % 32));
 function safeName(n) {
   if (typeof n !== 'string') return '';
   n = cut30(n.normalize('NFKC').replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, '').replace(/\s+/g, ' ').trim()).trim();  // cut, then trim again (Pass 2)
+  const seen = unbox(n);  // what's checked: boxed letters as plain ones (#127); n itself is what shows
   const refused = (L) => {  // L: how look-alike letters read; a name is checked with each reading (Pass 3)
-    const latin = (t) => [...unbox(t).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()].map(ch => L[ch] || ch).join('');
-    const low = latin(n), split = latin(n.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
+    const latin = (t) => [...t.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()].map(ch => L[ch] || ch).join('');
+    const low = latin(seen), split = latin(seen.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
     const run = (t) => t.replace(/[\s\p{P}\p{S}]/gu, '');
     const words = (t) => {
       const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
@@ -2134,7 +2135,7 @@ function safeName(n) {
     // Uneven splits ("G OP", "V oter"): from the name as typed, a single letter joins its neighbour, except a
     // capitalised word ("S Tate" stays a person) (#43, Pass 1).
     // Small capitals (ᴘ, ᴛ…) look like capitals, so they count as capitals here; a capitalised word needs 3+ letters (Pass 2).
-    const caps = unbox(n).replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (L[ch] || L[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
+    const caps = seen.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (L[ch] || L[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
     const uneven = caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim().replace(/(?<=(^|\s)\S)\s(?!\p{Lu}\p{Ll}{2,})|(?<!(^|\s)\p{Lu}\p{Ll}{2,})\s(?=\S(\s|$))/gu, '');
     const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split), fold(latin(uneven))];
     // Shouted with a party at the end ("LANEGOP"): all capitals can't be split into words, and no name ends that way;

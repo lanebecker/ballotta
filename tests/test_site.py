@@ -726,7 +726,9 @@ def shared_link_stays_on_screen_after_sharing(b):
         assert pg.is_visible('#share-out') and '#s2' in pg.inner_text('#share-out'), ('wide' if wide else 'phone', 'clipboard' if clip else 'no clipboard', 'the shared link vanished')
         if not clip: assert pg.evaluate("getSelection().toString()") == pg.inner_text('#share-out'), 'the link to copy by hand is not selected'
         pg.fill('#sharename', 'Lane B'); pg.dispatch_event('#sharename', 'input'); pg.dispatch_event('#sharename', 'change')
-        pg.evaluate("document.querySelector('#sharesecs input').click()")       # new choices: the old link goes
+        assert not pg.is_visible('#share-out'), 'an older link stayed next to a new name'
+        pg.click('#share-go'); pg.wait_for_function("!document.getElementById('share-out').classList.contains('hidden')", timeout=10000); pg.wait_for_timeout(300)
+        pg.evaluate("document.querySelector('#sharesecs input').click()")       # new choices alone (not a name too): the old link goes (D68, #182)
         assert not pg.is_visible('#share-out'), 'an older link stayed next to new choices'
         ctx.close()
 

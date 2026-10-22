@@ -57,6 +57,8 @@ MD_SELF = ROOT / 'tests/mutate_desk.py'                    # the runner's own si
 # Retired Oct 22 (#182): W6x and W6z, which dropped the pending reason when everything is cleared (in another tab, or
 # here). Both survive because whySave() writes nothing once the ballot is gone (W6ac, killed), and both paths remove the
 # ballot and then reload; the lines stay as a second guard.
+# Also D7 (cleanPicks keeping non-text values): current() keeps only the contest's own option names, and every reader of
+# a pick goes through it, so a stored number or object never counts, shows or travels in a link; the filter stays.
 M = [
  ('M1 live page changes', TPL, '<title>Ballotta ·', '<title>Ballotta  ·', ['live_build_is_unchanged_until_promotion']),
  ('M2 block stripping gone', BLD, "        elif not in_block:\n            out.append(line)", "        else:\n            out.append(line)", ['live_build_is_unchanged_until_promotion']),
@@ -285,7 +287,6 @@ M = [
  ('D3 flag letters not read', PREV, 'for (let i = 0; i < 26; i++) LOOKALIKE[String.fromCodePoint(0x1F1E6 + i)] = String.fromCharCode(97 + i);\n', '', ['share_names_close_remaining_gaps']),
  ('D4 symbol stand-ins not folded', PREV, "  '€': 'e', '©': 'c', '¢': 'c' };", "  '€': '€', '©': '©', '¢': '¢' };", ['share_names_close_remaining_gaps']),
  ('D5 short glued handles pass', PREV, "+ '|\\\\S{2,}(' + ['voters?', 'cityof']", "+ '|\\\\S{9,}(' + ['voters?', 'cityof']", ['share_names_close_remaining_gaps']),
- ('D7 non-text picks counted', PREV, ".filter(x => typeof x === 'string')]).filter(([, v]) => v.length));", '.filter(x => x != null)]).filter(([, v]) => v.length));', ['phone_stored_junk_in_share_fields']),
  ('D8 odd generation sent', PREV, 'gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1,', 'gen = Math.max(1, Math.min(99, g0 || 1)),', ['phone_stored_junk_in_share_fields']),
  ('D9 odd share name shown', PREV, "$('sharename').value = typeof nm === 'string' ? cut30(nm) : '';", "$('sharename').value = nm || '';", ['phone_stored_junk_in_share_fields']),
  ('D12 a touch leaves focus on Print…', PREV, " || e.pointerType === 'touch' || e.pointerType === 'pen'", '', ['desk_print_by_touch_and_announced']),
@@ -562,7 +563,7 @@ M = [
  ('W19 Enter twice looks up twice', PREV, "  if (key === lookupKey) return;\n", '', ['a_double_enter_counts_one_lookup']),   # #127
  ('W20 an address is never looked up again', PREV, "finally { if (lookupKey === key) lookupKey = ''; }", 'finally { }', ['a_double_enter_counts_one_lookup']),
  ('W21 the phone falls back to the hidden Keep', PREV, "const f = $('dk-paper') || $('a-keep');", "const f = $('a-keep');", ['the_backup_card_falls_back_to_the_paper_on_a_phone']),
- ('W22 boxed letters read as themselves', PREV, "const latin = (t) => [...unbox(t).normalize('NFKD')", "const latin = (t) => [...t.normalize('NFKD')", ['share_names_block_lowercase_and_enclosed_party_names']),
+ ('W22 boxed letters read as themselves', PREV, "const seen = unbox(n);", "const seen = n;", ['share_names_block_lowercase_and_enclosed_party_names']),
  ('W23 lowercase glued party passes', PREV, "/^(?:[\\p{Lu}\\p{N}]{5,}|[\\p{Ll}\\p{N}]{5,})$/u", "/^[\\p{Lu}\\p{N}]{5,}$/u", ['share_names_block_lowercase_and_enclosed_party_names']),
  ('W24 a link on every keystroke', PREV, "sharePrepTimer = setTimeout(() => prepShare(), 150);", "prepShare();", ['typing_a_share_name_prepares_the_link_once']),
  ('W25 an older name\'s link is shared', PREV, "'input', () => { sharePrep = null; $('share-out')", "'input', () => { $('share-out')", ['typing_a_share_name_prepares_the_link_once']),
