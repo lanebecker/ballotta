@@ -159,8 +159,8 @@ TRAVIS_ONLY = {"c003", "c023", "c024", "c025", "c026", "c027", "c028", "c033", "
 # finding 11): the whole county's, from the SOS feed for election 53815 (countyInfo, Oct 16, 2026). An upper bound of
 # ACC's slice there, so the partial rule is only ever more careful for it.
 # Lee: only Elgin ISD's corner of Lee is in ACC (7.6 km², 134 people in the 2020 census; 69 ACC ballots in Nov 2024),
-# so 200 is a safe upper bound there (research Oct 22, 2026, for the deep audit's #155; the notes are in the session's
-# scratch files). Caldwell stays the whole county's: since Lockhart ISD joined ACC (Nov 2024) most of it is ACC's.
+# so 200 is a safe upper bound there (research Oct 22, 2026, for the deep audit's #155:
+# docs/research/2026-10-22-district-registrations.md). Caldwell stays the whole county's: since Lockhart ISD joined ACC (Nov 2024) most of it is ACC's.
 ACC_REGISTERED = {"caldwell": 28491, "lee": 200}
 ANNEX = {  # annexations voted separately by the district and the area to be added (one outcome line, W33/W38)
     "c206": ("district", "c208"), "c208": ("area", "c206"), "c207": ("district", "c209"), "c209": ("area", "c207"),   # ESD 9
@@ -175,7 +175,7 @@ CONFIRMATION = {  # a MUD's confirmation vote; if it fails, every other contest 
 TWO_THIRDS = ["c150", "c157", "c161", "c172", "c181", "c188", "c196"]   # road bonds: Tex. Const. art. III §52(b)
 UNSURE_THRESHOLD = ["c153", "c162", "c175", "c184", "c191", "c198"]    # refunding road bonds: UNVERIFIED (two-thirds or a majority)
 OVERRIDES = {
-    # Austin council districts (research Oct 22, 2026, for #155): the City's district map (data.austintexas.gov
+    # Austin council districts (docs/research/2026-10-22-district-registrations.md, for #155): the City's district map (data.austintexas.gov
     # w3v2-cj58) over the county lines, checked against the City's Nov 2025 canvass, where Hays reported Austin ballots
     # in precinct 438 only and every Williamson precinct with Austin ballots is in District 6 (not on this ballot).
     # Districts 1, 3, 5 (a Hays corner with no voters) and 9 are Travis alone; District 8 is Travis and Hays's
