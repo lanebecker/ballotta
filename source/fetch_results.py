@@ -63,6 +63,12 @@ def keep(res, source, data, name, parse, election=None):
         # feed writes UTC, say), and every time filed from it would be hours off (Task 1 finding 10; #161)
         raise P.BadFile(f"its LastUpdatedTime reads as {rep['posted']} Austin time, after the server's clock "
                         f"({sent.astimezone(P.AUSTIN):%Y-%m-%dT%H:%M}): set meta.sos_time_zone in results_map.json to the zone it's written in")
+    closed = dt.datetime.fromisoformat(B.POLLS_CLOSE).replace(tzinfo=P.AUSTIN)
+    if source == "sos" and sent and rep["posted"] < B.POLLS_CLOSE and sent > closed + dt.timedelta(hours=3):
+        # the other way round: hours after the polls closed, a feed that reads as last updated before they did is read
+        # in the wrong zone (Central read as UTC), and the build would skip every file as before the polls closed
+        raise P.BadFile(f"its LastUpdatedTime reads as {rep['posted']} Austin time, before the polls closed, though the state's "
+                        f"server says it's {sent.astimezone(P.AUSTIN):%Y-%m-%dT%H:%M}: meta.sos_time_zone in results_map.json is probably wrong")
     d = B.raw_dir(res, source, rep["posted"], data)
     if d.exists():
         return None

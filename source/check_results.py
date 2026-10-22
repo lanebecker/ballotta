@@ -89,7 +89,20 @@ def is_num(x):
     return isinstance(x, (int, float)) and not isinstance(x, bool)
 
 
-def check(obj, key, prev=None):
+def excluded_stamps(excluded):
+    """{(source label, posted time): date excluded} for each raw file in excluded.json: a published time that came
+    from one of these may go back to an older file's, and a contest that read from it is a correction (#154)."""
+    import results_parse as P
+    out = {}
+    for x in excluded or []:
+        parts = str(x.get("path", "")).split("/")
+        if len(parts) >= 3 and parts[0] == "raw" and parts[1] in P.LABELS and len(parts[2]) >= 16:
+            st = (P.LABELS[parts[1]], parts[2][:13] + ":" + parts[2][14:16])
+            out[st] = max(out.get(st, ""), str(x.get("date", "")))
+    return out
+
+
+def check(obj, key, prev=None, rolled=None):
     """Problems with obj (parsed results.json) as a list of strings; [] when it's sound. key: answer_key(). prev: the
     copy published before it, or None."""
     bad = []
@@ -213,11 +226,11 @@ def check(obj, key, prev=None):
         if (e["state"] == "recount") != bool(e["recount"]):
             bad.append(where + "recount state exactly when there's a recount link")
     if prev is not None and not bad:
-        bad += check_against(obj, prev)
+        bad += check_against(obj, prev, rolled)
     return bad
 
 
-def check_against(obj, prev):
+def check_against(obj, prev, rolled=None):
     """obj, published after prev: seq goes up by one when anything changed (and stays when nothing did), and no source's
     posted time goes backwards."""
     bad = []
@@ -232,7 +245,7 @@ def check_against(obj, prev):
             continue
         was = dict(map(tuple, old.get("sources", [])))
         for label, t in e["sources"]:
-            if label in was and t < was[label] and not e["corrected"]:
+            if label in was and t < was[label] and not e["corrected"] and (label, was[label]) not in (rolled or {}):   # an excluded file's time may go back (#154)
                 bad.append(f"{cid}: {label}'s posted time went backwards ({was[label]} → {t}); a correction sets corrected")
     return bad
 
@@ -246,7 +259,8 @@ def main(argv):
         obj = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         sys.exit(f"results check: can't read {path}: {e}")
-    bad = check(obj, answer_key(), prev)
+    exc = ROOT / "source/results/excluded.json"   # the build's own allowance: an excluded file's time may go back (#154)
+    bad = check(obj, answer_key(), prev, excluded_stamps(json.loads(exc.read_text(encoding="utf-8")) if exc.exists() else []))
     if bad:
         sys.exit("results check: " + "; ".join(bad[:20]) + (f" (and {len(bad) - 20} more)" if len(bad) > 20 else ""))
     print(f"results check: {path.name} is sound (seq {obj['seq']}, {len(obj['contests'])} contests)")

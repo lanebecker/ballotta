@@ -238,8 +238,8 @@ def build(old=None):
                 m["keys"][county] = v
         if was.get("spell"):
             m["spell"] = was["spell"]
-        if was.get("registered"):   # typed in for a county the tables don't cover; the tables' own numbers win
-            m["registered"] = {**was["registered"], **m.get("registered", {})}
+        if was.get("registered"):   # typed in by hand: it wins over the tables, county by county (the verification of #162)
+            m["registered"] = {**m.get("registered", {}), **was["registered"]}
         if cid not in SOS and was.get("write_ins"):
             m["write_ins"] = was["write_ins"]
     return mp

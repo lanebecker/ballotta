@@ -187,7 +187,7 @@ def slice_of(rep, key, names, write_ins, spell, where):
     return [(n, got[n]) for n in names] + [(n, got.get(n, 0)) for n in write_ins], c.get("registered")
 
 
-def entry(cid, contest, m, reports, official, canvassers, prev_entry):
+def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None):
     """results.json's entry for one contest, or None when no source has it yet."""
     names, write_ins = check_results.pick_names(contest), [w["name"] for w in m.get("write_ins", [])]
     where = f"{cid} ({contest['title']})"
@@ -209,9 +209,14 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
         elif done:
             official_numbers = False                         # W11: official, but these are the last unofficial numbers
         if not m.get("travis_only") and reports.get("travis") and m["keys"].get("travis"):
-            tv, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
-            tt = sum(v for _, v in tv[: len(names)])
-            travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]]
+            try:
+                tv, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
+                tt = sum(v for _, v in tv[: len(names)])
+                travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]]
+            except Problem as p:   # only the Travis breakdown waits: the statewide result still shows (the verification of #158)
+                if held is None:
+                    raise
+                held.append(f"{contest['title']} ({cid}): {p} (shown without its Travis County breakdown)")
     else:
         total = {n: 0 for n in names + write_ins}
         any_county = False
@@ -330,9 +335,9 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     if not official.get("withdrawn"):
         for cid, m in mp["contests"].items():
             try:
-                e = entry(cid, key[cid], m, reports, official, mp["canvassers"], seen["contests"].get(cid))
+                e = entry(cid, key[cid], m, reports, official, mp["canvassers"], seen["contests"].get(cid), held)
             except Problem as p:
-                held.append(f"{key[cid]['title']} ({cid}): {p} (shown as last published)")
+                held.append(f"{key[cid]['title']} ({cid}): {p} " + ("(shown as last published)" if seen["contests"].get(cid) else "(not shown yet)"))
                 e = seen["contests"].get(cid)   # the last published entry stands; or not shown, if there was none
             if e is not None:
                 contests[cid] = e
@@ -340,12 +345,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     # A correction is exactly this: what's published came from a file now excluded, and the contest now reads differently.
     # Then it says so (W51), once; if it reads the same, it keeps its sources, so nothing appears to go back in time. An
     # exclusion that never reached the published file corrects nothing, then or later (the deep audit, #154).
-    stamps = {}
-    for path, x in excluded.items():
-        parts = path.split("/")
-        if len(parts) >= 3 and parts[0] == "raw" and parts[1] in P.LABELS and len(parts[2]) >= 16:
-            st = (P.LABELS[parts[1]], parts[2][:13] + ":" + parts[2][14:16])
-            stamps[st] = max(stamps.get(st, ""), x["date"])
+    stamps = check_results.excluded_stamps(excluded.values())
     out = {"seq": prev["seq"], "election": "2026-11-03", "withdrawn": bool(official.get("withdrawn")),
            "late_until": official.get("late_until", mp["meta"]["late_until"]), "contests": contests}
     lines, verdict_changed, fresh, numbers = [], False, 0, 0
@@ -359,11 +359,12 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
         # Rolled back: a source the published entry took from an excluded file now comes from an older one (or none).
         now_t = dict(map(tuple, e["sources"]))
         hit = [stamps[tuple(x)] for x in old["sources"] if tuple(x) in stamps and now_t.get(x[0], "") < x[1]] if old is not None else []
-        if hit:
-            if all(e[k] == old[k] for k in ("choices", "travis", "missing")):
-                e["sources"] = old["sources"]          # the numbers read the same: nothing to correct, nothing goes back
-            elif max(hit) > (old.get("corrected") or ""):
-                e["corrected"] = max(hit)
+        # The numbers read the same: nothing to correct; the sources say the older file, and the check allows that
+        # (sources kept as published made a later, ordinary update read as a rollback: the verification of #154).
+        if hit and not all(e[k] == old[k] for k in ("choices", "travis", "missing")) and max(hit) > (old.get("corrected") or ""):
+            e["corrected"] = max(hit)
+            verdict_changed = True                        # voters will see "Corrected": that waits for Lane, and says so
+            lines.append(f"- {title}: marked Corrected ({e['corrected']}): it read from an excluded file ({cid})")
         moved = old is None or (e["state"], e["verdict"], e["leaders"], e["runoff"], e["note"]) != (old["state"], old["verdict"], old["leaders"], old["runoff"], old["note"])
         if moved:
             verdict_changed = True
@@ -392,7 +393,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     if out["withdrawn"] != prev.get("withdrawn"):
         verdict_changed = True
         lines.insert(0, "- RESULTS WITHDRAWN (the kill switch): every result is hidden" if out["withdrawn"] else "- Results restored (the kill switch is off)")
-    bad = check_results.check(out, key, dict(seen, seq=prev["seq"]) if seen.get("contests") or prev.get("seq") else None)
+    bad = check_results.check(out, key, dict(seen, seq=prev["seq"]) if seen.get("contests") or prev.get("seq") else None, stamps)
     if bad:
         raise Problem("the built file fails the check: " + "; ".join(bad[:10]))
     return out, {"verdict_changed": verdict_changed, "seq": out["seq"], "lines": lines, "numbers_waiting": numbers if verdict_changed else 0,
@@ -448,6 +449,11 @@ def suggest(path, mp=None):
         raise Problem(f"{path} is the file for the {rep['election']} election, not {ELECTION}")
     key = check_results.answer_key()
     for cid, m in mp["contests"].items():
+        if m["source"] == "sos" and rep["source"] == "travis" and not m.get("travis_only") and not m["keys"].get("travis"):
+            # a statewide race's Travis breakdown: its key is the Travis file's contest of the same name (#158)
+            fits = sorted(((k, c["name"]) for k, c in rep["contests"].items()), key=lambda kn: -likeness(m["sos_name"], kn[1]))
+            print(f"{cid} {key[cid]['title']} (Travis breakdown): " + "; ".join(f"{k} = {n}" for k, n in fits[:3]))
+            continue
         if m["source"] != "counties" or rep["source"] not in m["electorate"] or m["keys"].get(rep["source"]):
             continue
         names = set(map(P.norm, check_results.pick_names(key[cid])))

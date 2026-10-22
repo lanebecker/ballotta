@@ -424,7 +424,7 @@ def excluding_a_newest_file_goes_back_quietly_and_corrects_only_what_changed():
         newest = (d / 'detailxml.xml').relative_to(s.res).as_posix()
         s.exclude({'path': newest, 'reason': 'a botched update', 'date': '2026-11-14', 'contests': []})
         three, ch = s.build(prev=two)   # no Problem: the posted time would go back, but nothing reads differently
-        assert three['contests']['c071']['sources'] == two['contests']['c071']['sources'] and three['contests']['c071']['corrected'] is None
+        assert dict(map(tuple, three['contests']['c071']['sources']))['Travis County'] == '2025-11-12T15:00' and three['contests']['c071']['corrected'] is None   # the older file's own time, allowed back
         assert not [l for l in ch['lines'] if l.startswith('- HELD')], ch['lines']
         # an exclusion of a file the published copy never used: a later ordinary change isn't called a correction
         y = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/10/2025 9:00:00 AM', 1)
@@ -441,6 +441,35 @@ def excluding_a_newest_file_goes_back_quietly_and_corrects_only_what_changed():
         r = P.parse_clarity(z); d = B.raw_dir(s.res, 'travis', r['posted'], z); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(z)
         five, _ = s.build(prev=four)
         assert five['contests']['c071']['corrected'] is None and dict(map(tuple, five['contests']['c071']['sources']))['Travis County'] == '2025-11-15T09:00'
+    finally: s.close()
+
+@test
+def a_quiet_rollback_never_turns_into_a_correction_later():
+    """The verification of #154: when an excluded file changed nothing, its stamp was kept in the entry's sources, so a
+    later ordinary update from another county read as a rollback and was shown to voters as "Corrected". And a real
+    correction that moved no verdict was listed as "Numbers only" and said it would merge itself."""
+    s = Scratch()
+    try:
+        one, _ = s.build()
+        x = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/13/2025 9:00:00 AM', 1)   # same numbers, newer stamp
+        r = P.parse_clarity(x); d = B.raw_dir(s.res, 'travis', r['posted'], x); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(x)
+        two, _ = s.build(prev=one)
+        s.exclude({'path': (d / 'detailxml.xml').relative_to(s.res).as_posix(), 'reason': 'botched', 'date': '2026-11-14', 'contests': []})
+        three, ch = s.build(prev=two)
+        e = three['contests']['c071']
+        assert e['corrected'] is None and dict(map(tuple, e['sources']))['Travis County'] == '2025-11-12T15:00', e['sources']
+        assert check_results_ok(three) and not B.check_results.check(three, B.check_results.answer_key(), two, B.check_results.excluded_stamps(json.loads((s.res / 'excluded.json').read_text())))
+        w = fx('williamson-2025-11.html').replace(b'9/30/2026 2:07:28 PM', b'11/16/2026 2:07:28 PM', 1)
+        w = w.replace(b"2, 2498]", b"2, 2600]", 1).replace(b'class="content-data">2,498<', b'class="content-data">2,600<', 1)
+        r = P.parse_williamson(w); d = B.raw_dir(s.res, 'williamson', r['posted'], w); d.mkdir(parents=True); (d / 'results.html').write_bytes(w)
+        four, ch = s.build(prev=three)
+        assert four['contests']['c071']['corrected'] is None, 'an ordinary Williamson update shown to voters as a correction'
+        # a real correction, no verdict moved: it waits for Lane and says so
+        s.exclude({'path': (d / 'results.html').relative_to(s.res).as_posix(), 'reason': 'bad', 'date': '2026-11-17', 'contests': ['c071']})
+        five, ch = s.build(prev=four)
+        assert five['contests']['c071']['corrected'] == '2026-11-17' and five['contests']['c071']['verdict'] == four['contests']['c071']['verdict']
+        assert ch['verdict_changed'] and '- City of Austin Proposition A: marked Corrected (2026-11-17): it read from an excluded file (c071)' in ch['lines'], ch['lines']
+        assert not [l for l in ch['lines'] if l.startswith('- Numbers only')], ch['lines']
     finally: s.close()
 
 @test
@@ -671,6 +700,25 @@ def a_generic_write_in_line_is_left_out():
     finally: shutil.rmtree(d)
 
 @test
+def a_bad_travis_key_on_a_statewide_race_holds_only_its_breakdown():
+    """The verification of #158: a statewide race's Travis key typed as a bare number held the whole race (the US
+    Senate not shown on Nov 4); suggest never printed those keys."""
+    d, res = scratch_with([clarity({'9': ('U.S. Senator', [('James Talarico', 10), ('Ken Paxton', 9), ('Ted Brown', 1)])})])
+    try:
+        data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
+        raw = B.raw_dir(res, 'sos', r['posted'], data); raw.mkdir(parents=True); (raw / 'election.json').write_bytes(data)
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9'
+        out, ch = B.build(res=res, mp=mp)
+        assert 'c001' in out['contests'] and out['contests']['c001']['travis'] is None, 'the whole race held for its breakdown'
+        assert [l for l in ch['lines'] if 'HELD' in l and 'without its Travis County breakdown' in l], ch['lines']
+        mp['contests']['c001']['keys']['travis'] = None
+        f = d / 'tv.xml'; f.write_bytes(clarity({'9': ('U.S. Senator', [('James Talarico', 10), ('Ken Paxton', 9), ('Ted Brown', 1)])}))
+        o = io.StringIO()
+        with contextlib.redirect_stdout(o): B.suggest(f, mp)
+        assert 'c001 United States Senator (Travis breakdown): 9 = U.S. Senator' in o.getvalue(), o.getvalue()
+    finally: shutil.rmtree(d)
+
+@test
 def a_race_decided_in_travis_alone_has_no_travis_breakdown():
     d, res = scratch_with([clarity({'9': ('U.S. Senator', [('James Talarico', 10), ('Ken Paxton', 9), ('Ted Brown', 1)])})])
     try:
@@ -772,6 +820,9 @@ def the_fetcher_tries_again_reports_and_never_stops_the_run():
         early = FR.Body(feed); early.date = datetime_utc(2026, 10, 16, 18, 0)   # the server's clock: 1:00 pm Austin time
         try: FR.keep(d, 'sos', early, 'election.json', P.parse_sos); raise AssertionError('a feed time after the server clock was filed')
         except P.BadFile as e: assert 'sos_time_zone' in str(e), e
+        stale = FR.Body(feed); stale.date = datetime_utc(2026, 11, 4, 13, 0)    # the morning after: it can't still read Oct 16
+        try: FR.keep(d, 'sos', stale, 'election.json', P.parse_sos); raise AssertionError('a feed read in the wrong zone, the other way, was filed')
+        except P.BadFile as e: assert 'probably wrong' in str(e), e
         late = FR.Body(feed); late.date = datetime_utc(2026, 10, 16, 21, 13)    # 4:13 pm: as it should be
         assert FR.keep(d, 'sos', late, 'election.json', P.parse_sos) is not None
         fetch, _ = net({f'{FR.SOS}/election/58314': fx('sos-58314.json')})
@@ -835,6 +886,7 @@ def hand_edits_to_the_map_are_kept_and_never_fail_the_run():
         mp = json.loads(brm.OUT.read_text(encoding='utf-8'))
         mp['contests']['c071']['spell'] = {'travis': {'FOR THE PROP': 'FOR'}}
         mp['contests']['c071']['registered'] = {'hays': 600}
+        mp['contests']['c117']['registered'] = {'caldwell': 900, 'lee': 300}         # over the tables' own numbers (ACC)
         mp['contests']['c071']['keys']['travis'] = '17 = CITY OF AUSTIN PROPOSITION A'
         mp['contests']['c071']['keys']['williamson'] = 'absent'
         brm.OUT = d / 'results_map.json'; brm.OUT.write_text(json.dumps(mp, indent=4))   # an editor's reformat
@@ -844,6 +896,7 @@ def hand_edits_to_the_map_are_kept_and_never_fail_the_run():
         kept = brm.build(json.loads(brm.OUT.read_text()))['contests']['c071']
         assert (kept['spell'], kept['registered']['hays'], kept['keys']['travis'], kept['keys']['williamson']) == (
             {'travis': {'FOR THE PROP': 'FOR'}}, 600, '17 = CITY OF AUSTIN PROPOSITION A', 'absent'), kept
+        assert brm.build(json.loads(brm.OUT.read_text()))['contests']['c117']['registered'] == {'caldwell': 900, 'lee': 300}, 'a hand-set registration wins'
     finally: shutil.rmtree(d)
 
 

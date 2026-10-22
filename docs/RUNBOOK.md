@@ -177,7 +177,8 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 5. Download Travis's and Bastrop's **Detail XML** (Clarity results page → Reports → Detail XML; `detailxml.zip`).
 6. **Map the county contests** (they get their keys only once the county posts): run
    `python3 source/build_results.py suggest detailxml.zip` (or ask Claude to). It prints each Ballotta contest with
-   the county contests whose choices fit, best first (`17 = CITY OF AUSTIN PROPOSITION A`). Confirm each and copy
+   the county contests whose choices fit, best first (`17 = CITY OF AUSTIN PROPOSITION A`), and for Travis's file the
+   statewide races too (their Travis County breakdown, "Travis breakdown"). Confirm each and copy
    that whole `17 = …` into the contest's `keys` in `source/results_map.json`: the name is checked against every later
    file, so a renumbered contest is held, not misread. "No fit" means none of the county's voters vote in it: confirm
    from the county's ballot and set the key to `"absent"`. A contest with no key is shown as *partial* (that county
@@ -243,7 +244,9 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
     **If the Results workflow itself won't run**: edit `results.json` on `main` in GitHub (pencil icon) and replace
     it all with `{"seq": N, "election": "2026-11-03", "withdrawn": true, "late_until": "2026-11-17", "contests": {}}`,
     where N is one more than the seq it had; commit to `main`. Pages deploys it (Actions → Pages, green). Done:
-    ballotta.org shows "Results are paused…". To restore, revert that commit on `main`.
+    ballotta.org shows "Results are paused…". To restore, don't revert (pages that saw the paused file ignore an older
+    seq): put back the last good `results.json` (its copy in the commit before yours) with its seq set to N + 1, and
+    commit that to `main`.
 
 ## After
 

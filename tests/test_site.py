@@ -5522,6 +5522,41 @@ def small_after_election_fixes(b):
     ctx.close()
 
 @results_test
+def a_restore_reaches_pages_left_open(b):
+    """The verification of #153: a page left open on the paused file stayed paused when the results came back at the
+    same seq (and a lower seq, from reverting the kill switch, is ignored by design: the runbook now restores at N+1)."""
+    fx = rs_fixtures(); serve = {'body': fx.scene('withdrawn')}
+    ctx, pg = rs_page(b, serve, when='2026-11-05T09:00')
+    assert 'Results are paused' in pg.inner_text('#rs-top')
+    back = fx.scene('mixed'); back['seq'] = 3; serve['body'] = back
+    pg.evaluate("results.newDay()"); pg.wait_for_timeout(600)
+    assert 'Results are paused' not in pg.inner_text('#rs-top'), 'the same seq, no longer withdrawn: still paused'
+    low = fx.scene('withdrawn'); low['seq'] = 2; serve['body'] = low
+    pg.evaluate("results.newDay()"); pg.wait_for_timeout(600)
+    assert 'Results are paused' not in pg.inner_text('#rs-top'), 'an older file replaced a newer one'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def verification_fixes_on_the_page(b):
+    """The verification of the deep-audit fixes: the summary called an unofficial runoff ("didn't win") while the paper
+    said "so far" (#177); with runoffs on two dates, the band gave each race the first one's (#166)."""
+    fx = rs_fixtures(); body = fx.scene('mixed'); e = body['contests']['c001']
+    e.update(verdict='runoff', leaders=[], runoff=['Ken Paxton', 'Ted Brown'])
+    ctx, pg = rs_page(b, {'body': body}, when='2026-11-05T09:00')
+    s = pg.inner_text('#rs-top .rs-sum')
+    assert 'didn’t win' not in s, s
+    ctx.close()
+    body = fx.scene('runoffs'); body['contests']['c121']['runoff_on'] = '2026-12-19'
+    ctx, pg = rs_page(b, {'body': body}, when='2026-11-14T09:00')
+    pg.evaluate("desk.rgo('c121')"); pg.wait_for_timeout(200)
+    assert 'Saturday, Dec 19' in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')[:120]
+    pg.evaluate("desk.rgo('c069')"); pg.wait_for_timeout(200)
+    assert 'Saturday, Dec 12' in pg.inner_text('#rs-top')
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
 def the_runoff_is_its_own_ballot(b):
     # Phase 4 (docs/plans/2026-10-21-the-runoff.md, the canvas's RunoffStates): while a runoff on your ballot is official
     # and not yet held, the menu and the rail get a Runoff group, and its Decide, Where to vote and Print are a ballot of
@@ -5597,6 +5632,17 @@ def the_runoff_is_its_own_ballot(b):
     pg.focus('#dk-paper'); pg.keyboard.press('1'); pg.wait_for_timeout(100)
     assert pg.errs == [], pg.errs
     ctx.close()
+    # the minute before the page notices the day (its timer hasn't run, or the tab was hidden): a key or a click on the
+    # old runoff page goes back to the results, with no error (the verification of #164)
+    for act in ('key', 'click'):
+        ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-12-12T23:59')
+        pg.click('#dk-views [data-view="rdecide"]'); pg.wait_for_timeout(150)
+        pg.clock.set_system_time(rs_when('2026-12-13T00:00'))                           # no timer runs
+        if act == 'key': pg.focus('#dk-paper'); pg.keyboard.press('1')
+        else: pg.click('#dk-paper [data-rpick="Cheryl Bradley"]')
+        pg.wait_for_timeout(150)
+        assert pg.errs == [] and pg.evaluate("desk.view()") == 'decide', (act, pg.errs, pg.evaluate("desk.view()"))
+        ctx.close()
     # no runoff on this ballot: nothing of it
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
     assert not pg.is_visible('#dk-rl') and pg.query_selector('.dk-row[data-rrow]') is None and pg.errs == [], pg.errs

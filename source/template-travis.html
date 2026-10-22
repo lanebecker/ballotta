@@ -2383,7 +2383,7 @@ const results = (() => {
       const next = accept(got[0]);
       if (!next) return;
       if (R && next.seq < R.seq && !saved) return;   // an older file (a lagging cache, a kept copy) never replaces a newer one (#152)
-      const changed = !R || next.seq !== R.seq || got[1] !== saved, news = !!R;
+      const changed = !R || next.seq !== R.seq || got[1] !== saved || !!next.withdrawn !== !!R.withdrawn, news = !!R;   // paused or back at the same seq redraws too (#153)
       R = next; saved = got[1];
       if (changed) redraw(news);
     }).catch(() => {}).finally(settle);
@@ -2623,7 +2623,7 @@ const results = (() => {
     }
     if (V === 'leading') return hit ? 'up' : 'behind';
     if (['won', 'elected', 'unopposed'].includes(V)) return hit ? 'up' : 'down';
-    if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : 'down';
+    if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : off ? 'down' : 'behind';   // unofficial: no call, as W112 (#177)
     return 'open';
   }  // Each pick's outcome, for the summary's counts: in a several-seat race each pick counts on its own, so "1 of your 2
   // picks is leading" adds one to "leading" and one to "behind", as the paper says (#144); a contest's picks otherwise count once.
@@ -2878,7 +2878,7 @@ const results = (() => {
   function runoffBand(cur) {   // cur: the runoff contest on the page (Decide), so its own voters are named (#166)
     const rs = runoffs(); if (!rs.length) return '';
     const one = rs.find(b => b.c.id === cur) || (rs.length === 1 ? rs[0] : null);
-    const d = entry(rs[0].c.id).runoff_on, n = daysTo(d);
+    const d = entry((one || rs[0]).c.id).runoff_on, n = daysTo(d);   // the open race's own date (#166); else the soonest
     return '<section class="ro-band" aria-label="The runoff"><div><p class="ov">Runoff</p><p class="t">' + esc(dow(d, true) + ', ' + md(d)) + '</p><p class="when">'
       + (n > 1 ? n + ' days from today' : n === 1 ? 'Tomorrow' : 'Today') + '</p></div><div class="facts">'
       + '<p><b>Early voting</b>' + (n <= 1 ? '<a href="' + TCE + '" target="_blank" rel="noopener">See Travis County Elections</a>' : 'Not posted yet') + '</p>'   // W98; from the day before, W114

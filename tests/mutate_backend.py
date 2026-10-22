@@ -10,6 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 S = ROOT / "source"
 RULES, PARSE, BUILD, FETCH = S / "results_rules.py", S / "results_parse.py", S / "build_results.py", S / "fetch_results.py"
 MAP = S / "build_results_map.py"
+CHECK = S / "check_results.py"
 M = [
     ("B1 the 20-vote floor is 19", RULES, "POINT, FLOOR = 1, 20", "POINT, FLOOR = 1, 19"),
     ("B2 a point exactly isn't enough", RULES, "Fraction(100 * gap, cast) >= POINT", "Fraction(100 * gap, cast) > POINT"),
@@ -52,7 +53,7 @@ M = [
     ("B43 the SOS feed's election date never read", PARSE, '"election": day_of(home.get("ElecDate"), "%m%d%Y")}', '"election": None}'),
     ("B44 a fetch tried once", FETCH, '    for i in range(tries):', '    for i in range(1):'),
     ("B45 a 404 tried again", FETCH, 'if e.code not in (429, 500, 502, 503, 504) or i == tries - 1:', 'if i == tries - 1:'),
-    ("B46 the SOS clock never checked", FETCH, 'if source == "sos" and sent and ', 'if False and '),
+    ("B46 the SOS clock never checked", FETCH, 'if source == "sos" and sent and dt.datetime', 'if False and dt.datetime'),
     ("B47 every fetch failing stops the run", FETCH, '    # never a failed step: Lane\'s uploads are built whatever the network did', '    sys.exit(1) if all(e for _, _, e in out) else None'),
     ("B48 the fetch report left out of the PR", BUILD, '            changes["fetch"] = ', '            changes["fetch_"] = '),
     ("B49 Hays reads three vote types only", PARSE, 'HAYS_ROW = re.compile(r"^(.*?)\\s+(?:[\\d,]+\\s+[\\d.]+%\\s+)*', 'HAYS_ROW = re.compile(r"^(.*?)\\s+(?:[\\d,]+\\s+[\\d.]+%\\s+){3}'),
@@ -63,6 +64,10 @@ M = [
     ("B54 a hand-set registration dropped", MAP, '        if was.get("registered"):', '        if False:'),
     ("B56 numbers waiting behind a verdict not counted", BUILD, '            numbers += 1 ', '            numbers += 0 '),
     ("B57 the SOS's Green code unknown", PARSE, '"GRN", "GRE", "G", ', '"GRN", '),
+    ("B58 a feed read in the wrong zone the other way filed", FETCH, 'if source == "sos" and sent and rep["posted"] < B.POLLS_CLOSE', 'if False and rep["posted"] < B.POLLS_CLOSE'),
+    ("B59 an excluded file's time may not go back", CHECK, 'and (label, was[label]) not in (rolled or {})', ''),
+    ("B60 a correction merges itself", BUILD, '            verdict_changed = True                        # voters will see "Corrected"', '            pass                                          # voters will see "Corrected"'),
+    ("B61 a bad Travis key holds a whole statewide race", BUILD, '                if held is None:\n                    raise\n                held.append(', '                raise\n                held.append('),
     ("B55 a restore forgets what voters saw before the pause", BUILD, 'seen = dict(prev, contests=load(ledger, {}) or {}) if prev.get("withdrawn")', 'seen = prev if True or prev.get("withdrawn")'),
     ("B27 seq never moves", BUILD, '        out["seq"] = prev["seq"] + 1\n', '        out["seq"] = prev["seq"]\n'),
     ("B28 a generic write-in line counted", BUILD, 'if P.norm(printed) in GENERIC_WRITE_IN:', "if False:"),

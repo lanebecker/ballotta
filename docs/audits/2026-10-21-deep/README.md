@@ -63,3 +63,38 @@ Not fixed, and why:
   picks only (with #180, runoff sharing, which Lane chose to build later).
 - **#173, part:** the runoff's Nov 3 box differs from the results paper's (lowercase "official", no vote counts).
 - **#175** (the Dec 12 runoff's own results), **#178** (tests), **#179** (efficiency): to come; #175 before Dec 12.
+
+## Verification (Oct 22)
+
+A fresh agent checked each fix against its issue's text (report kept with the session's scratch files): 2 FAIL and 9
+CONCERN findings. Each is fixed below with a test that fails without it, or listed for Lane.
+
+1. **FAIL #154:** an exclusion that changed nothing kept the excluded file's time in the sources, so a later, ordinary
+   update from another county read as a rollback and showed "Corrected". Now the sources say the older file, and
+   `check_results` allows a time to go back when it came from an excluded file (`excluded_stamps`, shared by the build
+   and the workflow's check). Mutant B59.
+2. **#154:** a real correction that moved no verdict said "Numbers only: this merges itself". It now waits for Lane with
+   its own line ("marked Corrected …"). Mutant B60.
+3. **FAIL #155:** pre-filled `absent` keys and the known small registrations (Hays's part of Austin; ACC's taxing
+   district in Caldwell and Lee) weren't done. Being researched; see below.
+4. **#153:** the runbook's manual restore ("revert") republished a lower seq, which open pages ignore by design, so they
+   stayed paused. The runbook now restores at N + 1, and the page redraws when `withdrawn` changes at the same seq. The
+   HELD line says "(not shown yet)" for a contest never published.
+5. **#158:** a statewide race's Travis key typed as a bare number held the whole race. Now only its Travis breakdown
+   waits (HELD), and `suggest` prints those keys too ("Travis breakdown"). Mutant B61.
+6. **#162:** a hand-set `registered` on a contest the tables cover failed the run. A hand entry now wins, county by
+   county. The plan's Risks section matches the code.
+7. **#177:** the summary still counted an unofficial runoff pick outside the pair as "didn't win". Now "behind", as
+   W112's "so far".
+8. **#157:** the declared write-in's name, LaShawn Nash (from Ballotpedia), is unconfirmed. **For Lane:** confirm it with
+   Travis County Elections before Nov 3; a different spelling holds c053.
+9. **#161:** the time-zone check caught one direction only. A feed that reads as last updated before the polls closed,
+   while the state's server is three or more hours past closing, is now refused and reported. Mutant B58.
+10. **#166:** with runoffs on two dates, the band gave each race the first's. On Decide it now gives the open race's own
+    date (Where to vote and Print show the soonest).
+11. **#164:** the guards for a key or click in the minute before the page notices the new day had no test. Now tested,
+    and the test fails with them removed.
+
+Also from the verification: Williamson's page prints no election date, and its vendor restamps old pages, so the
+polls-close cutoff doesn't protect it; the name carried in each county key (#158) does.
+
