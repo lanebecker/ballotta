@@ -1051,106 +1051,71 @@
    "source": "counties",
    "canvasser": "city-of-austin",
    "electorate": [
-    "travis",
-    "williamson",
-    "hays"
+    "travis"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": null
    },
    "write_ins": [],
    "majority": true,
-   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
-   "possible": [
-    "williamson",
-    "hays"
-   ]
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
   },
   "c067": {
    "source": "counties",
    "canvasser": "city-of-austin",
    "electorate": [
-    "travis",
-    "williamson",
-    "hays"
+    "travis"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": null
    },
    "write_ins": [],
    "majority": true,
-   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
-   "possible": [
-    "williamson",
-    "hays"
-   ]
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
   },
   "c068": {
    "source": "counties",
    "canvasser": "city-of-austin",
    "electorate": [
-    "travis",
-    "williamson",
-    "hays"
+    "travis"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": null
    },
    "write_ins": [],
    "majority": true,
-   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
-   "possible": [
-    "williamson",
-    "hays"
-   ]
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
   },
   "c069": {
    "source": "counties",
    "canvasser": "city-of-austin",
    "electorate": [
     "travis",
-    "williamson",
     "hays"
    ],
    "keys": {
     "travis": null,
-    "williamson": null,
     "hays": null
    },
    "write_ins": [],
    "majority": true,
    "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
-   "possible": [
-    "williamson",
-    "hays"
-   ]
+   "registered": {
+    "hays": 565
+   }
   },
   "c070": {
    "source": "counties",
    "canvasser": "city-of-austin",
    "electorate": [
-    "travis",
-    "williamson",
-    "hays"
+    "travis"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": null
    },
    "write_ins": [],
    "majority": true,
-   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)",
-   "possible": [
-    "williamson",
-    "hays"
-   ]
+   "why": "Ord. 20260806-003: 'elected by majority vote'; city spans three counties (Ord. 20260806-002 p1)"
   },
   "c071": {
    "source": "counties",
@@ -1850,7 +1815,7 @@
    "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
    "registered": {
     "caldwell": 28491,
-    "lee": 12262
+    "lee": 200
    }
   },
   "c118": {
@@ -1877,7 +1842,7 @@
    "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
    "registered": {
     "caldwell": 28491,
-    "lee": 12262
+    "lee": 200
    }
   },
   "c119": {
@@ -1904,7 +1869,7 @@
    "why": "six counties per its order (pp. 2-3); majority per its order; 2024 runoff",
    "registered": {
     "caldwell": 28491,
-    "lee": 12262
+    "lee": 200
    }
   },
   "c120": {

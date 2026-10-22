@@ -75,8 +75,13 @@ CONCERN findings. Each is fixed below with a test that fails without it, or list
    and the workflow's check). Mutant B59.
 2. **#154:** a real correction that moved no verdict said "Numbers only: this merges itself". It now waits for Lane with
    its own line ("marked Corrected …"). Mutant B60.
-3. **FAIL #155:** pre-filled `absent` keys and the known small registrations (Hays's part of Austin; ACC's taxing
-   district in Caldwell and Lee) weren't done. Being researched; see below.
+3. **FAIL #155:** pre-filled `absent` keys and the known small registrations weren't done. Researched Oct 22 (the
+   City's district map over the county lines, checked against its Nov 2025 canvass; ACC's order and past results):
+   Austin Districts 1, 3, 5 and 9 are Travis alone (their electorate now says so, so they're never "partial,
+   Williamson missing"); District 8 is Travis and Hays's precinct 438 (565 registered); ACC's Lee part is Elgin ISD's
+   corner (200, an upper bound; was the whole county's 12,262). Caldwell stays the whole county's: since Lockhart ISD
+   joined ACC in Nov 2024, most of it is ACC's. Still for Nov 4: ACC's annexation (c120) is held in Travis only per its
+   notice, while the map also lists Williamson; set its Williamson key to "absent" if Williamson's file lacks it.
 4. **#153:** the runbook's manual restore ("revert") republished a lower seq, which open pages ignore by design, so they
    stayed paused. The runbook now restores at N + 1, and the page redraws when `withdrawn` changes at the same seq. The
    HELD line says "(not shown yet)" for a contest never published.

@@ -40,7 +40,8 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
     in `source/results/rejected/`; the kill switch is read first; while paused, what voters saw is kept (#153).
   - An excluded file rolls back quietly; "Corrected" only when the published numbers came from it and now differ, and
     that waits for Lane (#154).
-  - Counties with no file (ACC's Caldwell and Lee) count from the canvass record, with its own time (W106) (#155); a
+  - Counties with no file (ACC's Caldwell and Lee) count from the canvass record, with its own time (W106); Austin's
+    council districts list only the counties with their voters, and ACC's Lee part has its own bound (#155); a
     county's final file is the official numbers (#156); County Clerk's declared write-in (#157).
   - Only Nov 3's files are read; county keys carry the county's name for the contest; `suggest` ranks by title and
     covers the statewide races' Travis breakdown (#158).
