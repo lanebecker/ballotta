@@ -86,7 +86,8 @@ M = [
  ('R59 every race has new numbers', PREV, "else if (w[4] !== n[4]) since.numbers++;", "else since.numbers++;", [S]),
  ('R61 what is seen while open is forgotten', PREV, "if (txt !== seenText) { seenText = txt;", "if (!seenText) { seenText = txt;", [S]),
  ('R62 new results wipe the reader\'s place', PREV, "if (news) desk.reflow(updated()); else desk.render();", "desk.render();", [S]),
- ('R63 the header loses the results time at midnight', PREV, "(after() && results.updated()) || whenLine();   // after the election, the results' time, as header() (#141)", "whenLine();", [T]),
+ # R63 retired Oct 22: since #164, a new day redraws the whole header (newDay → render → header()), so the line it
+ # removed in today() changes nothing on its own (an equivalent mutant); the midnight test still checks the time.
  ('R64 a canvassed tie is too close to call', PREV, "!!e && !isOfficial(e) && ['too_close'", "!!e && ['too_close'", [V]),
  ('R65 a recount reads as lost', PREV, "    if (e.state === 'recount') return 'open';", "", [V]),
  ('R66 the rail hides a recount', PREV, "(isOfficial(e) ? 'Official' : 'Unofficial') + (e.state === 'recount' ? ' · recount requested' : '');", "(isOfficial(e) ? 'Official' : 'Unofficial');", [V]),
@@ -121,7 +122,9 @@ M = [
  ('R108 the runoff prints the results', PREV, "desk.view()[0] === 'r' && results.runoff.list().length ? results.runoff.crib(withWhy)", "false ? results.runoff.crib(withWhy)", [RO]),
  ('R109 the runoff after it is held', PREV, "      if (!runoff) ui.view = 'decide';\n", "", [RO]),
  ('R111 the phone Next to nowhere', PREV, "    if (D.ui.view === 'rdecide') { desk.rnext(); return; }", "", [RO]),
- ('R119 a second tab writes over the first', PREV, "function rpick(c, val) { RP = null; rstore();", "function rpick(c, val) { rstore();", ['runoff_picks_and_reasons_hold_across_two_tabs']),
+ # R119 retired Oct 22: re-reading the store before a write and the storage listener (R120, killed) each keep a
+ # second tab from writing over the first; with the listener, the re-read only matters in the instant before
+ # the storage event arrives, which a browser test can't stage (an equivalent mutant here).
  ('R120 another tab\'s runoff picks unseen', PREV, "  if ((e.key !== 'ballotta.runoffPicks' && e.key !== 'ballotta.runoffWhys') || !window.results) return;", "  return;", ['runoff_picks_and_reasons_hold_across_two_tabs']),
  ('R121 the band names the first race on every page', PREV, "const one = rs.find(b => b.c.id === cur) || (rs.length === 1 ? rs[0] : null);", "const one = rs[0];", ['several_runoffs_step_through_and_each_names_its_voters']),
  ('R122 one runoff contest only', PREV, "    if (a === 'next' && i >= 0 && i < rs.length - 1) { rgo(rs[i + 1].c.id, true); return; }", "", ['several_runoffs_step_through_and_each_names_its_voters']),

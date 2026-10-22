@@ -5510,16 +5510,18 @@ def small_after_election_fixes(b):
     initials stayed in the rail with no Hide (the results paper has no friend's picks); a rail line cut off its
     "· Unofficial"."""
     fx = rs_fixtures()
-    url = link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2345', 'g': 1, 'p': {'69': 0}, 'w': {}})
     ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-11-14T09:00')
     rs_go(pg, 'c069'); paper = pg.inner_text('#dk-paper')
     assert 'Becomes official when the Austin City Council canvasses the vote, by Nov 17.' in paper and 'on Nov 12' not in paper, paper[:600]   # the deadline, still ahead
     assert pg.evaluate("getComputedStyle(document.querySelector('.dk-row[data-row=\"c113\"] small')).whiteSpace") == 'normal', 'a rail line is cut with …'
     ctx.close()
-    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-11-05T09:00', url=url)
-    pg.wait_for_timeout(400)
-    assert not pg.query_selector('.dk-rail .dk-fa'), 'a friend’s initials in the rail after the election, with no Hide'
-    ctx.close()
+    for when, shown in (('2026-11-02T09:00', 1), ('2026-11-05T09:00', 0)):   # before the election they show: the check can see them
+        ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when=when, url=link('s', DESK_FRIEND), ballot=False, picks=False)
+        pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')   # as lookup_wide, whatever the count says
+        pg.wait_for_selector('body.dk-app-on', timeout=30000); pg.wait_for_selector('.dk-rail .dk-row', timeout=30000); pg.wait_for_timeout(600)
+        n = pg.locator('.dk-rail .dk-fa').count()
+        assert (n > 0) == bool(shown), (when, n, 'a friend’s initials in the rail after the election, with no Hide' if n else 'the check sees no initials at all')
+        ctx.close()
 
 @results_test
 def a_restore_reaches_pages_left_open(b):
