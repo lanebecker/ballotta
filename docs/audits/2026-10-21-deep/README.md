@@ -103,3 +103,8 @@ CONCERN findings. Each is fixed below with a test that fails without it, or list
 Also from the verification: Williamson's page prints no election date, and its vendor restamps old pages, so the
 polls-close cutoff doesn't protect it; the name carried in each county key (#158) does.
 
+Correction (Oct 22): the Green codes (GRE, G) left a party code on a candidate's name in the state's canvass report,
+but the build's name matching still matched it (one name fits), so that race would not have been held, as first said.
+The parser fix stands, and the test now compares names exactly. The mutation runs then found two weak tests (B34, a
+canvass with a county's counts not yet in; B57, the Green codes); both are tightened, and every mutant is killed:
+back end 61 of 61, page 130 of 130.

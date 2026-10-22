@@ -251,7 +251,7 @@ def a_general_elections_canvass_report_equals_its_feed():
     assert feed['election'] == can['election'] == '2025-11-04' and len(can['contests']) == 1
     for r in feed['contests'].values():
         o = can['contests'][P.norm(r['name'])]; names = [n for n, _ in r['choices']]
-        assert len(names) == 16 and sorted((P.match(n, names), v) for n, v in o['choices']) == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])
+        assert len(names) == 16 and sorted(map(tuple, o['choices'])) == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])   # name for name, exactly: no party code left on a name
 
 @test
 def names_match_only_when_exactly_one_fits():
@@ -557,6 +557,9 @@ def a_county_with_no_file_counts_from_the_canvass_and_final_files_are_official_n
         e = B.build(res=res, mp=mp)[0]['contests']['c147']
         assert (e['state'], e['missing']) == ('partial', ['Lee County']), e
         LEE = {'at': '2026-11-12T10:30', 'votes': {'FOR': 10, 'AGAINST': 5}}
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}}))
+        held, ch = B.build(res=res, mp=mp)                                    # canvassed, Lee's counts not typed in yet
+        assert 'c147' not in held['contests'] and [l for l in ch['lines'] if 'HELD' in l and 'Lee County' in l], ('called official with a county missing', ch['lines'])
         (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': LEE}}}))
         out, ch = B.build(res=res, mp=mp)
         e = out['contests']['c147']

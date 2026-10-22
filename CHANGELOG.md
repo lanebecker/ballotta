@@ -65,8 +65,8 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ### Tests
 - Results: 56 tests (from 44), with fixtures from the Nov 2025 special's SOS feed and canvass report. Back-end mutants
-  B33–B61 (61 in all). Site: 200 tests (from 184). Page mutants R114–R136 (132 in all). `mutate_backend` takes the
-  clone's mutation lock.
+  B33–B61: all 61 killed. Site: 200 tests (from 184). Page mutants R114–R136: all 130 killed (R63 and R119 retired
+  as equivalent, with the reasons in the file). `mutate_backend` takes the clone's mutation lock.
 
 ## [1.4.0] — 2026-10-21
 
