@@ -292,6 +292,10 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 .ro-band .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;border-left:1px solid rgba(255,249,241,.25);padding-left:26px}
 .ro-band .facts p{display:flex;flex-direction:column;gap:3px;font-size:15px;line-height:1.35}
 .ro-band .facts b{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--lilac)}
+@media screen and (min-width:1024px) and (max-width:1279.98px){   /* the facts under the date, three across: side by side they were squeezed (#173) */
+  .ro-band{grid-template-columns:minmax(0,1fr);gap:16px}
+  .ro-band .facts{border-left:none;padding-left:0;border-top:1px solid rgba(255,249,241,.25);padding-top:14px}
+}
 @media screen and (max-width:1023.98px){
   .ro-band{grid-template-columns:minmax(0,1fr);gap:14px;padding:16px 18px}
   .ro-band .t{font-size:28px}
@@ -441,7 +445,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   /* paper and notes stay together, centred: the gap between them grows from 24px to at most 32px (1/3 inch, Lane,
      Oct 15), then only the outer margins grow. Below 1064px of content width all gaps are 24px and the paper narrows;
      from 1064 to 1088px all three grow together to 32px. */
-  .dk-desk{display:grid;grid-template-columns:minmax(0,720px) 320px;justify-content:center;gap:24px;column-gap:clamp(24px,calc((100% - 992px) / 3),32px);align-items:start;min-width:0;padding:28px 24px 64px}
+  .dk-desk{display:grid;grid-template-columns:minmax(0,720px) 320px;justify-content:center;align-content:start;gap:24px;column-gap:clamp(24px,calc((100% - 992px) / 3),32px);align-items:start;min-width:0;padding:28px 24px 64px}   /* align-content: rows never stretch into a gap under the band (#173) */
   .dk-desk.wide{grid-template-columns:minmax(0,1040px);padding:28px 32px 64px}
   .dk-desk.wide .dk-notes{display:none}
   .dk-paper{background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--line2),0 12px 32px rgba(36,26,46,.08);padding:36px 44px;display:flex;flex-direction:column;gap:18px;min-width:0;outline:none}
@@ -932,9 +936,9 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
       <button type="button" data-view="crib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Print your choices</button>
 <!--RESULTS-->
       <p class="dk-vl hidden" id="dk-rl"></p>
-      <button type="button" data-view="rdecide" class="hidden"></button>
-      <button type="button" data-view="rvote" class="hidden"></button>
-      <button type="button" data-view="rcrib" class="hidden"></button>
+      <button type="button" data-view="rdecide" class="hidden" aria-describedby="dk-rl"></button>
+      <button type="button" data-view="rvote" class="hidden" aria-describedby="dk-rl"></button>
+      <button type="button" data-view="rcrib" class="hidden" aria-describedby="dk-rl"></button>
 <!--/RESULTS-->
     </div>
     <div class="dk-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFF9F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="dk-q" type="search" placeholder="Find a race or a name" aria-label="Find a race or a name" autocomplete="off"><span class="kbd" aria-hidden="true">/</span></div>
@@ -1238,7 +1242,7 @@ EVENTS.backup_nudge.action = ONE_OF('shown', 'keep', 'dismiss', 'home');
 /*RESULTS*/
 EVENTS.help_opened.item = ONE_OF('feedback', 'privacy', 'about', 'address', 'clear', 'clearall', 'results');
 EVENTS.results_seen = {};
-EVENTS.view_opened.view = ONE_OF('decide', 'glance', 'vote', 'crib', 'all');
+EVENTS.view_opened.view = ONE_OF('decide', 'glance', 'vote', 'crib', 'all', 'rdecide', 'rvote', 'rcrib');   // the runoff's three (#174)
 /*/RESULTS*/
 const LAYOUT = ONE_OF('phone', 'laptop');
 const dropped = [];  // what clean() removed: kept in this page only, so the tests can prove our own calls never trip it
@@ -1639,7 +1643,7 @@ function whyShown(t) { const a = Array.from(String(t || '').trim()); return a.le
 function cribHTML() {  // the crib sheet, for the phone page and the laptop's crib view alike (#38)
   const withWhy = $('withwhy').checked;
 /*RESULTS*/
-  if (window.results && results.after()) return window.desk && desk.view() === 'rcrib' ? results.runoff.crib(withWhy) : results.crib(withWhy);   // after the election: Print your results, or the runoff's choices
+  if (window.results && results.after()) return window.desk && desk.view()[0] === 'r' && results.runoff.list().length ? results.runoff.crib(withWhy) : results.crib(withWhy);   // after the election: Print your results, or, on the runoff's pages, its choices (#168)
 /*/RESULTS*/
   let html = '<div class="ch"><b style="font-size:15px">My ballot choices</b><span style="font-size:11px">Nov 3, 2026</span></div>', last = '';
   ballot.forEach(b => {/*DESK*/ try { if (window.desk && desk.cribSkip(b.c)) return; } catch (e) {}/*/DESK*/
@@ -1664,7 +1668,7 @@ function whySave() {
   renderCrib();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/
 }
 window.addEventListener('pagehide', whySave);
-window.addEventListener('beforeprint', whySave);  // the crib sheet printed carries the reason just typed (Pass 1)
+window.addEventListener('beforeprint', () => { whySave(); renderCrib(); });  // the sheet printed is this view's, with the reason just typed (Pass 1; Ctrl+P too, #168)
 document.addEventListener('visibilitychange', () => { if (document.hidden) whySave(); });
 $('withwhy').addEventListener('change', renderCrib);
 
@@ -2222,6 +2226,9 @@ $('feedback').addEventListener('click', (e) => { e.preventDefault(); sendFeedbac
 // An iPhone or iPad Home Screen app can't print: window.print() does nothing there (Lane tested it, Oct 18; round-2 #6).
 // Say how instead, under each Print button and on a tap, so the button never silently does nothing.
 const NO_PRINT = 'Printing doesn’t work in a Home Screen app. To print, tap Keep my picks, then Copy link, and open the link in Safari. Print from there.';
+// Keep my picks carries Nov 3's picks only, so the runoff's pages say something else (W109, #168)
+const NO_PRINT_RUNOFF = 'Printing doesn’t work in a Home Screen app, and runoff picks stay in this app. To print them, open ballotta.org in Safari, pick there and print from there.';
+const noPrint = () => /*DESK*/window.desk && desk.view()[0] === 'r' ? NO_PRINT_RUNOFF : /*/DESK*/NO_PRINT;
 function cantPrint() {
   return (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) &&
     (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
@@ -2230,8 +2237,9 @@ function printCrib() {  // from either layout (#38)
   if (cantPrint()) {  // where the voter tapped: the note under the button becomes a warning (a message at the top of the page was off screen on a phone; Pass 1)
     const notes = [...document.querySelectorAll('#noprint, #dk-noprint')];  // by id: a second tap finds them too (Pass 3)
     notes.forEach(n => { n.className = 'status warn'; n.setAttribute('role', 'status'); n.textContent = ''; });
+    const say = noPrint();
     setTimeout(() => {  // set anew after a pause a screen reader can't merge away, so it says it on every tap (Pass 2, 3); then on screen, an iPad in landscape too
-      notes.forEach(n => { n.textContent = NO_PRINT; });
+      notes.forEach(n => { n.textContent = say; });
       const shown = notes.find(n => n.isConnected && n.getClientRects().length); if (shown) shown.scrollIntoView({ block: 'center' });
     }, 150);
     return;
@@ -2273,6 +2281,13 @@ window.addEventListener('storage', (e) => {
   /*DESK*/if (window.desk) try { desk.syncWhy(); } catch (err) {}/*/DESK*/
   quietProgress = true; try { refresh(); } finally { quietProgress = false; }
 });
+/*RESULTS*/
+window.addEventListener('storage', (e) => {   // #165: as #92 does for Nov 3's, for the runoff's picks and reasons
+  if ((e.key !== 'ballotta.runoffPicks' && e.key !== 'ballotta.runoffWhys') || !window.results) return;
+  results.runoff.reset();
+  if (window.desk) try { desk.rsync(); } catch (err) {}
+});
+/*/RESULTS*/
 function clearPicks() { if (confirm('Clear all your picks and reasons?')) { clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
 $('reset').addEventListener('click', clearPicks);
 
@@ -2513,16 +2528,16 @@ const results = (() => {
     const rec = { seq: R.seq, at: day(), v: now }, txt = JSON.stringify(rec);
     if (txt !== seenText) { seenText = txt; LS.set('ballotta.resultsSeen', rec); }   // only when it changed: every write tells the other tabs
   }
-  function top(view) {
+  function top(view, cur) {
     const box = $('rs-top');
     if (!box) return;
-    sinceNow();
     const app = document.body.classList.contains('dk-app-on');
     if (!R || !live() || !app || (!ballot.length && view !== 'all')) { box.classList.add('hidden'); return; }
     if (R.withdrawn) { box.className = 'rs-top'; box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; return; }  // W52
     if (view === 'all') { box.className = 'rs-top rs-band'; box.innerHTML = '<p class="rs-upd">' + esc(updated()) + '</p>' + timeline(); return; }   // (#149)
-    if (view && view[0] === 'r' && runoffs().length) { box.className = 'rs-top rs-band'; box.innerHTML = runoffBand(); return; }   // the runoff's pages: its band
+    if (view && view[0] === 'r' && runoffs().length) { box.className = 'rs-top rs-band'; box.innerHTML = runoffBand(view === 'rdecide' ? cur : ''); return; }   // the runoff's pages: its band
     if (!ballot.some(b => R.contests[b.c.id])) { box.classList.add('hidden'); return; }
+    sinceNow();   // a visit counts only where "Since you last looked" can be shown: the ballot's own pages (#177)
     let h = '';
     if (since) {
       const s = [];
@@ -2626,7 +2641,7 @@ const results = (() => {
     const runs = runsAhead();
     if (runs.length) {
       const first = runs[0], d = entry(first.c.id).runoff_on;
-      h += '<button type="button" class="sx next" data-rs="rdecide" data-c="' + esc(first.c.id) + '"><p class="ov">What’s next</p><div class="row"><p class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · Get ready</span></p></div></button>';   // the runoff's Decide (Phase 4)
+      h += '<button type="button" class="sx next" data-rs="rdecide" data-c="' + esc(first.c.id) + '"><span class="ov">What’s next</span><span class="row"><span class="t">Runoff · ' + esc(dayLong(d)) + '<span>' + runWho(runs) + ' · Get ready</span></span></span></button>';   // the runoff's Decide (Phase 4); spans: a button holds no paragraphs (#172)
     } else if (ballot.some(b => { const e = entry(b.c.id); return e && (e.verdict === 'may_runoff' || (e.verdict === 'runoff' && !isOfficial(e))); })) {
       h += '<div class="sx next"><p class="ov">What’s next</p><div class="row"><p class="t">A runoff is possible<span>If no one wins a majority, the top two meet again in December.</span></p></div></div>';
     } else {
@@ -2645,7 +2660,8 @@ const results = (() => {
       ['Late ballots and local canvasses', 'To ' + md(R.late_until) + ' · cities, schools, county', R.late_until],
       ['State canvass', 'Nov 21 – Dec 7 · state and federal', '2026-12-07']]
       .concat(runs.length ? [['Runoffs', dayLong(runs[runs.length - 1]), runs[runs.length - 1]]] : [])
-      .concat([['The Legislature', 'January · Governor, Lt. Governor', '2027-01-31']]);
+      .concat([['The Legislature', 'January · Governor, Lt. Governor', '2027-01-31']])
+      .sort((a, b) => a[2].localeCompare(b[2]));   // in date order: a runoff can come before the state canvass ends (#177)
     const now = steps.findIndex(s => d <= s[2]);
     return '<section class="rs-tl" aria-label="Where things stand"><div class="hd"><b>Where things stand</b></div><ol style="--n:' + steps.length + '">'
       + steps.map((s, i) => '<li class="' + (i < now || now < 0 ? 'done' : i === now ? 'now' : '') + '"' + (i === now ? ' aria-current="step"' : '') + '><i aria-hidden="true"></i><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>').join('') + '</ol></section>';
@@ -2817,7 +2833,7 @@ const results = (() => {
   }
   /* ----- the runoff (Phase 4, docs/plans/2026-10-21-the-runoff.md): a contest on your ballot headed to an official
      runoff not yet held. Runoff picks and reasons are kept apart from Nov 3's, which never change. ----- */
-  const runoffs = () => ballot.filter(b => upcoming(b.c)).sort((a, b) => entry(a.c.id).runoff_on < entry(b.c.id).runoff_on ? -1 : 1);
+  const runoffs = () => ballot.filter(b => upcoming(b.c)).sort((a, b) => entry(a.c.id).runoff_on.localeCompare(entry(b.c.id).runoff_on));   // same day: ballot order (#166)
   const pair = (c) => { const e = entry(c.id); return e.runoff.length ? e.runoff : e.choices.filter(x => !x[3]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]); };
   let RP = null, RW = null;
   function rstore() {
@@ -2828,27 +2844,31 @@ const results = (() => {
     Object.keys(w).forEach(id => { if (isStr(w[id])) RW[id] = w[id]; });
   }
   function rcur(c) { rstore(); const v = RP[c.id]; return v && (v[0] === '__skip' || pair(c).includes(v[0])) ? v : []; }
-  function rpick(c, val) { rstore(); const v = rcur(c); if (v[0] === val) delete RP[c.id]; else RP[c.id] = [val]; LS.set('ballotta.runoffPicks', RP); }
-  function rwhy(c, t) { rstore(); if (t === undefined) return RW[c.id] || ''; if (t.trim()) RW[c.id] = t; else delete RW[c.id]; LS.set('ballotta.runoffWhys', RW); }
+  // Each write starts from what's saved now, so another tab's runoff picks and reasons are never written over (#165)
+  function rpick(c, val) { RP = null; rstore(); const v = rcur(c); if (v[0] === val) delete RP[c.id]; else RP[c.id] = [val]; LS.set('ballotta.runoffPicks', RP); }
+  function rwhy(c, t) { if (t !== undefined) RP = null; rstore(); if (t === undefined) return RW[c.id] || ''; if (t.trim()) RW[c.id] = t; else delete RW[c.id]; LS.set('ballotta.runoffWhys', RW); }
   const rstate = (c) => { const v = rcur(c); return !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : choice(c, v[0]); };
   const rrow = (c) => { const v = rcur(c); return v.length ? rstate(c) : andList(names(c, pair(c)).map(surname)).replace(' and ', ' or ') + ' · Undecided'; };
   const daysTo = (d) => Math.round((Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) - Date.UTC(+day().slice(0, 4), +day().slice(5, 7) - 1, +day().slice(8, 10))) / 864e5);
-  const area = (c) => { const m = cleanTitle(c).match(/District \d+|Place \d+/); return (c.entity ? c.entity + (m ? ' ' + m[0] : '') : m ? m[0] : cleanTitle(c)); };
+  // Who votes in a runoff: the entity, and its district if the seat has one. A "Place" is an at-large seat: the whole entity (#166).
+  const area = (c) => { const m = cleanTitle(c).match(/District \d+/); return (c.entity ? c.entity + (m ? ' ' + m[0] : '') : m ? m[0] : cleanTitle(c)); };
   // The plum band over the runoff's pages (the canvas's LaptopRunoff).
-  function runoffBand() {
+  function runoffBand(cur) {   // cur: the runoff contest on the page (Decide), so its own voters are named (#166)
     const rs = runoffs(); if (!rs.length) return '';
+    const one = rs.find(b => b.c.id === cur) || (rs.length === 1 ? rs[0] : null);
     const d = entry(rs[0].c.id).runoff_on, n = daysTo(d);
     return '<section class="ro-band" aria-label="The runoff"><div><p class="ov">Runoff</p><p class="t">' + esc(dow(d, true) + ', ' + md(d)) + '</p><p class="when">'
       + (n > 1 ? n + ' days from today' : n === 1 ? 'Tomorrow' : 'Today') + '</p></div><div class="facts">'
       + '<p><b>Early voting</b>Not posted yet</p>'
-      + '<p><b>Who can vote</b>Any registered voter in ' + esc(area(rs[0].c)) + ', whether or not you voted Nov 3</p>'
+      + '<p><b>Who can vote</b>' + (one ? 'Any registered voter in ' + esc(area(one.c)) + ', whether or not you voted Nov 3'
+        : 'In each race, any registered voter in its area (' + esc(rs.map(b => area(b.c)).join('; ')) + '), whether or not you voted Nov 3') + '</p>'   // W108
       + '<p><b>On your ballot</b>' + rs.length + (rs.length === 1 ? ' contest: ' : ' contests: ') + esc(rs.map(b => cleanTitle(b.c)).join('; ')) + '</p></div></section>';
   }
   // The runoff's ballot paper: the Nov 3 result as context, your Nov 3 pick, then a new choice.
   function runoffPaper(c, i, n) {
     const e = entry(c.id), P2 = pair(c), v = rcur(c), was = current(c.id), L = DATA.learn[c.id] || {};
     const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level), t = cleanTitle(c);
-    let h = '<div class="dk-top"><span class="ov">Runoff · ' + esc(where) + ' · contest ' + (i + 1) + ' of ' + n + '</span><span class="note">Saved on this device</span></div>';
+    let h = '<div class="dk-top"><span class="ov">Runoff · ' + esc(where) + ' · contest ' + (i + 1) + ' of ' + n + '</span><span class="note' + (v.length || rwhy(c) ? '' : ' hidden') + '">Saved on this device</span></div>';   // once something is (#173)
     h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
     h += '<p class="dk-meta">Vote for 1 · Runoff, ' + esc(dayLong(e.runoff_on)) + '</p>';
     const tops = P2.map(nm => e.choices.find(x => x[0] === nm)).filter(Boolean), rest = e.choices.filter(x => !P2.includes(x[0]));
@@ -2866,7 +2886,10 @@ const results = (() => {
     h += '<div class="dk-lines">' + P2.map((o, k) => '<div class="dk-lw"><button type="button" class="dk-line" data-rpick="' + esc(o) + '" aria-pressed="' + (v[0] === o) + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(choice(c, o)) + '</span><span class="kbd" aria-hidden="true">' + (k + 1) + '</span></button>' + candLinks(L, o) + '</div>').join('') + '</div>';
     h += '<button type="button" class="skip" data-rpick="__skip" aria-pressed="' + (v[0] === '__skip') + '">Skip this race <span class="kbd" aria-hidden="true">S</span></button>';
     h += '<div class="dk-why"><label for="ro-w">Why? <span>Private unless you choose to share it</span><span class="kbd" aria-hidden="true">R</span></label><textarea id="ro-w" placeholder="Your reasoning, in your words">' + esc(rwhy(c)) + '</textarea></div>';
-    h += '<div class="dk-nav"><button type="button" class="btn secondary small" data-ract="back">← Back to results</button><button type="button" class="btn small" data-ract="vote">Next: where to vote in the runoff <span class="kbd" aria-hidden="true">N</span></button></div>';
+    const rs = runoffs(), k = ' <span class="kbd" aria-hidden="true">N</span>';   // several runoffs: Previous and Next between them (#166)
+    h += '<div class="dk-nav">' + (i > 0 ? '<button type="button" class="btn secondary small" data-ract="prev"><span class="kbd" aria-hidden="true">K</span> Previous</button>'
+      : '<button type="button" class="btn secondary small" data-ract="back">← Back to results</button>')
+      + '<button type="button" class="btn small" data-ract="next">' + (i < n - 1 ? '<span class="dk-nt">Next: ' + esc(cleanTitle(rs[i + 1].c)) + '</span>' + k : 'Next: where to vote in the runoff' + k) + '</button></div>';
     return h;
   }
   function runoffNotes() {
@@ -2895,7 +2918,7 @@ const results = (() => {
     });
     return html + '<p style="font-size:10px;margin-top:10px">Blank = no vote planned. Contests are in ballot order.</p>';
   }
-  const runoff = { list: runoffs, band: runoffBand, paper: runoffPaper, notes: runoffNotes, vote: runoffVote, crib: runoffCrib, pick: rpick, why: rwhy, cur: rcur, pair, row: rrow, state: rstate, reset() { RP = RW = null; }, date: () => { const rs = runoffs(); return rs.length ? dayLong(entry(rs[0].c.id).runoff_on) : ''; } };
+  const runoff = { area, list: runoffs, band: runoffBand, paper: runoffPaper, notes: runoffNotes, vote: runoffVote, crib: runoffCrib, pick: rpick, why: rwhy, cur: rcur, pair, row: rrow, state: rstate, reset() { RP = RW = null; }, date: () => { const rs = runoffs(); return rs.length ? dayLong(entry(rs[0].c.id).runoff_on) : ''; } };
   const paused = () => !!(R && R.withdrawn && live());
   return { start, ribbon, on, paused, runoff, newDay, said, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
 })();
@@ -2999,8 +3022,10 @@ const desk = (() => {
     });
 /*RESULTS*/
     const rs = A ? results.runoff.list() : [];
-    if (rs.length && !ui.q && ui.filter === 'all') html = '<div class="dk-g"><span>Runoff · ' + esc(results.runoff.date()) + '</span><span>' + rs.length + '</span></div>'
-      + rs.map(b => '<button type="button" class="dk-row" data-rrow="' + b.c.id + '"' + (ui.view === 'rdecide' && b.c.id === rcurId() ? ' aria-current="true"' : '') + '><span class="dk-d' + (results.runoff.cur(b.c).length && results.runoff.cur(b.c)[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(results.runoff.row(b.c)) + '</small></span></button>').join('') + html;
+    // the group stays under a filter while a runoff page is open, and a search finds its contests (#173)
+    const rshown = rs.filter(b => ui.view[0] === 'r' || (ui.q ? matches(b) : ui.filter === 'all'));
+    if (rshown.length) html = '<div class="dk-g"><span>Runoff · ' + esc(results.runoff.date()) + '</span><span>' + rs.length + '</span></div>'
+      + rshown.map(b => '<button type="button" class="dk-row" data-rrow="' + b.c.id + '"' + (ui.view === 'rdecide' && b.c.id === rcurId() ? ' aria-current="true"' : '') + '><span class="dk-d' + (results.runoff.cur(b.c).length && results.runoff.cur(b.c)[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b><span class="dk-vh">Runoff: </span>' + esc(cleanTitle(b.c)) + '</b><small>' + esc(results.runoff.row(b.c)) + '</small></span></button>').join('') + html;
 /*/RESULTS*/
     if (A && html) html = results.listSum() + html;
     $('dk-out').innerHTML = html || '<p class="dk-empty">' + (ui.q ? 'Nothing matches “' + esc(ui.q) + '”.' : ui.filter === 'und' ? (A ? 'Nothing on your ballot is too close to call.' : 'Every contest is decided.') : (A ? 'No picks on this device.' : 'No reasons written yet.')) + '</p>';
@@ -3066,18 +3091,22 @@ const desk = (() => {
     if (ui.curAuto && after() && ballot.length) { ui.curAuto = false; ui.cur = ballot[0].c.id; }   // a record starts at the top, not at the first contest without a pick (#146)
     const app = mode(); header();
 /*RESULTS*/
-    try { results.top(ui.view); } catch (e) {}
+    try { results.top(ui.view, ui.view === 'rdecide' ? rcurId() : ''); } catch (e) {}
 /*/RESULTS*/
     if (!ballot.length && !(app && ui.view === 'all')) /*PHONE*/{ if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/return;/*PHONE*/ }/*/PHONE*/
     if (ballot.length && idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
     if (ui.view === 'all' && !after()) ui.view = 'decide';
     if (after() && ui.view === 'vote') ui.view = 'decide';   // Nov 3's Where to vote isn't in the menu after the election
+    if (ui.view[0] === 'r') {   // no runoff to come (or results rolled back, #176): back to the ballot
+      let runoff = false;
 /*RESULTS*/
-    if (ui.view[0] === 'r' && !(after() && results.runoff.list().length)) ui.view = 'decide';   // no runoff to come: back to results
+      runoff = after() && results.runoff.list().length > 0;
 /*/RESULTS*/
+      if (!runoff) ui.view = 'decide';
+    }
     if (ui.view === 'all') railAll(); else rail();
     P().dataset.c = ui.view === 'decide' && ballot.length ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
-    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' || ui.view === 'all' || ui.view === 'rvote' ? ' wide' : '');
+    $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' || ui.view === 'all' ? ' wide' : '');   // the runoff's Where to vote keeps its notes and the band its width (#173)
     ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib, all: viewAll/*RESULTS*/, rdecide: viewRDecide, rvote: viewRVote, rcrib: viewRCrib/*/RESULTS*/ })[ui.view]();
     if (app && friend && /*PHONE*/(true || /*/PHONE*/WIDE.matches/*PHONE*/)/*/PHONE*/ && ui.cmpFor !== friend) {
       // Counted when at least one of their races is on your ballot: once per page for links without a code, once per
@@ -3154,13 +3183,18 @@ const desk = (() => {
 /*RESULTS*/
   /* ----- the runoff's pages (Phase 4): Decide, Where to vote and Print, for the runoff contests only ----- */
   function rcurId() { const rs = results.runoff.list(); return rs.some(b => b.c.id === ui.rcur) ? ui.rcur : rs.length ? rs[0].c.id : ''; }
-  function rgo(cid, focus) { ui.rcur = cid; ui.view = 'rdecide'; save(); render(); if (WIDE.matches) window.scrollTo(0, 0); if (focus) P().focus({ preventScroll: true }); }
+  function rgo(cid, focus) {
+    ui.rcur = cid; ui.view = 'rdecide'; save(); render(); if (WIDE.matches) window.scrollTo(0, 0);
+    if (!focus) return;
+    P().focus({ preventScroll: true });
+    const b = results.runoff.list().find(x => x.c.id === cid); if (b) say({ text: cleanTitle(b.c) + ': ' + results.runoff.state(b.c) });   // where it went (#172)
+  }
   function viewRDecide() {
     const rs = results.runoff.list(), id = rcurId(), i = rs.findIndex(b => b.c.id === id), c = rs[i].c;
     P().innerHTML = results.runoff.paper(c, i, rs.length);
     P().querySelectorAll('[data-rpick]').forEach(btn => btn.addEventListener('click', () => { results.runoff.pick(c, btn.dataset.rpick); rrefresh(); }));
     const ta = $('ro-w'); fit(ta);
-    ta.addEventListener('input', () => { fit(ta); results.runoff.why(c, ta.value); });
+    ta.addEventListener('input', () => { fit(ta); results.runoff.why(c, ta.value); const sv = P().querySelector('.dk-top .note'); if (sv) sv.classList.toggle('hidden', !(results.runoff.cur(c).length || ta.value.trim())); });
     P().querySelectorAll('[data-ract]').forEach(btn => btn.addEventListener('click', () => ract(btn.dataset.ract)));
     N().innerHTML = results.runoff.notes();
   }
@@ -3170,14 +3204,31 @@ const desk = (() => {
     if (!b) { render(); return; }   // the runoff has gone by (a page left open past the day): back to results (#164)
     const c = b.c, v = results.runoff.cur(c);
     P().querySelectorAll('[data-rpick]').forEach(btn => btn.setAttribute('aria-pressed', String(v[0] === btn.dataset.rpick)));
+    const sv = P().querySelector('.dk-top .note'); if (sv) sv.classList.toggle('hidden', !(v.length || results.runoff.why(c)));
     rail();
   }
-  function ract(a) { if (a === 'back') { ui.view = 'decide'; save(); render(); } else if (a === 'vote') { ui.view = 'rvote'; save(); render(); if (WIDE.matches) window.scrollTo(0, 0); } }
+  // Another tab saved runoff picks or reasons: show them here; a reason box being typed in keeps its own text (#165)
+  function rsync() {
+    if (ui.view === 'rdecide') {
+      rrefresh();
+      const ta = $('ro-w'), b = results.runoff.list().find(x => x.c.id === rcurId());
+      if (ta && b && document.activeElement !== ta) { ta.value = results.runoff.why(b.c); fit(ta); }
+    } else if (ui.view === 'rcrib') render();
+    else rail();
+  }
+  function ract(a) {
+    const rs = results.runoff.list(), i = rs.findIndex(b => b.c.id === rcurId());
+    if (a === 'next' && i >= 0 && i < rs.length - 1) { rgo(rs[i + 1].c.id, true); return; }   // the next runoff contest (#166)
+    if (a === 'prev') { if (i > 0) rgo(rs[i - 1].c.id, true); return; }
+    if (a === 'next') a = 'vote';
+    if (a === 'back') { ui.view = 'decide'; save(); render(); } else if (a === 'vote') { ui.view = 'rvote'; save(); render(); if (WIDE.matches) window.scrollTo(0, 0); }
+    if (a === 'back' || a === 'vote') P().focus({ preventScroll: true });   // focus stays on the paper, not the page (#172)
+  }
   function viewRVote() { P().innerHTML = results.runoff.vote(); N().innerHTML = results.runoff.notes(); }
   function viewRCrib() {
     P().innerHTML = '<span class="ov">Runoff · ' + esc(results.runoff.date()) + '</span><h1>Print your choices</h1><p class="lead">Phones must be off in the room where you vote in Texas. Printed notes are allowed, so print this and bring it.</p><div class="dk-page" id="dk-page">' + results.runoff.crib($('withwhy').checked) + '</div>';
     N().innerHTML = '<section><h3>Print options</h3><div class="sw"><label for="ro-cw">Include my reasons</label><input type="checkbox" role="switch" id="ro-cw"' + ($('withwhy').checked ? ' checked' : '') + '></div></section>'
-      + '<button class="btn" type="button" data-act="print">Print your choices</button><p class="note">The printout has your runoff picks and, if you choose, your reasons. Nothing else.</p>';
+      + '<button class="btn" type="button" data-act="print">Print your choices</button><p class="note"' + (cantPrint() ? ' id="dk-noprint" role="status">' + NO_PRINT_RUNOFF : '>The printout has your runoff picks and, if you choose, your reasons. Nothing else.') + '</p>';
     $('ro-cw').addEventListener('change', () => { $('withwhy').checked = $('ro-cw').checked; renderCrib(); viewRCrib(); });
     N().querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => act(btn.dataset.act)));
   }
@@ -3495,13 +3546,14 @@ const desk = (() => {
   $('dk-share').addEventListener('click', openShare);
   $('dk-keep').addEventListener('click', openKeep);
   $('dk-print').addEventListener('click', (e) => {  // opens the crib view, where the print options are (Lane, Oct 15)
-    if (ui.view !== 'crib') { setView('crib'); track('view_opened', { view: 'crib' }); }
+    const to = ui.view[0] === 'r' ? 'rcrib' : 'crib';   // on the runoff's pages, its own Print (#168)
+    if (ui.view !== to) { setView(to); track('view_opened', { view: to }); }
     const pr = N().querySelector('[data-act="print"]');
     // A keyboard press or a touch (a screen reader's double-tap on a tablet is a touch) lands on the real Print button,
     // scrolled on screen (below the paper at 1024–1279px); a mouse click leaves focus on Print… (a later Space or Enter
     // just moves it to the real button). A held key's repeats are ignored there, so holding Enter on Print… never prints
     // (Pass 2, 3, 4). Every activation says where it went (#46).
-    say({ text: (after() ? 'Print your results' : 'Crib sheet') + ': print options, then the Print button.' });   // (#148)
+    say({ text: (to === 'rcrib' ? 'Print your choices' : after() ? 'Print your results' : 'Crib sheet') + ': print options, then the Print button.' });   // (#148)
     if (pr && (e.detail === 0 || e.pointerType === 'touch' || e.pointerType === 'pen')) { pr.focus({ preventScroll: true }); pr.scrollIntoView({ block: 'nearest' }); }
   });
   $('dk-back').addEventListener('click', () => { ui.landing = false; render(); });
@@ -3543,7 +3595,8 @@ const desk = (() => {
       if (/^[1-9]$/.test(k) && P2[+k - 1]) { e.preventDefault(); results.runoff.pick(c, P2[+k - 1]); rrefresh(); say({ text: cleanTitle(c) + ': ' + results.runoff.state(c) }); }
       else if (k === 's') { e.preventDefault(); results.runoff.pick(c, '__skip'); rrefresh(); say({ text: cleanTitle(c) + ': ' + results.runoff.state(c) }); }
       else if (k === 'r') { e.preventDefault(); $('ro-w').focus(); }
-      else if (k === 'n') { e.preventDefault(); ract('vote'); }
+      else if (k === 'n' || k === 'j') { e.preventDefault(); ract('next'); }
+      else if (k === 'k') { e.preventDefault(); ract('prev'); }
       return;
     }
 /*/RESULTS*/
@@ -3571,7 +3624,7 @@ const desk = (() => {
   return {
     render, goTo: (cid) => go(cid, true), after, view: () => ui.view,
 /*RESULTS*/
-    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'),
+    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'), rsync,
 /*/RESULTS*/
     // A redraw the voter didn't ask for (new results arriving): the folds they had open, their place on the page and the
     // control they were on come back as they were, and the update is said politely (#140).
@@ -3580,9 +3633,10 @@ const desk = (() => {
       [P(), N()].forEach((el, k) => el && el.querySelectorAll('details').forEach((d, i) => { if (d.open) open.push([k, i]); }));
       const key = (el) => el.tagName + (el.id ? '#' + el.id : '') + JSON.stringify(Object.entries(el.dataset)) + (el.getAttribute('href') || '');
       const mine = f && f !== document.body && app.contains(f), k = mine ? key(f) : '', nth = mine ? [...app.querySelectorAll(f.tagName)].filter(x => key(x) === k).indexOf(f) : -1;
+      let sel = null; try { if (mine && typeof f.selectionStart === 'number') sel = [f.selectionStart, f.selectionEnd, f.selectionDirection]; } catch (e) {}   // a box's caret (#177)
       render();
       open.forEach(([b, i]) => { const d = [P(), N()][b] && [P(), N()][b].querySelectorAll('details')[i]; if (d) d.open = true; });
-      if (mine && !app.contains(f)) { const g = [...app.querySelectorAll(f.tagName)].filter(x => key(x) === k)[nth]; if (g) g.focus({ preventScroll: true }); }
+      if (mine && !app.contains(f)) { const g = [...app.querySelectorAll(f.tagName)].filter(x => key(x) === k)[nth]; if (g) { g.focus({ preventScroll: true }); if (sel) try { g.setSelectionRange(...sel); } catch (e) {} } }
       window.scrollTo(0, y);
       if (text) say({ text });
     },

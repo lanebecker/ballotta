@@ -235,7 +235,9 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 12. **Anything shown is wrong and the cause isn't clear: the kill switch.** Set `"withdrawn": true` in
     `source/results/official.json` on `results/next` and merge the pull request it opens (a kill switch is never
     numbers-only, so it waits for you: merge at once). Every result disappears from every ballot with "Results are
-    paused…" (W52). Set it back to `false` to restore. For a fault in the page's results code, not the data, roll back
+    paused…" (W52). It takes about 15–25 minutes to reach phones (the run, Pages, the CDN). While paused, what voters
+    last saw is kept in `source/results/ledger.json` (never published), so a restore keeps each result's
+    corrections and "since you last looked". Set it back to `false` to restore. For a fault in the page's results code, not the data, roll back
     with `RESULTS_LIVE = False` in `source/build_site.py`: a release (the steps above).
     **If the Results workflow itself won't run**: edit `results.json` on `main` in GitHub (pencil icon) and replace
     it all with `{"seq": N, "election": "2026-11-03", "withdrawn": true, "late_until": "2026-11-17", "contests": {}}`,

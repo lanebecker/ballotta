@@ -315,6 +315,12 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     official = load(res / "official.json", {}) or {}
     excluded = {x["path"]: x for x in load(res / "excluded.json", []) or []}
     ZONE[0] = mp["meta"]["sos_time_zone"]
+    # While paused, what voters last saw is kept, unpublished, in ledger.json, so a restore carries on from it: its
+    # corrections, each contest's "changed", its posted times (the deep audit, #153). Written as the pause begins.
+    ledger = res / "ledger.json"
+    if official.get("withdrawn") and not prev.get("withdrawn"):
+        ledger.write_text(json.dumps(prev["contests"], ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    seen = dict(prev, contests=load(ledger, {}) or {}) if prev.get("withdrawn") and not official.get("withdrawn") else prev
     held = []   # what couldn't be used this run, for the pull request: Lane fixes it, and nothing else waits (#153)
     reports = {}
     if not official.get("withdrawn"):   # the kill switch is read first: no file can hold up a withdrawal (#153)
@@ -324,10 +330,10 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     if not official.get("withdrawn"):
         for cid, m in mp["contests"].items():
             try:
-                e = entry(cid, key[cid], m, reports, official, mp["canvassers"], prev["contests"].get(cid))
+                e = entry(cid, key[cid], m, reports, official, mp["canvassers"], seen["contests"].get(cid))
             except Problem as p:
                 held.append(f"{key[cid]['title']} ({cid}): {p} (shown as last published)")
-                e = prev["contests"].get(cid)   # the last published entry stands; or not shown, if there was none
+                e = seen["contests"].get(cid)   # the last published entry stands; or not shown, if there was none
             if e is not None:
                 contests[cid] = e
         notes(contests, mp)
@@ -343,8 +349,8 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     out = {"seq": prev["seq"], "election": "2026-11-03", "withdrawn": bool(official.get("withdrawn")),
            "late_until": official.get("late_until", mp["meta"]["late_until"]), "contests": contests}
     lines, verdict_changed, fresh = [], False, 0
-    for cid in sorted(set(contests) | set(prev["contests"])):
-        e, old = contests.get(cid), prev["contests"].get(cid)
+    for cid in sorted(set(contests) | set(seen["contests"])):
+        e, old = contests.get(cid), seen["contests"].get(cid)
         title = key[cid]["title"]
         if e is None:
             if old is not None:
@@ -384,7 +390,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     if out["withdrawn"] != prev.get("withdrawn"):
         verdict_changed = True
         lines.insert(0, "- RESULTS WITHDRAWN (the kill switch): every result is hidden" if out["withdrawn"] else "- Results restored (the kill switch is off)")
-    bad = check_results.check(out, key, prev if prev.get("contests") or prev.get("seq") else None)
+    bad = check_results.check(out, key, dict(seen, seq=prev["seq"]) if seen.get("contests") or prev.get("seq") else None)
     if bad:
         raise Problem("the built file fails the check: " + "; ".join(bad[:10]))
     return out, {"verdict_changed": verdict_changed, "seq": out["seq"], "lines": lines,

@@ -112,7 +112,7 @@ jobs:
           if git rev-parse --verify --quiet "origin/$NEXT" >/dev/null; then git checkout -q -B next "origin/$NEXT"; git merge -q --no-edit origin/main; else git checkout -q -B next origin/main; fi
           if [ -s "$A/results.patch" ]; then
             # the build job runs code from results/next and packages from PyPI: only results may come back from it (#159)
-            if git apply --numstat "$A/results.patch" | cut -f3- | grep -vE '^(source/results/(inbox|raw|rejected)/|results\.json$)'; then echo "::error::the patch touches files other than results"; exit 1; fi
+            if git apply --numstat "$A/results.patch" | cut -f3- | grep -vE '^(source/results/(inbox|raw|rejected)/|source/results/ledger\.json$|results\.json$)'; then echo "::error::the patch touches files other than results"; exit 1; fi
             git apply --index --binary "$A/results.patch"
           fi
           if git diff --cached --quiet "origin/main" -- results.json && git diff --quiet "origin/main" -- results.json; then echo "results=same" >> "$GITHUB_OUTPUT"; else echo "results=new" >> "$GITHUB_OUTPUT"; fi

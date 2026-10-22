@@ -10,6 +10,8 @@ How results reach the ballot is in `docs/plans/2026-10-20-results.md`; the daily
   a `.why.txt` beside it. The pull request lists each one until it's deleted.
 - `raw/<source>/<posted time>-<hash>/`: every file, as fetched or downloaded, filed by the time posted inside it.
   Never edited or deleted; a bad file goes in `excluded.json`.
+- `ledger.json`: written by the build when the kill switch goes on: what voters last saw, so a restore carries on
+  from it. Never published; leave it be.
 - `excluded.json`: `[{"path": "raw/...", "reason": "...", "date": "YYYY-MM-DD", "contests": ["c071"]}]`. A
   published contest that read from it, and reads differently without it, is marked corrected on that date.
 - `official.json`: the canvasses, written by hand as each body canvasses:

@@ -77,6 +77,12 @@ def scene(name="mixed"):
         r.update(state="official", verdict="runoff", runoff=[r["choices"][0][0], r["choices"][1][0]], runoff_on="2026-12-12", changed=out["seq"])
         r["canvass"]["done"] = "2026-11-13"
         return out
+    if name == "runoffs":   # two runoffs on the ballot, Dec 12: AISD District 1 and Austin's District 8 (test shapes only:
+        # a two-name race can't really go to a runoff, but the test ballot's majority races have two names)
+        out = scene("runoff"); r = out["contests"]["c069"]
+        r.update(state="official", verdict="runoff", runoff=[r["choices"][1][0], r["choices"][0][0]], runoff_on="2026-12-12", changed=out["seq"])
+        r["canvass"].update(on=None, done="2026-11-12")
+        return out
     seq = 5 if name == "official" else 2
     for v in e.values():
         v["changed"] = min(v["changed"], seq)

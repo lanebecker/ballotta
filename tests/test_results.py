@@ -434,6 +434,16 @@ def the_kill_switch_hides_everything_and_says_so():
         one, _ = s.build(); s.official(withdrawn=True)
         out, ch = s.build(prev=one)
         assert out['withdrawn'] and out['contests'] == {} and out['seq'] == 2 and ch['verdict_changed'] and 'WITHDRAWN' in ch['lines'][0]
+        # #153: a pause and a restore leave the record as it was: a correction still says so, "changed" doesn't jump
+        one['contests']['c071']['corrected'] = '2026-11-12'
+        paused, _ = s.build(prev=one); paused, _ = s.build(prev=paused)      # two runs while paused
+        assert paused['contests'] == {} and 'c071' not in (s.res / 'results.json').read_text() if (s.res / 'results.json').exists() else True
+        s.official(withdrawn=False)
+        back, ch = s.build(prev=paused)
+        c = back['contests']['c071']
+        assert (c['corrected'], c['changed']) == ('2026-11-12', one['contests']['c071']['changed']), (c['corrected'], c['changed'])
+        assert not back['withdrawn'] and back['seq'] == paused['seq'] + 1 and 'Results restored' in ch['lines'][0]
+        assert not [l for l in ch['lines'] if '(c071)' in l], ('the restore reads as a change in every contest', ch['lines'])
     finally: s.close()
 
 @test
@@ -827,7 +837,7 @@ def the_workflows_keep_what_the_audit_fixed():
     didn't move, and decides "numbers only" itself too; the build job's packages are pinned by hash (the same PDF
     libraries as requirements.txt); and Pages takes one page from the demo's branch."""
     y = (ROOT / '.github/workflows/results.yml').read_text(encoding='utf-8')
-    for must in ('--match-head-commit "$HEAD"', "grep -vE '^(source/results/(inbox|raw|rejected)/|results\\.json$)'",
+    for must in ('--match-head-commit "$HEAD"', "grep -vE '^(source/results/(inbox|raw|rejected)/|source/results/ledger\\.json$|results\\.json$)'",
                  '!= "$(cat "$A/base.txt")"', 'c["verdict_changed"] or moved', '--require-hashes -r requirements-results.txt',
                  'git diff --cached --binary --no-renames', '--report "$RUNNER_TEMP/fetch.json"', '--fetch "$RUNNER_TEMP/fetch.json"'):
         assert must in y, must
