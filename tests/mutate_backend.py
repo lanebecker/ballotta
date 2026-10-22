@@ -4,7 +4,7 @@ one. No browser; about two minutes.
 
     python3 tests/mutate_backend.py          # from the repo root; restores every file, even when stopped
 """
-import pathlib, signal, subprocess, sys
+import os, pathlib, signal, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 S = ROOT / "source"
@@ -77,9 +77,22 @@ M = [
 ORIG = {}
 
 
+LOCK = ROOT / ".mutate-lock"   # the page runners' lock (mutate_desk.take_lock, #79): one runner per clone, of any kind
+
+
+def take_lock():
+    try:
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        sys.exit(f"{LOCK} is there: another mutation run is going in this clone, or one was killed (check git status "
+                 "and git diff for a mutant left on disk, then delete the lock)")
+    os.write(fd, str(os.getpid()).encode()); os.close(fd)
+
+
 def restore(*_):
     for f, text in ORIG.items():
         f.write_text(text, encoding="utf-8")
+    LOCK.unlink(missing_ok=True)
     if _:
         sys.exit("stopped: files restored")
 
@@ -88,9 +101,11 @@ def main():
     for name, f, a, z in M:
         n = f.read_text(encoding="utf-8").count(a)
         assert n == 1, (name, "anchor found", n, "times in", f.name)
+    take_lock()
     signal.signal(signal.SIGINT, restore); signal.signal(signal.SIGTERM, restore)
     base = subprocess.run([sys.executable, str(ROOT / "tests/test_results.py")], capture_output=True, text=True)
-    assert base.returncode == 0, "the results tests must pass unmutated first:\n" + base.stdout[-2000:]
+    if base.returncode:
+        restore(); sys.exit("the results tests must pass unmutated first:\n" + base.stdout[-2000:])
     survived = []
     try:
         for name, f, a, z in M:
