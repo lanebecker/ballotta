@@ -4848,8 +4848,11 @@ def results_show_on_the_phone_ballot(b):
     assert pg.errs == [], pg.errs
     # #148: the results' small links are full-size targets on a phone
     pg.evaluate("desk.openAll()"); pg.wait_for_timeout(200)
-    hs = pg.evaluate("[...document.querySelectorAll('#dk-paper .dk-link[data-rs]')].map(a => a.getBoundingClientRect().height)")
+    hs = pg.evaluate("[...document.querySelectorAll('#dk-paper .dk-link[data-rs]')].filter(a => !a.closest('.dk-meta')).map(a => a.getBoundingClientRect().height)")
     assert hs and min(hs) >= 44, hs
+    # a link inside a sentence is exempt (WCAG 2.5.8's inline exception), and a 44px box there broke the lines (#177)
+    inl = pg.evaluate("(() => { const a = document.querySelector('#dk-paper .dk-meta .dk-link[data-rs]'); return [a.getBoundingClientRect().height, parseFloat(getComputedStyle(a.closest('p')).lineHeight)]; })()")
+    assert inl[0] <= inl[1] * 1.3, inl
     assert pg.inner_text('#ph-count').endswith(' official') and pg.inner_text('#ph-count') != '0 of 11 official', ('All Travis County results keeps its own count (#150)', pg.inner_text('#ph-count'))
     assert not pg.is_visible('#ph-next'), 'no Next to a ballot step from All Travis County results (#150)'
     ctx.close()
@@ -5499,6 +5502,23 @@ def lanes_runoff_calls_oct_21_evening(b):
     sheet = pg.eval_on_selector('#dk-page', 'e => e.textContent')
     assert 'Undecided' in sheet and '______' not in sheet, sheet
     assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def small_after_election_fixes(b):
+    """#177: a canvass date already past read as still to come ("canvasses the vote on Nov 12" on Nov 14); a friend's
+    initials stayed in the rail with no Hide (the results paper has no friend's picks); a rail line cut off its
+    "· Unofficial"."""
+    fx = rs_fixtures()
+    url = link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2345', 'g': 1, 'p': {'69': 0}, 'w': {}})
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-11-14T09:00')
+    rs_go(pg, 'c069'); paper = pg.inner_text('#dk-paper')
+    assert 'Becomes official when the Austin City Council canvasses the vote, by Nov 17.' in paper and 'on Nov 12' not in paper, paper[:600]   # the deadline, still ahead
+    assert pg.evaluate("getComputedStyle(document.querySelector('.dk-row[data-row=\"c113\"] small')).whiteSpace") == 'normal', 'a rail line is cut with …'
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when='2026-11-05T09:00', url=url)
+    pg.wait_for_timeout(400)
+    assert not pg.query_selector('.dk-rail .dk-fa'), 'a friend’s initials in the rail after the election, with no Hide'
     ctx.close()
 
 @results_test

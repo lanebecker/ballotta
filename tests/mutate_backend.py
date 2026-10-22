@@ -62,6 +62,7 @@ M = [
     ("B53 the map compared as text", MAP, 'json.loads(OUT.read_text(encoding="utf-8")) != json.loads(new)', 'OUT.read_text(encoding="utf-8") != new'),
     ("B54 a hand-set registration dropped", MAP, '        if was.get("registered"):', '        if False:'),
     ("B56 numbers waiting behind a verdict not counted", BUILD, '            numbers += 1 ', '            numbers += 0 '),
+    ("B57 the SOS's Green code unknown", PARSE, '"GRN", "GRE", "G", ', '"GRN", '),
     ("B55 a restore forgets what voters saw before the pause", BUILD, 'seen = dict(prev, contests=load(ledger, {}) or {}) if prev.get("withdrawn")', 'seen = prev if True or prev.get("withdrawn")'),
     ("B27 seq never moves", BUILD, '        out["seq"] = prev["seq"] + 1\n', '        out["seq"] = prev["seq"]\n'),
     ("B28 a generic write-in line counted", BUILD, 'if P.norm(printed) in GENERIC_WRITE_IN:', "if False:"),

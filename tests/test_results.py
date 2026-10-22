@@ -243,6 +243,17 @@ def the_sos_canvass_report_equals_the_feed_name_by_name():
         assert got == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])   # wrapped and shortened names too
 
 @test
+def a_general_elections_canvass_report_equals_its_feed():
+    """#163: the canvass parser had only read a primary runoff's report. The Nov 4, 2025 special for U.S. House
+    District 18 (SOS election 51742, fetched Oct 21, 2026): a general election's report, 16 names on one race,
+    with the SOS's own party code for Green (GRE), which stuck to a name until the parser knew it."""
+    feed, can = P.parse_sos(fx('sos-51742.json')), P.parse_sos_canvass(fx('sos-51742-canvass.pdf'))
+    assert feed['election'] == can['election'] == '2025-11-04' and len(can['contests']) == 1
+    for r in feed['contests'].values():
+        o = can['contests'][P.norm(r['name'])]; names = [n for n, _ in r['choices']]
+        assert len(names) == 16 and sorted((P.match(n, names), v) for n, v in o['choices']) == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])
+
+@test
 def names_match_only_when_exactly_one_fits():
     assert P.match('JESUS GARCIA, JR', ['JESUS TOMAS GARCIA, JR', 'NOE GARZA']) == 'JESUS TOMAS GARCIA, JR'
     assert P.match('greg abbott (i)', ['GREG ABBOTT', 'GINA HINOJOSA']) == 'GREG ABBOTT'

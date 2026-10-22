@@ -20,7 +20,7 @@ LABELS = {"travis": "Travis County", "bastrop": "Bastrop County", "williamson": 
           "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State’s canvass",   # apart, so the state
           # canvass report, printed before the feed's last update, isn't read as the feed going back in time (#163)
           "caldwell": "Caldwell County", "lee": "Lee County"}       # ACC only; no file ever comes from them (Task 1 finding 11)
-PARTIES = {"REP", "DEM", "LIB", "GRN", "IND", "NON", "W", "WI", "W-I"}
+PARTIES = {"REP", "DEM", "LIB", "GRN", "GRE", "G", "IND", "NON", "W", "WI", "W-I"}   # GRE and G: the SOS's own codes for Green (#163, the Nov 2025 special)
 
 
 class BadFile(ValueError):
