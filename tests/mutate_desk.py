@@ -218,7 +218,7 @@ M = [
  ('A12 rail initial read out', PREV, ' aria-hidden="true" title="\' + possessive() + \' pick: \' + fp', ' title="\' + possessive() + \' pick: \' + fp', ['desk_friend_pick_in_rail_has_a_name']),
  ('A13 extra pick accepted', PREV, '    if (!cur.includes(val) && cur.length >= n) { limitNote(cid, n); return false; }  // already N picks: say why nothing changed (#33)\n', '', ['phone_extra_pick_is_explained']),
  ('A14 extra pick refused silently', PREV, '{ limitNote(cid, n); return false; }', '{ return false; }', ['phone_extra_pick_is_explained']),
- ('A15 limit note never clears', PREV, '  limitNote(cid, 0);\n  picks[cid] = cur;', '  picks[cid] = cur;', ['phone_extra_pick_is_explained']),
+ ('A15 limit note never clears', PREV, '  limitNote(cid, 0);\n  picks = cleanPicks(', '  picks = cleanPicks(', ['phone_extra_pick_is_explained']),
  ('A16 refused key pick announced', PREV, 'if (pick(b.c.id, o) !== false) announce(b.c);', 'pick(b.c.id, o); announce(b.c);', ['desk_extra_pick_is_explained', 'phone_extra_pick_is_explained']),
  ('A18 no check for a new day', PREV, 'setInterval(dayCheck, 60000);\n', '', ['dates_move_on_in_a_tab_left_open']),
  ('A19 chosen period overridden', PREV, '  if (!periodChosen) period = defaultPeriod();\n', '  period = defaultPeriod();\n', ['dates_move_on_in_a_tab_left_open']),
@@ -436,7 +436,7 @@ M = [
  ('W5l comments count', MD_SELF, ' for t in toks if t.type != tokenize.COMMENT)\n', ' for t in toks)\n', ['mutation_runner_runs_alone']),
  ('W5m a helper passes as a target', MD_SELF, '            if t not in fns or t not in registered: bad.append(f\'{name}: no test named {t}\')\n', '            if t not in fns: bad.append(f\'{name}: no test named {t}\')\n', ['mutation_runner_runs_alone']),
  ("W6a another tab's picks are ignored", PREV, "  if (e.key !== 'ballotta.picks' && e.key !== 'ballotta.whys') return;\n", '  return;\n', ['two_tabs_stay_in_step']),
- ('W6b a reason being typed is lost to the other tab', PREV, '  if (typing) whys[typing[0]] = typing[1].value;\n', '', ['two_tabs_stay_in_step']),
+ ('W6b a reason being typed is lost to the other tab', PREV, '  if (typing) typing.forEach((box, cid) => { whys[cid] = box.value; });  // every box waiting to be saved, not just the last (#119)\n', '', ['two_tabs_stay_in_step']),
  ("W6c the other tab's picks are not shown", PREV, "document.querySelectorAll('[data-c][data-pick]').forEach(btn => { const on", '[].forEach(btn => { const on', ['two_tabs_stay_in_step']),
  ('W6d the open reason box keeps the old reason', PREV, "if (ta && ui.view === 'decide') { ta.value = whys[ui.cur] || ''; fit(ta); }", '', ['two_tabs_stay_in_step']),
  ('W6f the summary and counts are not redrawn', PREV, '  quietProgress = true; try { refresh(); } finally { quietProgress = false; }\n});', '});', ['two_tabs_stay_in_step']),
@@ -451,7 +451,7 @@ M = [
  ('W6o shouted party names pass', PREV, '  return shouted || forms.some(', '  return forms.some(', ['share_names_block_lookalikes_and_nicknames']),
  ('W6p a shouted party at the start blocks real names', PREV, '/.(gop|dems|rnc|dnc)$/.test(fold(latin(w)))', '/(gop|dems|rnc|dnc)/.test(fold(latin(w)))', ['share_names_block_lookalikes_and_nicknames']),
  ('W6q the note is not tied to the box', PREV, ' aria-describedby="sharename-no"', '', ['a_refused_share_name_is_said_to_the_sender']),
- ('W6r the printout misses the reason just typed', PREV, "window.addEventListener('beforeprint', whySave);", '', ['reasons_are_saved_when_typing_pauses']),
+ ('W6r the printout misses the reason just typed', PREV, "window.addEventListener('beforeprint', () => { whySave(); renderCrib(); });", "window.addEventListener('beforeprint', () => { renderCrib(); });", ['reasons_are_saved_when_typing_pauses']),
  ('W6t a shouted name ending in dem is refused', PREV, '/.(gop|dems|rnc|dnc)$/.test(fold(latin(w)))', '/.(gop|dems?|rnc|dnc)$/.test(fold(latin(w)))', ['share_names_block_lookalikes_and_nicknames']),
  ('W6u a name checked only once', PREV, "const name = once && safeName(once) === once ? once : '';", 'const name = once;', ['a_refused_share_name_is_said_to_the_sender']),
  ('W6v the note shows while typing', PREV, "if (!on || document.activeElement !== $('sharename')) say(); else nameNoteTimer = setTimeout(say, 700);", 'say();', ['a_refused_share_name_is_said_to_the_sender']),
@@ -459,12 +459,12 @@ M = [
  ('W6x the other tab clearing leaves a pending reason', PREV, '{ clearTimeout(whyTimer); whyTyping = null; location.replace(location.pathname); } });', '{ location.replace(location.pathname); } });', ['two_tabs_stay_in_step']),
  ('W6z clearing here leaves a pending reason', PREV, '  clearTimeout(whyTimer); whyTyping = null;  // a reason waiting to be saved must not come back on the way out (Pass 1)\n', '', ['reasons_are_saved_when_typing_pauses']),
  ('W6aa At a glance is not redrawn', PREV, '        render();\n        if (mine) {', '        if (mine) {', ['two_tabs_stay_in_step']),
- ('W6ac a reason is written back after a clear', PREV, "if (LS.get('ballotta.ballot', null) !== null) LS.set('ballotta.whys', whys);", "LS.set('ballotta.whys', whys);", ['reasons_are_saved_when_typing_pauses']),
+ ('W6ac a reason is written back after a clear', PREV, "if (LS.get('ballotta.ballot', null) !== null) { const w = readWhys();", "if (true) { const w = readWhys();", ['reasons_are_saved_when_typing_pauses']),
  ('W6ad the redraw takes the keyboard away', PREV, '        if (mine) { const g = [...P().querySelectorAll(f.tagName)].filter(x => key(x) === k)[nth]; if (g) g.focus({ preventScroll: true }); }\n', '', ['two_tabs_stay_in_step']),
  ('W6ae a cut name ends in a space', PREV, 'trim()).trim();  // cut, then trim again (Pass 2)', 'trim());  // cut, then trim again (Pass 2)', ['share_names_block_lookalikes_and_nicknames']),
  ('W6aj focus restored only on dropdowns', PREV, "const key = (el) => el.tagName + (el.id ? '#' + el.id : '') + JSON.stringify(Object.entries(el.dataset)) + (el.getAttribute('href') || '');", 'const key = (el) => el.tagName + (el.dataset.sel || el.id || Math.random());', ['two_tabs_stay_in_step']),
  ('W6ak the stroke reading misses the fixes below it', PREV, 'LOOKALIKE[\'б\'] = LOOKALIKE[\'Б\'] = \'b\'; LOOKALIKE[\'ᴩ\'] = \'p\';  // Unicode lists б as a look-alike of 6 (read as g): "Бор" is "bop", not "gop" (Pass 1, 2)\nconst LOOKALIKE_STROKE = Object.assign({}, LOOKALIKE, Object.fromEntries(STROKE_PAIRS));  // last: every fix above applies to both readings (Pass 4)\n', 'const LOOKALIKE_STROKE = Object.assign({}, LOOKALIKE, Object.fromEntries(STROKE_PAIRS));  // last: every fix above applies to both readings (Pass 4)\nLOOKALIKE[\'б\'] = LOOKALIKE[\'Б\'] = \'b\'; LOOKALIKE[\'ᴩ\'] = \'p\';  // Unicode lists б as a look-alike of 6 (read as g): "Бор" is "bop", not "gop" (Pass 1, 2)\n', ['share_names_close_remaining_gaps']),
- ('W6ai nothing redrawn when nothing is written', PREV, "if (LS.get('ballotta.ballot', null) !== null) LS.set('ballotta.whys', whys);", "if (LS.get('ballotta.ballot', null) === null) return; LS.set('ballotta.whys', whys);", ['reasons_are_saved_when_typing_pauses']),
+ ('W6ai nothing redrawn when nothing is written', PREV, "if (LS.get('ballotta.ballot', null) !== null) { const w = readWhys();", "if (LS.get('ballotta.ballot', null) === null) return; { const w = readWhys();", ['reasons_are_saved_when_typing_pauses']),
  ('W6ah the table read by 16-bit unit', PREV, 'const STROKE_PAIRS = Array.from(STROKED[0]).map(', "const STROKE_PAIRS = STROKED[0].split('').map(", ['share_names_block_lookalikes_and_nicknames']),
  ('W6ag names checked only as strokes read', PREV, "return refused(LOOKALIKE) || refused(LOOKALIKE_STROKE) ? '' : n;", "return refused(LOOKALIKE_STROKE) ? '' : n;", ['share_names_block_lookalikes_and_nicknames']),
  ('W6af names checked only as Unicode reads them', PREV, "return refused(LOOKALIKE) || refused(LOOKALIKE_STROKE) ? '' : n;", "return refused(LOOKALIKE) ? '' : n;", ['share_names_block_lookalikes_and_nicknames']),
@@ -553,6 +553,11 @@ M = [
  ('W3e a share link titled as the site', ROOT / 'picks/index.html', '<title>My picks for Nov 3 · Ballotta</title>', '<title>Ballotta</title>', ['a_share_link_has_its_own_card']),
  ('W3f the offline copy does not keep picks/', ROOT / 'sw.js', ", 'picks/'].map", "].map", ['a_share_link_opens_from_the_offline_copy']),   # with or without next/ (Oct 19)
  ('W3g the share page points unfurlers at the site', ROOT / 'picks/index.html', '<meta property="og:url" content="https://ballotta.org/picks/">', '<link rel="canonical" href="https://ballotta.org/">', ['a_share_link_has_its_own_card']),
+ ('W14 a pick writes over the other tab\'s', PREV, "picks = cleanPicks(LS.get('ballotta.picks', {})); picks[cid] = cur;", "picks[cid] = cur;", ['two_tabs_acting_at_once_keep_both']),   # #119
+ ('W15 a reason writes over the other tab\'s', PREV, "{ const w = readWhys(); typed.forEach((box, cid) => { w[cid] = whys[cid]; }); whys = w; LS.set('ballotta.whys', whys); }", "LS.set('ballotta.whys', whys);", ['two_tabs_acting_at_once_keep_both']),
+ ('W16 only the last box keeps its text', PREV, "typing.forEach((box, cid) => { whys[cid] = box.value; });", "{ const [cid, box] = [...typing].pop(); whys[cid] = box.value; }", ['two_tabs_acting_at_once_keep_both']),
+ ('W17 one box waits to be saved', PREV, "(whyTyping = whyTyping || new Map()).set(cid, box);", "(whyTyping = new Map()).set(cid, box);", ['two_tabs_acting_at_once_keep_both']),
+ ('W18 Clear my picks leaves the open box', PREV, "/*DESK*/ if (window.desk) try { desk.syncWhy(); } catch (e) {}/*/DESK*/ } }  // from either", " } }  // from either", ['clear_my_picks_empties_the_open_reason_box']),   # #131
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
 def mutate(f, text, a, z):

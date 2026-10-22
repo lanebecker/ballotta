@@ -14,6 +14,30 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+## [1.5.1] — 2026-10-22
+
+### Fixed
+- Two tabs acting at the same moment: a pick or a reason saved in one tab before the other tab's save had reached it
+  wrote over that save. Each save now re-reads what's stored and writes only its own change; every reason box waiting
+  to be saved keeps its text, not just the last one typed in (#119).
+- On the laptop, Clear my picks left the open reason box, and At a glance, showing the old reasons; one more keystroke
+  saved the old reason back (#131).
+
+### Changed
+- `check_sites.py` links a campaign site that moved to another name (and answers there) at its new address, without
+  the query string; a site that stays on its own name, or a bot wall's challenge page, keeps the address it was given
+  (#120). The next run records the new addresses.
+- Workflows: Build check and Pages' pipeline job install the PDF libraries pinned by hash (`requirements-results.txt`);
+  the release tag job has a timeout; Pages' comments say the branch-publishing case is only a fallback (#121).
+- `_site/` is ignored; the requirements say Python 3.10+, as the README does (#121).
+
+### Tests
+- The browser runs in Austin's time zone and every clock time a test sets is Austin's, so the suite passes on a
+  machine in any zone (#115). A stubbed run that had to ask the live county fails and lists the requests (#116).
+- The answer key against the ballot: write-ins where the ballot has them, every English line accounted for, measure
+  titles whole; vote sites against the County Clerk's own early-voting and Election Day lists (#118).
+- New site tests for #119 and #131; desk mutants W14–W18, with W6b, W6r, W6ac, W6ai and A15 re-anchored.
+
 ## [1.5.0] — 2026-10-22
 
 ### Added

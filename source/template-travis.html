@@ -1601,7 +1601,7 @@ function pick(cid, val) {
   }
   else cur = current(cid)[0] === val ? [] : [val];
   limitNote(cid, 0);
-  picks[cid] = cur; LS.set('ballotta.picks', picks);
+  picks = cleanPicks(LS.get('ballotta.picks', {})); picks[cid] = cur; LS.set('ballotta.picks', picks);  // storage's copy with this one change: never another tab's pick it hasn't told us of yet (#119)
   document.querySelectorAll('[data-c="' + cid + '"][data-pick]').forEach(b => { const on = current(cid).includes(b.dataset.pick); b.setAttribute('aria-pressed', on ? 'true' : 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.toggle('on', on); });
   $('s' + cid).innerHTML = summaryHTML(cid);
   refresh();
@@ -1662,13 +1662,13 @@ function cribHTML() {  // the crib sheet, for the phone page and the laptop's cr
 function renderCrib() { $('crib').innerHTML = cribHTML(); }
 // #91: a reason is kept in memory at each keystroke, but saved, and the crib sheet and rail redrawn, only once typing
 // pauses (every save is a storage event in each other tab), and at once when the page is hidden or closed.
-let whyTimer = 0, whyTyping = null;  // [contest id, its box] while a save is pending
-function whyTyped(cid, box) { whys[cid] = box.value; whyTyping = [cid, box]; clearTimeout(whyTimer); whyTimer = setTimeout(whySave, 150); }
+let whyTimer = 0, whyTyping = null;  // a Map of contest id to its box, for every reason waiting to be saved (#119), or null
+function whyTyped(cid, box) { whys[cid] = box.value; (whyTyping = whyTyping || new Map()).set(cid, box); clearTimeout(whyTimer); whyTimer = setTimeout(whySave, 150); }
 function whySave() {
   clearTimeout(whyTimer); whyTimer = 0;
   if (!whyTyping) return;
-  whyTyping = null;
-  if (LS.get('ballotta.ballot', null) !== null) LS.set('ballotta.whys', whys);  // everything cleared (here or in another tab): write nothing back (Pass 2); still redraw (Pass 3)
+  const typed = whyTyping; whyTyping = null;
+  if (LS.get('ballotta.ballot', null) !== null) { const w = readWhys(); typed.forEach((box, cid) => { w[cid] = whys[cid]; }); whys = w; LS.set('ballotta.whys', whys); }  // storage's copy with only this tab's reasons (#119); everything cleared (here or in another tab): write nothing back (Pass 2); still redraw (Pass 3)
   renderCrib();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/
 }
 window.addEventListener('pagehide', whySave);
@@ -2278,7 +2278,7 @@ window.addEventListener('storage', (e) => {
   if (e.key !== 'ballotta.picks' && e.key !== 'ballotta.whys') return;
   const typing = whyTyping;  // (clearing everything removes the ballot too: that listener drops any pending reason)
   picks = cleanPicks(LS.get('ballotta.picks', {})); whys = readWhys();
-  if (typing) whys[typing[0]] = typing[1].value;
+  if (typing) typing.forEach((box, cid) => { whys[cid] = box.value; });  // every box waiting to be saved, not just the last (#119)
   if (!ballot.length) return;
   document.querySelectorAll('[data-c][data-pick]').forEach(btn => { const on = current(btn.dataset.c).includes(btn.dataset.pick); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); if (btn.parentNode.classList.contains('optw')) btn.parentNode.classList.toggle('on', on); });
   ballot.forEach(x => { const s = $('s' + x.c.id); if (s) s.innerHTML = summaryHTML(x.c.id); const w = $('w' + x.c.id); if (w) w.value = whys[x.c.id] || ''; });  // a box being typed in gets its own text back: its caret stays
@@ -2299,7 +2299,7 @@ function clearPicks() {
     return;
   }
 /*/RESULTS*/
-  if (confirm('Clear all your picks and reasons?')) { clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); } } }  // from either layout (#38)
+  if (confirm('Clear all your picks and reasons?')) { clearTimeout(whyTimer); whyTyping = null; track('cleared', { what: 'picks' }); nudgeAt = 0; nudgeBoxes(false); document.querySelectorAll('[data-limit]').forEach(s => { s.textContent = ''; }); picks = {}; whys = {}; LS.set('ballotta.picks', picks); LS.set('ballotta.whys', whys); if (ballot.length) { const r = ballot; $('groups').querySelectorAll('[aria-pressed]').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.parentNode.classList.contains('optw')) b.parentNode.classList.remove('on'); }); $('groups').querySelectorAll('textarea').forEach(t => t.value = ''); r.forEach(b => $('s' + b.c.id).innerHTML = summaryHTML(b.c.id)); refresh(); }/*DESK*/ if (window.desk) try { desk.syncWhy(); } catch (e) {}/*/DESK*/ } }  // from either layout (#38); the laptop's open box and At a glance too (#131)
 $('reset').addEventListener('click', clearPicks);
 
 /*RESULTS*/
