@@ -5444,6 +5444,40 @@ def lanes_runoff_calls_oct_21(b):
     ctx.close()
 
 @results_test
+def a_tie_that_went_to_a_runoff_says_it_was_held(b):
+    """#169: after the runoff's day, a tie that went to a runoff still said "Tied · goes to a runoff" (W30 is for both)."""
+    fx = rs_fixtures(); body = fx.scene('runoff'); e = body['contests']['c121']
+    e.update(verdict='tied_runoff', runoff=[], choices=[[x[0], 5000, 50.0, x[3]] for x in e['choices']])
+    ctx, pg = rs_page(b, {'body': body}, when='2026-12-14T09:00')
+    rs_go(pg, 'c121')
+    assert 'Runoff held Dec 12 · result not shown here' in pg.inner_text('#dk-paper'), pg.inner_text('#dk-paper')[:300]
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def the_phone_shows_the_runoff_and_steps_back_sensibly(b):
+    """#171: on the phone the runoff was only in the list (which opened past it), and on the runoff's page the bottom
+    bar's back said "← Contest 1" and went to a results contest."""
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('runoffs')}, when='2026-11-14T09:00', phone=True)
+    run = pg.locator('#rs-top .rs-compact .rs-lnext')
+    assert run.is_visible() and 'Runoff · Sat, Dec 12' in run.inner_text(), run.inner_text() if run.count() else 'none'
+    run.click(); pg.wait_for_timeout(200)
+    assert pg.evaluate('desk.view()') == 'rdecide' and 'contest 1 of 2' in pg.inner_text('#dk-paper .dk-top').lower()
+    assert (pg.inner_text('#ph-back'), pg.inner_text('#ph-next')) == ('← Results', 'Next →'), (pg.inner_text('#ph-back'), pg.inner_text('#ph-next'))
+    pg.click('#ph-next'); pg.wait_for_timeout(200)
+    assert (pg.inner_text('#ph-back'), pg.inner_text('#ph-next')) == ('← Previous', 'Where to vote →'), (pg.inner_text('#ph-back'), pg.inner_text('#ph-next'))
+    pg.click('#ph-back'); pg.wait_for_timeout(200)
+    assert 'contest 1 of 2' in pg.inner_text('#dk-paper .dk-top').lower(), 'back to the first runoff'
+    pg.click('#ph-back'); pg.wait_for_timeout(200)
+    assert pg.evaluate('desk.view()') == 'decide', 'back to the results'
+    pg.evaluate("desk.rgo('c069')"); pg.wait_for_timeout(150); pg.click('#ph-next'); pg.click('#ph-next'); pg.wait_for_timeout(200)
+    assert pg.evaluate('desk.view()') == 'rvote' and pg.inner_text('#ph-back') == '← Decide', pg.inner_text('#ph-back')
+    pg.click('#ph-back'); pg.wait_for_timeout(200)
+    assert pg.evaluate('desk.view()') == 'rdecide'
+    ctx.close()
+
+@results_test
 def the_runoff_is_its_own_ballot(b):
     # Phase 4 (docs/plans/2026-10-21-the-runoff.md, the canvas's RunoffStates): while a runoff on your ballot is official
     # and not yet held, the menu and the rail get a Runoff group, and its Decide, Where to vote and Print are a ballot of

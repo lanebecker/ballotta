@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-uXZOvG2I8h3o7xdarXbh40TlUlDOz/LSGkK0AdTC+fg='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-KBAEn5JqnGZwkP7DK9nRPyHZCePD94cLt8gyf73JDSk='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2428,7 +2428,7 @@ const results = (() => {
       case 'unopposed': return 'Unopposed: ' + L.join(', ');                                                           // W24
       case 'tied': return 'Tied · state law decides by drawing lots, a recount or a new election';                     // W25
       case 'tied_legislature': return 'Tied · the Legislature decides';                                                // W26
-      case 'tied_runoff': return 'Tied · goes to a runoff';                                                            // W27
+      case 'tied_runoff': return e.runoff_on && day() > e.runoff_on ? 'Runoff held ' + md(e.runoff_on) + ' · result not shown here' : 'Tied · goes to a runoff';   // W30 once held (#169), W27
       case 'tied_second': return 'Tie for the runoff spot · a recount decides';                                        // W28
       default: return '';
     }
@@ -2557,7 +2557,9 @@ const results = (() => {
     }
     if (saved) h += '<p class="rs-saved">Saved copy · may be out of date</p>';   // W14
     const off = ballot.filter(b => official(b.c)).length, oc = ballot.flatMap(b => outs(b.c)), up = oc.filter(o => o === 'up').length;
-    const compact = '<p class="rs-compact"><b>' + off + ' of ' + ballot.length + ' official</b>' + (oc.length ? ' · ' + up + ' of your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + ' won or ' + (up === 1 ? 'is' : 'are') + ' leading' : '') + '<span>' + esc(updated()) + '</span></p>';
+    const runs = runsAhead();   // the phone's main view names the runoff too, not only its list (#171)
+    const compact = '<p class="rs-compact"><b>' + off + ' of ' + ballot.length + ' official</b>' + (oc.length ? ' · ' + up + ' of your ' + oc.length + ' pick' + (oc.length === 1 ? '' : 's') + ' won or ' + (up === 1 ? 'is' : 'are') + ' leading' : '') + '<span>' + esc(updated()) + '</span>'
+      + (runs.length ? '<button type="button" class="rs-lnext" data-rs="rdecide" data-c="' + esc(runs[0].c.id) + '"><span class="ov">What’s next</span><b>Runoff · ' + esc(dayLong(entry(runs[0].c.id).runoff_on)) + '</b><span>' + runWho(runs) + ' · Get ready</span></button>' : '') + '</p>';
     box.className = 'rs-top rs-band'; box.innerHTML = h + compact + '<p class="rs-upd">' + esc(updated()) + '</p>' + summary() + timeline(true);   // rs-upd: the header's time, where the header has no room for it (#149)
     if (!counted) { counted = true; track('results_seen'); }
   }
@@ -3638,7 +3640,7 @@ const desk = (() => {
   return {
     render, goTo: (cid) => go(cid, true), after, view: () => ui.view,
 /*RESULTS*/
-    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'), rnext: () => ract('next'), rsync,
+    rgo: (cid) => rgo(cid || rcurId(), true), rvote: () => ract('vote'), rnext: () => ract('next'), rprev: () => { const rs = results.runoff.list(); if (rs.findIndex(b => b.c.id === rcurId()) > 0) ract('prev'); else ract('back'); }, rsync,
 /*/RESULTS*/
     // A redraw the voter didn't ask for (new results arriving): the folds they had open, their place on the page and the
     // control they were on come back as they were, and the update is said politely (#140).
@@ -3730,9 +3732,16 @@ const phone = (() => {
     $('ph-back').textContent = dec ? '← Previous' : '← Contest ' + (i + 1);
     $('ph-back').setAttribute('aria-label', dec ? 'Previous contest' : 'Contest ' + (i + 1) + ', go back');
     $('ph-back').disabled = dec && i <= 0;
+/*RESULTS*/
+    if (D.ui.view[0] === 'r') {   // the runoff's pages: back through its contests, then to the results (#171)
+      const rs = results.runoff.list(), ri = Math.max(0, rs.findIndex(b => b.c.id === D.ui.rcur)), first = D.ui.view === 'rdecide' && ri === 0;
+      const w = D.ui.view !== 'rdecide' ? ['← Decide', 'Decide, go back'] : first ? ['← Results', 'Results, go back'] : ['← Previous', 'Previous contest'];
+      $('ph-back').textContent = w[0]; $('ph-back').setAttribute('aria-label', w[1]); $('ph-back').disabled = false;
+    }
+/*/RESULTS*/
     // Everything decided: step through in order, then on to the crib sheet (the row under the paper is gone).
     $('ph-next').textContent = nx ? 'Next undecided →' : dec && i < n - 1 ? 'Next →' : A ? 'At a glance →' : 'Crib sheet →';   // after the election, the last contest leads to At a glance
-    if (D.ui.view === 'rdecide') $('ph-next').textContent = 'Where to vote →';   // the runoff's ballot leads to its Where to vote (Phase 4)
+    if (D.ui.view === 'rdecide') { const rs = results.runoff.list(); $('ph-next').textContent = rs.findIndex(b => b.c.id === D.ui.rcur) < rs.length - 1 && rs.length > 1 && rs.findIndex(b => b.c.id === D.ui.rcur) >= 0 ? 'Next →' : 'Where to vote →'; }   // contest by contest, then its Where to vote (Phase 4, #166)
     $('ph-next').classList.toggle('hidden', (!nx && D.ui.view === (A ? 'glance' : 'crib')) || D.ui.view === 'all' || (D.ui.view[0] === 'r' && D.ui.view !== 'rdecide'));   // All Travis County results and the runoff's pages aren't steps on your ballot (#150)
   }
   // The bar's second sentence follows the ballot: start() and a pasted link both draw one after this code runs (Pass 2).
@@ -3780,6 +3789,8 @@ const phone = (() => {
   }
   function back() {
     if (D.ui.view === 'decide') D.act('prev');
+    else if (D.ui.view === 'rdecide') desk.rprev();   // a runoff contest back, or the results from the first (#171)
+    else if (D.ui.view[0] === 'r') desk.rgo();
     else { D.setView('decide'); track('view_opened', { view: 'decide' }); }
   }
 
@@ -3791,7 +3802,7 @@ const phone = (() => {
     const rail = document.querySelector('.dk-rail'); rail.setAttribute('role', 'dialog'); rail.setAttribute('aria-modal', 'true'); rail.setAttribute('aria-label', 'Your ballot');
     behind().forEach(e => { e.inert = true; });
     const row = $('dk-out').querySelector('[aria-current="true"]');
-    if (row) { row.scrollIntoView({ block: 'center' }); row.focus({ preventScroll: true }); } else $('ph-done').focus();
+    if (row) { row.scrollIntoView({ block: 'center' }); row.focus({ preventScroll: true }); } else { rail.scrollTop = 0; $('dk-out').scrollTop = 0; $('ph-done').focus(); }   // no open contest: the list's top, What's next first (#171)
   }
   function closeList(then) {
     if (!cls.contains('ph-list')) return;
