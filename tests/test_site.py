@@ -3055,7 +3055,8 @@ def phone_offline_copy_after_one_visit(b):
     ctx, pg = phone_page(b, csp=True, sw=True); pg.add_init_script(CSP_WATCH)
     try:
         pg.goto(url.rsplit('/', 1)[0] + '/manifest.webmanifest')                           # same site, before any copy exists
-        pg.evaluate("u => caches.open('aaa-other').then(c => c.put(u, new Response('<h1>Not ours</h1>', { headers: { 'Content-Type': 'text/html' } })))", url)
+        pg.evaluate("u => caches.open('aaa-other').then(c => c.put(u, new Response('<h1>Not ours</h1>', { headers: { 'Content-Type': 'text/html' } })))",
+                    re.sub(r'index\.html$', '', url))                                    # under the key the copy uses since #76 (its folder), so P76 can see it
         pg.goto(url)
         assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])'), 'no offline copy installed'
         poll(pg, '!!navigator.serviceWorker.controller', 15)                             # and in charge of this page
