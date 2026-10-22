@@ -31,16 +31,17 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 - Opened from the old preview's Home Screen icon, ballotta.org/next/ says: "This icon is for the old preview. To keep
   Ballotta on your Home Screen, delete this icon, open ballotta.org in Safari and add it again." (Lane, Oct 22; #127).
   In a browser it still sends people on at once.
-- The share link is prepared once typing in the name box pauses, not on every keystroke (#127).
+- The share link is prepared once typing in the name box pauses, not on every keystroke; the name's note still
+  changes at once (#127).
 - Housekeeping (#122, #124, #87): no line carries two pairs of one layer's markers (a pipeline test keeps it so); dead
   phone CSS and stale comments removed. The old hidden page itself stays until after Nov 3 (#86, Lane).
 - Docs (#128): the plans and the Oct 17 audit say where their logs and status now live.
 
 ### Tests
 - New site tests for each #127 item; pipeline tests for one viewport tag and one marker pair per line.
-- Mutation runners (#182): 32 anchors brought up to date (24 stale since before 1.5.1, 8 moved by this release); W6x
+- Mutation runners (#182): 34 anchors brought up to date (24 stale since before 1.5.1, 10 moved by this release); W6x
   and W6z retired as redundant (reasons in the file); X17's test gets an address that puts a town name at the edge.
-  New desk mutants W19–W28.
+  New desk mutants W19–W29.
 
 ## [1.5.1] — 2026-10-22
 

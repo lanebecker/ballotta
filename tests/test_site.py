@@ -1786,21 +1786,21 @@ def a_refused_share_name_is_said_to_the_sender(b):
     pg.evaluate("window.__notes = []; new MutationObserver(() => __notes.push(document.getElementById('sharename-no').textContent)).observe(document.getElementById('sharename-no'), { childList: true, characterData: true, subtree: true })")
     pg.click('#sharename'); pg.keyboard.type('Demi', delay=60)                     # "Dem…" on the way to "Demi" is not refused (Pass 1)
     pg.wait_for_timeout(1000)
-    assert not [x for x in pg.evaluate('__notes') if x] and note() == '' and pg.evaluate('sharePrep.name') == 'Demi', pg.evaluate('__notes')
+    assert not [x for x in pg.evaluate('__notes') if x] and note() == '' and pg.evaluate('(sharePrep || prepShare()).name') == 'Demi', pg.evaluate('__notes')
     pg.fill('#sharename', 'Travis GOP')
-    assert pg.evaluate('sharePrep.name') == '', 'a refused name is never sent, even before the note shows'
+    assert pg.evaluate('(sharePrep || prepShare()).name') == '', 'a refused name is never sent, even before the note shows'
     pg.wait_for_function("document.getElementById('sharename-no').textContent !== ''", timeout=3000)   # once typing pauses
     assert note() == 'That name can’t be used. Try your first name.', note()
-    pg.fill('#sharename', 'Maya  Lee'); assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya Lee'   # cleaned, still sent
+    pg.fill('#sharename', 'Maya  Lee'); assert note() == '' and pg.evaluate('(sharePrep || prepShare()).name') == 'Maya Lee'   # cleaned, still sent
     pg.fill('#sharename', 'Travis GØP'); pg.evaluate("document.getElementById('sharename').blur()")
-    assert note() == 'That name can’t be used. Try your first name.' and pg.evaluate('sharePrep.name') == ''      # leaving the box: at once
+    assert note() == 'That name can’t be used. Try your first name.' and pg.evaluate('(sharePrep || prepShare()).name') == ''      # leaving the box: at once
     pg.evaluate(r"document.getElementById('sharename').value = 'Travis­́GOP'; prepShare()")   # passes once, refused when checked again (Pass 1)
-    assert pg.evaluate('sharePrep.name') == '', ('a name the friend\'s page would refuse goes into the link', pg.evaluate('sharePrep.name'))
+    assert pg.evaluate('(sharePrep || prepShare()).name') == '', ('a name the friend\'s page would refuse goes into the link', pg.evaluate('(sharePrep || prepShare()).name'))
     url = pg.evaluate('sharePrep.p')
     frag = url.split('#', 1)[1]
     assert pg.evaluate('f => unpackFrag(f).then(o => o.n)', frag) == '', 'a refused name went into the link'
     pg.fill('#sharename', 'Maya')
-    assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya'
+    assert note() == '' and pg.evaluate('(sharePrep || prepShare()).name') == 'Maya'
     pg.fill('#sharename', 'Travis GOP'); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
     assert pg.evaluate("localStorage.getItem('ballotta.name')") in (None, '""'), 'a refused name was kept for next time'
     # Round-2 audit #9 (#107): a refused name leaves the name kept from before alone; a box emptied on purpose clears it.
@@ -1811,7 +1811,7 @@ def a_refused_share_name_is_said_to_the_sender(b):
     pg.fill('#sharename', ''); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
     assert pg.evaluate("localStorage.getItem('ballotta.name')") == '""', 'an emptied box kept the old name'
     pg.evaluate(r"document.getElementById('sharename').value = 'a'.repeat(29) + '\u{1F600}\u{1F600}'; prepShare()")
-    got = pg.evaluate('sharePrep.name')
+    got = pg.evaluate('(sharePrep || prepShare()).name')
     assert got == 'a' * 29 + '\U0001F600' and len(got.encode('utf-16-le')) == 62, ('cut inside a character', [hex(ord(c)) for c in got[-2:]])
     assert pg.evaluate(r"safeName('b'.repeat(29) + '\u{1F600}x')") == 'b' * 29 + '\U0001F600'
     ctx.close()

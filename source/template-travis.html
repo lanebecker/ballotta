@@ -2014,9 +2014,12 @@ function updateShareSum() {
   prepShare();
 }
 let sharePrep = null;  // the link for the sheet's current choices, packed ahead of the tap
+function shareName() {  // the name as typed, and as the link would carry it ('' when refused)
+  const typed = cut30($('sharename').value.trim()), once = safeName(typed);
+  return { typed, name: once && safeName(once) === once ? once : '' };  // the friend's page runs the check on what the link carries (Pass 1)
+}
 function prepShare(keepShown) {  // keepShown: right after a share, the link just shown stays (Oct 17)
-  const typed = cut30($('sharename').value.trim()), once = safeName(typed), ids = chosenIds(), withWhy = $('sharewhy').checked;
-  const name = once && safeName(once) === once ? once : '';  // the friend's page runs the check on what the link carries (Pass 1)
+  const { typed, name } = shareName(), ids = chosenIds(), withWhy = $('sharewhy').checked;
   nameNote(typed && !name);  // the friend's page would refuse it: say so here (once typing pauses), send nothing (#93)
   const pk = packPicks(ids, false, withWhy), g0 = LS.get('ballotta.gen', 1), gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1, code = rand8();  // a whole number or 1 (#44)
   const st = { ids, name, withWhy, pk, gen, code, url: null };
@@ -2027,7 +2030,7 @@ function prepShare(keepShown) {  // keepShown: right after a share, the link jus
   sharePrep = st; return st;
 }
 let sharePrepTimer = 0;  // a new name: the link just shared goes at once (#98), and the new one is prepared once typing pauses (#127)
-$('sharename').addEventListener('input', () => { sharePrep = null; $('share-out').classList.add('hidden'); clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(), 150); });
+$('sharename').addEventListener('input', () => { sharePrep = null; $('share-out').classList.add('hidden'); const n = shareName(); nameNote(n.typed && !n.name); clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(), 150); });   // the name's note at once, as before
 // The note waits for typing to pause, or for the box to be left: "Dem…" on the way to "Demi" isn't a refusal, and the
 // note is read aloud (Pass 1). Clearing it never waits.
 let nameNoteTimer = 0, nameRefused = false;

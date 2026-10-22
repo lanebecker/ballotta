@@ -448,7 +448,7 @@ M = [
  ('W6i nothing saved when the tab is hidden', PREV, "document.addEventListener('visibilitychange', () => { if (document.hidden) whySave(); });\n", '', ['reasons_are_saved_when_typing_pauses']),
  ('W6j the rail is not redrawn after typing', PREV, "  renderCrib();/*DESK*/ if (window.desk) try { desk.refresh(); } catch (e) {}/*/DESK*/\n}\nwindow.addEventListener('pagehide'", "  renderCrib();\n}\nwindow.addEventListener('pagehide'", ['reasons_are_saved_when_typing_pauses']),
  ('W6k the sender is not told', PREV, "$('sharename-no').textContent = on ? 'That name can’t be used. Try your first name.' : '';", "$('sharename-no').textContent = '';", ['a_refused_share_name_is_said_to_the_sender']),
- ('W6l a refused name is sent', PREV, 'once = safeName(typed), ids = chosenIds()', 'once = typed, ids = chosenIds()', ['a_refused_share_name_is_said_to_the_sender']),
+ ('W6l a refused name is sent', PREV, "once = safeName(typed);\n  return { typed", "once = typed;\n  return { typed", ['a_refused_share_name_is_said_to_the_sender']),
  ('W6m names cut inside a character', PREV, "const cut30 = (t) => [...t].slice(0, 30).join('');", 'const cut30 = (t) => t.slice(0, 30);', ['a_refused_share_name_is_said_to_the_sender']),
  ('W6n eth and wynn pass', PREV, "LOOKALIKE['ð'] = LOOKALIKE['Ð'] = 'd'; LOOKALIKE['ƿ'] = LOOKALIKE['Ƿ'] = 'p';", '', ['share_names_block_lookalikes_and_nicknames']),
  ('W6o shouted party names pass', PREV, '  return shouted || forms.some(', '  return forms.some(', ['share_names_block_lookalikes_and_nicknames']),
@@ -456,7 +456,7 @@ M = [
  ('W6q the note is not tied to the box', PREV, ' aria-describedby="sharename-no"', '', ['a_refused_share_name_is_said_to_the_sender']),
  ('W6r the printout misses the reason just typed', PREV, "window.addEventListener('beforeprint', () => { whySave(); renderCrib(); });", "window.addEventListener('beforeprint', () => { renderCrib(); });", ['reasons_are_saved_when_typing_pauses']),
  ('W6t a shouted name ending in dem is refused', PREV, '/.(gop|dems|rnc|dnc)$/.test(fold(latin(w)))', '/.(gop|dems?|rnc|dnc)$/.test(fold(latin(w)))', ['share_names_block_lookalikes_and_nicknames']),
- ('W6u a name checked only once', PREV, "const name = once && safeName(once) === once ? once : '';", 'const name = once;', ['a_refused_share_name_is_said_to_the_sender']),
+ ('W6u a name checked only once', PREV, "name: once && safeName(once) === once ? once : ''", 'name: once', ['a_refused_share_name_is_said_to_the_sender']),
  ('W6v the note shows while typing', PREV, "if (!on || document.activeElement !== $('sharename')) say(); else nameNoteTimer = setTimeout(say, 700);", 'say();', ['a_refused_share_name_is_said_to_the_sender']),
  ('W6w leaving the box shows nothing', PREV, "$('sharename').addEventListener('blur', () => nameNote(nameRefused));", '', ['a_refused_share_name_is_said_to_the_sender']),
  ('W6aa At a glance is not redrawn', PREV, '        render();\n        if (mine) {', '        if (mine) {', ['two_tabs_stay_in_step']),
@@ -541,7 +541,7 @@ M = [
  ('W2d a long reason cut inside a character', PREV, "const a = Array.from(String(t || '').trim());", "const a = String(t || '').trim().split('');", ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
  ('W2e At a glance shows the whole reason', PREV, '\'<span class="dk-wt">\' + esc(whyShown(whys[id]))', '\'<span class="dk-wt">\' + esc(whys[id])', ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
  ('W2f the crib sheet prints the whole reason', PREV, '\'<div class="why">\' + esc(whyShown(whys[b.c.id]))', '\'<div class="why">\' + esc(whys[b.c.id])', ['a_long_reason_is_cut_in_the_printout_and_the_glance_table']),
- ('W2g a new share name keeps the old link on screen', PREV, "$('share-out').classList.add('hidden'); clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(), 150); });", "clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(true), 150); });", ['a_new_share_name_hides_the_link_just_shared']),
+ ('W2g a new share name keeps the old link on screen', PREV, "$('share-out').classList.add('hidden'); const n = shareName(); nameNote(n.typed && !n.name); clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(), 150); });", "const n = shareName(); nameNote(n.typed && !n.name); clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(true), 150); });", ['a_new_share_name_hides_the_link_just_shared']),
  ('W2h hiding a friend drops a waiting Keep link', PREV, "if (typeof v === 'string' && v[0] === 's') SS.del('ballotta.incoming'); }\n  $('friend')", "SS.del('ballotta.incoming'); }\n  $('friend')", ['hiding_a_friends_picks_keeps_a_waiting_keep_link']),
  ('W2i Next never leaves a contest', PREV, "function leave() { if (ui.view === 'decide' && !upNext() && !decided(ui.cur)) left = ui.cur; }", 'function leave() {}', ['next_keeps_going_past_a_contest_left_undecided']),
  ('W2j a contest left undecided is still named', PREV, 'if (b && !decided(b.c.id) && b.c.id !== skip) return b;', 'if (b && !decided(b.c.id)) return b;', ['next_keeps_going_past_a_contest_left_undecided']),
@@ -569,6 +569,7 @@ M = [
  ('W26 the waiting link replaces the one shown', PREV, "clearTimeout(sharePrepTimer); const st = sharePrep || prepShare();", "const st = sharePrep || prepShare();", ['typing_a_share_name_prepares_the_link_once']),
  ('W27 a tampered key is kept', PREV, "Object.entries(plain(o)).filter(own).map(", "Object.entries(plain(o)).map(", ['a_tampered_picks_key_doesnt_break_a_keep_link']),
  ('W28 a portal is Ballotta coming back', PREV, "end(r.ok && !r.redirected)", "end(r.ok)", ['a_portal_is_not_ballotta_coming_back']),
+ ("W29 a fixed name's note waits for the pause", PREV, "const n = shareName(); nameNote(n.typed && !n.name); ", '', ['a_refused_share_name_is_said_to_the_sender']),
 ]
 CSP_META = __import__('re').compile(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">')
 def mutate(f, text, a, z):
