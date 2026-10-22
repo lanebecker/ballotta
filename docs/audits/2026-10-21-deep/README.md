@@ -86,8 +86,8 @@ CONCERN findings. Each is fixed below with a test that fails without it, or list
    county. The plan's Risks section matches the code.
 7. **#177:** the summary still counted an unofficial runoff pick outside the pair as "didn't win". Now "behind", as
    W112's "so far".
-8. **#157:** the declared write-in's name, LaShawn Nash (from Ballotpedia), is unconfirmed. **For Lane:** confirm it with
-   Travis County Elections before Nov 3; a different spelling holds c053.
+8. **#157:** the declared write-in's name, LaShawn Nash (from Ballotpedia), was unconfirmed. **Confirmed by Lane, Oct 22:**
+   LaShawn Nash, independent (https://lashawnnash.org/).
 9. **#161:** the time-zone check caught one direction only. A feed that reads as last updated before the polls closed,
    while the state's server is three or more hours past closing, is now refused and reported. Mutant B58.
 10. **#166:** with runoffs on two dates, the band gave each race the first's. On Decide it now gives the open race's own
