@@ -17,9 +17,10 @@ from zoneinfo import ZoneInfo
 
 AUSTIN = ZoneInfo("America/Chicago")
 LABELS = {"travis": "Travis County", "bastrop": "Bastrop County", "williamson": "Williamson County", "hays": "Hays County",
-          "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State",
+          "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State’s canvass",   # apart, so the state
+          # canvass report, printed before the feed's last update, isn't read as the feed going back in time (#163)
           "caldwell": "Caldwell County", "lee": "Lee County"}       # ACC only; no file ever comes from them (Task 1 finding 11)
-PARTIES = {"REP", "DEM", "LIB", "GRN", "IND", "NON", "W", "WI", "W-I"}
+PARTIES = {"REP", "DEM", "LIB", "GRN", "GRE", "G", "IND", "NON", "W", "WI", "W-I"}   # GRE and G: the SOS's own codes for Green (#163, the Nov 2025 special)
 
 
 class BadFile(ValueError):
@@ -57,6 +58,14 @@ def stamp(t):
 def local(naive):
     """A time printed without a zone, read as Austin time."""
     return stamp(naive.replace(tzinfo=AUSTIN))
+
+
+def day_of(text, fmt):
+    """An election date printed in a file, as YYYY-MM-DD, or None if it isn't one (the build then can't check it)."""
+    try:
+        return dt.datetime.strptime(text.strip(), fmt).date().isoformat()
+    except (AttributeError, ValueError):
+        return None
 
 
 def num(s):
@@ -116,7 +125,8 @@ def parse_clarity(data):
         contests[key] = {"name": c.get("text"), "vote_for": int(c.get("voteFor") or 1), "choices": choices,
                          "registered": sum(reg.get(p, 0) for p in precincts)}
     src = CLARITY_COUNTIES[region]
-    return {"source": src, "label": LABELS[src], "posted": posted, "contests": contests}
+    return {"source": src, "label": LABELS[src], "posted": posted, "contests": contests,
+            "election": day_of(root.findtext("ElectionDate"), "%m/%d/%Y")}
 
 
 # ---------------------------------------------------------------- Texas SOS election night feed (by script)
@@ -156,7 +166,8 @@ def parse_sos(data, zone="America/Chicago"):
         raise BadFile("no races in the SOS feed")
     reports = sos_section(feed, "ReportList") or {}
     canvass = bool((reports.get("OfficialCanvassReport") or {}).get("view"))
-    return {"source": "sos", "label": LABELS["sos"], "posted": posted, "contests": contests, "canvass_report": canvass}
+    return {"source": "sos", "label": LABELS["sos"], "posted": posted, "contests": contests, "canvass_report": canvass,
+            "election": day_of(home.get("ElecDate"), "%m%d%Y")}
 
 
 # ---------------------------------------------------------------- Texas SOS Official Canvass Report PDF (by script)
@@ -208,7 +219,8 @@ def parse_sos_canvass(data):
     if not foot:
         raise BadFile("no report time at the foot of the pages")
     posted = local(dt.datetime.strptime(foot, "%m/%d/%Y %I:%M %p"))
-    return {"source": "sos_canvass", "label": LABELS["sos_canvass"], "posted": posted, "contests": contests}
+    when = next((d for d in (day_of(ln, "%B %d, %Y") for ln in lines[:6]) if d), None)   # under the election's name
+    return {"source": "sos_canvass", "label": LABELS["sos_canvass"], "posted": posted, "contests": contests, "election": when}
 
 
 # ---------------------------------------------------------------- Williamson County results page (by script)
@@ -246,13 +258,19 @@ def parse_williamson(data):
             choices.append([nm, num(r[k].get("votes", "0") or "0")])
         if rid in pies and [[str(x[0]), int(x[-1])] for x in pies[rid]] != choices:
             raise BadFile(f"{name}: the table and the chart disagree")
+        if not choices:   # a contest the page lists with no rows: a page caught mid-update, never "no votes" (#163)
+            raise BadFile(f"{name}: the page lists no choices for it")
         contests[rid] = {"name": name, "vote_for": vf, "choices": choices, "registered": None}
-    return {"source": "williamson", "label": LABELS["williamson"], "posted": posted, "contests": contests}
+    # The page prints no election date: each election has its own address (results_map.json's meta.fetch), and nothing
+    # posted before the polls close is read (build_results.POLLS_CLOSE).
+    return {"source": "williamson", "label": LABELS["williamson"], "posted": posted, "contests": contests, "election": None}
 
 
 # ---------------------------------------------------------------- Hays County cumulative results PDF (by script)
-HAYS_ROW = re.compile(r"^(.*?)\s+(?:[\d,]+\s+[\d.]+%\s+){3}([\d,]+)\s+[\d.]+%$")
-HAYS_CAST = re.compile(r"^Cast Votes:\s+(?:[\d,]+\s+[\d.]+%\s+){3}([\d,]+)\s+[\d.]+%$")
+# One vote-and-percent pair per vote type, then the total's: three types in 2025 (early, mail, Election Day), but a
+# general election's report can add one (provisional), so any number is read and the last pair is the total (#163)
+HAYS_ROW = re.compile(r"^(.*?)\s+(?:[\d,]+\s+[\d.]+%\s+)*([\d,]+)\s+[\d.]+%$")
+HAYS_CAST = re.compile(r"^Cast Votes:\s+(?:[\d,]+\s+[\d.]+%\s+)*([\d,]+)\s+[\d.]+%$")
 HAYS_HEAD = re.compile(r"^(Cumulative Results Report|Registered Voters|General Election|Precincts Reporting|\d+ of \d+ = |"
                        r"\d+/\d+/\d{4}$|Run Time|Run Date|Nov\. |[A-Z][a-z]+\.? \d+, \d{4} )")
 
@@ -301,8 +319,9 @@ def parse_hays(data):
             choices.append([nm, num(mr.group(2))])
     if cur is not None:
         raise BadFile(f"contest {cur} has no Cast Votes line")
+    when = next((d for d in (day_of(ln, "%m/%d/%Y") for ln in lines[:12]) if d), None)   # the header's own date line
     return {"source": "hays", "label": LABELS["hays"], "posted": posted, "contests": contests,
-            "official": "Official Results" in lines[0]}
+            "official": "Official Results" in lines[0], "election": when}
 
 
 PARSERS = {"clarity": parse_clarity, "sos": parse_sos, "sos_canvass": parse_sos_canvass, "williamson": parse_williamson,

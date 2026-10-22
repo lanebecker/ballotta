@@ -4,11 +4,13 @@ one. No browser; about two minutes.
 
     python3 tests/mutate_backend.py          # from the repo root; restores every file, even when stopped
 """
-import pathlib, signal, subprocess, sys
+import os, pathlib, signal, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 S = ROOT / "source"
 RULES, PARSE, BUILD, FETCH = S / "results_rules.py", S / "results_parse.py", S / "build_results.py", S / "fetch_results.py"
+MAP = S / "build_results_map.py"
+CHECK = S / "check_results.py"
 M = [
     ("B1 the 20-vote floor is 19", RULES, "POINT, FLOOR = 1, 20", "POINT, FLOOR = 1, 19"),
     ("B2 a point exactly isn't enough", RULES, "Fraction(100 * gap, cast) >= POINT", "Fraction(100 * gap, cast) > POINT"),
@@ -33,11 +35,40 @@ M = [
     ("B19 a loose name match that isn't unique", PARSE, "return loose[0] if len(loose) == 1 else None", "return loose[0] if loose else None"),
     ("B20 a file in the wrong folder filed", BUILD, 'if rep["source"] != folder.name:', "if False:"),
     ("B21 excluded files read", BUILD, "if rel in excluded or not f.is_file():", "if not f.is_file():"),
-    ("B22 two files the same minute: the later one wins", BUILD, 'if len(best) > 1 and best[-1]["posted"] == best[-2]["posted"]:', "if False:"),
+    ("B22 two files the same minute: the later one wins", BUILD, 'if any(body(r) != body(top[0]) for r in top):', "if False:"),
     ("B23 a missing county with unknown voters still gets a verdict", BUILD, 'slack = None if (slack is None or reg is None) else slack + reg', "slack = slack + (reg or 0)"),
     ("B24 official through any canvasser", BUILD, 'line = official.get("canvasses", {}).get(cv_slug, {})', 'line = next(iter(official.get("canvasses", {}).values()), {})'),
-    ("B25 numbers before the canvass called official", BUILD, 'if done and rep["posted"][:10] < done:', "if False:"),
-    ("B26 a correction never named", BUILD, '                e["corrected"] = corrections[cid]\n', '                pass\n'),
+    ("B25 numbers before the canvass called official", BUILD, 'if done and not (rep.get("official") or (fin and rep["posted"][:10] >= fin) or rep["posted"][:10] >= done):', "if False:"),
+    ("B26 a correction never named", BUILD, 'e["corrected"] = max(hit)', 'pass'),
+    ("B33 a final file still says last unofficial", BUILD, '(fin and rep["posted"][:10] >= fin) or ', ''),
+    ("B34 a canvass with a county never loaded is official anyway", BUILD, 'if missing and done:', 'if False:'),
+    ("B35 hand counts with a mistyped name taken", BUILD, 'if odd or not votes or not all(isinstance(v, int) and v >= 0 for v in votes.values()):', 'if False:'),
+    ("B36 a county with no file never counted from its canvass", BUILD, 'if (rep is None or not key) and hand and done:', 'if False:'),
+    ("B37 suggest unranked", BUILD, '        fits.sort(key=lambda kn: -likeness(key[cid]["title"], kn[1]))', '        pass'),
+    ("B38 another election's file filed", BUILD, 'if election and rep.get("election") not in (None, election):\n                reject(', 'if False:\n                reject('),
+    ("B39 another election's file read", BUILD, 'if election and rep.get("election") not in (None, election):\n                msg', 'if False:\n                msg'),
+    ("B40 a renumbered county contest read", BUILD, 'if P.norm(named) != P.norm(c["name"]):', 'if False:'),
+    ("B41 a key with no name accepted", BUILD, '        if named is None:\n            raise', '        if False:\n            raise'),
+    ("B42 Clarity's election date never read", PARSE, '"election": day_of(root.findtext("ElectionDate"), "%m/%d/%Y")}', '"election": None}'),
+    ("B43 the SOS feed's election date never read", PARSE, '"election": day_of(home.get("ElecDate"), "%m%d%Y")}', '"election": None}'),
+    ("B44 a fetch tried once", FETCH, '    for i in range(tries):', '    for i in range(1):'),
+    ("B45 a 404 tried again", FETCH, 'if e.code not in (429, 500, 502, 503, 504) or i == tries - 1:', 'if i == tries - 1:'),
+    ("B46 the SOS clock never checked", FETCH, 'if source == "sos" and sent and dt.datetime', 'if False and dt.datetime'),
+    ("B47 every fetch failing stops the run", FETCH, '    # never a failed step: Lane\'s uploads are built whatever the network did', '    sys.exit(1) if all(e for _, _, e in out) else None'),
+    ("B48 the fetch report left out of the PR", BUILD, '            changes["fetch"] = ', '            changes["fetch_"] = '),
+    ("B49 Hays reads three vote types only", PARSE, 'HAYS_ROW = re.compile(r"^(.*?)\\s+(?:[\\d,]+\\s+[\\d.]+%\\s+)*', 'HAYS_ROW = re.compile(r"^(.*?)\\s+(?:[\\d,]+\\s+[\\d.]+%\\s+){3}'),
+    ("B50 an empty Williamson contest read", PARSE, '        if not choices:   # a contest the page lists with no rows', '        if False:   # a contest the page lists with no rows'),
+    ("B51 the canvass report reads as the feed", PARSE, '"sos_canvass": "Texas Secretary of State’s canvass"', '"sos_canvass": "Texas Secretary of State"'),
+    ("B52 a hand count with no time of its own", BUILD, 'if not (isinstance(at, str) and check_results.TIME.match(at) and at[:10] >= done):', 'if False:'),
+    ("B53 the map compared as text", MAP, 'json.loads(OUT.read_text(encoding="utf-8")) != json.loads(new)', 'OUT.read_text(encoding="utf-8") != new'),
+    ("B54 a hand-set registration dropped", MAP, '        if was.get("registered"):', '        if False:'),
+    ("B56 numbers waiting behind a verdict not counted", BUILD, '            numbers += 1 ', '            numbers += 0 '),
+    ("B57 the SOS's Green code unknown", PARSE, '"GRN", "GRE", "G", ', '"GRN", '),
+    ("B58 a feed read in the wrong zone the other way filed", FETCH, 'if source == "sos" and sent and rep["posted"] < B.POLLS_CLOSE', 'if False and rep["posted"] < B.POLLS_CLOSE'),
+    ("B59 an excluded file's time may not go back", CHECK, 'and (label, was[label]) not in (rolled or {})', ''),
+    ("B60 a correction merges itself", BUILD, '            verdict_changed = True                        # voters will see "Corrected"', '            pass                                          # voters will see "Corrected"'),
+    ("B61 a bad Travis key holds a whole statewide race", BUILD, '                if held is None:\n                    raise\n                held.append(', '                raise\n                held.append('),
+    ("B55 a restore forgets what voters saw before the pause", BUILD, 'seen = dict(prev, contests=load(ledger, {}) or {}) if prev.get("withdrawn")', 'seen = prev if True or prev.get("withdrawn")'),
     ("B27 seq never moves", BUILD, '        out["seq"] = prev["seq"] + 1\n', '        out["seq"] = prev["seq"]\n'),
     ("B28 a generic write-in line counted", BUILD, 'if P.norm(printed) in GENERIC_WRITE_IN:', "if False:"),
     ("B29 an annexation's two votes swapped", BUILD, 'd_cid, a_cid = (cid, pair) if m.get("who") == "district" else (pair, cid)', 'd_cid, a_cid = (pair, cid) if m.get("who") == "district" else (cid, pair)'),
@@ -46,9 +77,22 @@ M = [
 ORIG = {}
 
 
+LOCK = ROOT / ".mutate-lock"   # the page runners' lock (mutate_desk.take_lock, #79): one runner per clone, of any kind
+
+
+def take_lock():
+    try:
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        sys.exit(f"{LOCK} is there: another mutation run is going in this clone, or one was killed (check git status "
+                 "and git diff for a mutant left on disk, then delete the lock)")
+    os.write(fd, str(os.getpid()).encode()); os.close(fd)
+
+
 def restore(*_):
     for f, text in ORIG.items():
         f.write_text(text, encoding="utf-8")
+    LOCK.unlink(missing_ok=True)
     if _:
         sys.exit("stopped: files restored")
 
@@ -57,9 +101,11 @@ def main():
     for name, f, a, z in M:
         n = f.read_text(encoding="utf-8").count(a)
         assert n == 1, (name, "anchor found", n, "times in", f.name)
+    take_lock()
     signal.signal(signal.SIGINT, restore); signal.signal(signal.SIGTERM, restore)
     base = subprocess.run([sys.executable, str(ROOT / "tests/test_results.py")], capture_output=True, text=True)
-    assert base.returncode == 0, "the results tests must pass unmutated first:\n" + base.stdout[-2000:]
+    if base.returncode:
+        restore(); sys.exit("the results tests must pass unmutated first:\n" + base.stdout[-2000:])
     survived = []
     try:
         for name, f, a, z in M:

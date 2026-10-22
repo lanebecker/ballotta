@@ -2,9 +2,10 @@
 
     python3 source/build_results.py file-inbox            # moves Lane's downloads from source/results/inbox/<county>/
                                                           # into source/results/raw/, refusing a file in the wrong folder
-    python3 source/build_results.py build [--prev FILE] [--out FILE] [--changes FILE]
+    python3 source/build_results.py build [--prev FILE] [--out FILE] [--changes FILE] [--fetch FILE]
                                                           # writes results.json (default: over the published one, which is
                                                           # also the default --prev) and the change list for the PR
+                                                          # (with fetch_results.py's report, if given, under "Sources")
     python3 source/build_results.py suggest FILE          # for each counties contest without a key for FILE's county,
                                                           # the source contests whose names fit (to confirm by hand)
 
@@ -45,9 +46,28 @@ def raw_dir(root, source, posted, data):
     return root / "raw" / source / (posted.replace(":", "-") + "-" + hashlib.sha256(data).hexdigest()[:8])
 
 
-def file_inbox(res=RES):
+def reject(res, folder, f, why):
+    """A file Ballotta can't use is moved to rejected/<county>/ with a .why.txt beside it: the run goes on, and the
+    pull request lists it until Lane deletes it (the deep audit, #153; RUNBOOK step 11)."""
+    d = res / "rejected" / folder
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f.name).write_bytes(f.read_bytes())
+    (d / (f.name + ".why.txt")).write_text(why + "\n", encoding="utf-8")
+    f.unlink()
+
+
+def rejected(res):
+    """[(path, why)] for every file set aside, for the pull request."""
+    out = []
+    for w in sorted((res / "rejected").glob("*/*.why.txt")) if (res / "rejected").exists() else []:
+        out.append((w.relative_to(res).as_posix()[: -len(".why.txt")], w.read_text(encoding="utf-8").strip()))
+    return out
+
+
+def file_inbox(res=RES, election=None):
     """Each file in inbox/<county>/ is parsed, checked to be that county's, and moved to raw/<county>/<posted>-<hash8>/.
-    A file already filed (same hash) is just removed from the inbox. Returns the paths filed."""
+    A file already filed (same hash) is just removed from the inbox; one that isn't a usable file of that county is set
+    aside (reject). Returns the paths filed."""
     filed = []
     for folder in sorted((res / "inbox").glob("*")):
         if not folder.is_dir():
@@ -59,10 +79,15 @@ def file_inbox(res=RES):
             kind = "williamson" if folder.name == "williamson" else "hays" if folder.name == "hays" else "clarity"
             try:
                 rep = P.PARSERS[kind](data)
-            except P.BadFile as e:
-                raise Problem(f"inbox/{folder.name}/{f.name}: {e}")
+            except Exception as e:   # any way a file can fail to parse: set aside, never a stopped run
+                reject(res, folder.name, f, f"not a {folder.name} results file Ballotta reads: {type(e).__name__}: {e}")
+                continue
             if rep["source"] != folder.name:
-                raise Problem(f"inbox/{folder.name}/{f.name} is {rep['label']}'s file: move it to inbox/{rep['source']}/")
+                reject(res, folder.name, f, f"this is {rep['label']}'s file: upload it to inbox/{rep['source']}/")
+                continue
+            if election and rep.get("election") not in (None, election):
+                reject(res, folder.name, f, f"this is the file for the {rep['election']} election, not {election}")
+                continue
             d = raw_dir(res, rep["source"], rep["posted"], data)
             if not d.exists():
                 d.mkdir(parents=True)
@@ -72,9 +97,19 @@ def file_inbox(res=RES):
     return filed
 
 
-def latest(res, source, excluded):
-    """The newest report from one source (by the time posted inside the file), excluded files skipped. Two different
-    files posted at the same minute can't be told apart: a Problem, so Lane excludes the wrong one."""
+# Polls close at 7 pm Austin time on Election Day. A report posted before then (the SOS feed lists every contest with no
+# votes weeks ahead) is no result: published, it would say "No votes reported yet" from midnight Nov 4 until the first
+# real update was merged (the deep audit, #152). The workflow builds with it; the tests pass their own.
+POLLS_CLOSE = "2026-11-03T19:00"
+# Every file must be this election's, where the file says (all but Williamson's page do): last year's file, or the Dec 12
+# runoff's, is set aside (the deep audit, #158). The workflow passes it; the tests pass their own (their files are 2025's).
+ELECTION = "2026-11-03"
+
+
+def latest(res, source, excluded, since=None, held=None, election=None):
+    """The newest report from one source (by the time posted inside the file), excluded files skipped, and any posted
+    before `since`. Two different files posted at the same minute can't be told apart: a Problem, so Lane excludes the
+    wrong one."""
     best = []
     for d in sorted((res / "raw" / source).glob("*")) if (res / "raw" / source).exists() else []:
         for f in sorted(d.iterdir()):
@@ -83,15 +118,34 @@ def latest(res, source, excluded):
                 continue
             try:
                 rep = P.PARSERS[SOURCE_OF[source]](f.read_bytes(), **({"zone": ZONE[0]} if source == "sos" else {}))
-            except P.BadFile as e:
+            except Exception as e:   # one bad file: skipped and listed, the source's other files still used (#153)
+                if held is not None:
+                    held.append(f"{rel}: {e} (skipped; add it to excluded.json with the reason)")
+                    continue
                 raise Problem(f"{rel}: {e} (add it to excluded.json with the reason)")
             rep["file"] = rel
+            if since and rep["posted"] < since:
+                continue
+            if election and rep.get("election") not in (None, election):
+                msg = f"{rel}: the file for the {rep['election']} election, not {election}"
+                if held is None:
+                    raise Problem(msg + " (add it to excluded.json)")
+                held.append(msg + " (skipped; add it to excluded.json with the reason)")
+                continue
             best.append(rep)
     if not best:
         return None
     best.sort(key=lambda r: r["posted"])
-    if len(best) > 1 and best[-1]["posted"] == best[-2]["posted"]:
-        raise Problem(f"{best[-2]['file']} and {best[-1]['file']} were both posted at {best[-1]['posted']}: exclude one")
+    top = [r for r in best if r["posted"] == best[-1]["posted"]]
+    if len(top) > 1:
+        body = lambda r: {k: v for k, v in r.items() if k != "file"}
+        if any(body(r) != body(top[0]) for r in top):   # different files in one minute can't be told apart: this source waits
+            msg = f"{', '.join(r['file'] for r in top)} were all posted at {best[-1]['posted']} and differ: exclude one"
+            if held is None:
+                raise Problem(msg)
+            held.append(msg + f" ({source} held at its previous file)")
+            older = [r for r in best if r["posted"] < best[-1]["posted"]]
+            return older[-1] if older else None
     return best[-1]
 
 
@@ -103,9 +157,18 @@ def slice_of(rep, key, names, write_ins, spell, where):
     """One source's numbers for a contest, as [(pick name, votes)] in the page's order (ballot, then declared write-ins),
     plus registered voters. Every printed choice must be a ballot name, a declared write-in, or a generic write-in
     line (dropped: Ballotta never shows a ranked "Write-in" total); otherwise a Problem."""
+    key, named = (key.split(" = ", 1) + [None])[:2]
     c = rep["contests"].get(key)
     if c is None:
         raise Problem(f"{where}: {rep['label']}'s file has no contest {key!r} (fix the map's key)")
+    if rep["source"] in ("travis", "bastrop", "williamson"):
+        # a county's own contest number: kept with the county's name for it, so a renumbered file (or a mistyped
+        # number) is caught, not read as another contest (the deep audit, #158)
+        if named is None:
+            raise Problem(f"{where}: {rep['label']}'s key {key!r} needs the county's name for the contest, as suggest prints it: "
+                          f"\"{key} = {c['name']}\" (if that's the right contest)")
+        if P.norm(named) != P.norm(c["name"]):
+            raise Problem(f"{where}: {rep['label']}'s contest {key} is {c['name']!r} in this file, not {named!r} (fix the map's key)")
     every = names + write_ins
     got = {}
     for printed, votes in c["choices"]:
@@ -124,7 +187,7 @@ def slice_of(rep, key, names, write_ins, spell, where):
     return [(n, got[n]) for n in names] + [(n, got.get(n, 0)) for n in write_ins], c.get("registered")
 
 
-def entry(cid, contest, m, reports, official, canvassers, prev_entry):
+def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None):
     """results.json's entry for one contest, or None when no source has it yet."""
     names, write_ins = check_results.pick_names(contest), [w["name"] for w in m.get("write_ins", [])]
     where = f"{cid} ({contest['title']})"
@@ -146,15 +209,38 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
         elif done:
             official_numbers = False                         # W11: official, but these are the last unofficial numbers
         if not m.get("travis_only") and reports.get("travis") and m["keys"].get("travis"):
-            tv, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
-            tt = sum(v for _, v in tv[: len(names)])
-            travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]]
+            try:
+                tv, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
+                tt = sum(v for _, v in tv[: len(names)])
+                travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]]
+            except Problem as p:   # only the Travis breakdown waits: the statewide result still shows (the verification of #158)
+                if held is None:
+                    raise
+                held.append(f"{contest['title']} ({cid}): {p} (shown without its Travis County breakdown)")
     else:
         total = {n: 0 for n in names + write_ins}
         any_county = False
         for county in m["electorate"]:
             rep, key = reports.get(county), m["keys"].get(county)
             if key == "absent":                          # confirmed from that county's own file: none of its voters vote here
+                continue
+            hand = official.get("counted", {}).get(cid, {}).get(county)
+            if (rep is None or not key) and hand and done:
+                # a county that never posts a file (Caldwell and Lee, for ACC): its count from the canvass record, typed
+                # into official.json's "counted" by Lane with the canvass's date and time (the deep audit, #155):
+                # {"at": "2026-11-18T10:00", "votes": {"Jane Doe": 120, ...}}
+                votes, at = hand.get("votes") or {}, hand.get("at")
+                odd = sorted(set(votes) - set(names + write_ins))
+                if odd or not votes or not all(isinstance(v, int) and v >= 0 for v in votes.values()):
+                    raise Problem(f"{where}: official.json's counted for {P.LABELS[county]}: {odd or 'votes must be whole numbers'}"
+                                  f" (the names are {names + write_ins})")
+                if not (isinstance(at, str) and check_results.TIME.match(at) and at[:10] >= done):
+                    raise Problem(f"{where}: official.json's counted for {P.LABELS[county]} needs \"at\": the canvass's date and time,"
+                                  f" YYYY-MM-DDTHH:MM, on or after {done}")
+                for n in names + write_ins:
+                    total[n] += votes.get(n, 0)
+                any_county = True
+                sources.append([f"{P.LABELS[county]}, from the canvass by {cvr['label']}", at])   # W106
                 continue
             if rep is None or not key:
                 missing.append(P.LABELS[county])
@@ -166,8 +252,12 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
             for n, v in rows:
                 total[n] += v
             sources.append([rep["label"], rep["posted"]])
-            if done and rep["posted"][:10] < done:
-                official_numbers = False                     # a county's file is from before the canvass
+            # W11 ("numbers are the last unofficial count") only while a county's file is older than its final count:
+            # counties post their final files before the bodies canvass from them, so the canvass date can't be the
+            # test. Final = Hays's PDF says "Official", or the date in official.json's "final" for that county (#156).
+            fin = official.get("final", {}).get(county)
+            if done and not (rep.get("official") or (fin and rep["posted"][:10] >= fin) or rep["posted"][:10] >= done):
+                official_numbers = False
             if county == "travis" and sum(1 for k in m["electorate"] if m["keys"].get(k) != "absent") > 1:
                 tt = sum(v for _, v in rows[: len(names)])
                 travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]]
@@ -222,7 +312,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry):
 
 
 # ---------------------------------------------------------------- the whole file
-def build(res=RES, mp=None, prev=None, key=None):
+def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     """(results, changes): results.json's object, and {verdict_changed, lines} for the pull request."""
     mp = mp if mp is not None else load(ROOT / "source/results_map.json")
     key = key or check_results.answer_key()
@@ -230,39 +320,61 @@ def build(res=RES, mp=None, prev=None, key=None):
     official = load(res / "official.json", {}) or {}
     excluded = {x["path"]: x for x in load(res / "excluded.json", []) or []}
     ZONE[0] = mp["meta"]["sos_time_zone"]
-    reports = {s: latest(res, s, excluded) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
-    reports = {s: r for s, r in reports.items() if r is not None}
+    # While paused, what voters last saw is kept, unpublished, in ledger.json, so a restore carries on from it: its
+    # corrections, each contest's "changed", its posted times (the deep audit, #153). Written as the pause begins.
+    ledger = res / "ledger.json"
+    if official.get("withdrawn") and not prev.get("withdrawn"):
+        ledger.write_text(json.dumps(prev["contests"], ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    seen = dict(prev, contests=load(ledger, {}) or {}) if prev.get("withdrawn") and not official.get("withdrawn") else prev
+    held = []   # what couldn't be used this run, for the pull request: Lane fixes it, and nothing else waits (#153)
+    reports = {}
+    if not official.get("withdrawn"):   # the kill switch is read first: no file can hold up a withdrawal (#153)
+        reports = {s: latest(res, s, excluded, since, held, election) for s in ("sos", "sos_canvass", "travis", "bastrop", "williamson", "hays")}
+        reports = {s: r for s, r in reports.items() if r is not None}
     contests = {}
     if not official.get("withdrawn"):
         for cid, m in mp["contests"].items():
-            e = entry(cid, key[cid], m, reports, official, mp["canvassers"], prev["contests"].get(cid))
+            try:
+                e = entry(cid, key[cid], m, reports, official, mp["canvassers"], seen["contests"].get(cid), held)
+            except Problem as p:
+                held.append(f"{key[cid]['title']} ({cid}): {p} " + ("(shown as last published)" if seen["contests"].get(cid) else "(not shown yet)"))
+                e = seen["contests"].get(cid)   # the last published entry stands; or not shown, if there was none
             if e is not None:
                 contests[cid] = e
         notes(contests, mp)
-    corrections = {}
-    for x in excluded.values():
-        for cid in x.get("contests", []):
-            corrections[cid] = max(corrections.get(cid, ""), x["date"])
+    # A correction is exactly this: what's published came from a file now excluded, and the contest now reads differently.
+    # Then it says so (W51), once; if it reads the same, it keeps its sources, so nothing appears to go back in time. An
+    # exclusion that never reached the published file corrects nothing, then or later (the deep audit, #154).
+    stamps = check_results.excluded_stamps(excluded.values())
     out = {"seq": prev["seq"], "election": "2026-11-03", "withdrawn": bool(official.get("withdrawn")),
            "late_until": official.get("late_until", mp["meta"]["late_until"]), "contests": contests}
-    lines, verdict_changed, fresh = [], False, 0
-    for cid in sorted(set(contests) | set(prev["contests"])):
-        e, old = contests.get(cid), prev["contests"].get(cid)
+    lines, verdict_changed, fresh, numbers = [], False, 0, 0
+    for cid in sorted(set(contests) | set(seen["contests"])):
+        e, old = contests.get(cid), seen["contests"].get(cid)
         title = key[cid]["title"]
         if e is None:
             if old is not None:
                 lines.append(f"- {title}: no longer shown ({cid})"); verdict_changed = True
             continue
+        # Rolled back: a source the published entry took from an excluded file now comes from an older one (or none).
+        now_t = dict(map(tuple, e["sources"]))
+        hit = [stamps[tuple(x)] for x in old["sources"] if tuple(x) in stamps and now_t.get(x[0], "") < x[1]] if old is not None else []
+        # The numbers read the same: nothing to correct; the sources say the older file, and the check allows that
+        # (sources kept as published made a later, ordinary update read as a rollback: the verification of #154).
+        if hit and not all(e[k] == old[k] for k in ("choices", "travis", "missing")) and max(hit) > (old.get("corrected") or ""):
+            e["corrected"] = max(hit)
+            verdict_changed = True                        # voters will see "Corrected": that waits for Lane, and says so
+            lines.append(f"- {title}: marked Corrected ({e['corrected']}): it read from an excluded file ({cid})")
         moved = old is None or (e["state"], e["verdict"], e["leaders"], e["runoff"], e["note"]) != (old["state"], old["verdict"], old["leaders"], old["runoff"], old["note"])
         if moved:
             verdict_changed = True
-            if old is not None and old["verdict"] != e["verdict"] and corrections.get(cid, "") > (old.get("corrected") or ""):
-                e["corrected"] = corrections[cid]
             if old is None and e["state"] == "counting":
                 fresh += 1                                # first seen, no votes yet: one summary line, not dozens
             else:
                 lines.append(f"- {title}: " + (f"{word(old)} → " if old else "") + word(e) + f" ({cid})")
         e["changed"] = -1 if moved else old["changed"]
+        if not moved and (e["choices"], e["travis"]) != (old["choices"], old["travis"]):
+            numbers += 1                                  # new numbers only: they wait if anything else waits for Lane (#160)
     same = {k: v for k, v in out.items() if k != "seq"}
     was = {k: v for k, v in prev.items() if k != "seq"}
     if strip_changed(same) != strip_changed(was) or any(e["changed"] == -1 for e in contests.values()):
@@ -274,13 +386,17 @@ def build(res=RES, mp=None, prev=None, key=None):
         lines.insert(0, f"- {fresh} contest{'s' if fresh > 1 else ''} now shown, no votes yet")
     if out["seq"] != prev["seq"] and not verdict_changed:
         lines.append("- Numbers only: no result changed")
+    held += [f"{p}: {why} (set aside; delete it once dealt with)" for p, why in rejected(res)]
+    if held:   # never a self-merge while something waits on Lane
+        verdict_changed = True
+        lines[:0] = ["- HELD: " + h for h in held]
     if out["withdrawn"] != prev.get("withdrawn"):
         verdict_changed = True
         lines.insert(0, "- RESULTS WITHDRAWN (the kill switch): every result is hidden" if out["withdrawn"] else "- Results restored (the kill switch is off)")
-    bad = check_results.check(out, key, prev if prev.get("contests") or prev.get("seq") else None)
+    bad = check_results.check(out, key, dict(seen, seq=prev["seq"]) if seen.get("contests") or prev.get("seq") else None, stamps)
     if bad:
         raise Problem("the built file fails the check: " + "; ".join(bad[:10]))
-    return out, {"verdict_changed": verdict_changed, "seq": out["seq"], "lines": lines,
+    return out, {"verdict_changed": verdict_changed, "seq": out["seq"], "lines": lines, "numbers_waiting": numbers if verdict_changed else 0,
                  "files": sorted(r["file"] for r in reports.values())}
 
 
@@ -329,14 +445,32 @@ def suggest(path, mp=None):
     rep = next((f(data) for k, f in P.PARSERS.items() if k in ("clarity", "williamson", "hays") and _ok(f, data)), None)
     if rep is None:
         raise Problem(f"{path} isn't a county results file Ballotta reads")
+    if rep.get("election") not in (None, ELECTION):
+        raise Problem(f"{path} is the file for the {rep['election']} election, not {ELECTION}")
     key = check_results.answer_key()
     for cid, m in mp["contests"].items():
+        if m["source"] == "sos" and rep["source"] == "travis" and not m.get("travis_only") and not m["keys"].get("travis"):
+            # a statewide race's Travis breakdown: its key is the Travis file's contest of the same name (#158)
+            fits = sorted(((k, c["name"]) for k, c in rep["contests"].items()), key=lambda kn: -likeness(m["sos_name"], kn[1]))
+            print(f"{cid} {key[cid]['title']} (Travis breakdown): " + "; ".join(f"{k} = {n}" for k, n in fits[:3]))
+            continue
         if m["source"] != "counties" or rep["source"] not in m["electorate"] or m["keys"].get(rep["source"]):
             continue
         names = set(map(P.norm, check_results.pick_names(key[cid])))
         fits = [(k, c["name"]) for k, c in rep["contests"].items()
                 if names <= {P.norm(n) for n, _ in c["choices"]} | ({"FOR", "AGAINST"} if key[cid]["type"] == "measure" else set())]
-        print(f"{cid} {key[cid]['title']}: " + ("; ".join(f"{k} = {n}" for k, n in fits[:4]) or "no fit"))
+        fits.sort(key=lambda kn: -likeness(key[cid]["title"], kn[1]))   # FOR/AGAINST fits every measure: the title decides (#158)
+        print(f"{cid} {key[cid]['title']}: " + ("; ".join(f"{k} = {n}" for k, n in fits[:4])
+              or f"no fit: if none of this county's voters vote here, set its key to \"absent\""))
+
+
+WORD = re.compile(r"[A-Z0-9]+")
+def likeness(title, name):
+    """How alike a ballot title and a county's contest name read: shared words, a shared proposition letter or number
+    counting most ("Proposition A" is not "Proposition B", whatever else they share)."""
+    a, b = set(WORD.findall(P.norm(title))), set(WORD.findall(P.norm(name)))
+    pa, pb = re.search(r"PROPOSITION ([A-Z0-9]+)", P.norm(title)), re.search(r"PROPOSITION ([A-Z0-9]+)", P.norm(name))
+    return len(a & b) + (10 if pa and pb and pa.group(1) == pb.group(1) else -10 if pa and pb else 0)
 
 
 def _ok(f, data):
@@ -350,12 +484,13 @@ def main(argv):
     cmd = argv[1] if len(argv) > 1 else "build"
     try:
         if cmd == "file-inbox":
-            for f in file_inbox():
+            for f in file_inbox(election=ELECTION):
                 print("filed", f.relative_to(ROOT))
         elif cmd == "build":
             arg = lambda k, d: pathlib.Path(argv[argv.index(k) + 1]) if k in argv else d
             out_path, prev_path = arg("--out", ROOT / "results.json"), arg("--prev", ROOT / "results.json")
-            obj, changes = build(prev=load(prev_path))
+            obj, changes = build(prev=load(prev_path), since=POLLS_CLOSE, election=ELECTION)
+            changes["fetch"] = load(arg("--fetch", ROOT / "-"), None) or ["- the fetch made no report (see the run's log)"] if "--fetch" in argv else []
             out_path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
             if "--changes" in argv:
                 arg("--changes", None).write_text(json.dumps(changes, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

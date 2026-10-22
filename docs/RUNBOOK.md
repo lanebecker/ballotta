@@ -156,6 +156,8 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 3. **The SOS time zone** (Task 1 finding 10): open the SOS results page and note the first "Last updated" time.
    `Nov 03 … 19:xx` or later that evening means Central; `Nov 04 … 01:xx` means UTC. If UTC, set
    `meta.sos_time_zone` to `"UTC"` in `source/results_map.json`. Done: posted times on the PR read as Austin evening.
+   (The fetch checks this too: a feed whose times read later than the state server's own clock isn't filed, and the
+   PR's "Sources this run" says to set the zone.)
 4. **Where the counties post:** put Williamson's Nov 3 results page address in `meta.fetch.williamson` and Hays's
    cumulative PDF addresses in `meta.fetch.hays` (both unofficial and, later, official). Done: the next run's log says
    `williamson: filed …` and `hays: filed …`. Where to look (prepared Oct 21 from past elections; confirm each that
@@ -175,8 +177,13 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 5. Download Travis's and Bastrop's **Detail XML** (Clarity results page → Reports → Detail XML; `detailxml.zip`).
 6. **Map the county contests** (they get their keys only once the county posts): run
    `python3 source/build_results.py suggest detailxml.zip` (or ask Claude to). It prints each Ballotta contest with
-   the county contests whose choices fit. Confirm each and put the key in that contest's `keys` in
-   `source/results_map.json`. A contest with no key is shown as *partial* (that county missing), never as zero.
+   the county contests whose choices fit, best first (`17 = CITY OF AUSTIN PROPOSITION A`), and for Travis's file the
+   statewide races too (their Travis County breakdown, "Travis breakdown"). Confirm each and copy
+   that whole `17 = …` into the contest's `keys` in `source/results_map.json`: the name is checked against every later
+   file, so a renumbered contest is held, not misread. "No fit" means none of the county's voters vote in it: confirm
+   from the county's ballot and set the key to `"absent"`. A contest with no key is shown as *partial* (that county
+   missing), never as zero. A file from another election (last year's, or the Dec 12 runoff's) is set aside in
+   `source/results/rejected/` with the reason, and the PR lists it.
 7. Then go on with the daily steps.
 
 ## Every day, Nov 4 → each canvass
@@ -186,12 +193,21 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
    upload's commit is on `results/next`. Williamson, Hays and the SOS come by themselves (7:15 am and 5:15 pm).
 9. The workflow runs on the upload and updates the "Results updates" pull request with a plain-words change list.
    - **"Numbers only"**: it merged itself and posted the list on the pinned "Results updates" issue. Nothing to do.
-   - **"A state or verdict changed"**: read the list and **merge by 9 am**, every day at the same time. Hold a merge only
+   - **"A state or verdict changed"**: read the list and **merge by 9 am**, every day at the same time; sooner when the
+     PR says new numbers wait with it (one PR holds everything, so numbers-only updates wait too). Hold a merge only
      for an error in the data, and say why in the pull request. Use **Create a merge commit** (never squash or rebase),
      and don't click **Delete branch** afterward (if it happens, the Results workflow recreates `results/next` from
      main). Done: Pages deployed (Actions → Pages, green).
-   - **The build stopped** (red, `results build stopped: …`): it names what it couldn't decide. An unmapped choice or
-     key → fix the map. A bad file → step 11. Nothing is published until it's fixed; what's live stays as it was.
+   - **"HELD" lines**: a contest, file or source the build couldn't use this time. It stays as last published and
+     everything else goes on; the PR waits for you while any HELD line is there. An unmapped choice or key → fix the
+     map (`spell`, a write-in, or the key; hand edits to the map are kept). A bad file → step 11.
+   - **The build stopped** (red, `results build stopped: …`): rare now (the built file failed its own check). Nothing
+     is published until it's fixed; what's live stays as it was.
+   - **"Sources this run"** at the foot of the PR: any source that couldn't be fetched (it's tried three times; the
+     run never fails because of it) and how old each source's newest file is. A county many hours old on a counting
+     day: check its site, or that its download was uploaded.
+   - The PR may show a red "Release check" and "Build check" with zero jobs, started by github-actions[bot]: those
+     workflows don't run for the bot's pushes. Ignore them; the Results run's own checks are what count.
 
 ## When a body canvasses
 
@@ -202,20 +218,37 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
     (after Jan 12, 2027, Governor and Lt. Governor) is `"legislature"`. Done: the PR lists those contests as official.
     A canvass date outside its legal window is refused.
     After a canvass, download that county's file once more: until the files are from on or after the canvass, the
-    contest says "numbers are the last unofficial count".
+    contest says "numbers are the last unofficial count". If a county's last file is final but posted before the
+    canvass, say so instead: `"final": {"travis": "2026-11-14"}` (the date of that final file).
+    A county that posts no file Ballotta reads (ACC's Caldwell and Lee): type its canvassed counts from the canvass
+    record, with the canvass's date and time (voters see it as that county's "posted" time):
+    `"counted": {"c147": {"lee": {"at": "2026-11-18T10:00", "votes": {"FOR": 10, "AGAINST": 5}}}}`. Until those are in, the contest is held at
+    its last state and the PR says which county is missing. A county with none of the contest's voters: set its key
+    in `source/results_map.json` to `"absent"`.
 
 ## When something is wrong
 
-11. **A bad file** (a county posted a mistake, or the wrong file was uploaded): add it to
-    `source/results/excluded.json` with a reason, today's date and the contests it affects. The next run ignores it;
-    any verdict it changes is marked "Corrected" for voters. Never delete or edit a file in `raw/`.
+11. **A bad file.** One uploaded to the wrong folder, from another election, or not a results file is set aside
+    by itself in `source/results/rejected/<county>/` with a `.why.txt`; the PR lists it until you delete it there.
+    A file that was filed and is wrong (the county posted a mistake): add it to `source/results/excluded.json` with
+    a reason, today's date and the contests it affects. The next run uses that source's previous file; a contest
+    voters saw from the bad file that now reads differently is marked "Corrected" (with that date). Never delete or
+    edit a file in `raw/`.
 12. **Anything shown is wrong and the cause isn't clear: the kill switch.** Set `"withdrawn": true` in
     `source/results/official.json` on `results/next` and merge the pull request it opens (a kill switch is never
     numbers-only, so it waits for you: merge at once). Every result disappears from every ballot with "Results are
-    paused…" (W52). Set it back to `false` to restore. For a fault in the page's results code, not the data, roll back
+    paused…" (W52). It takes about 15–25 minutes to reach phones (the run, Pages, the CDN). While paused, what voters
+    last saw is kept in `source/results/ledger.json` (never published), so a restore keeps each result's
+    corrections and "since you last looked". Set it back to `false` to restore. For a fault in the page's results code, not the data, roll back
     with `RESULTS_LIVE = False` in `source/build_site.py`: a release (the steps above).
+    **If the Results workflow itself won't run**: edit `results.json` on `main` in GitHub (pencil icon) and replace
+    it all with `{"seq": N, "election": "2026-11-03", "withdrawn": true, "late_until": "2026-11-17", "contests": {}}`,
+    where N is one more than the seq it had; commit to `main`. Pages deploys it (Actions → Pages, green). Done:
+    ballotta.org shows "Results are paused…". To restore, don't revert (pages that saw the paused file ignore an older
+    seq): put back the last good `results.json` (its copy in the commit before yours) with its seq set to N + 1, and
+    commit that to `main`.
 
 ## After
 
-13. The schedule stops on Dec 10. Governor and Lt. Governor stay "becomes official when the Legislature canvasses" until
-    January: add the `"legislature"` line then.
+13. The schedule runs to Dec 20, for a late SOS canvass report. Governor and Lt. Governor stay "becomes official when
+    the Legislature canvasses" until January: add the `"legislature"` line then (and run the Results workflow by hand).

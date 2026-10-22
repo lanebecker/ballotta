@@ -48,7 +48,8 @@ Names, counties, dates and times below are placeholders. Separators and quotes f
 - **W27** Tie, two candidates, majority needed: "Tied · goes to a runoff"
 - **W28** Tie for second, majority needed: "Tie for the runoff spot · a recount decides"
 - **W29** "Recount requested" (with a link: "Details")
-- **W30** After the runoff date: "Runoff held Dec 12 · result not shown here"
+- **W30** After the runoff date: "Runoff held Dec 12 · its result is on Travis County Elections" (W113, Lane, Oct 21;
+  was "· result not shown here")
 - **W31** MUD confirmation failed, on that district's other contests: "Voters didn’t confirm this district (Proposition A
   failed), so it won’t be created."
 - **W32** ESD annexation, one line across both votes: "Area approved, district rejected: the area won’t be added." (and
@@ -247,3 +248,76 @@ the same day:
   last words open the canvass explainer.
 - The pick counts stay as built (W96).
 - What's next says "See the runoff" instead of "Get ready" until Phase 4's runoff pages exist.
+
+## The runoff (Phase 4, Oct 21) — approved by Lane, Oct 21, 4:55 pm
+
+Most of the runoff's words come from the canvas boards LaptopRunoff, LaptopRunoffVote, PhoneRunoff, PhoneRunoffVote and
+RunoffStates, which Lane reviewed Oct 20–21: the menu group, Decide's "Undecided" / "Decided", the band's labels, the
+paper ("Runoff · <place> · contest 1 of 1", "Vote for 1 · Runoff, Sat, Dec 12", the Nov 3 lines), "← Back to results",
+"Next: where to vote in the runoff", the notes, and the "not posted yet" page. The build added:
+
+- **W98** The band's early voting, until the county posts dates: "Not posted yet". (The canvas had a placeholder.)
+- **W99** The band's countdown: "28 days from today"; the day before, "Tomorrow"; on the day, "Today".
+- **W100** Who can vote: "Any registered voter in <the contest's place and district>, whether or not you voted Nov 3",
+  e.g. "in Austin ISD District 1" (the canvas: "in District 9"). With no district: the place alone ("in City of Austin").
+- **W101** On Nov 3 you skipped the race: "On Nov 3 you skipped this race. This is a new choice: pick, or skip it
+  again." (The canvas covered a pick that made the runoff and one that didn't.) With no Nov 3 pick: no line.
+- **W102** The runoff's printout: "My runoff choices" / "Sat, Dec 12"; the page "Runoff · Sat, Dec 12" / "Print your
+  choices" with the crib sheet's lead; under the button: "The printout has your runoff picks and, if you choose, your
+  reasons. Nothing else."
+- **W103** The result card's What's next, once Phase 4 exists: "Get ready for the runoff" / "Where to vote in the
+  runoff" (RunoffStates 4), and the summary's "· Get ready" again (Lane, Oct 21: once Phase 4's pages exist).
+- **W104** The phone's bottom bar on the runoff's ballot: "Where to vote →".
+- **Links:** "Travis County runoff information" opens VoteTravis.gov's current-election page; "How runoffs work" opens the
+  page's canvass explainer.
+- **W105** "How runoffs work" opens a new section of the canvass explainer, "What’s a runoff?": "Some offices need a
+  majority: more than half the votes. Austin’s City Council, several other city councils and school boards, and ACC’s
+  trustees are among them. When no one gets a majority, the top two meet again in a runoff. Any registered voter in that
+  district or area can vote in it, whether or not they voted in November. The county sets the runoff’s early voting and
+  vote centers, and fewer places are open than in November." (Lane approved a version that named "Austin's mayor"; the
+  mayor isn't on the 2026 ballot, so the sentence names the majority races that are: Austin, Manor and Pflugerville
+  councils, Austin ISD, ACC.)
+
+**Lane, Oct 21, 4:55 pm:** W98–W105 approved as built, one by one with alternatives.
+
+## From the deep audit's back-end fixes (Oct 21), for Lane
+
+Two source names voters see in a result's "Where the numbers come from" and its ribbon ("<source>, posted <time>"):
+
+- **W106** A county that posts no file Ballotta reads (ACC's Caldwell and Lee), counted from the canvass record:
+  "Lee County, from the canvass by the ACC Board of Trustees", posted at the canvass's own date and time, as Lane
+  types it from the record (#155).
+- **W107** The state's Official Canvass Report, apart from its election-night feed: "Texas Secretary of State’s
+  canvass" (the feed stays "Texas Secretary of State"). Two names, so the report, printed before the feed's last
+  update, isn't read as the feed's time going backwards (#163).
+- **W108** Two or more runoffs: the band on the runoff's Where to vote and Print says "In each race, any registered
+  voter in its area (City of Austin District 8; Austin ISD District 1), whether or not you voted Nov 3". Each race's
+  Decide names that race's own area (W100). An at-large Place is the whole city ("in City of Pflugerville").
+- **W109** The runoff's Print in an iPhone Home Screen app: "Printing doesn’t work in a Home Screen app, and runoff
+  picks stay in this app. To print them, open ballotta.org in Safari, pick there and print from there."
+
+**Lane, Oct 21:** W106–W109 approved as written.
+
+Lane's calls the same day (AskUserQuestion), and the words they need:
+
+- **W110** (#167) On the runoff's pages, Clear my picks clears the runoff's picks only: "Clear your runoff picks and
+  reasons? Your Nov 3 picks stay." Elsewhere it clears Nov 3's, as before.
+- **W111** (#169) An official runoff with no date set yet, or a tie for its second spot: What's next says "A runoff is
+  coming" / "The date isn’t set yet. We’ll add it, and the runoff’s pages, once it is."
+- **W112** (#177) On an unofficial count, W39 makes no call: "Your pick is in the runoff so far." / "Your pick isn’t in
+  the runoff so far." Official: W39 as before.
+- **#160** One PR stays: no separate numbers-only path. The PR (and digest) says "New numbers in N other races wait
+  with it: merge as soon as you can." when a verdict change holds numbers back.
+
+Lane's calls that evening (AskUserQuestion):
+
+- **W113** (#170) After the runoff: W30 ends "its result is on Travis County Elections ↗" (a link), and the Nov 3 bars
+  under it are labeled "Nov 3 result".
+- **W114** (#170) From the day before the runoff: the band's early voting says "See Travis County Elections" (a link),
+  and Where to vote says "Check Travis County Elections for runoff vote centers." instead of "We’ll add them as soon as
+  it does."
+- **W115** (#172) The runoff's reason box: "Why? Private · kept on this device" (Nov 3's box unchanged). Runoff
+  reasons can't be shared: Share and Keep carry Nov 3's picks (the runoff plan's decision 4). Lane: private now,
+  runoff sharing later (filed).
+- **W116** (#168) The runoff's printout prints "Undecided" for an undecided race; blank is a skip, so "Blank = no vote
+  planned" holds.

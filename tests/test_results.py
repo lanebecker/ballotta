@@ -14,6 +14,7 @@
 5. The map (source/results_map.json, written by source/build_results_map.py): every contest, every canvasser, every
    county known; the 42 SOS contests against the live Nov 3 feed, write-ins included, through a full build.
 """
+import contextlib
 import pathlib, sys, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -242,6 +243,17 @@ def the_sos_canvass_report_equals_the_feed_name_by_name():
         assert got == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])   # wrapped and shortened names too
 
 @test
+def a_general_elections_canvass_report_equals_its_feed():
+    """#163: the canvass parser had only read a primary runoff's report. The Nov 4, 2025 special for U.S. House
+    District 18 (SOS election 51742, fetched Oct 21, 2026): a general election's report, 16 names on one race,
+    with the SOS's own party code for Green (GRE), which stuck to a name until the parser knew it."""
+    feed, can = P.parse_sos(fx('sos-51742.json')), P.parse_sos_canvass(fx('sos-51742-canvass.pdf'))
+    assert feed['election'] == can['election'] == '2025-11-04' and len(can['contests']) == 1
+    for r in feed['contests'].values():
+        o = can['contests'][P.norm(r['name'])]; names = [n for n, _ in r['choices']]
+        assert len(names) == 16 and sorted(map(tuple, o['choices'])) == sorted(map(tuple, r['choices'])), (r['name'], o['choices'])   # name for name, exactly: no party code left on a name
+
+@test
 def names_match_only_when_exactly_one_fits():
     assert P.match('JESUS GARCIA, JR', ['JESUS TOMAS GARCIA, JR', 'NOE GARZA']) == 'JESUS TOMAS GARCIA, JR'
     assert P.match('greg abbott (i)', ['GREG ABBOTT', 'GINA HINOJOSA']) == 'GREG ABBOTT'
@@ -267,7 +279,8 @@ def hays_reads_every_contest_and_its_run_time():
 
 # ---------------------------------------------------------------- 3. the build, end to end on real files
 SENATE = next(k for k, c in P.parse_sos(fx('sos-53815-travis.json'))['contests'].items() if c['name'].strip() == 'U. S. SENATOR')
-PROPQ = next(k for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])
+PROPQ = next(f'{k} = {c["name"]}' for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])
+WC46 = '46 = ' + P.parse_williamson(fx('williamson-2025-11.html'))['contests']['46']['name']
 MAP = {
     'meta': {'election': '2026-11-03', 'sos_election': '53815', 'sos_time_zone': 'America/Chicago', 'late_until': '2026-11-17'},
     'canvassers': {'state': {'label': 'the state', 'kind': 'state'}, 'city-of-austin': {'label': 'the Austin City Council', 'kind': 'local'}},
@@ -276,7 +289,7 @@ MAP = {
                  'write_ins': [{'name': n} for n in ('Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons')]},
         # Prop Q (Nov 2025) stands in for Austin's Prop A (c071): three counties, real numbers
         'c071': {'source': 'counties', 'canvasser': 'city-of-austin', 'electorate': ['travis', 'williamson', 'hays'],
-                 'keys': {'travis': PROPQ, 'williamson': '46', 'hays': 'CITY OF AUSTIN PROPOSITION Q'}, 'registered': {'hays': 565}},
+                 'keys': {'travis': PROPQ, 'williamson': WC46, 'hays': 'CITY OF AUSTIN PROPOSITION Q'}, 'registered': {'hays': 565}},
     }}
 
 class Scratch:
@@ -305,8 +318,13 @@ def downloads_are_filed_by_county_and_posted_time():
         assert not [f for f in (s.res / 'inbox/travis').iterdir()], 'the inbox is emptied'
         (s.res / 'inbox/travis/again.xml').write_bytes(fx('travis-2025-11-detail.xml')); assert B.file_inbox(s.res) == [], 'the same file twice is filed once'
         (s.res / 'inbox/bastrop/detailxml.xml').write_bytes(fx('travis-2025-11-detail.xml'))
-        try: B.file_inbox(s.res); raise AssertionError('a Travis file in the Bastrop folder was filed')
-        except B.Problem as e: assert 'inbox/travis/' in str(e), e
+        assert B.file_inbox(s.res) == [] and not s.raw('bastrop'), 'a Travis file in the Bastrop folder was filed'
+        assert B.rejected(s.res) == [('rejected/bastrop/detailxml.xml', 'this is Travis County’s file: upload it to inbox/travis/')] or 'inbox/travis/' in B.rejected(s.res)[0][1], B.rejected(s.res)
+        assert not list((s.res / 'inbox/bastrop').iterdir()), 'set aside, so the next run goes on (#153)'
+        (s.res / 'inbox/hays/oops.pdf').write_bytes(b'<html>rate limited</html>')
+        B.file_inbox(s.res)
+        out, ch = s.build()
+        assert out['contests'] and any(l.startswith('- HELD: rejected/hays/oops.pdf') for l in ch['lines']) and ch['verdict_changed'], ch['lines'][:3]
     finally: s.close()
 
 @test
@@ -322,6 +340,7 @@ def three_counties_make_one_unofficial_result():
         sen = out['contests']['c001']                                          # the live Nov 3 feed: no votes yet
         assert (sen['state'], sen['verdict']) == ('counting', 'none') and [x[0] for x in sen['choices'] if x[3]] == ['Avery Ayers', 'Bradford "Brad" Hall', 'Zul Mohamed', 'Jade Simmons']
         assert out['seq'] == 1 and ch['verdict_changed'] and check_results_ok(out)
+        assert ch['numbers_waiting'] == 0, 'everything new here is a verdict'
         # the change list, in plain words: first-seen contests with no votes are one line
         assert ch['lines'] == ['- 1 contest now shown, no votes yet', '- City of Austin Proposition A: Failing (unofficial) (c071)'], ch['lines']
     finally: s.close()
@@ -348,8 +367,9 @@ def official_only_through_its_own_canvasser():
     s = Scratch()
     try:
         s.official(canvasses={'state': {'canvassed': '2026-12-02'}})
-        try: s.build(); raise AssertionError('canvassed with no votes loaded was accepted')
-        except B.Problem as e: assert 'c001' in str(e) and 'no votes' in str(e), e
+        out, ch = s.build()
+        assert 'c001' not in out['contests'] and any('(c001)' in l and 'no votes' in l and l.startswith('- HELD: ') for l in ch['lines']), 'canvassed with no votes loaded was accepted'
+        assert out['contests']['c071'] and ch['verdict_changed'], 'the rest goes on, and Lane sees it (#153)'
         mp = copy.deepcopy(MAP); del mp['contests']['c001']
         e = s.build(mp=mp)[0]['contests']['c071']; assert e['state'] == 'unofficial', 'the state canvass never makes a city measure official'
         s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12', 'link': 'https://example.org'}})
@@ -374,6 +394,10 @@ def the_ledger_counts_changes_and_names_corrections():
         two, ch = s.build(prev=one)
         assert two['seq'] == 2 and two['contests']['c071']['changed'] == 2 and two['contests']['c001']['changed'] == 1 and ch['verdict_changed']
         assert '- City of Austin Proposition A: Failing (unofficial) → Failed (official) (c071)' in ch['lines'], ch['lines']
+        # #160: one PR holds everything, so it says when new numbers in other races wait with a verdict change
+        old = copy.deepcopy(one); old['contests']['c001']['choices'][0][1] = 7       # c001's numbers then differed from now
+        _, ch = s.build(prev=old)
+        assert ch['verdict_changed'] and ch['numbers_waiting'] == 1, ch.get('numbers_waiting')
         # Hays's file was bad: excluded, the verdict moves (official -> partial is refused, so take the canvass back too)
         s.official()
         hays = s.raw('hays')[0]
@@ -386,35 +410,117 @@ def the_ledger_counts_changes_and_names_corrections():
     finally: s.close()
 
 @test
+def excluding_a_newest_file_goes_back_quietly_and_corrects_only_what_changed():
+    """#154: excluding a source's newest file never stops the build (posted times would go back); a contest that reads the
+    same keeps its sources, one that reads differently says Corrected once; an exclusion that never reached the published
+    file corrects nothing, then or later."""
+    s = Scratch()
+    try:
+        one, _ = s.build()
+        x = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/13/2025 9:00:00 AM', 1)
+        r = P.parse_clarity(x); d = B.raw_dir(s.res, 'travis', r['posted'], x); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(x)
+        two, _ = s.build(prev=one)
+        assert dict(map(tuple, two['contests']['c071']['sources']))['Travis County'] == '2025-11-13T09:00'
+        newest = (d / 'detailxml.xml').relative_to(s.res).as_posix()
+        s.exclude({'path': newest, 'reason': 'a botched update', 'date': '2026-11-14', 'contests': []})
+        three, ch = s.build(prev=two)   # no Problem: the posted time would go back, but nothing reads differently
+        assert dict(map(tuple, three['contests']['c071']['sources']))['Travis County'] == '2025-11-12T15:00' and three['contests']['c071']['corrected'] is None   # the older file's own time, allowed back
+        assert not [l for l in ch['lines'] if l.startswith('- HELD')], ch['lines']
+        # an exclusion of a file the published copy never used: a later ordinary change isn't called a correction
+        y = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/10/2025 9:00:00 AM', 1)
+        r = P.parse_clarity(y); d = B.raw_dir(s.res, 'travis', r['posted'], y); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(y)
+        never = (d / 'detailxml.xml').relative_to(s.res).as_posix()
+        s.exclude({'path': newest, 'reason': 'a botched update', 'date': '2026-11-14', 'contests': []},
+                  {'path': never, 'reason': 'test', 'date': '2026-11-15', 'contests': ['c071']})
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12'}})
+        four, ch = s.build(prev=three)
+        e = four['contests']['c071']
+        assert (e['state'], e['verdict'], e['corrected']) == ('official', 'failed', None), ('an ordinary change called a correction', e['corrected'])
+        # and a genuinely newer file after the rollback is new numbers, not a correction
+        z = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/15/2025 9:00:00 AM', 1).replace(b'State of Texas Proposition 1', b'State of Texas Proposition 1 (again)', 1)
+        r = P.parse_clarity(z); d = B.raw_dir(s.res, 'travis', r['posted'], z); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(z)
+        five, _ = s.build(prev=four)
+        assert five['contests']['c071']['corrected'] is None and dict(map(tuple, five['contests']['c071']['sources']))['Travis County'] == '2025-11-15T09:00'
+    finally: s.close()
+
+@test
+def a_quiet_rollback_never_turns_into_a_correction_later():
+    """The verification of #154: when an excluded file changed nothing, its stamp was kept in the entry's sources, so a
+    later ordinary update from another county read as a rollback and was shown to voters as "Corrected". And a real
+    correction that moved no verdict was listed as "Numbers only" and said it would merge itself."""
+    s = Scratch()
+    try:
+        one, _ = s.build()
+        x = fx('travis-2025-11-detail.xml').replace(b'11/12/2025 3:00:27 PM', b'11/13/2025 9:00:00 AM', 1)   # same numbers, newer stamp
+        r = P.parse_clarity(x); d = B.raw_dir(s.res, 'travis', r['posted'], x); d.mkdir(parents=True); (d / 'detailxml.xml').write_bytes(x)
+        two, _ = s.build(prev=one)
+        s.exclude({'path': (d / 'detailxml.xml').relative_to(s.res).as_posix(), 'reason': 'botched', 'date': '2026-11-14', 'contests': []})
+        three, ch = s.build(prev=two)
+        e = three['contests']['c071']
+        assert e['corrected'] is None and dict(map(tuple, e['sources']))['Travis County'] == '2025-11-12T15:00', e['sources']
+        assert check_results_ok(three) and not B.check_results.check(three, B.check_results.answer_key(), two, B.check_results.excluded_stamps(json.loads((s.res / 'excluded.json').read_text())))
+        w = fx('williamson-2025-11.html').replace(b'9/30/2026 2:07:28 PM', b'11/16/2026 2:07:28 PM', 1)
+        w = w.replace(b"2, 2498]", b"2, 2600]", 1).replace(b'class="content-data">2,498<', b'class="content-data">2,600<', 1)
+        r = P.parse_williamson(w); d = B.raw_dir(s.res, 'williamson', r['posted'], w); d.mkdir(parents=True); (d / 'results.html').write_bytes(w)
+        four, ch = s.build(prev=three)
+        assert four['contests']['c071']['corrected'] is None, 'an ordinary Williamson update shown to voters as a correction'
+        # a real correction, no verdict moved: it waits for Lane and says so
+        s.exclude({'path': (d / 'results.html').relative_to(s.res).as_posix(), 'reason': 'bad', 'date': '2026-11-17', 'contests': ['c071']})
+        five, ch = s.build(prev=four)
+        assert five['contests']['c071']['corrected'] == '2026-11-17' and five['contests']['c071']['verdict'] == four['contests']['c071']['verdict']
+        assert ch['verdict_changed'] and '- City of Austin Proposition A: marked Corrected (2026-11-17): it read from an excluded file (c071)' in ch['lines'], ch['lines']
+        assert not [l for l in ch['lines'] if l.startswith('- Numbers only')], ch['lines']
+    finally: s.close()
+
+@test
 def the_kill_switch_hides_everything_and_says_so():
     s = Scratch()
     try:
         one, _ = s.build(); s.official(withdrawn=True)
         out, ch = s.build(prev=one)
         assert out['withdrawn'] and out['contests'] == {} and out['seq'] == 2 and ch['verdict_changed'] and 'WITHDRAWN' in ch['lines'][0]
+        # #153: a pause and a restore leave the record as it was: a correction still says so, "changed" doesn't jump
+        one['contests']['c071']['corrected'] = '2026-11-12'
+        paused, _ = s.build(prev=one); paused, _ = s.build(prev=paused)      # two runs while paused
+        assert paused['contests'] == {} and 'c071' not in (s.res / 'results.json').read_text() if (s.res / 'results.json').exists() else True
+        s.official(withdrawn=False)
+        back, ch = s.build(prev=paused)
+        c = back['contests']['c071']
+        assert (c['corrected'], c['changed']) == ('2026-11-12', one['contests']['c071']['changed']), (c['corrected'], c['changed'])
+        assert not back['withdrawn'] and back['seq'] == paused['seq'] + 1 and 'Results restored' in ch['lines'][0]
+        assert not [l for l in ch['lines'] if '(c071)' in l], ('the restore reads as a change in every contest', ch['lines'])
     finally: s.close()
 
 @test
 def anything_unmapped_stops_the_build():
     s = Scratch()
     try:
+        # each held, never dropped silently, and nothing else waits (#153): the contest stays as last published
+        held = lambda ch, *w: [l for l in ch['lines'] if l.startswith('- HELD: ') and all(x in l for x in w)]
+        good, _ = s.build()
         mp = copy.deepcopy(MAP); mp['contests']['c001']['write_ins'] = mp['contests']['c001']['write_ins'][:3]
-        try: s.build(mp=mp); raise AssertionError('a write-in the map lacks was dropped silently')
-        except B.Problem as e: assert 'JADE SIMMONS' in str(e), e
+        out, ch = s.build(mp=mp, prev=good)
+        assert held(ch, 'JADE SIMMONS', '(c001)'), 'a write-in the map lacks was dropped silently'
+        assert out['contests']['c001'] == good['contests']['c001'] and ch['verdict_changed'], 'held at the last published entry'
         mp = copy.deepcopy(MAP); mp['contests']['c071']['keys']['williamson'] = '999'
-        try: s.build(mp=mp); raise AssertionError('a key the file lacks was accepted')
-        except B.Problem as e: assert "'999'" in str(e), e
+        out, ch = s.build(mp=mp)
+        assert held(ch, "'999'", '(c071)') and 'c071' not in out['contests'] and out['contests']['c001'], 'a key the file lacks was accepted'
         data = fx('sos-53815-travis.json').replace(b'"Version"', b' "Version"'); r = P.parse_sos(data)
         d = B.raw_dir(s.res, 'sos', r['posted'], data); d.mkdir(parents=True); (d / 'election.json').write_bytes(data)
-        try: s.build(); raise AssertionError('two different files posted the same minute were accepted')
-        except B.Problem as e: assert 'exclude one' in str(e), e
+        assert not held(s.build()[1], 'exclude one'), 'the same contents re-stamped in the same minute are one report (#153)'
+        x = fx('travis-2025-11-detail.xml'); diff = x.replace(b'State of Texas Proposition 1', b'State of Texas Proposition 1 (as printed again)', 1)
+        assert diff != x; r = P.parse_clarity(diff)
+        d2 = B.raw_dir(s.res, 'travis', r['posted'], diff); d2.mkdir(parents=True); (d2 / 'detailxml.xml').write_bytes(diff)
+        out, ch = s.build()
+        assert held(ch, 'exclude one', 'travis held'), 'two different files posted the same minute were accepted'
+        assert out['contests']['c001'], 'the SOS goes on while Travis waits'
     finally: s.close()
 
 
-def clarity(contests, stamp='11/5/2026 9:00:00 AM CST', region='Travis'):
+def clarity(contests, stamp='11/5/2026 9:00:00 AM CST', region='Travis', election='11/3/2026'):
     """A valid Detail XML with chosen numbers: {key: (name, [(choice, votes)])}, one precinct, one vote type."""
     out = [f'<?xml version="1.0" encoding="utf-8"?><ElectionResult><Timestamp>{stamp}</Timestamp><ElectionName>Test</ElectionName>'
-           f'<ElectionDate>11/3/2026</ElectionDate><Region>{region}</Region><VoterTurnout totalVoters="5000" ballotsCast="0" voterTurnout="0">'
+           f'<ElectionDate>{election}</ElectionDate><Region>{region}</Region><VoterTurnout totalVoters="5000" ballotsCast="0" voterTurnout="0">'
            '<Precincts><Precinct name="101" totalVoters="5000" ballotsCast="0" voterTurnout="0" percentReporting="4" /></Precincts></VoterTurnout>']
     for k, (name, ch) in contests.items():
         out.append(f'<Contest key="{k}" text="{name}" voteFor="1" isQuestion="false" precinctsReporting="1" precinctsReported="1">')
@@ -441,6 +547,88 @@ M = lambda key, **k: {'source': 'counties', 'canvasser': k.pop('canvasser', 'eas
 FA = lambda f, a: [('FOR', f), ('AGAINST', a)]
 
 @test
+def a_county_with_no_file_counts_from_the_canvass_and_final_files_are_official_numbers():
+    """#155: ACC's Caldwell and Lee never post a file: at ACC's canvass Lane types their counts into official.json's
+    "counted", and the contest is official (no stop). #156: a county's final file is posted before the canvass; once Lane
+    marks it final (official.json "final"), "numbers are the last unofficial count" (W11) goes away."""
+    d, res = scratch_with([clarity({'1': ('Eastwood MUD Proposition A', FA(900, 100))})])
+    try:
+        mp = one_map(c147=M('1 = Eastwood MUD Proposition A', electorate=['travis', 'lee'], keys={'travis': '1 = Eastwood MUD Proposition A', 'lee': None}, registered={'lee': 50}))
+        e = B.build(res=res, mp=mp)[0]['contests']['c147']
+        assert (e['state'], e['missing']) == ('partial', ['Lee County']), e
+        LEE = {'at': '2026-11-12T10:30', 'votes': {'FOR': 10, 'AGAINST': 5}}
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}}))
+        held, ch = B.build(res=res, mp=mp)                                    # canvassed, Lee's counts not typed in yet
+        assert 'c147' not in held['contests'] and [l for l in ch['lines'] if 'HELD' in l and 'Lee County' in l], ('called official with a county missing', ch['lines'])
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': LEE}}}))
+        out, ch = B.build(res=res, mp=mp)
+        e = out['contests']['c147']
+        assert (e['state'], e['verdict'], [x[1] for x in e['choices']]) == ('official', 'passed', [910, 105]), e
+        assert ['Lee County, from the canvass by the eastwood-mud board', '2026-11-12T10:30'] in e['sources'] and not [l for l in ch['lines'] if 'HELD' in l]
+        assert e['official_numbers'] is False, 'the Travis file is from before the canvass and not marked final'
+        for bad in ({'at': LEE['at'], 'votes': {'FOR': 10, 'AGIANST': 5}}, {'at': LEE['at'], 'votes': {'FOR': '10', 'AGAINST': 5}},
+                    {'votes': LEE['votes']}, {'at': '2026-11-11T10:00', 'votes': LEE['votes']}):   # no time, or before the canvass
+            (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': bad}}}))
+            out, ch = B.build(res=res, mp=mp, prev=out)
+            assert out['contests']['c147']['state'] == 'official' and [l for l in ch['lines'] if 'HELD' in l and 'counted' in l], (bad, ch['lines'])
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-12'}}, 'counted': {'c147': {'lee': LEE}}, 'final': {'travis': '2026-11-05'}}))
+        assert B.build(res=res, mp=mp)[0]['contests']['c147']['official_numbers'] is True, 'a final file: the official numbers'
+    finally: shutil.rmtree(d)
+
+@test
+def suggest_ranks_by_the_title_and_says_absent():
+    """#158: every measure fits FOR/AGAINST, so the title (and its proposition letter) ranks the guesses; #155: a contest
+    a county's file doesn't have is offered as "absent"."""
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        f = d / 'w.xml'
+        f.write_bytes(clarity({'7': ('CITY OF AUSTIN PROPOSITION B', FA(1, 1)), '8': ('CITY OF AUSTIN PROPOSITION A', FA(1, 1)),
+                               '9': ('MAYOR', [('Somebody Else', 3)])}))
+        mp = one_map(c071=M(None, canvasser='eastwood-mud'), c001=M(None))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out): B.suggest(f, mp)
+        lines = dict(l.split(' ', 1) for l in out.getvalue().splitlines())
+        assert lines['c071'].split(': ', 1)[1].startswith('8 = CITY OF AUSTIN PROPOSITION A'), lines['c071']
+        assert 'set its key to "absent"' in lines['c001'], lines['c001']
+    finally: shutil.rmtree(d)
+
+@test
+def only_this_elections_files_are_read():
+    """#158: no parser checked the election date, so last year's file, or the Dec 12 runoff's, was read as Nov 3's."""
+    import json as J
+    real = J.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))['meta']['election']
+    assert B.ELECTION == real and B.POLLS_CLOSE.startswith(real), (B.ELECTION, B.POLLS_CLOSE, real)
+    d, res = scratch_with([])
+    try:
+        (res / 'inbox/travis/old.xml').write_bytes(clarity({'1': ('Prop', FA(1, 2))}, election='11/4/2025'))
+        (res / 'inbox/travis/runoff.xml').write_bytes(clarity({'1': ('Prop', FA(1, 2))}, stamp='12/13/2026 9:00:00 AM CST', election='12/12/2026'))
+        (res / 'inbox/travis/good.xml').write_bytes(clarity({'1': ('Prop', FA(5, 2))}))
+        filed = B.file_inbox(res, election=B.ELECTION)
+        assert [f.name for f in filed] == ['good.xml'] and sorted(p for p, _ in B.rejected(res)) == ['rejected/travis/old.xml', 'rejected/travis/runoff.xml'], (filed, B.rejected(res))
+        assert 'the 2026-12-12 election, not 2026-11-03' in dict(B.rejected(res))['rejected/travis/runoff.xml']
+        data = clarity({'1': ('Prop', FA(1, 2))}, stamp='12/13/2026 9:00:00 AM CST', election='12/12/2026')    # filed some other way
+        r = P.parse_clarity(data); raw = B.raw_dir(res, 'travis', r['posted'], data); raw.mkdir(parents=True); (raw / 'x.xml').write_bytes(data)
+        out, ch = B.build(res=res, mp=one_map(c148=M('1 = Prop')), election=B.ELECTION)
+        assert [x[1] for x in out['contests']['c148']['choices']] == [5, 2], 'the runoff file was read as Nov 3'
+        assert [l for l in ch['lines'] if 'HELD' in l and '2026-12-12 election' in l], ch['lines']
+    finally: shutil.rmtree(d)
+    f = lambda n: (ROOT / 'tests/fixtures/results' / n).read_bytes()
+    assert (P.parse_sos(f('sos-53815-travis.json'))['election'], P.parse_sos(f('sos-51031.json'))['election'], P.parse_hays(f('hays-2025-11-official.pdf'))['election'],
+            P.parse_sos_canvass(f('sos-58314-canvass.pdf'))['election']) == ('2026-11-03', '2025-11-04', '2025-11-04', '2026-05-26')
+
+@test
+def a_county_key_carries_the_countys_name_for_it():
+    """#158: a county's contest number alone can't be checked: a mistyped or renumbered key read another contest. The
+    key is written as suggest prints it, "17 = <the county's name>", and a file that disagrees holds the contest."""
+    d, res = scratch_with([clarity({'1': ('Road bonds', FA(700, 300)), '2': ('Refunding road bonds', FA(600, 400))})])
+    try:
+        for k, says in (('1', 'needs the county’s name'), ('2 = Road bonds', "is 'Refunding road bonds' in this file")):
+            out, ch = B.build(res=res, mp=one_map(c150=M(k)))
+            assert 'c150' not in out['contests'] and [l for l in ch['lines'] if 'HELD' in l and says.replace('’', "'") in l], (k, ch['lines'])
+        assert B.build(res=res, mp=one_map(c150=M('1 = ROAD  BONDS')))[0]['contests']['c150']['choices'][0][1] == 700, 'names compare as norm() reads them'
+    finally: shutil.rmtree(d)
+
+@test
 def clarity_times_in_utc_read_as_austin_time():
     assert P.parse_clarity(clarity({}, stamp='11/5/2026 3:00:00 PM UTC'))['posted'] == '2026-11-05T09:00'   # CST: UTC-6
     assert P.parse_clarity(clarity({}, stamp='10/30/2026 3:00:00 PM UTC'))['posted'] == '2026-10-30T10:00'  # CDT: UTC-5
@@ -450,7 +638,7 @@ def clarity_times_in_utc_read_as_austin_time():
 def a_failed_confirmation_marks_the_whole_district():
     d, res = scratch_with([clarity({'1': ('Confirmation', FA(300, 700)), '2': ('Bonds', FA(600, 400))})])
     try:
-        mp = one_map(c147=M('1'), c148=M('2', depends_on='c147'))
+        mp = one_map(c147=M('1 = Confirmation'), c148=M('2 = Bonds', depends_on='c147'))
         out, _ = B.build(res=res, mp=mp)
         assert out['contests']['c148']['note'] is None, 'failing (unofficial) is not yet failed'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-10'}}}))
@@ -463,7 +651,7 @@ def a_failed_confirmation_marks_the_whole_district():
 def an_annexation_gets_one_outcome_from_both_votes():
     d, res = scratch_with([clarity({'1': ('ESD 9 district', FA(400, 600)), '2': ('ESD 9 territory', FA(80, 20))})])
     try:
-        mp = one_map(c206=M('1', canvasser='esd-9', who='district', pair='c208'), c208=M('2', canvasser='esd-9', who='area', pair='c206'))
+        mp = one_map(c206=M('1 = ESD 9 district', canvasser='esd-9', who='district', pair='c208'), c208=M('2 = ESD 9 territory', canvasser='esd-9', who='area', pair='c206'))
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-9': {'canvassed': '2026-11-10'}}}))
         out, _ = B.build(res=res, mp=mp)
         assert [out['contests'][c]['note'] for c in ('c206', 'c208')] == ['annex_district_rejected'] * 2, out['contests']['c206']['note']
@@ -474,12 +662,12 @@ def an_annexation_gets_one_outcome_from_both_votes():
 def an_outcome_one_total_cant_show_waits_for_the_canvass():
     d, res = scratch_with([clarity({'1': ('ESD 4 annexation', FA(900, 100))})])
     try:
-        mp = one_map(c205=M('1', canvasser='esd-4', outcome_from_canvass=True))
+        mp = one_map(c205=M('1 = ESD 4 annexation', canvasser='esd-4', outcome_from_canvass=True))
         e = B.build(res=res, mp=mp)[0]['contests']['c205']
         assert (e['state'], e['verdict'], e['no_call']) == ('unofficial', 'none', 'two_majorities'), '90% for, and still no call: two majorities, one total'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}}))
-        try: B.build(res=res, mp=mp); raise AssertionError('canvassed without its outcome entered')
-        except B.Problem as x: assert 'outcomes' in str(x), x
+        out, ch = B.build(res=res, mp=mp)
+        assert any('outcomes' in l and l.startswith('- HELD: ') for l in ch['lines']) and 'c205' not in out['contests'], 'canvassed without its outcome entered'
         (res / 'official.json').write_text(json.dumps({'canvasses': {'esd-4': {'canvassed': '2026-11-12'}}, 'outcomes': {'c205': 'failed'}}))
         assert B.build(res=res, mp=mp)[0]['contests']['c205']['verdict'] == 'failed', "the canvass's outcome, not the total's"
     finally: shutil.rmtree(d)
@@ -488,7 +676,7 @@ def an_outcome_one_total_cant_show_waits_for_the_canvass():
 def an_unsettled_rule_says_why_there_is_no_call():
     d, res = scratch_with([clarity({'1': ('Refunding road bonds', FA(600, 400)), '2': ('Road bonds', FA(700, 300))})])
     try:
-        mp = one_map(c153=M('1', needs='unsure'), c150=M('2', needs='unsure'))
+        mp = one_map(c153=M('1 = Refunding road bonds', needs='unsure'), c150=M('2 = Road bonds', needs='unsure'))
         out, _ = B.build(res=res, mp=mp)
         assert (out['contests']['c153']['verdict'], out['contests']['c153']['no_call']) == ('none', 'rule_unsettled'), '60%: a majority yes, two-thirds no'
         assert (out['contests']['c150']['verdict'], out['contests']['c150']['no_call']) == ('passing', None), '70%: both agree'
@@ -498,7 +686,7 @@ def an_unsettled_rule_says_why_there_is_no_call():
 def a_county_confirmed_absent_leaves_no_travis_breakdown():
     d, res = scratch_with([clarity({'1': ('District 9', [('Rich Heyman', 600), ('Katie Kam', 300), ('Zohaib “Zo” Qadri', 50), ('Dave Thadani', 30), ('Kai Huang', 20)])})])
     try:
-        m = M('1', canvasser='eastwood-mud', majority=True); m['electorate'] = ['travis', 'williamson', 'hays']; m['keys'] = {'travis': '1', 'williamson': None, 'hays': None}
+        m = M('1 = District 9', canvasser='eastwood-mud', majority=True); m['electorate'] = ['travis', 'williamson', 'hays']; m['keys'] = {'travis': '1 = District 9', 'williamson': None, 'hays': None}
         e = B.build(res=res, mp=one_map(c070=m))[0]['contests']['c070']
         assert e['state'] == 'partial' and e['travis'] is not None, 'before Nov 4 mapping: possible counties are missing'
         m['keys'].update(williamson='absent', hays='absent')
@@ -510,8 +698,27 @@ def a_county_confirmed_absent_leaves_no_travis_breakdown():
 def a_generic_write_in_line_is_left_out():
     d, res = scratch_with([clarity({'1': ('Prop', [('FOR', 600), ('AGAINST', 400), ('Write-in', 7)])})])
     try:
-        e = B.build(res=res, mp=one_map(c148=M('1')))[0]['contests']['c148']
+        e = B.build(res=res, mp=one_map(c148=M('1 = Prop')))[0]['contests']['c148']
         assert [x[:2] for x in e['choices']] == [['FOR', 600], ['AGAINST', 400]] and e['choices'][0][2] == 60.0, e['choices']
+    finally: shutil.rmtree(d)
+
+@test
+def a_bad_travis_key_on_a_statewide_race_holds_only_its_breakdown():
+    """The verification of #158: a statewide race's Travis key typed as a bare number held the whole race (the US
+    Senate not shown on Nov 4); suggest never printed those keys."""
+    d, res = scratch_with([clarity({'9': ('U.S. Senator', [('James Talarico', 10), ('Ken Paxton', 9), ('Ted Brown', 1)])})])
+    try:
+        data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
+        raw = B.raw_dir(res, 'sos', r['posted'], data); raw.mkdir(parents=True); (raw / 'election.json').write_bytes(data)
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9'
+        out, ch = B.build(res=res, mp=mp)
+        assert 'c001' in out['contests'] and out['contests']['c001']['travis'] is None, 'the whole race held for its breakdown'
+        assert [l for l in ch['lines'] if 'HELD' in l and 'without its Travis County breakdown' in l], ch['lines']
+        mp['contests']['c001']['keys']['travis'] = None
+        f = d / 'tv.xml'; f.write_bytes(clarity({'9': ('U.S. Senator', [('James Talarico', 10), ('Ken Paxton', 9), ('Ted Brown', 1)])}))
+        o = io.StringIO()
+        with contextlib.redirect_stdout(o): B.suggest(f, mp)
+        assert 'c001 United States Senator (Travis breakdown): 9 = U.S. Senator' in o.getvalue(), o.getvalue()
     finally: shutil.rmtree(d)
 
 @test
@@ -520,12 +727,25 @@ def a_race_decided_in_travis_alone_has_no_travis_breakdown():
     try:
         data = fx('sos-53815-travis.json'); r = P.parse_sos(data)
         raw = B.raw_dir(res, 'sos', r['posted'], data); raw.mkdir(parents=True); (raw / 'election.json').write_bytes(data)
-        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9'
+        mp = copy.deepcopy(MAP); del mp['contests']['c071']; mp['contests']['c001']['keys']['travis'] = '9 = U.S. Senator'
         assert B.build(res=res, mp=mp)[0]['contests']['c001']['travis'] == [['Ken Paxton', 9, 45.0], ['James Talarico', 10, 50.0], ['Ted Brown', 1, 5.0]]   # ballot order, not the file's
         mp['contests']['c001']['travis_only'] = True
         assert B.build(res=res, mp=mp)[0]['contests']['c001']['travis'] is None
     finally: shutil.rmtree(d)
 
+
+@test
+def nothing_posted_before_the_polls_close_is_a_result():
+    """#152: the SOS feed lists every contest weeks ahead with no votes; published, the page would say "No votes reported
+    yet" from midnight Nov 4. The workflow's build skips any report posted before 7 pm on Election Day."""
+    s = Scratch()
+    try:
+        before = B.build(res=s.res, mp=MAP, since=B.POLLS_CLOSE)[0]
+        assert before["contests"] == {}, len(before["contests"])
+        assert s.build()[0]["contests"], "without the cutoff the same files are results (the tests' own)"
+        assert B.POLLS_CLOSE == "2026-11-03T19:00"
+        assert "since=POLLS_CLOSE" in (ROOT / 'source/build_results.py').read_text(), 'the workflow (the command line) builds with it'
+    finally: s.close()
 
 # ---------------------------------------------------------------- 4. the fetcher, with a stand-in network
 def net(pages):
@@ -573,6 +793,134 @@ def the_fetcher_files_what_it_gets_and_skips_what_fails():
     finally: shutil.rmtree(d)
 
 
+@test
+def the_fetcher_tries_again_reports_and_never_stops_the_run():
+    """#161: one timeout meant no data until the next run; errors were only in the log; every fetch failing stopped
+    the job, Lane's uploads with it. And the SOS feed's times, read in the wrong zone, were filed hours off."""
+    import urllib.error, urllib.request, io as _io, email.utils as eu, datetime as _dt
+    calls, real = [], urllib.request.urlopen
+    class Resp(_io.BytesIO):
+        status = 200; headers = {'Date': eu.format_datetime(_dt.datetime(2026, 11, 4, 2, 0, tzinfo=_dt.timezone.utc), usegmt=True)}
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+    def flaky(fails, err):
+        def urlopen(req, timeout=None):
+            calls.append(req.full_url)
+            if len(calls) <= fails: raise err
+            return Resp(b'ok')
+        return urlopen
+    try:
+        urllib.request.urlopen = flaky(2, urllib.error.URLError('timed out'))
+        body = FR.get('https://x.example/a', wait=(0, 0))
+        assert body == b'ok' and len(calls) == 3 and body.date.hour == 2, (body, calls)
+        calls.clear(); urllib.request.urlopen = flaky(5, urllib.error.HTTPError('https://x.example/b', 404, 'Not Found', {}, None))
+        try: FR.get('https://x.example/b', wait=(0, 0)); raise AssertionError('a 404 was taken')
+        except urllib.error.HTTPError: assert len(calls) == 1, 'a 404 is not tried again'
+    finally: urllib.request.urlopen = real
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        feed = fx('sos-53815-travis.json')                       # LastUpdatedTime Oct 16, 2026 16:12:10
+        early = FR.Body(feed); early.date = datetime_utc(2026, 10, 16, 18, 0)   # the server's clock: 1:00 pm Austin time
+        try: FR.keep(d, 'sos', early, 'election.json', P.parse_sos); raise AssertionError('a feed time after the server clock was filed')
+        except P.BadFile as e: assert 'sos_time_zone' in str(e), e
+        stale = FR.Body(feed); stale.date = datetime_utc(2026, 11, 4, 13, 0)    # the morning after: it can't still read Oct 16
+        try: FR.keep(d, 'sos', stale, 'election.json', P.parse_sos); raise AssertionError('a feed read in the wrong zone, the other way, was filed')
+        except P.BadFile as e: assert 'probably wrong' in str(e), e
+        late = FR.Body(feed); late.date = datetime_utc(2026, 10, 16, 21, 13)    # 4:13 pm: as it should be
+        assert FR.keep(d, 'sos', late, 'election.json', P.parse_sos) is not None
+        fetch, _ = net({f'{FR.SOS}/election/58314': fx('sos-58314.json')})
+        out = FR.fetch_all(dict(META, sos_election='58314'), res=d, fetch=fetch, election='2026-11-03')
+        assert out[0][1] is None and 'the 2026-05-26 election' in out[0][2], out[0]
+        lines = FR.report(out, res=d, now=datetime_utc(2026, 11, 4, 15, 0))
+        assert lines[0].startswith('- sos: could not fetch') and '- Travis County: no file yet' in lines, lines
+        # the run itself: every fetch failed, and it still ends well, with the report written for the PR
+        rep, was = d / 'fetch.json', (FR.fetch_all, FR.report)
+        FR.fetch_all, FR.report = (lambda meta, election=None: [('sos', None, 'down')]), (lambda out: ['- sos: could not fetch: down'])
+        try: FR.main(['fetch_results.py', '--report', str(rep)])
+        except SystemExit as e: raise AssertionError(f'every fetch failing stopped the run ({e}), and Lane’s uploads with it')
+        finally: FR.fetch_all, FR.report = was
+        assert json.loads(rep.read_text()) == ['- sos: could not fetch: down']
+    finally: shutil.rmtree(d)
+
+def datetime_utc(*a):
+    import datetime as _dt
+    return _dt.datetime(*a, tzinfo=_dt.timezone.utc)
+
+@test
+def the_pull_request_shows_the_fetch_report():
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        (d / 'prev.json').write_text(json.dumps({'seq': 3, 'election': '2026-11-03', 'withdrawn': False, 'late_until': '2026-11-17', 'contests': {}}))
+        (d / 'fetch.json').write_text(json.dumps(['- sos: could not fetch: down']))
+        res, B.RES = B.RES, d / 'results'                      # an empty results folder: nothing filed, nothing built
+        try:
+            args = ['build_results.py', 'build', '--prev', str(d / 'prev.json'), '--out', str(d / 'out.json'), '--changes', str(d / 'ch.json')]
+            with contextlib.redirect_stdout(io.StringIO()):
+                B.main(args + ['--fetch', str(d / 'fetch.json')])
+                assert json.loads((d / 'ch.json').read_text())['fetch'] == ['- sos: could not fetch: down']
+                B.main(args + ['--fetch', str(d / 'none.json')])
+                assert 'no report' in json.loads((d / 'ch.json').read_text())['fetch'][0], 'a fetch step that died says so'
+        finally: B.RES = res
+    finally: shutil.rmtree(d)
+
+@test
+def parsers_take_the_formats_a_general_election_brings():
+    """#163: Hays's report adds a vote-type column in a general (provisional); Williamson lists a contest with no rows
+    mid-update; the state's canvass report and its feed must read as two sources."""
+    for line, want in (('Jane Doe REP 10 5.00% 20 6.00% 30 7.00% 5 1.00% 65 6.00%', ('Jane Doe REP', '65')),
+                       ('FOR 1,234 52.30% 2,000 51.00% 3,234 51.50%', ('FOR', '3,234')), ('AGAINST 1,234 47.70%', ('AGAINST', '1,234'))):
+        m = P.HAYS_ROW.match(line); assert m and (m.group(1), m.group(2)) == want, (line, m and m.groups())
+    assert P.HAYS_CAST.match('Cast Votes: 10 1.00% 20 2.00% 30 3.00% 4 4.00% 64 2.00%').group(1) == '64'
+    h = fx('williamson-2025-11.html').decode('utf-8')
+    h = re.sub(r'<td data-race="46"[^>]*>.*?</td>', '', h, flags=re.S)
+    h = re.sub(r'<div data-race-id="46" class="pie-results">.*?\]\];', '', h, flags=re.S)
+    try: P.parse_williamson(h.encode('utf-8')); raise AssertionError('a contest with no choices was read')
+    except P.BadFile as e: assert 'no choices' in str(e), e
+    assert P.LABELS['sos_canvass'] != P.LABELS['sos'], 'one label: the canvass report reads as the feed going backwards'
+
+@test
+def hand_edits_to_the_map_are_kept_and_never_fail_the_run():
+    """#162: the check compared exact text, so a reformat, a spell or a hand-set registration failed the Results run
+    (nothing published)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('brm', ROOT / 'source/build_results_map.py'); brm = importlib.util.module_from_spec(spec); spec.loader.exec_module(brm)
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        mp = json.loads(brm.OUT.read_text(encoding='utf-8'))
+        mp['contests']['c071']['spell'] = {'travis': {'FOR THE PROP': 'FOR'}}
+        mp['contests']['c071']['registered'] = {'hays': 600}
+        mp['contests']['c117']['registered'] = {'caldwell': 900, 'lee': 300}         # over the tables' own numbers (ACC)
+        mp['contests']['c071']['keys']['travis'] = '17 = CITY OF AUSTIN PROPOSITION A'
+        mp['contests']['c071']['keys']['williamson'] = 'absent'
+        brm.OUT = d / 'results_map.json'; brm.OUT.write_text(json.dumps(mp, indent=4))   # an editor's reformat
+        try:
+            with contextlib.redirect_stdout(io.StringIO()): brm.main(['x', '--check'])
+        except SystemExit as e: raise AssertionError(f'a hand edit failed the check: {e}')
+        kept = brm.build(json.loads(brm.OUT.read_text()))['contests']['c071']
+        assert (kept['spell'], kept['registered']['hays'], kept['keys']['travis'], kept['keys']['williamson']) == (
+            {'travis': {'FOR THE PROP': 'FOR'}}, 600, '17 = CITY OF AUSTIN PROPOSITION A', 'absent'), kept
+        assert brm.build(json.loads(brm.OUT.read_text()))['contests']['c117']['registered'] == {'caldwell': 900, 'lee': 300}, 'a hand-set registration wins'
+    finally: shutil.rmtree(d)
+
+
+@test
+def the_workflows_keep_what_the_audit_fixed():
+    """#159: the self-merge merges only the commit it checked; the publish job takes back only results, checks main
+    didn't move, and decides "numbers only" itself too; the build job's packages are pinned by hash (the same PDF
+    libraries as requirements.txt); and Pages takes one page from the demo's branch."""
+    y = (ROOT / '.github/workflows/results.yml').read_text(encoding='utf-8')
+    for must in ('--match-head-commit "$HEAD"', "grep -vE '^(source/results/(inbox|raw|rejected)/|source/results/ledger\\.json$|results\\.json$)'",
+                 '!= "$(cat "$A/base.txt")"', 'c["verdict_changed"] or moved', '--require-hashes -r requirements-results.txt',
+                 'git diff --cached --binary --no-renames', '--report "$RUNNER_TEMP/fetch.json"', '--fetch "$RUNNER_TEMP/fetch.json"', 'c.get("numbers_waiting")'):
+        assert must in y, must
+    pin = lambda text, name: re.search(rf'^{name}==(\S+)', text, re.M | re.I).group(1)
+    r, h = (ROOT / 'requirements.txt').read_text(), (ROOT / 'requirements-results.txt').read_text()
+    for name in ('pdfplumber', 'pdfminer[.-]six'):
+        assert pin(r, name) == pin(h, name), name
+    assert all('--hash=sha256:' in block for block in re.split(r'\n(?=[a-z])', h.split('\n', 3)[3]) if block.strip()), 'every package hashed'
+    p = (ROOT / '.github/workflows/pages.yml').read_text(encoding='utf-8')
+    assert 'cp "$D/demo/index.html" _site/demo/index.html' in p and 'path: _site\n' not in p.split('demo-locked')[1].split('Where Pages')[0], 'the demo artifact unpacks over the site'
+
 # ---------------------------------------------------------------- 5. the map
 def real_map(): return json.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))
 
@@ -594,6 +942,9 @@ def the_map_is_what_its_tables_write_and_covers_every_contest():
         if m.get('depends_on'): assert key[m['depends_on']]['type'] == 'measure' and key[m['depends_on']]['entity'] == key[cid]['entity'], cid
         if m.get('pair'): assert mp['contests'][m['pair']]['pair'] == cid and {m['who'], mp['contests'][m['pair']]['who']} == {'district', 'area'}, cid
         if m.get('write_ins'): assert 'Write-in' in key[cid]['choices'], (cid, 'a declared write-in where the ballot has no write-in line')
+        # and the reverse (#157): a write-in line means someone declared, so the contest is never "unopposed" for want of
+        # their name (c053 County Clerk: LaShawn Nash, from Ballotpedia; to confirm with Travis County Elections)
+        if 'Write-in' in key[cid]['choices']: assert m.get('write_ins'), (cid, 'a write-in line on the ballot and no declared write-in in the map')
     assert mp['contests']['c006']['canvasser'] == mp['contests']['c007']['canvasser'] == 'legislature'
 
 @test
