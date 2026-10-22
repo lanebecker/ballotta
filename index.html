@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-KBAEn5JqnGZwkP7DK9nRPyHZCePD94cLt8gyf73JDSk='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-OoOdYpDuqwehO3D5L9gY1+KSedsbE1yG42d4Thpirg4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -205,6 +205,7 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 .rs-n.rs-key{color:var(--ink2);font-weight:600}
 .rs-v{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:21px;font-weight:700;line-height:1.15;color:var(--ink);overflow-wrap:anywhere}
 .rs-bars{display:flex;flex-direction:column;gap:7px;margin:4px 0}
+.rs-bl{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
 .rs-b{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nm vt" "tr tr";column-gap:10px;row-gap:3px;font-size:14px}
 .rs-nm{grid-area:nm;min-width:0;overflow-wrap:anywhere}
 .rs-nm small{color:var(--muted);font-size:12px}
@@ -2311,6 +2312,7 @@ const results = (() => {
   const VERDICTS = ['none', 'leading', 'too_close', 'may_runoff', 'runoff', 'won', 'elected', 'passing', 'failing', 'passed', 'failed',
     'failed_tie', 'unopposed', 'tied', 'tied_legislature', 'tied_runoff', 'tied_second'];
   const NOTES = [null, 'district_not_confirmed', 'annex_both', 'annex_district_rejected', 'annex_area_rejected', 'annex_both_rejected'];
+  const TCE = 'https://votetravis.gov/current-election-information/current-election/';   // Travis County Elections
   let R = null, saved = false, asked = 0, since = null, seenText = '', counted = false, wantAll = false;
   // The date gate, in Austin time. Only on this computer (localhost), ?today=YYYY-MM-DD stands in for the date, so Lane can
   // look at results before Nov 4 with sample data; ballotta.org ignores it.
@@ -2420,7 +2422,7 @@ const results = (() => {
       case 'too_close': return 'Too close to call';                                                                    // W18
       case 'may_runoff': return 'May go to a runoff';                                                                  // W19
       case 'runoff':
-        if (e.runoff_on && day() > e.runoff_on) return 'Runoff held ' + md(e.runoff_on) + ' · result not shown here';  // W30
+        if (e.runoff_on && day() > e.runoff_on) return 'Runoff held ' + md(e.runoff_on) + ' · its result is on Travis County Elections';  // W30, with W113 (Lane, Oct 21)
         return e.runoff.length ? 'Headed to a runoff: ' + andList(names(c, e.runoff)) : 'Headed to a runoff';          // W20
       case 'won': return 'Won: ' + andList(L);   // one name (check_results; several are "elected", #135); never one of several  // W21
       case 'elected': return 'Elected: ' + L.join(', ') + (unoppHere(c, e) && L.length === 1 ? ' (unopposed)' : '');  // W22, W24
@@ -2428,7 +2430,7 @@ const results = (() => {
       case 'unopposed': return 'Unopposed: ' + L.join(', ');                                                           // W24
       case 'tied': return 'Tied · state law decides by drawing lots, a recount or a new election';                     // W25
       case 'tied_legislature': return 'Tied · the Legislature decides';                                                // W26
-      case 'tied_runoff': return e.runoff_on && day() > e.runoff_on ? 'Runoff held ' + md(e.runoff_on) + ' · result not shown here' : 'Tied · goes to a runoff';   // W30 once held (#169), W27
+      case 'tied_runoff': return e.runoff_on && day() > e.runoff_on ? 'Runoff held ' + md(e.runoff_on) + ' · its result is on Travis County Elections' : 'Tied · goes to a runoff';   // W30/W113 once held (#169), W27
       case 'tied_second': return 'Tie for the runoff spot · a recount decides';                                        // W28
       default: return '';
     }
@@ -2491,11 +2493,12 @@ const results = (() => {
     let h = '<section class="rs' + (isOfficial(e) ? ' rs-is-off' : '') + '" aria-label="Result">' + status(c, e);
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
-    if (v) h += '<p class="rs-v">' + esc(v) + '</p>';
+    const held = ['runoff', 'tied_runoff'].includes(e.verdict) && e.runoff_on && day() > e.runoff_on;   // W113: the county has the runoff's result
+    if (v) h += '<p class="rs-v">' + (held ? esc(v.replace(/Travis County Elections$/, '')) + '<a href="' + TCE + '" target="_blank" rel="noopener">Travis County Elections ↗</a>' : esc(v)) + '</p>';
     else if (e.no_call) h += '<p class="rs-v">No call yet</p><p class="rs-n">This one is decided at the canvass.</p>';   // W69 (Lane, Oct 21): numbers with no verdict, on purpose
     if (upcoming(c)) h += '<p class="rs-why">No one won a majority, so the top two meet again on ' + esc(dayLong(e.runoff_on)) + '.</p>';
     if (e.needs === 'two_thirds') h += '<p class="rs-n">Needs two-thirds of the vote to pass.</p>';   // W68: road bonds (Tex. Const. art. III §52(b))
-    if (e.state !== 'counting') h += bars(c, e.choices, true);
+    if (e.state !== 'counting') h += (held ? '<p class="rs-bl">Nov 3 result</p>' : '') + bars(c, e.choices, true);   // the bars aren't the runoff's (W113)
     if (e.write_ins) h += '<p class="rs-n">Declared write-in candidates are listed by name. Only votes for declared write-in candidates count.</p>';  // W45
     if (e.note) h += '<p class="rs-n rs-key">' + NOTE[e.note] + '</p>';
     if (e.recount) h += '<p class="rs-n rs-key">Recount requested · <a href="' + esc(e.recount) + '" target="_blank" rel="noopener">Details</a></p>';  // W29
@@ -2875,7 +2878,7 @@ const results = (() => {
     const d = entry(rs[0].c.id).runoff_on, n = daysTo(d);
     return '<section class="ro-band" aria-label="The runoff"><div><p class="ov">Runoff</p><p class="t">' + esc(dow(d, true) + ', ' + md(d)) + '</p><p class="when">'
       + (n > 1 ? n + ' days from today' : n === 1 ? 'Tomorrow' : 'Today') + '</p></div><div class="facts">'
-      + '<p><b>Early voting</b>Not posted yet</p>'
+      + '<p><b>Early voting</b>' + (n <= 1 ? '<a href="' + TCE + '" target="_blank" rel="noopener">See Travis County Elections</a>' : 'Not posted yet') + '</p>'   // W98; from the day before, W114
       + '<p><b>Who can vote</b>' + (one ? 'Any registered voter in ' + esc(area(one.c)) + ', whether or not you voted Nov 3'
         : 'In each race, any registered voter in its area (' + esc(rs.map(b => area(b.c)).join('; ')) + '), whether or not you voted Nov 3') + '</p>'   // W108
       + '<p><b>On your ballot</b>' + rs.length + (rs.length === 1 ? ' contest: ' : ' contests: ') + esc(rs.map(b => cleanTitle(b.c)).join('; ')) + '</p></div></section>';
@@ -2901,7 +2904,7 @@ const results = (() => {
     }
     h += '<div class="dk-lines">' + P2.map((o, k) => '<div class="dk-lw"><button type="button" class="dk-line" data-rpick="' + esc(o) + '" aria-pressed="' + (v[0] === o) + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(choice(c, o)) + '</span><span class="kbd" aria-hidden="true">' + (k + 1) + '</span></button>' + candLinks(L, o) + '</div>').join('') + '</div>';
     h += '<button type="button" class="skip" data-rpick="__skip" aria-pressed="' + (v[0] === '__skip') + '">Skip this race <span class="kbd" aria-hidden="true">S</span></button>';
-    h += '<div class="dk-why"><label for="ro-w">Why? <span>Private unless you choose to share it</span><span class="kbd" aria-hidden="true">R</span></label><textarea id="ro-w" placeholder="Your reasoning, in your words">' + esc(rwhy(c)) + '</textarea></div>';
+    h += '<div class="dk-why"><label for="ro-w">Why? <span>Private · kept on this device</span><span class="kbd" aria-hidden="true">R</span></label><textarea id="ro-w" placeholder="Your reasoning, in your words">' + esc(rwhy(c)) + '</textarea></div>';
     const rs = runoffs(), k = ' <span class="kbd" aria-hidden="true">N</span>';   // several runoffs: Previous and Next between them (#166)
     h += '<div class="dk-nav">' + (i > 0 ? '<button type="button" class="btn secondary small" data-ract="prev"><span class="kbd" aria-hidden="true">K</span> Previous</button>'
       : '<button type="button" class="btn secondary small" data-ract="back">← Back to results</button>')
@@ -2919,8 +2922,9 @@ const results = (() => {
     const rs = runoffs(); if (!rs.length) return '';
     const d = entry(rs[0].c.id).runoff_on;
     return '<span class="ov">Runoff · ' + esc(dayLong(d)) + '</span><h1>Where to vote in the runoff</h1>'
-      + '<div class="ro-none"><p><b>Travis County hasn’t posted runoff vote centers yet.</b></p><p>We’ll add them as soon as it does. Don’t go by the Nov 3 list: fewer places are open for a runoff.</p>'
-      + '<p><a href="https://votetravis.gov/current-election-information/current-election/" target="_blank" rel="noopener">Travis County Elections ↗</a></p></div>';
+      + (daysTo(d) <= 1 ? '<div class="ro-none"><p><b>Check Travis County Elections for runoff vote centers.</b></p><p>Don’t go by the Nov 3 list: fewer places are open for a runoff.</p>'   // W114: the last two days
+        : '<div class="ro-none"><p><b>Travis County hasn’t posted runoff vote centers yet.</b></p><p>We’ll add them as soon as it does. Don’t go by the Nov 3 list: fewer places are open for a runoff.</p>')
+      + '<p><a href="' + TCE + '" target="_blank" rel="noopener">Travis County Elections ↗</a></p></div>';
   }
   // Print your choices, for the runoff: the crib sheet's layout, the runoff contests only.
   function runoffCrib(withWhy) {
@@ -2929,7 +2933,7 @@ const results = (() => {
     let html = '<div class="ch"><b style="font-size:15px">My runoff choices</b><span style="font-size:11px">' + esc(dayLong(d)) + '</span></div>';
     rs.forEach(b => {
       const v = rcur(b.c);
-      html += '<div class="ln"><span>' + esc(cleanTitle(b.c)) + '</span><span>' + esc(!v.length || v[0] === '__skip' ? '______' : choice(b.c, v[0])) + '</span></div>';
+      html += '<div class="ln"><span>' + esc(cleanTitle(b.c)) + '</span><span>' + esc(!v.length ? 'Undecided' : v[0] === '__skip' ? '______' : choice(b.c, v[0])) + '</span></div>';   // W116: blank is a skip
       if (withWhy && rwhy(b.c)) html += '<div class="why">' + esc(whyShown(rwhy(b.c))) + '</div>';
     });
     return html + '<p style="font-size:10px;margin-top:10px">Blank = no vote planned. Contests are in ballot order.</p>';

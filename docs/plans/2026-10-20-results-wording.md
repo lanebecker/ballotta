@@ -48,7 +48,8 @@ Names, counties, dates and times below are placeholders. Separators and quotes f
 - **W27** Tie, two candidates, majority needed: "Tied · goes to a runoff"
 - **W28** Tie for second, majority needed: "Tie for the runoff spot · a recount decides"
 - **W29** "Recount requested" (with a link: "Details")
-- **W30** After the runoff date: "Runoff held Dec 12 · result not shown here"
+- **W30** After the runoff date: "Runoff held Dec 12 · its result is on Travis County Elections" (W113, Lane, Oct 21;
+  was "· result not shown here")
 - **W31** MUD confirmation failed, on that district's other contests: "Voters didn’t confirm this district (Proposition A
   failed), so it won’t be created."
 - **W32** ESD annexation, one line across both votes: "Area approved, district rejected: the area won’t be added." (and
@@ -307,3 +308,16 @@ Lane's calls the same day (AskUserQuestion), and the words they need:
   the runoff so far." Official: W39 as before.
 - **#160** One PR stays: no separate numbers-only path. The PR (and digest) says "New numbers in N other races wait
   with it: merge as soon as you can." when a verdict change holds numbers back.
+
+Lane's calls that evening (AskUserQuestion):
+
+- **W113** (#170) After the runoff: W30 ends "its result is on Travis County Elections ↗" (a link), and the Nov 3 bars
+  under it are labeled "Nov 3 result".
+- **W114** (#170) From the day before the runoff: the band's early voting says "See Travis County Elections" (a link),
+  and Where to vote says "Check Travis County Elections for runoff vote centers." instead of "We’ll add them as soon as
+  it does."
+- **W115** (#172) The runoff's reason box: "Why? Private · kept on this device" (Nov 3's box unchanged). Runoff
+  reasons can't be shared: Share and Keep carry Nov 3's picks (the runoff plan's decision 4). Lane: private now,
+  runoff sharing later (filed).
+- **W116** (#168) The runoff's printout prints "Undecided" for an undecided race; blank is a skip, so "Blank = no vote
+  planned" holds.

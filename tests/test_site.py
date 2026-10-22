@@ -5166,7 +5166,7 @@ def every_state_reads_in_at_a_glance_and_the_printout(b):
         ('c113', put('c113', state='official', verdict='elected', canvasser='the Sunset Valley City Council', votes=[400, 380, 120], leaders=['Sarah Ponder', 'Robert Johnson'], done='2026-11-12'), None,
          'Elected: Sarah Ponder, Robert Johnson / Official · Nov 12'),
         ('c071', put('c071', {'needs': 'two_thirds'}, verdict='failing', votes=[180000, 120000]), None, 'Failing / Unofficial · 60.0% for · needs two-thirds'),
-        ('c121', fx.scene('runoff'), '2026-12-14T09:00', 'Runoff held Dec 12 · result not shown here / Official · Nov 13'),
+        ('c121', fx.scene('runoff'), '2026-12-14T09:00', 'Runoff held Dec 12 · its result is on Travis County Elections / Official · Nov 13'),   # W30 with W113
         ('c117', base, None, 'No result yet'),
         ('c069', put('c069', {'no_call': 'rule_unsettled'}, verdict='none', votes=[1000, 900]), None, 'No call yet / Unofficial · canvass by Nov 17'),   # W69
     ]
@@ -5450,7 +5450,7 @@ def a_tie_that_went_to_a_runoff_says_it_was_held(b):
     e.update(verdict='tied_runoff', runoff=[], choices=[[x[0], 5000, 50.0, x[3]] for x in e['choices']])
     ctx, pg = rs_page(b, {'body': body}, when='2026-12-14T09:00')
     rs_go(pg, 'c121')
-    assert 'Runoff held Dec 12 · result not shown here' in pg.inner_text('#dk-paper'), pg.inner_text('#dk-paper')[:300]
+    assert 'Runoff held Dec 12 · its result is on Travis County Elections' in pg.inner_text('#dk-paper'), pg.inner_text('#dk-paper')[:300]
     assert pg.errs == [], pg.errs
     ctx.close()
 
@@ -5475,6 +5475,30 @@ def the_phone_shows_the_runoff_and_steps_back_sensibly(b):
     assert pg.evaluate('desk.view()') == 'rvote' and pg.inner_text('#ph-back') == '← Decide', pg.inner_text('#ph-back')
     pg.click('#ph-back'); pg.wait_for_timeout(200)
     assert pg.evaluate('desk.view()') == 'rdecide'
+    ctx.close()
+
+@results_test
+def lanes_runoff_calls_oct_21_evening(b):
+    """Lane, Oct 21: #170 after the runoff the Nov 3 bars say so and the county has its result (W113); its last two days
+    send voters to the county (W114); #172 the runoff's reason box says it stays here (W115); #168 an Undecided runoff
+    race prints "Undecided" (W116)."""
+    fx = rs_fixtures()
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-12-14T09:00')
+    rs_go(pg, 'c121'); paper = pg.inner_text('#dk-paper')
+    assert 'Runoff held Dec 12 · its result is on Travis County Elections' in paper and 'Nov 3 result' in paper, paper[:500]
+    assert (pg.get_attribute('#dk-paper .rs-v a', 'href') or '').startswith('https://votetravis.gov/'), pg.inner_html('#dk-paper .rs-v')
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('runoff')}, when='2026-12-11T09:00')
+    pg.evaluate("desk.rgo('c121')"); pg.wait_for_timeout(150)
+    assert 'See Travis County Elections' in pg.inner_text('#rs-top') and 'Not posted yet' not in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')
+    assert 'Private · kept on this device' in pg.inner_text('#dk-paper label[for="ro-w"]')
+    pg.click('#dk-views [data-view="rvote"]'); pg.wait_for_timeout(150)
+    v = pg.inner_text('#dk-paper')
+    assert 'Check Travis County Elections for runoff vote centers.' in v and 'as soon as it does' not in v, v
+    pg.click('#dk-views [data-view="rcrib"]'); pg.wait_for_timeout(150)
+    sheet = pg.eval_on_selector('#dk-page', 'e => e.textContent')
+    assert 'Undecided' in sheet and '______' not in sheet, sheet
+    assert pg.errs == [], pg.errs
     ctx.close()
 
 @results_test
