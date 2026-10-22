@@ -27,6 +27,7 @@ concurrency:
 jobs:
   tag:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5   # a tag push takes seconds; a stuck one shouldn't hold a runner for six hours (#121)
     permissions:
       contents: write   # the tag push
 

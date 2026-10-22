@@ -9,8 +9,9 @@ name: Pages
 # already tagged (source/check_bumped.py, #117): stdlib and git only, so it runs even when the pipeline job is skipped.
 # `--site` then refuses when the committed build has drifted from its sources (the same check as Build check).
 # If PyPI itself is down during a rollback, run this workflow by hand with "skip the pipeline tests" (docs/RUNBOOK.md).
-# If Settings → Pages → Source is ever set back to a branch, Pages publishes the branch itself: this workflow then
-# builds the folder and says so, but deploys nothing.
+# Pages publishes from this workflow (Settings → Pages → Source: GitHub Actions). The last step's other branch is kept
+# only as the emergency fallback (round 2 #24, #121): if Source is ever set back to a branch, Pages publishes the branch
+# itself, and this workflow builds the folder and says so, but deploys nothing.
 
 on:
   push:
@@ -38,8 +39,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - name: The PDF libraries the pipeline tests use (pinned in requirements.txt)
-        run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
+      - name: The PDF libraries the pipeline tests use, every package pinned by hash (#121)
+        run: python3 -m pip install --break-system-packages --require-hashes -r requirements-results.txt
       - name: The answer key against the ballot PDF, and the release check, before anything deploys
         run: python3 tests/test_pipeline.py
       - name: The results back end (rules, parsers, build) before anything deploys

@@ -72,12 +72,19 @@ def serve():
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s
 
+def austin(*a):
+    """A moment in Austin's own time, for the page's clock: a naive datetime is read in the runner's zone, so on a machine
+    outside US Central the midnight tests checked the wrong day (round 2 #17, #115)."""
+    import datetime as _d
+    from zoneinfo import ZoneInfo
+    return _d.datetime(*a, tzinfo=ZoneInfo('America/Chicago'))
+
 def new_page(browser, sent=None, wide=False, csp=False, touch=False, size=None, sw=False, ua=None, tz=None, county=None):
     # The page's Content-Security-Policy (#36) forbids eval, which Playwright's wait_for_function polls with: tests run
     # with it bypassed unless they ask (csp=True), and those poll from Python instead (see poll()). The offline copy
     # (sw.js) is blocked unless a test asks (sw=True): a service worker would answer requests the stubs below expect.
     ctx = browser.new_context(viewport=size or ({'width': 1440, 'height': 900} if wide else {'width': 400, 'height': 900}), permissions=['clipboard-read', 'clipboard-write'],
-                              bypass_csp=not csp, has_touch=touch, service_workers='allow' if sw else 'block', **({'user_agent': ua} if ua else {}), **({'timezone_id': tz} if tz else {}))
+                              bypass_csp=not csp, has_touch=touch, service_workers='allow' if sw else 'block', **({'user_agent': ua} if ua else {}), timezone_id=tz or 'America/Chicago')   # the browser in Austin's zone unless a test says otherwise (#115)
     stub_tracker(ctx)
     ctx.route('https://cloud.umami.is/**', lambda r: r.abort())
     ctx.route('https://gateway.umami.is/**', lambda r: r.abort())
@@ -1839,7 +1846,7 @@ def dates_move_on_in_a_tab_left_open(b):
     # and the laptop header's line. A period the visitor chose stays chosen.
     import datetime as dt
     for wide, choose in ((False, False), (False, True)) + (((True, False),) if HAS_DESK else ()):
-        ctx, pg = new_page(b, wide=wide); pg.clock.install(time=dt.datetime(2026, 10, 30, 23, 58)); pg.goto(BASE)
+        ctx, pg = new_page(b, wide=wide); pg.clock.install(time=austin(2026, 10, 30, 23, 58)); pg.goto(BASE)
         eday = lambda: pg.get_attribute('#t-eday', 'aria-pressed')
         assert eday() == 'false', (wide, choose)
         if wide: assert pg.text_content('#dk-when') == 'Early voting through Fri Oct 30 · 7am–7pm', pg.text_content('#dk-when')
@@ -1852,7 +1859,7 @@ def dates_move_on_in_a_tab_left_open(b):
         # Typing a reason on the laptop across midnight: the new day must not take focus away, or the rest of the
         # sentence would run as shortcuts (picks, skips, moves) (Pass 1).
         st = json.dumps({'pr': '999', 'b': [70, 71, 113], 'mode': 'saved', 'at': 0, 'pt': None})
-        ctx, pg = new_page(b, wide=True); pg.clock.install(time=dt.datetime(2026, 10, 30, 23, 58)); pg.goto(BASE)
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=austin(2026, 10, 30, 23, 58)); pg.goto(BASE)
         pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload(); pg.wait_for_selector('body.dk-app-on')
         cid = pg.evaluate('ballot[0].c.id')
         pg.focus('#dk-w'); pg.keyboard.type('Because she ')
@@ -1864,7 +1871,7 @@ def dates_move_on_in_a_tab_left_open(b):
         assert pg.evaluate('JSON.stringify(picks)') == '{}', pg.evaluate('JSON.stringify(picks)')
         ctx.close()
         # In the vote view, the new day re-draws the hours but keeps the visitor's place (Pass 2).
-        ctx, pg = new_page(b, wide=True); pg.clock.install(time=dt.datetime(2026, 10, 30, 23, 58)); pg.goto(BASE)
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=austin(2026, 10, 30, 23, 58)); pg.goto(BASE)
         pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload(); pg.wait_for_selector('body.dk-app-on')
         pg.click('#dk-views [data-view="vote"]'); pg.focus('#dk-paper [data-period="early"]')
         pg.clock.run_for(5 * 60 * 1000)
@@ -1872,7 +1879,7 @@ def dates_move_on_in_a_tab_left_open(b):
         assert pg.evaluate('document.activeElement.id') == 'dk-paper', 'a new list: focus on the paper, not on another center (Pass 4)'
         ctx.close()
         # ...and on a Directions link, by its position in the list (Pass 3)
-        ctx, pg = new_page(b, wide=True); pg.clock.install(time=dt.datetime(2026, 10, 18, 23, 58)); pg.goto(BASE)
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=austin(2026, 10, 18, 23, 58)); pg.goto(BASE)
         pg.evaluate('s => localStorage.setItem("ballotta.ballot", s)', st); pg.reload(); pg.wait_for_selector('body.dk-app-on')
         pg.click('#dk-views [data-view="vote"]'); link3 = pg.locator('#dk-paper a', has_text='Directions').nth(2); link3.focus()
         href = link3.get_attribute('href'); pg.clock.run_for(5 * 60 * 1000)
@@ -2268,7 +2275,64 @@ def clearing_picks_drops_a_reason_waiting_to_be_saved(b):
         t.evaluate("pick('c001', optionsOf(BYID.c001)[0])")   # another tab saves inside the 150 ms
         a.wait_for_timeout(600)
         assert not a.evaluate("whys.c070") and 'typed just now' not in (a.evaluate("localStorage.getItem('ballotta.whys')") or ''), (how, 'the cleared reason came back', a.evaluate("whys.c070"))
+        if how == 'clear':   # nothing at all is written back after the clear, not even an empty reason (#131 empties the box)
+            assert a.evaluate("localStorage.getItem('ballotta.whys')") == '{}', a.evaluate("localStorage.getItem('ballotta.whys')")
         ctx.close()
+
+@test
+def clear_my_picks_empties_the_open_reason_box(b):
+    # #131: on the laptop, Clear my picks emptied the reasons but left the open box showing the old one, and one more
+    # keystroke there saved it all back. At a glance, which refresh() doesn't redraw, kept showing it too.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("desk.ph.go('c070')"); pg.wait_for_selector('#dk-w')
+    pg.fill('#dk-w', 'an old reason'); pg.wait_for_timeout(400)
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys')).c070") == 'an old reason'
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_function("document.getElementById('dk-paper').textContent.includes('an old reason')", timeout=5000)
+    pg.evaluate("window.confirm = () => true; clearPicks()")
+    assert 'an old reason' not in pg.text_content('#dk-paper'), 'At a glance still shows the cleared reason'
+    pg.click('#dk-views [data-view="decide"]'); pg.evaluate("desk.ph.go('c070')"); pg.wait_for_selector('#dk-w')
+    pg.fill('#dk-w', 'an old reason'); pg.wait_for_timeout(400)                       # now with the box itself open
+    pg.evaluate("window.confirm = () => true; clearPicks()")
+    assert pg.input_value('#dk-w') == '', ('the open box still shows the cleared reason', pg.input_value('#dk-w'))
+    pg.click('#dk-w'); pg.keyboard.type('x'); pg.wait_for_timeout(400)
+    assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.whys')).c070") == 'x', pg.evaluate("localStorage.getItem('ballotta.whys')")
+    ctx.close()
+
+@test
+def two_tabs_acting_at_once_keep_both(b):
+    # #119: each save wrote the whole picks (or reasons) object, so a tab acting before the other tab's storage event
+    # had reached it wrote over that tab's change; and with two reasons typed inside one 150 ms pause, a storage event
+    # brought back the first box's old text. A save now re-reads storage and writes only this tab's own changes, and
+    # every box waiting to be saved keeps its text. Tab B holds back its storage events, as a tab does in the moment
+    # between the other tab's write reaching it and its listener running.
+    ctx, a = new_page(b, wide=True); a.goto(BASE); saved_ballot(a, [1, 70, 71]); a.wait_for_selector('body.dk-app-on')
+    t = ctx.new_page()                                                              # registered before the page's own listeners
+    t.add_init_script("window.__hold = true; addEventListener('storage', e => { if (window.__hold) e.stopImmediatePropagation(); })")
+    t.goto(BASE); t.wait_for_selector('body.dk-app-on')
+    o1, o70 = a.evaluate("[optionsOf(BYID.c001)[0], optionsOf(BYID.c070)[0]]")
+    a.evaluate("v => pick('c001', v)", o1)
+    t.wait_for_function("(JSON.parse(localStorage.getItem('ballotta.picks')) || {}).c001", timeout=5000)
+    assert t.evaluate("current('c001').length") == 0                               # B hasn't taken A's pick in yet
+    t.evaluate("v => pick('c070', v)", o70)                                         # ...and picks at that moment
+    saved = a.evaluate("JSON.parse(localStorage.getItem('ballotta.picks'))")
+    assert saved.get('c001') == [o1] and saved.get('c070') == [o70], ('a pick made at the same moment was lost', saved)
+    box = "c => document.querySelector('#groups textarea[data-c=' + c + ']')"
+    a.evaluate("([c, w]) => { const t = (%s)(c); t.value = w; t.dispatchEvent(new Event('input')); }" % box, ['c071', 'from A'])
+    t.wait_for_function("(JSON.parse(localStorage.getItem('ballotta.whys')) || {}).c071 === 'from A'", timeout=5000)
+    t.evaluate("([c, w]) => { const t = (%s)(c); t.value = w; t.dispatchEvent(new Event('input')); }" % box, ['c070', 'from B'])
+    t.wait_for_timeout(400)
+    saved = a.evaluate("JSON.parse(localStorage.getItem('ballotta.whys'))")
+    assert saved.get('c071') == 'from A' and saved.get('c070') == 'from B', ('a reason saved at the same moment was lost', saved)
+    t.evaluate("window.__hold = false")
+    a.evaluate("""() => { const box = %s;                                          // two boxes inside one pause, then
+        for (const [c, w] of [['c001', 'one'], ['c071', 'two']]) { const x = box(c); x.value = w; x.dispatchEvent(new Event('input')); }
+        dispatchEvent(new StorageEvent('storage', { key: 'ballotta.picks' })); }""" % box)   # another tab's save arrives
+    a.wait_for_timeout(400)
+    saved = a.evaluate("JSON.parse(localStorage.getItem('ballotta.whys'))")
+    assert saved.get('c001') == 'one' and saved.get('c071') == 'two' and saved.get('c070') == 'from B', ('a box waiting to be saved lost its text', saved)
+    assert a.evaluate("(%s)('c001').value" % box) == 'one'
+    t.wait_for_function("whys.c001 === 'one' && whys.c071 === 'two' && current('c001').length === 1", timeout=5000)   # B, no longer held, follows
+    ctx.close()
 
 @test
 def a_new_share_name_hides_the_link_just_shared(b):
@@ -2674,7 +2738,7 @@ def a_page_left_open_learns_of_a_newer_release(b):
                 v = live or json.loads((ROOT / 'version.json').read_text())['version']
                 route.fulfill(status=200, content_type='application/json', body=json.dumps({'version': v}))
             ctx.route('**/version.json*', answer)
-            pg.clock.install(time=dt.datetime(2026, 10, 20, 12, 0)); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
+            pg.clock.install(time=austin(2026, 10, 20, 12, 0)); pg.goto(BASE); saved_ballot(pg, [70, 71, 1]); pg.wait_for_selector('body.dk-app-on')
             pg.evaluate("window.__stay = 1; document.dispatchEvent(new Event('visibilitychange')); window.dispatchEvent(new Event('focus'))")
             pg.clock.run_for(2000)
             assert hits == [], (wide, live, 'asked again within 10 minutes of loading', hits)
@@ -3818,7 +3882,7 @@ def phone_where_to_vote_sorted_by_distance(b):
     # Port of where_to_vote_sorted_by_distance, in the phone's Where to vote view. The date is pinned inside early voting
     # (cold audit #18: from Oct 31 the page opens on Election Day); timers still run.
     import datetime as dt
-    ctx, pg = phone_page(b); pg.clock.set_fixed_time(dt.datetime(2026, 10, 20, 12, 0)); pg.goto(BASE); lookup_phone(pg)
+    ctx, pg = phone_page(b); pg.clock.set_fixed_time(austin(2026, 10, 20, 12, 0)); pg.goto(BASE); lookup_phone(pg)
     pa_view(pg, 'vote')
     sites = pg.locator('#dk-sites .dk-site')
     assert sites.count() == 5, sites.count()
@@ -4104,7 +4168,7 @@ def phone_new_day_keeps_the_vote_list_and_focus(b):
     # day that doesn't change the voting period leaves the vote-center list as it was, and a focused Directions link
     # keeps focus. (The dated note half: phone_wait_times_note_says_when_it_fills_in.) Named apart from the old test, which keeps its name.
     import datetime as dt
-    ctx, pg = phone_page(b); pg.clock.install(time=dt.datetime(2026, 10, 18, 23, 58)); pg.goto(BASE)
+    ctx, pg = phone_page(b); pg.clock.install(time=austin(2026, 10, 18, 23, 58)); pg.goto(BASE)
     saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('body.dk-app-on')
     pa_view(pg, 'vote')
     assert pg.get_attribute('#dk-paper [data-period="early"]', 'aria-pressed') == 'true'
@@ -4121,7 +4185,7 @@ def phone_wait_times_note_says_when_it_fills_in(b):
     # "Check live wait times", that the county's map "fills in once voting starts Oct 19", and drops it on the new day
     # (with no redraw of the list). The phone layout's Where to vote view must say the same.
     import datetime as dt
-    ctx, pg = phone_page(b); pg.clock.install(time=dt.datetime(2026, 10, 18, 23, 58)); pg.goto(BASE)
+    ctx, pg = phone_page(b); pg.clock.install(time=austin(2026, 10, 18, 23, 58)); pg.goto(BASE)
     saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('body.dk-app-on')
     pa_view(pg, 'vote')
     assert 'fills in once voting starts' in pg.inner_text('#dk-paper'), 'the phone\'s Where to vote view doesn\'t say the wait-times map is empty until Oct 19'
@@ -4136,7 +4200,7 @@ def desk_wait_times_note_says_when_it_fills_in(b):
     # The laptop's Where to vote view says the same as the phone's (the old phone page always did): the county's
     # wait-times map is empty until voting starts Oct 19, and the note goes on the day.
     import datetime as dt
-    for when, shown in ((dt.datetime(2026, 10, 18, 12, 0), True), (dt.datetime(2026, 10, 19, 9, 0), False)):
+    for when, shown in ((austin(2026, 10, 18, 12, 0), True), (austin(2026, 10, 19, 9, 0), False)):
         ctx, pg = new_page(b, wide=True); pg.clock.install(time=when); pg.goto(BASE)
         saved_ballot(pg, [70, 71], [-97.743, 30.272]); pg.wait_for_selector('body.dk-app-on')
         pg.click('#dk-views [data-view="vote"]')
@@ -4477,7 +4541,7 @@ def phone_backup_nudge_after_fifth_pick(b):
 
 @desk_test
 def desk_backup_nudge_after_fifth_pick(b):
-    # The laptop half of backup_nudge_after_fifth_pick (#48), which is skipped wherever the phone layout exists.
+    # The laptop half of the backup nudge after the fifth pick (#48).
     nums = list(range(1, 41))
     ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, nums); pg.wait_for_selector('body.dk-app-on')
     ids = pb_ids(pg); card = pg.locator('#dk-nudge')
@@ -4600,7 +4664,7 @@ def phone_friend_card_long_names_and_honest_copy(b):
 
 @desk_test
 def desk_friend_card_long_names_and_honest_copy(b):
-    # The laptop half of friend_card_long_names_and_honest_copy (#23, #24), which is skipped wherever the phone layout exists.
+    # The laptop half of the friend card's long names and honest copy (#23, #24).
     name = 'Bartholomew' + 'w' * 19
     url = link('s', {'v': 1, 'n': name, 'c': 'abcd2345', 'g': 1, 'p': {'70': 0}, 'w': {'70': 'x'}})
     ctx, pg = new_page(b, wide=True); fresh_goto(pg, url); pg.wait_for_selector('#friend:not(.hidden)')
@@ -5714,7 +5778,11 @@ def main():
     srv.shutdown()
     ran = len(TESTS) - skipped
     print(f'{ran - failed}/{ran} passed' + (f', {skipped} skipped' if skipped else '') + f' ({PAGE})')
-    sys.exit(1 if failed else 0)
+    missed = sorted(set(COUNTY_MISSES)) if COUNTY_MODE == 'stub' else []
+    if missed:   # a stubbed run that asked the live county isn't the offline run it claims to be (round 2 #18, #116)
+        print(f'STUB MISSES: {len(missed)} county request(s) had no recorded answer and went to the live county; record them with '
+              'BALLOTTA_RECORD_COUNTY=1:\n  ' + '\n  '.join(missed))
+    sys.exit(1 if failed or missed else 0)
 
 if __name__ == '__main__':
     main()

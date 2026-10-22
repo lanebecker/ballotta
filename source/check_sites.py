@@ -9,6 +9,9 @@ browsers fetch the missing piece, so the site is asked again without curl's own 
 were bot walls on sites that load in a normal browser (checked Oct 14), so they stay linked. A break is recorded only
 if it happens twice, a few seconds apart, so one bad moment can't unlink a site.
 
+A site that moved hosts (it redirects to another name, not just to www., and answers 2xx there) is linked by the address
+it ended at, without its query string (round 2 #23, #120); a site that stays on its own name keeps the address it was given.
+
 It also writes data/sites_checked.json: the rule's version (RULE) and a digest of the sites checked and their results.
 build_learn.py stops when either no longer matches (stale()), so a change to the rule can't ship with results the old
 rule made (round-2 audit #2: the 1.1.3 rule never reached the shipped data), nor a re-parsed guide with sites never
@@ -37,11 +40,12 @@ CHAIN_ONLY = 'unable to get local issuer certificate'   # curl's words for a cha
 
 
 def curl(url, insecure=False):
-    p = subprocess.run(['curl', '-sS', '-o', '/dev/null', '-L', '-A', UA, '-w', '%{http_code}', '--max-time', '20', *(['-k'] if insecure else []), url],
+    p = subprocess.run(['curl', '-sS', '-o', '/dev/null', '-L', '-A', UA, '-w', '%{http_code} %{url_effective}', '--max-time', '20', *(['-k'] if insecure else []), url],
                        capture_output=True, text=True)
     if p.returncode == 60 and CHAIN_ONLY in p.stderr and not insecure:
         return curl(url, insecure=True)          # only the missing intermediate: ask what a browser, which fetches it, would get
-    return (p.stdout.strip() or '000'), p.returncode
+    code, _, final = p.stdout.strip().partition(' ')
+    return (code or '000'), p.returncode, final   # the address it ended at, after any redirects (#120)
 
 
 def answered(code, ex):
@@ -50,13 +54,24 @@ def answered(code, ex):
     return ex == 0 or (code != '000' and ex not in BROKEN_EXIT)
 
 
+def moved(url, final):
+    """The address to link: the final one, without query or fragment, only when it is on another host (#120)."""
+    from urllib.parse import urlsplit, urlunsplit
+    host = lambda u: (urlsplit(u).hostname or '').removeprefix('www.')
+    if not str(final).startswith(('https://', 'http://')) or not host(final) or host(final) == host(url): return url
+    f = urlsplit(final)
+    return urlunsplit((f.scheme, f.netloc, f.path, '', ''))
 def once(s):
     """https first; http only if https didn't answer. When both fail, https's failure is the one recorded: http's own
     (a reset, or its redirect into the same broken https) says nothing about the link we'd show."""
-    code, ex = curl('https://' + s)
-    if answered(code, ex): return 'https://' + s, code, ex
-    hcode, hex_ = curl('http://' + s)
-    if hex_ == 0: return 'http://' + s, hcode, hex_   # only a clean http answer replaces https (a redirect that then fails doesn't; Pass 3)
+    def ask(url):
+        r = curl(url)
+        return r[0], r[1], (moved(url, r[2] if len(r) > 2 else '') if str(r[0]).startswith('2') else url)   # a bot wall's
+                                                                     # challenge host or a 404 elsewhere is never the link
+    code, ex, final = ask('https://' + s)
+    if answered(code, ex): return final, code, ex          # where it ended up, when it answered (#120)
+    hcode, hex_, hfinal = ask('http://' + s)
+    if hex_ == 0: return hfinal, hcode, hex_   # only a clean http answer replaces https (a redirect that then fails doesn't; Pass 3)
     return 'https://' + s, code, ex
 
 

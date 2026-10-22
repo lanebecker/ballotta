@@ -28,8 +28,8 @@ jobs:
           persist-credentials: false
       - name: The committed build is what the build writes
         run: python3 source/build_site.py --check
-      - name: The PDF libraries the pipeline tests use (pinned in requirements.txt)
-        run: grep -E '^(pdfplumber|pdfminer\.six)==' requirements.txt | python3 -m pip install --break-system-packages -r /dev/stdin
+      - name: The PDF libraries the pipeline tests use, every package pinned by hash (#121)
+        run: python3 -m pip install --break-system-packages --require-hashes -r requirements-results.txt
       - name: The answer key against the ballot PDF, and the release check
         run: python3 tests/test_pipeline.py
       - name: The results back end (rules, parsers, build)

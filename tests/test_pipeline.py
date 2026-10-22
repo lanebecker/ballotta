@@ -90,7 +90,7 @@ def every_measure_text_is_the_ballots_english():
 # English lines on the ballot that are neither a measure's text nor a choice: page numbers, "Vote for …" lines, and the
 # notices of the Coupland and Manor ISD trustees elected unopposed (pages 7 and 8).
 NOT_CONTENT = re.compile(r'^(Page \d+|of 18|Vote for .*|or five)$')
-UNOPPOSED = {'District School Board Trustee,', 'Special Election: Rhonda Suzanne', 'Dunlop Coupland Independent', 'School District School Board',
+UNOPPOSED = {'Coupland Independent School', 'District School Board Trustee,', 'Special Election: Rhonda Suzanne', 'Dunlop Coupland Independent', 'School District School Board',
              'Trustees, General Election: Crystal', 'Ward, Michael Roepke', 'Manor ISD Board of Trustees,', 'Place 1: Stephanie Rodriguez',
              'Place 2: LaKesha Small', 'Place 3: Ana Cortez', 'Place 4: Fabian Martinez'}
 
@@ -102,18 +102,48 @@ def every_english_line_on_the_ballot_is_in_the_key():
     # line after each measure's text starts its Spanish translation (all italic), so no English was cut off or added.
     texts = [pdf_lines.norm(c['text']) for c in KEY['contests'] if c['type'] == 'measure']
     choices = {name(x) for c in KEY['contests'] for x in c.get('choices', [])}
-    left = [(l['page'], l['col'], l['text']) for l in L if pdf_lines.english(l) and not pdf_lines.bold(l)
-            and not (name(pdf_lines.norm(l['text'])) in choices or NOT_CONTENT.match(l['text']) or l['text'] in UNOPPOSED
-                     or any(pdf_lines.norm(l['text']) in t for t in texts))]
-    assert not left, ('English on the ballot that the key does not carry', left[:8], len(left))
     titles = [i for i, l in enumerate(L) if pdf_lines.english(l) and pdf_lines.bold(l) and re.search(r'Proposition\s+[A-Z0-9]+$', l['text'])]
     assert len(titles) == 93, len(titles)
+    inside = set()   # the English of each measure's text: checked whole against the key below, line by line
+    for i in titles:
+        j = i + 1
+        while all(not it for _, it, _ in L[j]['words']): inside.add(j); j += 1
+    # Outside a measure's text, a line is a choice, a notice, or an unopposed line: whole lines, never a piece of some
+    # measure's text (a dropped candidate's name inside a measure passed before: round 2 #20, #118)
+    left = [(l['page'], l['col'], l['text']) for k, l in enumerate(L) if k not in inside and pdf_lines.english(l) and not pdf_lines.bold(l)
+            and not (name(pdf_lines.norm(l['text'])) in choices or NOT_CONTENT.match(l['text']) or l['text'] in UNOPPOSED)]
+    assert not left, ('English on the ballot that the key does not carry', left[:8], len(left))
+    # each measure is paired with its own title: its letter or number, and the entity printed above it (#118)
+    measures = [c for c in KEY['contests'] if c['type'] == 'measure']
+    wrong = []
+    for i, c in zip(titles, measures):
+        j, block = i, [L[i]['text']]                      # the whole bold title, wrapped lines and all
+        while pdf_lines.english(L[j - 1]) and pdf_lines.bold(L[j - 1]): j -= 1; block.insert(0, L[j]['text'])
+        isd = lambda t: pdf_lines.norm(t).replace('Independent School District', 'ISD')   # either form, on the ballot or in the key
+        if isd(' '.join(block)) != isd(re.sub(r' \([^)]*\)$', '', c['title'])): wrong.append((c['id'], c['title'], ' '.join(block)))   # less the key's own note
+    assert not wrong, ('a measure paired with another title', wrong[:5], len(wrong))
     for i, t in zip(titles, texts):
         j, words = i + 1, []
         while all(not it for _, it, _ in L[j]['words']): words.append(L[j]['text']); j += 1
         assert all(it for _, it, _ in L[j]['words']), ('a measure text runs into a line that is partly Spanish', L[j]['text'])
         assert pdf_lines.norm(' '.join(words)) == t, ('measure text differs from the English between its title and its Spanish', L[i]['text'], t[-60:])
 
+
+@test
+def write_ins_are_where_the_ballot_has_them():
+    """Round 2 #20 (#118): each "Write-in / Voto Escrito" line of the ballot follows its contest's candidates; the
+    contests it follows are exactly the key's contests with a write-in (all five were checked by hand before)."""
+    on_ballot = set()
+    for i, l in enumerate(L):
+        if not l['text'].startswith('Write-in'): continue
+        names, j = set(), i - 1
+        while j >= 0 and PARTY.search(L[j]['text']) or (j >= 0 and any(name(L[j]['text']) == name(x) for c in KEY['contests'] for x in c.get('choices', []))):
+            names.add(name(L[j]['text'])); j -= 1
+        fits = [c['id'] for c in KEY['contests'] if c['type'] == 'candidate' and names and names == {name(x) for x in c['choices'] if x != 'Write-in'}]
+        assert len(fits) == 1, ('a write-in line whose contest is unclear', L[i]['page'], sorted(names), fits)
+        on_ballot.add(fits[0])
+    in_key = {c['id'] for c in KEY['contests'] if 'Write-in' in c.get('choices', [])}
+    assert on_ballot == in_key, ('write-ins differ from the ballot', sorted(on_ballot ^ in_key))
 
 @test
 def party_labels_match_the_ballot():
@@ -205,7 +235,7 @@ def build_check_catches_drift_and_broken_markers():
     r = run(ROOT); assert r.returncode == 0, ('the committed build is out of date', r.stdout[-600:], r.stderr[-600:])
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d) / 'b'
-        shutil.copytree(ROOT, d, ignore=shutil.ignore_patterns('.git', 'tests', '__pycache__', '*.pdf'))
+        shutil.copytree(ROOT, d, ignore=shutil.ignore_patterns('.git', 'tests', '__pycache__', '*.pdf', '.mutate-lock', '*.mutate-tmp'))
         files = lambda: {p: p.read_bytes() for p in d.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
         before = files()
         assert run(d).returncode == 0
@@ -224,7 +254,7 @@ def rules_are_rebuilt_and_new_districts_stay_small():
     import shutil
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d) / 'source'
-        shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('__pycache__', '*.pdf'))
+        shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('__pycache__', '*.pdf', '.mutate-lock', '*.mutate-tmp'))
         run = lambda: subprocess.run([sys.executable, 'build_rules.py'], capture_output=True, text=True, cwd=str(d))
         r = run(); assert r.returncode == 0, ('build_rules.py stopped', r.stdout[-600:], r.stderr[-600:])
         for f in ('rules.json', 'tlc_precincts.json'):
@@ -266,7 +296,7 @@ def site_folder_holds_only_the_site():
         assert all((out / f).read_bytes() == (ROOT / f).read_bytes() for f in got)
         r = subprocess.run([sys.executable, str(ROOT / 'source/build_site.py'), '--site', str(out)], capture_output=True, text=True)
         assert r.returncode != 0 and 'not empty' in r.stdout + r.stderr, ('wrote into a folder that already held files', r.stderr[-300:])
-        repo = d / 'repo'; shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns('.git', 'tests', '__pycache__', '*.pdf'))
+        repo = d / 'repo'; shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns('.git', 'tests', '__pycache__', '*.pdf', '.mutate-lock', '*.mutate-tmp'))
         (repo / 'index.html').write_text((repo / 'index.html').read_text(encoding='utf-8') + ' ', encoding='utf-8')
         r = subprocess.run([sys.executable, str(repo / 'source/build_site.py'), '--site', str(d / 'bad')], capture_output=True, text=True)
         assert r.returncode != 0 and not (d / 'bad').exists() and 'index.html' in r.stdout + r.stderr, ('a drifted build was published', r.stdout[-300:], r.stderr[-300:])
@@ -376,7 +406,7 @@ def every_guide_measure_belongs_to_a_contest():
     m = json.loads((ROOT / 'source/data/lwv_measures.json').read_text(encoding='utf-8'))
     assert not [x for x in m if x.split('|')[0] in ('CITY OF GEORGETOWN', 'CITY OF HUTTO', 'CITY OF TAYLOR', 'GEORGETOWN INDEPENDENT SCHOOL DISTRICT')], m
     with tempfile.TemporaryDirectory() as d:
-        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__'))
+        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__', '.mutate-lock', '*.mutate-tmp'))
         run = lambda: subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d))
         r = run(); assert r.returncode == 0, r.stderr[-600:]
         assert (d / 'learn.json').read_bytes() == (ROOT / 'source/learn.json').read_bytes(), 'learn.json is not what build_learn.py makes'
@@ -405,7 +435,7 @@ def campaign_sites_were_checked_with_todays_rule():
     del old[ch]['http']; assert cs.stale(old, dict(stamp, sites=cs.digest(old))), 'a site with no result passed'
     import shutil                                                            # and build_learn.py stops on it
     with tempfile.TemporaryDirectory() as d:
-        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__'))
+        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__', '.mutate-lock', '*.mutate-tmp'))
         (d / 'data/sites_checked.json').write_text(json.dumps(dict(stamp, rule=cs.RULE - 1)), encoding='utf-8')
         r = subprocess.run([sys.executable, str(d / 'build_learn.py')], capture_output=True, text=True, cwd=str(d))
         assert r.returncode != 0 and 'out of date' in r.stderr, ('build_learn.py used results from an older rule', r.stderr[-300:])
@@ -438,6 +468,14 @@ def a_site_is_broken_only_when_it_surely_is():
         assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '000', 35), calls
         cs.curl, calls = fake([('000', 28), ('200', 0)])                     # https too slow, http answers: the http link
         assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('http://x.org', '200', 0) and calls == ['https://x.org', 'http://x.org']
+        cs.curl, calls = fake([('200', 0, 'https://www.newname.org/home?utm_source=x&sid=9#top')])   # moved hosts: linked where it
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://www.newname.org/home', '200', 0), calls   # ended, bare (#120)
+        cs.curl, calls = fake([('200', 0, 'https://www.x.org/en/?sid=9')])   # its own name, with www: the address it was given
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '200', 0), calls
+        cs.curl, calls = fake([('000', 28, ''), ('200', 0, 'https://new.org/')])   # only http answered, on a new host
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://new.org/', '200', 0), calls
+        cs.curl, calls = fake([('403', 0, 'https://validate.wall.net/?u=x')])   # a bot wall's challenge host is never the link
+        assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '403', 0), calls
         cs.curl, calls = fake([('403', 0)])                                  # a bot wall over https: no http try
         assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '403', 0) and len(calls) == 1
         for late in (56, 92, 28):                                            # https answered, then the page broke off: keep https (Pass 2)
@@ -458,13 +496,14 @@ def a_site_is_broken_only_when_it_surely_is():
                           ('curl: (60) SSL certificate problem: certificate has expired', ('000', 60)),
                           ('curl: (60) SSL: no alternative certificate subject name matches target host name', ('000', 60))):
             runs.clear()
-            cs.subprocess.run = lambda args, **k: (runs.append(args), P(0, '') if '-k' in args else P(60, err, ''))[1]
-            assert cs.curl('https://x.org') == want and (('-k' in runs[-1]) == (want[1] == 0)), (err, runs)
+            cs.subprocess.run = lambda args, **k: (runs.append(args), P(0, '', '200 https://www.x.org/') if '-k' in args else P(60, err, ''))[1]
+            got = cs.curl('https://x.org')
+            assert got[:2] == want and got[2] == ('https://www.x.org/' if want[1] == 0 else '') and (('-k' in runs[-1]) == (want[1] == 0)), (err, runs)
     finally:
         cs.subprocess.run = real_run
     assert cs.proxied({'HTTPS_PROXY': 'http://p:1'}) == ['HTTPS_PROXY'] and cs.proxied({'https_proxy': ''}) == [] and cs.proxied({}) == []
     with tempfile.TemporaryDirectory() as d:
-        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__'))
+        d = pathlib.Path(d) / 's'; shutil.copytree(ROOT / 'source', d, ignore=shutil.ignore_patterns('*.pdf', '__pycache__', '.mutate-lock', '*.mutate-tmp'))
         before = (d / 'data/lwv_candidates.json').read_bytes()
         r = subprocess.run([sys.executable, str(d / 'check_sites.py')], capture_output=True, text=True, env=dict(os.environ, HTTPS_PROXY='http://127.0.0.1:9'))
         assert r.returncode != 0 and 'proxy' in r.stderr and (d / 'data/lwv_candidates.json').read_bytes() == before, ('checked links behind a proxy', r.stderr[-300:])
@@ -638,6 +677,41 @@ def results_off_leaves_no_trace():
     if was:
         assert 'results/index.html' in B.outputs(False) and B.sw_js(False).count("u.pathname.endsWith('/results.json') ? savedCopy(kept)") == 1
 
+
+@test
+def vote_sites_match_the_clerks_lists():
+    """Round 2 #20 (#118): vote_sites.json against the Travis County Clerk's own flyers, frozen in tests/fixtures/clerk/
+    (votetravis.gov, early voting dated Sep 25, Election Day Oct 2, 2026; download the new ones if the Clerk updates
+    them). Every site is one row of its list, found by street address and city; the count, the bus route ("B"), the
+    early sites open till 10 pm Oct 29-30 (the list's *, "L") and the one open Friday Oct 30 only ("F") all agree."""
+    import pdfplumber
+    fixed = {('early', '1201 e rundberg ln'): '1201 e runberg ln'}   # the Clerk's typo on the early list; the page spells it right
+    sites = json.loads((ROOT / 'source/vote_sites.json').read_text(encoding='utf-8'))
+    row = re.compile(r'^(\d{3}) (.+) (\d{5}) (Yes|No)$')
+    for kind, f in (('early', 'G26-Early-Voting-Flyer-2026-09-25.pdf'), ('eday', 'G26-Election-Day-Flyer-2026-10-02.pdf')):
+        with pdfplumber.open(ROOT / 'tests/fixtures/clerk' / f) as pdf:
+            text = [l.strip() for p in pdf.pages for l in (p.extract_text() or '').splitlines()]
+        rows = [l for l in text if row.match(l)]
+        assert len(rows) == len(sites[kind]), (kind, len(rows), len(sites[kind]))
+        friday = ' '.join(l for l in text if 'only serve as an early voting polling location on Friday, October 30' in l)
+        bad = []
+        for nm, room, addr, city, fl, *_ in sites[kind]:
+            a = fixed.get((kind, addr.lower()), addr.lower())
+            hit = [r for r in rows if f' {a} {city.lower()} ' in r.lower() + ' ']
+            if len(hit) != 1: bad.append(('no single row', nm, addr, len(hit))); continue
+            r = hit[0]
+            if r.endswith(' Yes') != ('B' in fl): bad.append(('bus route', nm, fl))
+            if kind == 'early' and (nm + '*' in r) != ('L' in fl): bad.append(('open till 10 pm', nm, fl))
+            if ('F' in fl) != (kind == 'early' and nm in friday): bad.append(('Friday only', nm, fl))
+        assert not bad, (kind, bad)
+
+@test
+def browser_clocks_are_set_in_austins_time():
+    """Round 2 #17 (#115): a naive datetime given to the page's clock is read in the runner's own zone, so the midnight
+    tests checked the wrong day anywhere outside US Central. Every clock time in the site tests is zoned."""
+    src = (ROOT / 'tests/test_site.py').read_text(encoding='utf-8')
+    naive = re.findall(r'(?:clock\.install\(time=|clock\.set_fixed_time\(|clock\.set_system_time\()\s*(?:dt|_dt)\.datetime\([^)]*\)', src)
+    assert not naive, naive
 
 if __name__ == '__main__':
     failed = 0
