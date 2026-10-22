@@ -3,11 +3,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-vYStnY7px5a42uILDEUWONsjziwYFxUkbY4V72LOx5M='; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-IX5E+MNlP5JqtyHpVjp6YQXomWywhxHSYiMitQYOqfM='; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>Ballotta</title><link rel="canonical" href="https://ballotta.org/"></head>
 <body>
-<p>The new Ballotta is now at <a href="../">ballotta.org</a>.</p>
-<script>(() => { const go = () => location.replace(new URL('../', location.href).href + location.hash);
+<p id="moved">The new Ballotta is now at <a href="../">ballotta.org</a>.</p>
+<p id="old-icon" hidden>This icon is for the old preview. To keep Ballotta on your Home Screen, delete this icon, open <a href="../">ballotta.org</a> in Safari and add it again.</p>
+<script>(() => { const go = () => navigator.standalone === true ? (document.getElementById('moved').hidden = true, document.getElementById('old-icon').hidden = false)
+    : location.replace(new URL('../', location.href).href + location.hash);
   try { const sw = navigator.serviceWorker; if (!sw) return go();
     Promise.race([sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href).href && g.update()),
                   new Promise((ok) => setTimeout(ok, 1500))]).catch(() => {}).then(go);

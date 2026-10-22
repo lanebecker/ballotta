@@ -1,6 +1,6 @@
 # Ballotta: phone layout — build plan
 
-*Written Oct 15, 2026 for Lane. Status: **approved by Lane (Oct 16, 8:19am: all 15 differences, including the 4-second offline rule) and being executed.** Every script below was dry-run on a throwaway copy first (results in "Dry run"). Early voting starts **Mon Oct 19**, and most voters are on phones, so the plan is sized for a preview the same day Lane says go, and a promotion before Monday if he's happy.*
+*Written Oct 15, 2026 for Lane. Status: **approved by Lane (Oct 16, 8:19am: all 15 differences, including the 4-second offline rule), executed, and promoted Oct 17 (v1.0.0).** The execution log below stops at Oct 17; from then on, `CHANGELOG.md` is the log (each release, with its issue numbers) (#128). When written: every script below was dry-run on a throwaway copy first (results in "Dry run"). Early voting starts **Mon Oct 19**, and most voters are on phones, so the plan is sized for a preview the same day Lane says go, and a promotion before Monday if he's happy.*
 
 ## The request (verbatim)
 

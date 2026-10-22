@@ -3,9 +3,9 @@
     python3 source/build_site.py             # index.html: the live site
     python3 source/build_site.py --check     # CI: rebuilds in memory and compares with what is committed; writes nothing (#81)
     python3 source/build_site.py --site DIR  # the Pages workflow: after --check passes, copies only the site's files to DIR (#83)
-    python3 source/build_site.py --preview   # next/, while the phone layout isn't live: the page with it on; counts nothing
-                                             # (once it is, the main build writes next/: the street map's preview until
-                                             # STREETS_LIVE, then a page that sends people on)
+    python3 source/build_site.py --preview   # next/ with every layer on, for a layer not yet live; counts nothing. With
+                                             # every layer live (since Oct 19), the main build writes next/ as a page that
+                                             # sends people on (moved_page)
 
 Rebuild rules first if the answer key or district data change:  python3 source/build_rules.py
 """
@@ -25,14 +25,13 @@ UMAMI_DOMAINS = "ballotta.org,www.ballotta.org"   # lanebecker.github.io/ballott
 # browsers refuse one too. To update the tracker, review the new copy, then change this, the README and the test.
 UMAMI_SHA256 = "91a876d767646fd5b7701b6fabf97f8a99ae53b94e7e5b58d465bad1e5d763e0"
 # The laptop layout (1024px and wider) is marked in the template: /*DESK*/ ... /*/DESK*/ in CSS and JS,
-# <!--DESK--> ... <!--/DESK--> in HTML. Until Lane approves the preview at ballotta.org/next/, the live build
-# removes every marked block, so index.html stays byte-for-byte what it was. Promotion: set DESK_LIVE = True.
+# <!--DESK--> ... <!--/DESK--> in HTML. Live since Oct 15 (Lane). Set False to roll it back (it needs PHONE_LIVE False
+# too): the build then removes every marked block, giving the page as it was before (docs/RUNBOOK.md).
 DESK_LIVE = True
 # The phone layout (narrower than 1024px: the laptop app folded up, plus Add to Home Screen and an offline copy) is
-# marked the same way: /*PHONE*/ ... /*/PHONE*/ and <!--PHONE--> ... <!--/PHONE-->. Until Lane approves the preview at
-# ballotta.org/next/, the live build removes every marked block, so index.html stays byte-for-byte what it was.
-# Promotion: set PHONE_LIVE = True (docs/plans/2026-10-15-phone-layout.md, Task 13). Promoted Oct 17 (Lane): next/
-# now only hands people on (moved_page), and its worker removes itself; the main build writes both.
+# marked the same way: /*PHONE*/ ... /*/PHONE*/ and <!--PHONE--> ... <!--/PHONE-->. Promoted Oct 17 (Lane;
+# docs/plans/2026-10-15-phone-layout.md, Task 13): next/ now only hands people on (moved_page), and its worker removes
+# itself; the main build writes both. False rolls it back: the build removes every marked block (docs/RUNBOOK.md).
 PHONE_LIVE = True
 # The offline copy (sw.js). False writes a sw.js that removes itself and its copies from every phone that has it, and
 # the page stops installing it: the switch to pull if offline copies ever cause trouble. Rebuild and push to apply.
@@ -56,6 +55,9 @@ RESULTS_LIVE = True
 
 def marks(tag):
     return r'(?:/\*' + tag + r'\*/|<!--' + tag + r'-->)', r'(?:/\*/' + tag + r'\*/|<!--/' + tag + r'-->)'
+
+
+PLAIN_VIEWPORT = '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
 
 
 def strip_marked(html, tag):
@@ -246,8 +248,10 @@ SW_REMOVE = "sw.getRegistration('./').then((g) => g && g.update()).catch(() => {
 # browser to fetch next/sw.js again (the self-removing worker), for the preview's own registration only (scope check:
 # a page one folder down must never update the main page's worker), then goes on with the #fragment, so a Keep or
 # Share link made on the preview still opens its picks. Without scripts, the link does it (the fragment is lost).
-MOVED_JS = (
-    "(() => { const go = () => location.replace(new URL('../', location.href).href + location.hash);\n"
+MOVED_JS = (   # opened from the old preview's Home Screen icon, it says what to do instead: leaving would open the page
+              # outside the icon's app, in a Safari view with storage of its own (#127; Lane's words, Oct 22)
+    "(() => { const go = () => navigator.standalone === true ? (document.getElementById('moved').hidden = true, document.getElementById('old-icon').hidden = false)\n"
+    "    : location.replace(new URL('../', location.href).href + location.hash);\n"
     "  try { const sw = navigator.serviceWorker; if (!sw) return go();\n"
     "    Promise.race([sw.getRegistration('./').then((g) => g && g.scope === new URL('./', location.href).href && g.update()),\n"
     "                  new Promise((ok) => setTimeout(ok, 1500))]).catch(() => {}).then(go);\n"
@@ -267,7 +271,9 @@ def moved_page():
             + '; worker-src \'self\'; base-uri \'none\'; form-action \'none\'">\n'
             '<title>Ballotta</title><link rel="canonical" href="' + BASE_URL + '"></head>\n'
             '<body>\n'
-            '<p>The new Ballotta is now at <a href="../">ballotta.org</a>.</p>\n'
+            '<p id="moved">The new Ballotta is now at <a href="../">ballotta.org</a>.</p>\n'
+            '<p id="old-icon" hidden>This icon is for the old preview. To keep Ballotta on your Home Screen, delete this icon, '
+            'open <a href="../">ballotta.org</a> in Safari and add it again.</p>\n'
             '<script>' + MOVED_JS + '</script>\n</body></html>\n')
 
 # ---- The share card (Lane, Oct 18). A Share my picks link goes to ballotta.org/picks/#s2…: this page, whose own preview
@@ -411,6 +417,8 @@ def build(preview=False, desk=None, phone=None, streets=None, results=None, data
     if not phone:
         html = strip_phone(html)
     else:
+        assert html.count(PLAIN_VIEWPORT) == 1, PLAIN_VIEWPORT   # the phone layout brings its own, with viewport-fit=cover:
+        html = html.replace(PLAIN_VIEWPORT, '', 1)                # one viewport tag, not two (#122); a rollback keeps the plain one
         assert html.count(SW_REGISTER) == 1, SW_REGISTER
         if not OFFLINE:
             html = html.replace(SW_REGISTER, SW_REMOVE)

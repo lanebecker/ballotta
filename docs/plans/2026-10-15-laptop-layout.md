@@ -1,6 +1,6 @@
 # Ballotta: laptop layout — build plan
 
-*Written Oct 15, 2026 for Lane. Status: **approved by Lane (Oct 15, 7:24am) and executed; preview pushed.** The audits in Task 10 changed the code after this plan was written (see "Execution log" at the end): the repo, not the code blocks below, is now the source of truth.*
+*Written Oct 15, 2026 for Lane. Status: **approved by Lane (Oct 15, 7:24am), executed, and live since Oct 15 (v0.3.0).** From Oct 17, `CHANGELOG.md` is the log (#128). Original status: **approved by Lane (Oct 15, 7:24am) and executed; preview pushed.** The audits in Task 10 changed the code after this plan was written (see "Execution log" at the end): the repo, not the code blocks below, is now the source of truth.*
 
 ## The request (verbatim)
 
