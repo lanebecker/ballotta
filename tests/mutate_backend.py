@@ -73,6 +73,13 @@ M = [
     ("B28 a generic write-in line counted", BUILD, 'if P.norm(printed) in GENERIC_WRITE_IN:', "if False:"),
     ("B29 an annexation's two votes swapped", BUILD, 'd_cid, a_cid = (cid, pair) if m.get("who") == "district" else (pair, cid)', 'd_cid, a_cid = (pair, cid) if m.get("who") == "district" else (cid, pair)'),
     ("B30 the canvass report fetched before it exists", FETCH, "    if has_canvass:\n", "    if True:\n"),
+    # #163, the Nov 2024 general's canvass report and Hays's report (Lane's downloads, Oct 22)
+    ("B62 a general election's Total Votes unread", PARSE, 'r"^Total(?: Votes)?\\s+([\\d,]+)$"', 'r"^Total\\s+([\\d,]+)$"'),
+    ("B63 the canvass report's page header joins a name", PARSE, "while k < len(pg) and k < len(head) and pg[k] == head[k]:", "while False:"),
+    ("B64 the canvass report's page footer joins a name", PARSE, "while body and (SOS_PAGE.match(body[-1]) or SOS_FOOT.match(body[-1])):", "while False:"),
+    ("B65 Hays's page header joins a name", PARSE, "lines += pg if (n == 0 or end is None) else pg[end + 1:]", "lines += pg"),
+    ("B66 Hays's first page's header joins a name", PARSE, "                title = []                                       # the first page's header ends here (#163)", "                pass"),
+    ("B67 the SOS's write-in mark unknown", PARSE, ', "W-I", "WRI"}', ', "W-I"}'),
 ]
 ORIG = {}
 

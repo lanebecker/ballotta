@@ -20,7 +20,7 @@ LABELS = {"travis": "Travis County", "bastrop": "Bastrop County", "williamson": 
           "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State’s canvass",   # apart, so the state
           # canvass report, printed before the feed's last update, isn't read as the feed going back in time (#163)
           "caldwell": "Caldwell County", "lee": "Lee County"}       # ACC only; no file ever comes from them (Task 1 finding 11)
-PARTIES = {"REP", "DEM", "LIB", "GRN", "GRE", "G", "IND", "NON", "W", "WI", "W-I"}   # GRE and G: the SOS's own codes for Green (#163, the Nov 2025 special)
+PARTIES = {"REP", "DEM", "LIB", "GRN", "GRE", "G", "IND", "NON", "W", "WI", "W-I", "WRI"}   # GRE and G: the SOS's own codes for Green (#163, the Nov 2025 special); WRI: its write-in mark (Nov 2024)
 
 
 class BadFile(ValueError):
@@ -173,7 +173,8 @@ def parse_sos(data, zone="America/Chicago"):
 # ---------------------------------------------------------------- Texas SOS Official Canvass Report PDF (by script)
 SOS_OFFICE = re.compile(r"^(.*?)\s+([\d,]+)\s+[\d.]+ %$")
 SOS_CAND = re.compile(r"^(.*?)\s+(?:(" + "|".join(sorted(PARTIES, key=len, reverse=True)) + r")\s+)?([\d,]+)\s+[\d.]+ %$")
-SOS_TOTAL = re.compile(r"^Total\s+([\d,]+)$")
+SOS_TOTAL = re.compile(r"^Total(?: Votes)?\s+([\d,]+)$")   # "Total Votes" in a general election's report (Nov 2024, #163)
+SOS_PAGE = re.compile(r"^Page \d+ of \d+$")
 SOS_FOOT = re.compile(r"^(\d{2}/\d{2}/\d{4} \d{2}:\d{2} [AP]M)$")
 
 
@@ -181,16 +182,30 @@ def parse_sos_canvass(data):
     """data: the PDF bytes of /electionReports/{id}/OfficialCanvassReport/pdf (decoded from its {"upload": …}).
     Offices keyed by norm(office name), which equals norm() of the feed's race name."""
     import pdfplumber
-    lines, foot = [], None
+    pages, foot = [], None
     with pdfplumber.open(io.BytesIO(data)) as pdf:
         for p in pdf.pages:
-            for ln in (p.extract_text() or "").splitlines():
-                ln = ln.strip()
+            pg = [ln.strip() for ln in (p.extract_text() or "").splitlines() if ln.strip()]
+            for ln in pg:
                 if SOS_FOOT.match(ln):
                     foot = foot or SOS_FOOT.match(ln).group(1)
-                lines.append(ln)
-    if not lines or "Official Canvass Report" not in lines[:4]:
+            pages.append(pg)
+    if not pages or not pages[0] or "Official Canvass Report" not in pages[0][:4]:
         raise BadFile("not an SOS Official Canvass Report")
+    # Every page repeats the first page's header (the report, the election, the column heads) and ends with its page
+    # number and time. A contest runs on across pages (64 of the 86 in Nov 2024's), so that furniture would join a
+    # name; it goes, by its place on the page rather than its words (#163).
+    first = next((i for i, ln in enumerate(pages[0]) if SOS_OFFICE.match(ln) or SOS_TOTAL.match(ln)), len(pages[0]))
+    head = pages[0][:first]
+    lines = list(head)
+    for pg in pages:
+        k = 0
+        while k < len(pg) and k < len(head) and pg[k] == head[k]:
+            k += 1
+        body = pg[k:]
+        while body and (SOS_PAGE.match(body[-1]) or SOS_FOOT.match(body[-1])):
+            body = body[:-1]
+        lines += body
     contests, office, choices, naming = {}, None, [], False
     for ln in lines:
         if office is None:
@@ -281,14 +296,19 @@ def parse_hays(data):
     import pdfplumber
     lines, run_date, run_time = [], None, None
     with pdfplumber.open(io.BytesIO(data)) as pdf:
-        for p in pdf.pages:
-            for ln in (p.extract_text() or "").splitlines():
-                ln = ln.strip()
+        for n, p in enumerate(pdf.pages):
+            pg = [ln.strip() for ln in (p.extract_text() or "").splitlines()]
+            for ln in pg:
                 m = re.match(r"^Run Time (\d+:\d{2} [AP]M)", ln) or None
                 if m: run_time = run_time or m.group(1)
                 m = re.match(r"^Run Date (\d+/\d+/\d{4})", ln)
                 if m: run_date = run_date or m.group(1)
-                lines.append(ln)
+            # Each page opens with the same header, ending at its "Run Date … Page N" line; the election's own line in
+            # it changes wording from year to year ("Nov 5 2024 General Election Official"), so the whole header goes
+            # by its place, never by its words, and can't join a contest's name (#163). The first page's is kept: the
+            # report's kind and date are read from it.
+            end = next((i for i, ln in enumerate(pg) if ln.startswith("Run Date")), None)
+            lines += pg if (n == 0 or end is None) else pg[end + 1:]
     if not lines or not lines[0].startswith("Cumulative Results Report") or "Hays County" not in lines[0]:
         raise BadFile("not a Hays County cumulative results report")
     if not (run_date and run_time):
@@ -301,7 +321,9 @@ def parse_hays(data):
             title = []
             continue
         if cur is None:
-            if not HAYS_HEAD.match(ln) and not ln.startswith(("Undervotes:", "Overvotes:", "Page ")):
+            if ln.startswith("Run Date"):
+                title = []                                       # the first page's header ends here (#163)
+            elif not HAYS_HEAD.match(ln) and not ln.startswith(("Undervotes:", "Overvotes:", "Page ")):
                 title.append(ln)
             continue
         mc = HAYS_CAST.match(ln)

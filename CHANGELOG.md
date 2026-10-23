@@ -14,6 +14,24 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+## [1.5.3] — 2026-10-22
+
+Results parsers only; the page itself doesn't change.
+
+### Fixed
+- **The state's canvass report of a general election** stopped at its first office: a general election's report
+  says "Total Votes", not "Total". And its pages repeat a header and end mid-contest (64 of 86 pages in Nov 2024's),
+  so the header would have joined an office's or a candidate's name. The header and the page footer now go by their
+  place on the page. The SOS's write-in mark (WRI) no longer sticks to a name (#163).
+- **Hays's report** of a general election: its page header names the election differently each year ("Nov 5 2024
+  General Election Official"), and a contest that opened a page took that line into its name, which its key would
+  then have held. The header now goes by its place (#163).
+
+### Tests
+- Fixtures from the Nov 5, 2024 general election, downloaded by Lane: the state's 86-page canvass report
+  (`sos-49664-canvass.pdf`, 592 offices) and Hays's official report (`hays-2024-11-official.pdf`, 66 contests).
+  Results tests 58 (from 56); back-end mutants B62–B67.
+
 ## [1.5.2] — 2026-10-22
 
 ### Fixed
