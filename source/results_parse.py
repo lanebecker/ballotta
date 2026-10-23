@@ -20,7 +20,7 @@ LABELS = {"travis": "Travis County", "bastrop": "Bastrop County", "williamson": 
           "sos": "Texas Secretary of State", "sos_canvass": "Texas Secretary of State’s canvass",   # apart, so the state
           # canvass report, printed before the feed's last update, isn't read as the feed going back in time (#163)
           "caldwell": "Caldwell County", "lee": "Lee County"}       # ACC only; no file ever comes from them (Task 1 finding 11)
-PARTIES = {"REP", "DEM", "LIB", "GRN", "GRE", "G", "IND", "NON", "W", "WI", "W-I"}   # GRE and G: the SOS's own codes for Green (#163, the Nov 2025 special)
+PARTIES = {"REP", "DEM", "LIB", "GRN", "GRE", "G", "IND", "NON", "W", "WI", "W-I", "WRI"}   # GRE and G: the SOS's own codes for Green (#163, the Nov 2025 special); WRI: its write-in mark (Nov 2024)
 
 
 class BadFile(ValueError):
@@ -82,6 +82,12 @@ def check_sum(where, choices, total):
 CLARITY_COUNTIES = {"Travis": "travis", "Bastrop": "bastrop", "Williamson": "williamson"}
 
 
+# A partisan race's names carry the party first ("REP Ted Cruz", Bastrop's Nov 2024 file; Travis's county offices are
+# partisan too): it goes, so a name matches Ballotta's exactly. Only the multi-letter codes: a name may start with an
+# initial ("W Smith").
+CLARITY_PARTY = re.compile(r"^(?:" + "|".join(sorted((p for p in PARTIES if len(p) > 1 and p.isalpha()), key=len, reverse=True)) + r")\s+(?=\S)")
+
+
 def parse_clarity(data):
     """data: the detailxml.zip Lane downloaded (or the detail.xml inside it), as bytes. Its <Region> names the county,
     so a file in the wrong inbox folder is caught. Contests are keyed by Clarity's key (names can repeat)."""
@@ -119,7 +125,7 @@ def parse_clarity(data):
                 precincts.update(p.get("name") for p in ps)
             if ch.findall("VoteType") and by_type != total:
                 raise BadFile(f"{c.get('text')}: {ch.get('text')}'s vote types add up to {by_type:,}, not {total:,}")
-            choices.append([ch.get("text"), total])
+            choices.append([CLARITY_PARTY.sub("", ch.get("text") or ""), total])   # "REP Ted Cruz" → "Ted Cruz" (#163)
         if key in contests:
             raise BadFile(f"contest key {key} appears twice")
         contests[key] = {"name": c.get("text"), "vote_for": int(c.get("voteFor") or 1), "choices": choices,
@@ -173,7 +179,8 @@ def parse_sos(data, zone="America/Chicago"):
 # ---------------------------------------------------------------- Texas SOS Official Canvass Report PDF (by script)
 SOS_OFFICE = re.compile(r"^(.*?)\s+([\d,]+)\s+[\d.]+ %$")
 SOS_CAND = re.compile(r"^(.*?)\s+(?:(" + "|".join(sorted(PARTIES, key=len, reverse=True)) + r")\s+)?([\d,]+)\s+[\d.]+ %$")
-SOS_TOTAL = re.compile(r"^Total\s+([\d,]+)$")
+SOS_TOTAL = re.compile(r"^Total(?: Votes)?\s+([\d,]+)$")   # "Total Votes" in a general election's report (Nov 2024, #163)
+SOS_PAGE = re.compile(r"^Page \d+ of \d+$")
 SOS_FOOT = re.compile(r"^(\d{2}/\d{2}/\d{4} \d{2}:\d{2} [AP]M)$")
 
 
@@ -181,16 +188,30 @@ def parse_sos_canvass(data):
     """data: the PDF bytes of /electionReports/{id}/OfficialCanvassReport/pdf (decoded from its {"upload": …}).
     Offices keyed by norm(office name), which equals norm() of the feed's race name."""
     import pdfplumber
-    lines, foot = [], None
+    pages, foot = [], None
     with pdfplumber.open(io.BytesIO(data)) as pdf:
         for p in pdf.pages:
-            for ln in (p.extract_text() or "").splitlines():
-                ln = ln.strip()
+            pg = [ln.strip() for ln in (p.extract_text() or "").splitlines() if ln.strip()]
+            for ln in pg:
                 if SOS_FOOT.match(ln):
                     foot = foot or SOS_FOOT.match(ln).group(1)
-                lines.append(ln)
-    if not lines or "Official Canvass Report" not in lines[:4]:
+            pages.append(pg)
+    if not pages or not pages[0] or "Official Canvass Report" not in pages[0][:4]:
         raise BadFile("not an SOS Official Canvass Report")
+    # Every page repeats the first page's header (the report, the election, the column heads) and ends with its page
+    # number and time. A contest runs on across pages (64 of the 86 in Nov 2024's), so that furniture would join a
+    # name; it goes, by its place on the page rather than its words (#163).
+    first = next((i for i, ln in enumerate(pages[0]) if SOS_OFFICE.match(ln) or SOS_TOTAL.match(ln)), len(pages[0]))
+    head = pages[0][:first]
+    lines = list(head)
+    for pg in pages:
+        k = 0
+        while k < len(pg) and k < len(head) and pg[k] == head[k]:
+            k += 1
+        body = pg[k:]
+        while body and (SOS_PAGE.match(body[-1]) or SOS_FOOT.match(body[-1])):
+            body = body[:-1]
+        lines += body
     contests, office, choices, naming = {}, None, [], False
     for ln in lines:
         if office is None:
@@ -301,7 +322,12 @@ def parse_hays(data):
             title = []
             continue
         if cur is None:
-            if not HAYS_HEAD.match(ln) and not ln.startswith(("Undervotes:", "Overvotes:", "Page ")):
+            if ln.startswith("Run Date"):
+                # Every page opens with the same header, ending at its "Run Date … Page N" line, and the election's
+                # own line in it changes wording by year ("Nov 5 2024 General Election Official"), so a title starts
+                # only after it: by its place, never its words (#163). (Hays starts each contest on the page it ends.)
+                title = []
+            elif not HAYS_HEAD.match(ln) and not ln.startswith(("Undervotes:", "Overvotes:", "Page ")):
                 title.append(ln)
             continue
         mc = HAYS_CAST.match(ln)

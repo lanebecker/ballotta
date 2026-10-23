@@ -277,6 +277,54 @@ def hays_reads_every_contest_and_its_run_time():
     assert smd['choices'] == [['Jeffrey Morales', 460], ['Emily Jones', 154], ['Kimberly Goodman', 465]]
 
 
+@test
+def a_long_canvass_report_reads_whole_across_its_pages():
+    """#163: the parsers had met only short reports. The state's canvass of Nov 5, 2024 (SOS election 49664, downloaded
+    by Lane Oct 22, 2026): 86 pages, 592 offices, "Total Votes" lines, a write-in mark (WRI), and 64 pages that end
+    inside a contest, so every page's header would have joined a name (an office's on page 7, a wrapped one on 8)."""
+    can = P.parse_sos_canvass(fx('sos-49664-canvass.pdf'))
+    assert can['election'] == '2024-11-05' and can['posted'] == '2025-01-07T10:42' and len(can['contests']) == 592, (can['election'], can['posted'], len(can['contests']))
+    pres = can['contests']['PRESIDENT/VICE-PRESIDENT']
+    assert sum(v for _, v in pres['choices']) == 11388674 and pres['choices'][0] == ['DONALD J. TRUMP/JD VANCE', 6393597], pres['choices'][:2]
+    assert can['contests']['U. S. REPRESENTATIVE DISTRICT 38']['choices'] == [['WESLEY P. HUNT (I)', 215030], ['MELISSA MCDONOUGH', 127640], ['AVERY AYERS', 94]]   # its office line ends page 7
+    assert can['contests']['PRESIDING JUDGE, COURT OF CRIMINAL APPEALS']['choices'] == [['DAVID J. SCHENCK', 6330389], ['HOLLY TAYLOR', 4558856]]   # wraps onto page 8's last line
+    furniture = ('SECRETARY OF STATE', 'CANVASS REPORT', 'NOVEMBER 5TH', 'REGISTRATION', 'TURNOUT', 'PAGE ')
+    names = [c['name'] for c in can['contests'].values()] + [n for c in can['contests'].values() for n, _ in c['choices']]
+    assert not [n for n in names if any(f in n.upper() for f in furniture)], [n for n in names if any(f in n.upper() for f in furniture)][:5]
+    assert not [n for n in names if n.split()[-1] in P.PARTIES], 'a party code left on a name'
+
+@test
+def hays_reads_a_general_elections_report_by_its_own_names():
+    """#163: Hays's Nov 5, 2024 official report (downloaded by Lane Oct 22, 2026). Its page header names the election
+    differently from 2025's ("Nov 5 2024 General Election Official"), so a contest that opened a page took that line
+    into its name, and the key that names it would have held it."""
+    r = P.parse_hays(fx('hays-2024-11-official.pdf'))
+    assert r['posted'] == '2024-11-12T16:27' and r['election'] == '2024-11-05' and r['official'] and len(r['contests']) == 66, (r['posted'], r['election'], len(r['contests']))
+    pres = r['contests']['U.S. PRESIDENT/VICE-PRESIDENT']
+    assert pres['choices'][:2] == [['Donald J. Trump/JD Vance', 58438], ['Kamala D. Harris/Tim Walz', 65528]], pres['choices'][:2]
+    assert r['contests']['U.S. REPRESENTATIVE, DISTRICT 35']['choices'] == [['Steven Wright', 20720], ['Greg Casar', 32899]]   # opens page 2
+    assert not [c['name'] for c in r['contests'].values() if 'General Election' in c['name'] or 'Run ' in c['name']], [c['name'] for c in r['contests'].values()][:5]
+    assert P.parse_hays(fx('hays-2025-11-official.pdf'))['contests']['CITY OF BUDA SINGLE MEMBER DISTRICT (SMD) C']   # 2025's header still reads
+
+
+@test
+def bastrop_reads_through_clarity_with_names_as_ballotta_prints_them():
+    """#163: no Bastrop file had ever been read. Bastrop's Nov 5, 2024 Detail XML (downloaded by Lane Oct 22, 2026,
+    as the zip Clarity gives): its Region names the county, and a partisan race prints the party before each name
+    ("REP Ted Cruz"), which Travis's county offices will do too; the party goes, so names match exactly."""
+    r = P.parse_clarity(fx('bastrop-2024-11-detail.zip'))
+    assert r['source'] == 'bastrop' and r['election'] == '2024-11-05' and r['posted'] == '2024-12-13T08:10' and len(r['contests']) == 59, (r['source'], r['election'], r['posted'], len(r['contests']))
+    sen = next(c for c in r['contests'].values() if c['name'] == 'US Senator')
+    assert sen['choices'][:2] == [['Ted Cruz', 21835], ['Colin Allred', 16445]] and sen['registered'] == 61423, sen
+    assert P.match(sen['choices'][1][0], ['Ted Cruz', 'Colin Allred']) == 'Colin Allred'
+    names = [n for c in r['contests'].values() for n, _ in c['choices']]
+    assert not [n for n in names if n.split()[0] in P.PARTIES and len(n.split()[0]) > 1], [n for n in names if n.split()[0] in P.PARTIES][:5]
+    acc = next(c for c in r['contests'].values() if c['name'] == 'ACC, Trustee, Place 7')
+    assert acc['choices'] == [['Sherri Lynn Taylor', 2816], ['Cole Wilson', 1318]], acc   # nonpartisan names untouched
+    assert P.parse_clarity(fx('travis-2025-11-detail.xml'))['source'] == 'travis'
+    assert [P.CLARITY_PARTY.sub('', n) for n in ('W Smith', 'G Gordon Liddy', 'REP', 'Democrat Jones')] == ['W Smith', 'G Gordon Liddy', 'REP', 'Democrat Jones']   # an initial, a lone code, a word
+
+
 # ---------------------------------------------------------------- 3. the build, end to end on real files
 SENATE = next(k for k, c in P.parse_sos(fx('sos-53815-travis.json'))['contests'].items() if c['name'].strip() == 'U. S. SENATOR')
 PROPQ = next(f'{k} = {c["name"]}' for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])
