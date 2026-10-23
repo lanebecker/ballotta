@@ -493,6 +493,10 @@ def a_site_is_broken_only_when_it_surely_is():
         assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '200', 0), calls
         cs.curl, calls = fake([('000', 28, ''), ('200', 0, 'https://new.org/')])   # only http answered, on a new host
         assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://new.org/', '200', 0), calls
+        cs.curl, calls = fake([('200', 0, 'https://luckfortexashouse.sitesab.com/')])   # reviewed by Lane: the printed address stays
+        assert cs.check(('X', {'site': 'LuckForTexasHouse.com'}), wait=0)[1:] == ('https://LuckForTexasHouse.com', '200', 0), calls
+        cs.curl, calls = fake([('000', 7, ''), ('200', 0, 'http://calexas.com/mayor/')])   # and through the http answer too
+        assert cs.check(('X', {'site': 'www.SavingManor.org'}), wait=0)[1:] == ('http://www.SavingManor.org', '200', 0), calls
         cs.curl, calls = fake([('403', 0, 'https://validate.wall.net/?u=x')])   # a bot wall's challenge host is never the link
         assert cs.check(('X', {'site': 'x.org'}), wait=0)[1:] == ('https://x.org', '403', 0), calls
         cs.curl, calls = fake([('403', 0)])                                  # a bot wall over https: no http try

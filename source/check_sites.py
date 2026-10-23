@@ -25,7 +25,11 @@ there unless given --behind-proxy.
 import datetime, hashlib, json, os, pathlib, subprocess, sys, time, concurrent.futures as cf
 P = pathlib.Path(__file__).resolve().parent / 'data/lwv_candidates.json'
 STAMP = P.with_name('sites_checked.json')
-RULE = 2   # the broken-link rule's version: bump it with any change to what a site is recorded as (1: Oct 14; 2: #85, 1.1.3)
+RULE = 3   # the broken-link rule's version: bump it with any change to what a site is recorded as (1: Oct 14; 2: #85, 1.1.3; 3: KEEP_PRINTED, 1.5.4)
+# Sites whose redirect is not followed, reviewed by Lane on Oct 23, 2026: the address the League guide prints is kept.
+# luckfortexashouse.com forwards to its site builder's address (luckfortexashouse.sitesab.com), which would break if he
+# changed builders; SavingManor.org forwards to calexas.com/mayor/, which couldn't be confirmed as the candidate's.
+KEEP_PRINTED = {'luckfortexashouse.com', 'savingmanor.org'}
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15'
 BROKEN_EXIT = {6: 'the name does not resolve', 35: 'the secure connection fails', 60: 'the certificate is refused'}   # an incomplete chain is not: see curl()
 
@@ -66,6 +70,7 @@ def once(s):
     (a reset, or its redirect into the same broken https) says nothing about the link we'd show."""
     def ask(url):
         r = curl(url)
+        if s.lower().removeprefix('www.') in KEEP_PRINTED: return r[0], r[1], url   # reviewed: the printed address stays
         return r[0], r[1], (moved(url, r[2] if len(r) > 2 else '') if str(r[0]).startswith('2') else url)   # a bot wall's
                                                                      # challenge host or a 404 elsewhere is never the link
     code, ex, final = ask('https://' + s)
