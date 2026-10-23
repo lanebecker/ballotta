@@ -296,19 +296,14 @@ def parse_hays(data):
     import pdfplumber
     lines, run_date, run_time = [], None, None
     with pdfplumber.open(io.BytesIO(data)) as pdf:
-        for n, p in enumerate(pdf.pages):
-            pg = [ln.strip() for ln in (p.extract_text() or "").splitlines()]
-            for ln in pg:
+        for p in pdf.pages:
+            for ln in (p.extract_text() or "").splitlines():
+                ln = ln.strip()
                 m = re.match(r"^Run Time (\d+:\d{2} [AP]M)", ln) or None
                 if m: run_time = run_time or m.group(1)
                 m = re.match(r"^Run Date (\d+/\d+/\d{4})", ln)
                 if m: run_date = run_date or m.group(1)
-            # Each page opens with the same header, ending at its "Run Date … Page N" line; the election's own line in
-            # it changes wording from year to year ("Nov 5 2024 General Election Official"), so the whole header goes
-            # by its place, never by its words, and can't join a contest's name (#163). The first page's is kept: the
-            # report's kind and date are read from it.
-            end = next((i for i, ln in enumerate(pg) if ln.startswith("Run Date")), None)
-            lines += pg if (n == 0 or end is None) else pg[end + 1:]
+                lines.append(ln)
     if not lines or not lines[0].startswith("Cumulative Results Report") or "Hays County" not in lines[0]:
         raise BadFile("not a Hays County cumulative results report")
     if not (run_date and run_time):
@@ -322,7 +317,10 @@ def parse_hays(data):
             continue
         if cur is None:
             if ln.startswith("Run Date"):
-                title = []                                       # the first page's header ends here (#163)
+                # Every page opens with the same header, ending at its "Run Date … Page N" line, and the election's
+                # own line in it changes wording by year ("Nov 5 2024 General Election Official"), so a title starts
+                # only after it: by its place, never its words (#163). (Hays starts each contest on the page it ends.)
+                title = []
             elif not HAYS_HEAD.match(ln) and not ln.startswith(("Undervotes:", "Overvotes:", "Page ")):
                 title.append(ln)
             continue

@@ -77,8 +77,7 @@ M = [
     ("B62 a general election's Total Votes unread", PARSE, 'r"^Total(?: Votes)?\\s+([\\d,]+)$"', 'r"^Total\\s+([\\d,]+)$"'),
     ("B63 the canvass report's page header joins a name", PARSE, "while k < len(pg) and k < len(head) and pg[k] == head[k]:", "while False:"),
     ("B64 the canvass report's page footer joins a name", PARSE, "while body and (SOS_PAGE.match(body[-1]) or SOS_FOOT.match(body[-1])):", "while False:"),
-    ("B65 Hays's page header joins a name", PARSE, "lines += pg if (n == 0 or end is None) else pg[end + 1:]", "lines += pg"),
-    ("B66 Hays's first page's header joins a name", PARSE, "                title = []                                       # the first page's header ends here (#163)", "                pass"),
+    ("B66 Hays's page header joins a name", PARSE, "(Hays starts each contest on the page it ends.)\n                title = []", "(Hays starts each contest on the page it ends.)\n                pass"),
     ("B67 the SOS's write-in mark unknown", PARSE, ', "W-I", "WRI"}', ', "W-I"}'),
 ]
 ORIG = {}

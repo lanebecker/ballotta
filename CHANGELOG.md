@@ -30,7 +30,7 @@ Results parsers only; the page itself doesn't change.
 ### Tests
 - Fixtures from the Nov 5, 2024 general election, downloaded by Lane: the state's 86-page canvass report
   (`sos-49664-canvass.pdf`, 592 offices) and Hays's official report (`hays-2024-11-official.pdf`, 66 contests).
-  Results tests 58 (from 56); back-end mutants B62–B67.
+  Results tests 58 (from 56); back-end mutants B62–B64, B66 and B67.
 
 ## [1.5.2] — 2026-10-22
 
