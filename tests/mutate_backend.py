@@ -79,6 +79,8 @@ M = [
     ("B64 the canvass report's page footer joins a name", PARSE, "while body and (SOS_PAGE.match(body[-1]) or SOS_FOOT.match(body[-1])):", "while False:"),
     ("B66 Hays's page header joins a name", PARSE, "(Hays starts each contest on the page it ends.)\n                title = []", "(Hays starts each contest on the page it ends.)\n                pass"),
     ("B67 the SOS's write-in mark unknown", PARSE, ', "W-I", "WRI"}', ', "W-I"}'),
+    ("B68 Clarity's party prefix kept on a name", PARSE, 'choices.append([CLARITY_PARTY.sub("", ch.get("text") or ""), total])', 'choices.append([ch.get("text"), total])'),
+    ("B69 an initial read as a party", PARSE, "for p in PARTIES if len(p) > 1 and p.isalpha()", "for p in PARTIES if p.isalpha()"),
 ]
 ORIG = {}
 

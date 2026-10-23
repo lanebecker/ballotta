@@ -26,11 +26,15 @@ Results parsers only; the page itself doesn't change.
 - **Hays's report** of a general election: its page header names the election differently each year ("Nov 5 2024
   General Election Official"), and a contest that opened a page took that line into its name, which its key would
   then have held. The header now goes by its place (#163).
+- **Clarity's partisan names** (Travis and Bastrop): a partisan race prints the party first ("REP Ted Cruz"); it's
+  dropped, so a name matches Ballotta's exactly rather than by its words. Travis's county offices on Nov 3 are
+  partisan (#163).
 
 ### Tests
 - Fixtures from the Nov 5, 2024 general election, downloaded by Lane: the state's 86-page canvass report
-  (`sos-49664-canvass.pdf`, 592 offices) and Hays's official report (`hays-2024-11-official.pdf`, 66 contests).
-  Results tests 58 (from 56); back-end mutants B62–B64, B66 and B67.
+  (`sos-49664-canvass.pdf`, 592 offices), Hays's official report (`hays-2024-11-official.pdf`, 66 contests) and
+  Bastrop's Detail XML (`bastrop-2024-11-detail.zip`, 59 contests; the first Bastrop file read). Results tests 59
+  (from 56); back-end mutants B62–B64 and B66–B69.
 
 ## [1.5.2] — 2026-10-22
 

@@ -307,6 +307,24 @@ def hays_reads_a_general_elections_report_by_its_own_names():
     assert P.parse_hays(fx('hays-2025-11-official.pdf'))['contests']['CITY OF BUDA SINGLE MEMBER DISTRICT (SMD) C']   # 2025's header still reads
 
 
+@test
+def bastrop_reads_through_clarity_with_names_as_ballotta_prints_them():
+    """#163: no Bastrop file had ever been read. Bastrop's Nov 5, 2024 Detail XML (downloaded by Lane Oct 22, 2026,
+    as the zip Clarity gives): its Region names the county, and a partisan race prints the party before each name
+    ("REP Ted Cruz"), which Travis's county offices will do too; the party goes, so names match exactly."""
+    r = P.parse_clarity(fx('bastrop-2024-11-detail.zip'))
+    assert r['source'] == 'bastrop' and r['election'] == '2024-11-05' and r['posted'] == '2024-12-13T08:10' and len(r['contests']) == 59, (r['source'], r['election'], r['posted'], len(r['contests']))
+    sen = next(c for c in r['contests'].values() if c['name'] == 'US Senator')
+    assert sen['choices'][:2] == [['Ted Cruz', 21835], ['Colin Allred', 16445]] and sen['registered'] == 61423, sen
+    assert P.match(sen['choices'][1][0], ['Ted Cruz', 'Colin Allred']) == 'Colin Allred'
+    names = [n for c in r['contests'].values() for n, _ in c['choices']]
+    assert not [n for n in names if n.split()[0] in P.PARTIES and len(n.split()[0]) > 1], [n for n in names if n.split()[0] in P.PARTIES][:5]
+    acc = next(c for c in r['contests'].values() if c['name'] == 'ACC, Trustee, Place 7')
+    assert acc['choices'] == [['Sherri Lynn Taylor', 2816], ['Cole Wilson', 1318]], acc   # nonpartisan names untouched
+    assert P.parse_clarity(fx('travis-2025-11-detail.xml'))['source'] == 'travis'
+    assert [P.CLARITY_PARTY.sub('', n) for n in ('W Smith', 'G Gordon Liddy', 'REP', 'Democrat Jones')] == ['W Smith', 'G Gordon Liddy', 'REP', 'Democrat Jones']   # an initial, a lone code, a word
+
+
 # ---------------------------------------------------------------- 3. the build, end to end on real files
 SENATE = next(k for k, c in P.parse_sos(fx('sos-53815-travis.json'))['contests'].items() if c['name'].strip() == 'U. S. SENATOR')
 PROPQ = next(f'{k} = {c["name"]}' for k, c in P.parse_clarity(fx('travis-2025-11-detail.xml'))['contests'].items() if 'Proposition Q' in c['name'])

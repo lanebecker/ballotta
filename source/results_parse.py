@@ -82,6 +82,12 @@ def check_sum(where, choices, total):
 CLARITY_COUNTIES = {"Travis": "travis", "Bastrop": "bastrop", "Williamson": "williamson"}
 
 
+# A partisan race's names carry the party first ("REP Ted Cruz", Bastrop's Nov 2024 file; Travis's county offices are
+# partisan too): it goes, so a name matches Ballotta's exactly. Only the multi-letter codes: a name may start with an
+# initial ("W Smith").
+CLARITY_PARTY = re.compile(r"^(?:" + "|".join(sorted((p for p in PARTIES if len(p) > 1 and p.isalpha()), key=len, reverse=True)) + r")\s+(?=\S)")
+
+
 def parse_clarity(data):
     """data: the detailxml.zip Lane downloaded (or the detail.xml inside it), as bytes. Its <Region> names the county,
     so a file in the wrong inbox folder is caught. Contests are keyed by Clarity's key (names can repeat)."""
@@ -119,7 +125,7 @@ def parse_clarity(data):
                 precincts.update(p.get("name") for p in ps)
             if ch.findall("VoteType") and by_type != total:
                 raise BadFile(f"{c.get('text')}: {ch.get('text')}'s vote types add up to {by_type:,}, not {total:,}")
-            choices.append([ch.get("text"), total])
+            choices.append([CLARITY_PARTY.sub("", ch.get("text") or ""), total])   # "REP Ted Cruz" → "Ted Cruz" (#163)
         if key in contests:
             raise BadFile(f"contest key {key} appears twice")
         contests[key] = {"name": c.get("text"), "vote_for": int(c.get("voteFor") or 1), "choices": choices,
