@@ -14,6 +14,37 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+## [1.5.2] — 2026-10-22
+
+### Fixed
+- Pressing Enter twice on an address started two lookups and counted both; the same address, while it's being looked
+  up, is now asked once (#127).
+- A share name typed all in lowercase with a party glued to its end ("lanegop"), or spelled in boxed or circled
+  letters, got past the name check; both are refused, and "Lanegop" is still a name (#127).
+- A tampered stored pick under "constructor" or "__proto__" made a Keep link say it was damaged; such keys are dropped
+  (#127).
+- "Ballotta is back" counts only the page's own answer, not a network sign-in page that redirects the check (#127).
+- The backup card's fallback focus on a phone is the paper, not a hidden button (#127).
+- The page has one viewport tag, not two (#122).
+
+### Changed
+- Opened from the old preview's Home Screen icon, ballotta.org/next/ says: "This icon is for the old preview. To keep
+  Ballotta on your Home Screen, delete this icon, open ballotta.org in Safari and add it again." (Lane, Oct 22; #127).
+  In a browser it still sends people on at once.
+- The share link is prepared once typing in the name box pauses, not on every keystroke; the name's note still
+  changes at once (#127).
+- Housekeeping (#122, #124, #87): no line carries two pairs of one layer's markers (a pipeline test keeps it so); dead
+  phone CSS and stale comments removed. The old hidden page itself stays until after Nov 3 (#86, Lane).
+- Docs (#128): the plans and the Oct 17 audit say where their logs and status now live.
+
+### Tests
+- New site tests for each #127 item; pipeline tests for one viewport tag and one marker pair per line.
+- Mutation runners (#182): 34 anchors brought up to date (24 stale since before 1.5.1, 10 moved by this release), and
+  all five runners run whole again: desk 503 of 506 (W6x, W6z and D7 retired as redundant, reasons in the file), phone
+  155, streets 23, results 130, back end 61, every one killed. Tests that passed for the wrong reason were tightened:
+  a key's own pick announcement (F5), warnings after Change address then Back (F15, F17), the offline copy's decoy
+  cache (P76), a town name at the map's edge (X17), share names and sections apart (D68). New desk mutants W19–W29.
+
 ## [1.5.1] — 2026-10-22
 
 ### Fixed
@@ -574,6 +605,11 @@ and Share link people already have still opens.
 ### Tests
 - `tests/test_pipeline.py`: the key against the PDF (choice order, measure texts, line by line; party labels; the
   count of measures).
+
+### Known issue
+- For about seven minutes on Oct 17, between 663feec (every link in the new order) and 1789fae (the old order kept for
+  links), the live page made Keep and Share links that list those ten contests' picks in the new order; every later
+  page reads them in the old one, so such a link can show the wrong candidate in those ten. Few if any exist (#127).
 
 ## [0.6.1] — 2026-10-17
 

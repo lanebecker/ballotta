@@ -111,7 +111,7 @@ M = [
  ('R84 any verdict in any state', PREV, " || !ALLOWED[e.state].includes(e.verdict)) return false;", ") return false;", [X]),
  ('R85 leading no one', PREV, "    if (['leading', 'won', 'elected', 'unopposed'].includes(e.verdict) && !e.leaders.length) return false;", "", [X]),
  ('R86 month 13', PREV, "TIME.test(x) && realDay(x) &&", "TIME.test(x) &&", [X]),
- ('R87 constructor is a contest', PREV, "Object.prototype.hasOwnProperty.call(BYID, cid) ? BYID[cid] : null", "BYID[cid]", [X]),
+ ('R87 constructor is a contest', PREV, "Object.prototype.hasOwnProperty.call(BYID, cid) ? BYID[cid] : null;   // \"constructor\" is no contest", "BYID[cid];   // \"constructor\" is no contest", [X]),
  ('R88 the phone count on All results', PREV, "    if (D.ui.view !== 'all') $('ph-count')", "    $('ph-count')", [P]),
  # the runoff (Phase 4)
  ('R103 no runoff group', PREV, "    gl.classList.toggle('hidden', !rs.length);", "    gl.classList.toggle('hidden', true);", [RO]),

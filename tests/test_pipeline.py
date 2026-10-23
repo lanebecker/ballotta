@@ -227,6 +227,25 @@ def release_check_refuses_drift():
     assert check_release.key('1.2.10') > check_release.key('1.2.9') > check_release.key('1.2.9-rc1')
 
 @test
+def one_marker_pair_per_line():
+    """#87, #124: two pairs of one marker on a line ("/*PHONE*/{ … /*/PHONE*/return;/*PHONE*/ }/*/PHONE*/") strip into
+    correct code in every build, but an edit to one half breaks exactly one build. One pair per line, of each marker."""
+    lines = (ROOT / 'source/template-travis.html').read_text(encoding='utf-8').split('\n')
+    bad = [(i, m, l.strip()[:90]) for i, l in enumerate(lines, 1) for m in ('PHONE', 'DESK', 'STREETS', 'RESULTS') if l.count('/*%s*/' % m) > 1]
+    assert not bad, bad
+
+@test
+def one_viewport_tag():
+    """#122: with the phone layout, the page carried two viewport tags (the plain one and the phone layout's, with
+    viewport-fit=cover). The build keeps one: the phone layout's when it is live, the plain one in a rollback."""
+    import importlib; sys.path.insert(0, str(ROOT / 'source')); B = importlib.import_module('build_site')
+    page = (ROOT / 'index.html').read_text(encoding='utf-8')
+    tags = re.findall(r'<meta name="viewport"[^>]*>', page)
+    assert tags == (['<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'] if B.PHONE_LIVE else [B.PLAIN_VIEWPORT.strip()]), tags
+    rollback = B.strip_phone((ROOT / 'source/template-travis.html').read_text(encoding='utf-8'))
+    assert re.findall(r'<meta name="viewport"[^>]*>', rollback) == [B.PLAIN_VIEWPORT.strip()], 'a rollback build lost its viewport tag'
+
+@test
 def build_check_catches_drift_and_broken_markers():
     # #81: `build_site.py --check` (what CI runs) rebuilds in memory, writes nothing, and fails when a committed output
     # differs from the build (a hand edit, a left-behind mutant) or when a rollback build's markers don't pair up.

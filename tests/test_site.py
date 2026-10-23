@@ -726,7 +726,9 @@ def shared_link_stays_on_screen_after_sharing(b):
         assert pg.is_visible('#share-out') and '#s2' in pg.inner_text('#share-out'), ('wide' if wide else 'phone', 'clipboard' if clip else 'no clipboard', 'the shared link vanished')
         if not clip: assert pg.evaluate("getSelection().toString()") == pg.inner_text('#share-out'), 'the link to copy by hand is not selected'
         pg.fill('#sharename', 'Lane B'); pg.dispatch_event('#sharename', 'input'); pg.dispatch_event('#sharename', 'change')
-        pg.evaluate("document.querySelector('#sharesecs input').click()")       # new choices: the old link goes
+        assert not pg.is_visible('#share-out'), 'an older link stayed next to a new name'
+        pg.click('#share-go'); pg.wait_for_function("!document.getElementById('share-out').classList.contains('hidden')", timeout=10000); pg.wait_for_timeout(300)
+        pg.evaluate("document.querySelector('#sharesecs input').click()")       # new choices alone (not a name too): the old link goes (D68, #182)
         assert not pg.is_visible('#share-out'), 'an older link stayed next to new choices'
         ctx.close()
 
@@ -1490,7 +1492,9 @@ def desk_launch_audit_fixes(b):
     pg.focus('#dk-help'); pg.keyboard.press('2')                                                       # #30: not while on a header button…
     pg.focus('.dk-row[data-row="c002"]'); pg.keyboard.press('s')                                       # …or a rail row (WCAG 2.1.4)
     assert cur(pg, 'c001') == [], cur(pg, 'c001')
-    pg.click('.dk-row[data-row="c001"]'); pg.keyboard.press('2')                                       # on the paper: yes, and said out loud
+    pg.click('.dk-row[data-row="c001"]')                                                               # the move is said first, so the
+    pg.wait_for_function("/No pick yet/.test(document.getElementById('dk-live').textContent)", timeout=2000)   # pick's own words are its key's (F5, #182)
+    pg.keyboard.press('2')                                                                             # on the paper: yes, and said out loud
     assert cur(pg, 'c001') == ['James Talarico']
     live = pg.locator('#dk-live'); assert live.get_attribute('aria-live') == 'polite'
     pg.wait_for_function("document.getElementById('dk-live').textContent.includes('James Talarico')", timeout=2000)
@@ -1525,6 +1529,13 @@ def desk_launch_audit_fixes(b):
     r = box(pg, '#dk-say'); assert r['y'] >= 0 and r['y'] + r['height'] <= 900, ('the warning is on screen', r)
     pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)'); lookup_wide(pg)              # Change address, then a new lookup
     assert pg.is_hidden('#dk-say'), 'no stale warning after Change address'
+    pg.evaluate("location.hash = '#s=not-a-real-payload-3'"); pg.wait_for_selector('#dk-say:not(.hidden)', timeout=5000)   # and with no new lookup (#182):
+    pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)'); pg.click('#dk-back'); pg.wait_for_selector('body.dk-app-on')
+    assert pg.is_hidden('#dk-say'), 'Change address, then back to the ballot: the old warning came back (F17)'
+    pg.click('#dk-change'); pg.wait_for_selector('body:not(.dk-app-on)')
+    pg.evaluate("location.hash = '#s=not-a-real-payload-4'"); pg.wait_for_function("!document.getElementById('lookupmsg').classList.contains('hidden')", timeout=5000)
+    pg.click('#dk-back'); pg.wait_for_selector('body.dk-app-on')
+    assert pg.is_hidden('#dk-say'), 'a warning the landing page already showed was shown again in the app (F15)'
     ctx.close()
     ctx, pg = new_page(b, wide=True); pg.goto(BASE + '#s=not-a-real-payload')                       # on the landing page the form shows it
     pg.wait_for_selector('#lookupmsg:not(.hidden)'); lookup_wide(pg)
@@ -1786,21 +1797,21 @@ def a_refused_share_name_is_said_to_the_sender(b):
     pg.evaluate("window.__notes = []; new MutationObserver(() => __notes.push(document.getElementById('sharename-no').textContent)).observe(document.getElementById('sharename-no'), { childList: true, characterData: true, subtree: true })")
     pg.click('#sharename'); pg.keyboard.type('Demi', delay=60)                     # "Dem…" on the way to "Demi" is not refused (Pass 1)
     pg.wait_for_timeout(1000)
-    assert not [x for x in pg.evaluate('__notes') if x] and note() == '' and pg.evaluate('sharePrep.name') == 'Demi', pg.evaluate('__notes')
+    assert not [x for x in pg.evaluate('__notes') if x] and note() == '' and pg.evaluate('(sharePrep || prepShare()).name') == 'Demi', pg.evaluate('__notes')
     pg.fill('#sharename', 'Travis GOP')
-    assert pg.evaluate('sharePrep.name') == '', 'a refused name is never sent, even before the note shows'
+    assert pg.evaluate('(sharePrep || prepShare()).name') == '', 'a refused name is never sent, even before the note shows'
     pg.wait_for_function("document.getElementById('sharename-no').textContent !== ''", timeout=3000)   # once typing pauses
     assert note() == 'That name can’t be used. Try your first name.', note()
-    pg.fill('#sharename', 'Maya  Lee'); assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya Lee'   # cleaned, still sent
+    pg.fill('#sharename', 'Maya  Lee'); assert note() == '' and pg.evaluate('(sharePrep || prepShare()).name') == 'Maya Lee'   # cleaned, still sent
     pg.fill('#sharename', 'Travis GØP'); pg.evaluate("document.getElementById('sharename').blur()")
-    assert note() == 'That name can’t be used. Try your first name.' and pg.evaluate('sharePrep.name') == ''      # leaving the box: at once
+    assert note() == 'That name can’t be used. Try your first name.' and pg.evaluate('(sharePrep || prepShare()).name') == ''      # leaving the box: at once
     pg.evaluate(r"document.getElementById('sharename').value = 'Travis­́GOP'; prepShare()")   # passes once, refused when checked again (Pass 1)
-    assert pg.evaluate('sharePrep.name') == '', ('a name the friend\'s page would refuse goes into the link', pg.evaluate('sharePrep.name'))
+    assert pg.evaluate('(sharePrep || prepShare()).name') == '', ('a name the friend\'s page would refuse goes into the link', pg.evaluate('(sharePrep || prepShare()).name'))
     url = pg.evaluate('sharePrep.p')
     frag = url.split('#', 1)[1]
     assert pg.evaluate('f => unpackFrag(f).then(o => o.n)', frag) == '', 'a refused name went into the link'
     pg.fill('#sharename', 'Maya')
-    assert note() == '' and pg.evaluate('sharePrep.name') == 'Maya'
+    assert note() == '' and pg.evaluate('(sharePrep || prepShare()).name') == 'Maya'
     pg.fill('#sharename', 'Travis GOP'); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
     assert pg.evaluate("localStorage.getItem('ballotta.name')") in (None, '""'), 'a refused name was kept for next time'
     # Round-2 audit #9 (#107): a refused name leaves the name kept from before alone; a box emptied on purpose clears it.
@@ -1811,7 +1822,7 @@ def a_refused_share_name_is_said_to_the_sender(b):
     pg.fill('#sharename', ''); pg.evaluate("$('share-go').click()"); pg.wait_for_timeout(500)
     assert pg.evaluate("localStorage.getItem('ballotta.name')") == '""', 'an emptied box kept the old name'
     pg.evaluate(r"document.getElementById('sharename').value = 'a'.repeat(29) + '\u{1F600}\u{1F600}'; prepShare()")
-    got = pg.evaluate('sharePrep.name')
+    got = pg.evaluate('(sharePrep || prepShare()).name')
     assert got == 'a' * 29 + '\U0001F600' and len(got.encode('utf-16-le')) == 62, ('cut inside a character', [hex(ord(c)) for c in got[-2:]])
     assert pg.evaluate(r"safeName('b'.repeat(29) + '\u{1F600}x')") == 'b' * 29 + '\U0001F600'
     ctx.close()
@@ -2332,6 +2343,87 @@ def two_tabs_acting_at_once_keep_both(b):
     assert saved.get('c001') == 'one' and saved.get('c071') == 'two' and saved.get('c070') == 'from B', ('a box waiting to be saved lost its text', saved)
     assert a.evaluate("(%s)('c001').value" % box) == 'one'
     t.wait_for_function("whys.c001 === 'one' && whys.c071 === 'two' && current('c001').length === 1", timeout=5000)   # B, no longer held, follows
+    ctx.close()
+
+@test
+def a_double_enter_counts_one_lookup(b):
+    # #127: Enter pressed twice started two lookups, each counted as lookup_started (the newest answer was the one used,
+    # #58). A repeat of the same address while it's being looked up is now ignored; a changed address still goes.
+    ctx, pg = new_page(b, county='stub'); pg.goto(BASE)
+    pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701')
+    pg.evaluate("""() => { for (const id of ['street', 'street', 'zip'])   // three Enters before the first answer (a key press through
+        document.getElementById(id).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }""")   # Playwright can land after it: W19)
+    pg.wait_for_selector('body.dk-app-on', timeout=30000); pg.wait_for_timeout(1500)   # every lookup's count has landed
+    assert names(pg).count('lookup_started') == 1 and names(pg).count('ballot_found') == 1, names(pg)
+    pg.evaluate("lookup()"); pg.wait_for_function("(window.__events || []).filter(e => e[0] === 'ballot_found').length === 2", timeout=30000)
+    pg.wait_for_timeout(1500); assert names(pg).count('lookup_started') == 2, ('once the first has finished, the same address can be looked up again', names(pg))
+    ctx.close()
+
+@phone_test
+def the_backup_card_falls_back_to_the_paper_on_a_phone(b):
+    # #127: when the card's own target can't take focus, the fallback on a phone was the old page's hidden Keep button,
+    # so focus fell to the page itself. It is the paper at both widths.
+    ctx, pg = new_page(b); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    got = pg.evaluate("""() => { nudgeAt = 5; nudgeFrom = null; document.getElementById('ph-list').style.display = 'none';
+        openKeep = () => {}; nudgeDone('keep'); return document.activeElement.id; }""")
+    assert got == 'dk-paper', got
+    ctx.close()
+
+@test
+def share_names_block_lowercase_and_enclosed_party_names(b):
+    # #127: an all-lowercase name with a party glued to its end, and party letters in boxes or circles, got past the
+    # check. "Lanegop", capitalised, is a name and still shows (#93).
+    ctx, pg = new_page(b); pg.goto(BASE)
+    sn = lambda n: pg.evaluate('n => safeName(n)', n)
+    for bad in ['lanegop', 'travisdems', 'austinrnc', 'texasdnc', '\U0001F156\U0001F15E\U0001F15F', 'Travis \U0001F156\U0001F15E\U0001F15F',
+                '\U0001F136\U0001F13E\U0001F13F', '\U0001F176\U0001F17E\U0001F17F', '\U0001F1EC\U0001F1F4\U0001F1F5',
+                '\U0001F133\U0001F134\U0001F13C\U0001F142']:
+        assert sn(bad) == '', bad
+    for good in ['Lanegop', 'gopal', 'rajagopal', 'erdem', 'maya', 'Gopinath', 'GOPAL', 'ERDEM']:
+        assert sn(good) == good, good
+    ctx.close()
+
+@test
+def typing_a_share_name_prepares_the_link_once(b):
+    # #127: every keystroke in the name box prepared a whole new link (two name checks, the picks packed, the link
+    # compressed). It is prepared once typing pauses; a share right after typing still carries the name just typed.
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70, 71]); pg.wait_for_selector('body.dk-app-on')
+    pg.evaluate("pick('c070', optionsOf(BYID.c070)[0])")
+    pg.evaluate("openShare(); window.__packs = 0; const was = packFrag; packFrag = (...a) => { window.__packs++; return was(...a); }")
+    pg.click('#sharename'); pg.keyboard.type('Bartholomew', delay=20); pg.wait_for_timeout(400)
+    assert pg.evaluate('window.__packs') <= 2, ('a link prepared on every keystroke', pg.evaluate('window.__packs'))
+    pg.fill('#sharename', ''); pg.click('#sharename'); pg.keyboard.type('Maya'); pg.click('#share-go')   # at once, no pause
+    pg.wait_for_selector('#share-out:not(.hidden)')
+    pg.wait_for_timeout(400); assert pg.is_visible('#share-out'), 'the link just shown went when typing paused'   # nothing waits to replace it
+    url = pg.inner_text('#share-out').strip()                                      # the link shown, as shared (after a share, sharePrep is already the next one)
+    assert pg.evaluate("u => unpackFrag(u.split('#')[1]).then(o => o.n)", url) == 'Maya', ('the link carried an older name', url[:80])
+    ctx.close()
+
+@desk_test
+def a_tampered_picks_key_doesnt_break_a_keep_link(b):
+    # #127: a stored pick under "constructor" or "__proto__" found Object's own properties through the contests'
+    # lookup, and opening a Keep link then said the link was damaged. Such keys are dropped (links can't make them).
+    ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70])
+    pg.evaluate("""localStorage.setItem('ballotta.picks', '{"constructor": ["x"], "__proto__": ["y"], "toString": ["z"], "c070": ["' + optionsOf(BYID.c070)[0] + '"]}')""")
+    pg.reload(); pg.wait_for_selector('body.dk-app-on')
+    assert pg.evaluate("Object.keys(picks).sort()") == ['c070'], pg.evaluate("Object.keys(picks)")
+    pg.evaluate("u => { location.hash = u.split('#')[1]; }", link('k', {'v': 1, 'pr': '300', 'b': [1, 70], 'p': {'70': 0}})); pg.wait_for_selector('#d-restore[open]', timeout=5000)
+    assert '1 pick' in pg.text_content('#restorewarn') and 'damaged' not in (pg.text_content('#lookupmsg') or ''), pg.text_content('#restorewarn')
+    ctx.close()
+
+@test
+def an_old_preview_icon_says_to_add_ballotta_again(b):
+    # #127 (Lane's words, Oct 22): a Home Screen icon from the preview opens next/, which sent it on to the page, outside
+    # the icon's own app: an in-app Safari view with separate storage. Opened from that icon, next/ now says what to do.
+    ctx, pg = new_page(b); pg.add_init_script("Object.defineProperty(navigator, 'standalone', { get: () => true })")
+    pg.goto(BASE.rsplit('/', 1)[0] + '/next/'); pg.wait_for_timeout(2500)
+    assert pg.url.rstrip('/').endswith('/next'), ('a preview icon was sent out of its app', pg.url)
+    t = pg.text_content('body')
+    assert 'This icon is for the old preview. To keep Ballotta on your Home Screen, delete this icon, open ballotta.org in Safari and add it again.' in ' '.join(t.split()), t
+    assert pg.get_attribute('#old-icon a', 'href') == '../' and not pg.is_visible('#moved')
+    ctx.close()
+    ctx, pg = new_page(b)                                                            # in a browser tab it still goes on at once
+    pg.goto(BASE.rsplit('/', 1)[0] + '/next/'); pg.wait_for_url(lambda u: '/next/' not in u, timeout=10000)
     ctx.close()
 
 @test
@@ -2897,6 +2989,7 @@ class Flip(http.server.SimpleHTTPRequestHandler):           # the repo's files, 
         Flip.hits.append('HEAD ' + p)
         if p in Flip.slow: time.sleep(Flip.slow[p])
         if p in Flip.gone or p in Flip.fail: self.send_response(404 if p in Flip.gone else Flip.fail[p]); self.end_headers(); return
+        if p in Flip.moved: self.send_response(302); self.send_header('Location', Flip.moved[p]); self.end_headers(); return   # a portal (#127)
         return super().do_HEAD()
     def do_GET(self):
         Flip.hits.append(self.path.split('?')[0])
@@ -2922,6 +3015,25 @@ def own_server():                                           # a spare port of th
     s = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Flip, directory=str(ROOT)))
     threading.Thread(target=s.serve_forever, daemon=True).start()
     return s, f'http://127.0.0.1:{s.server_address[1]}/{PAGE}'
+
+@phone_test
+def a_portal_is_not_ballotta_coming_back(b):
+    # #127: "Ballotta is back" trusted any answer to its check; a network's sign-in page (a portal) that redirects the
+    # request answered too, so Reload landed on the portal. Only the page's own answer counts: HTML, not redirected.
+    Flip.swap, Flip.gone, Flip.fail, Flip.slow, Flip.gzip, Flip.moved = {}, set(), {}, {}, False, {}; srv, url = own_server()
+    ctx, pg = phone_page(b, csp=True, sw=True)                                     # (a portal that answers without a redirect can't be told apart)
+    try:
+        pg.goto(url); poll(pg, '!!navigator.serviceWorker.controller', 15); pg.reload(); poll(pg, "document.fonts.status === 'loaded'")
+        Flip.slow = {'/' + PAGE: 7}; pg.reload(timeout=20000); Flip.slow = {}
+        assert 'Slow connection' in pg.inner_text('#ph-saved')
+        Flip.moved = {'/' + PAGE: '/census.html'}                                  # the check is answered by a portal's page
+        pg.wait_for_timeout(4000); pg.evaluate("document.dispatchEvent(new Event('visibilitychange'))"); pg.wait_for_timeout(2500)
+        assert 'Ballotta is back.' not in pg.inner_text('#ph-saved'), 'a redirect to another page counted as the site coming back'
+        Flip.moved = {}
+        pg.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+        poll(pg, "document.querySelector('#ph-saved b').textContent === 'Ballotta is back.'", 8)
+    finally:
+        Flip.moved = {}; ctx.close(); srv.shutdown()
 
 @phone_test
 def a_share_link_opens_from_the_offline_copy(b):
@@ -2955,7 +3067,8 @@ def phone_offline_copy_after_one_visit(b):
     ctx, pg = phone_page(b, csp=True, sw=True); pg.add_init_script(CSP_WATCH)
     try:
         pg.goto(url.rsplit('/', 1)[0] + '/manifest.webmanifest')                           # same site, before any copy exists
-        pg.evaluate("u => caches.open('aaa-other').then(c => c.put(u, new Response('<h1>Not ours</h1>', { headers: { 'Content-Type': 'text/html' } })))", url)
+        pg.evaluate("u => caches.open('aaa-other').then(c => c.put(u, new Response('<h1>Not ours</h1>', { headers: { 'Content-Type': 'text/html' } })))",
+                    re.sub(r'index\.html$', '', url))                                    # under the key the copy uses since #76 (its folder), so P76 can see it
         pg.goto(url)
         assert pg.evaluate('Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(ok => setTimeout(ok, 15000, false))])'), 'no offline copy installed'
         poll(pg, '!!navigator.serviceWorker.controller', 15)                             # and in charge of this page
@@ -3645,7 +3758,8 @@ def phone_candidate_links_are_full_size_targets(b):
 def the_map_shows_all_five_closest_centers(b):
     # #76: from an outlying address (Webberville), the five numbered centers were mostly off the map, while its label
     # promised them. The map now widens just enough to fit all five; closer in, it keeps its usual scale.
-    for pt, wide in (([-97.50, 30.24], True), ([-98.10, 30.55], True), ([-98.17, 30.62], True), ([-97.7431, 30.2747], False)):   # Pass 1, 2: far northwest too
+    for pt, wide in (([-97.50, 30.24], True), ([-98.10, 30.55], True), ([-98.17, 30.62], True), ([-97.7431, 30.2747], False),   # Pass 1, 2: far northwest too
+                     ([-97.7193, 30.2669], False)):   # east of downtown: Zilker falls in the edge band and must be left off (X17, #182)
         ctx, pg = new_page(b, wide=True); pg.goto(BASE); saved_ballot(pg, [1, 70], pt=pt); pg.wait_for_selector('body.dk-app-on')
         pg.evaluate("desk.ph.setView('vote')"); pg.wait_for_selector('#dk-map')
         assert pg.locator('#dk-map .top').count() == 5, (pt, pg.locator('#dk-map .top').count())

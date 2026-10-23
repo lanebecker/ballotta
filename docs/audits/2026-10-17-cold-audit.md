@@ -1,5 +1,11 @@
 # Ballotta cold audit, Oct 17, 2026
 
+**Status, Oct 22 (#128):** every finding was filed as GitHub issues #55–#98, and each issue's state is its status;
+the release that closed it names it in `CHANGELOG.md`. Still open: #56 (the Tax Office's district codes), #86 (the old
+page still built under both layouts: after Nov 3, Lane, Oct 22), #87 (markers: the two-pair lines are gone and a
+pipeline test keeps them out, 1.5.2; removing the PHONE markers waits until no rollback is wanted), #88, #89, #90
+(efficiency and tidiness), #97 (after the election).
+
 Scope: the whole repo at commit 7a45db0 (origin/main as of 13:10 CT, Oct 17), read by four independent auditors with no inherited context (the shared page code; the laptop and phone layers and the offline copy; the Python pipeline and its data; the tests, mutation runners and security posture), then argued down against the code and, where it mattered, against the county's ballot PDF and map server. Findings that did not survive are listed at the end, struck through, so they are not re-found next round.
 
 Line numbers are in `source/template-travis.html` (T), `source/build_site.py` (B), `tests/test_site.py` (S) and `tests/mutate_desk.py` (M) at 7a45db0.

@@ -645,9 +645,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   .dk-hdr{display:flex;align-items:center;gap:8px;height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));position:sticky;top:0;z-index:20;background:var(--plum)}
   .dk-brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
   .dk-brand b{font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:21px;font-weight:600;color:var(--ground)}
-  .dk-loc{font-size:0;color:var(--ground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;padding-left:4px}  /* the precinct only: the street and "change" are in the menu */
-  .dk-loc b{font-size:13px;font-weight:600}
-  .dk-loc .dk-link,body:not(.dk-app-on) .dk-loc{display:none}
+  body:not(.dk-app-on) .dk-loc{display:none}  /* and in the app (below): the precinct is on the paper, the street and "change" in the menu (#122) */
   .dk-sp{flex:1}
   .dk-when,.dk-menu{display:none !important}
   /* in the app: the mark, then "Your ballot" as the title (it opens the list), Feedback & Info, Share (Lane, Oct 16: option B);
@@ -1190,8 +1188,9 @@ const SS = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { retu
 // Saved state is checked when read: an old format or tampering (a reason that isn't text, picks that aren't an
 // object) can't make the page, Keep or Share throw (#20).
 const plain = (o) => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
-const cleanPicks = (o) => Object.fromEntries(Object.entries(plain(o)).map(([k, v]) => [k, (Array.isArray(v) ? v : [v]).filter(x => typeof x === 'string')]).filter(([, v]) => v.length));  // option names only (#44)
-const readWhys = () => Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(([, v]) => typeof v === 'string'));
+const own = ([k]) => !Object.prototype.hasOwnProperty.call(Object.prototype, k);  // never "constructor", "__proto__"… (a tampered key, #127)
+const cleanPicks = (o) => Object.fromEntries(Object.entries(plain(o)).filter(own).map(([k, v]) => [k, (Array.isArray(v) ? v : [v]).filter(x => typeof x === 'string')]).filter(([, v]) => v.length));  // option names only (#44)
+const readWhys = () => Object.fromEntries(Object.entries(plain(LS.get('ballotta.whys', {}))).filter(own).filter(([, v]) => typeof v === 'string'));
 let picks = cleanPicks(LS.get('ballotta.picks', {})), whys = readWhys();
 let ballot = [];  // [{c, conf, note}]
 let here = null;  // [lon, lat] of the looked-up address, kept on this device only
@@ -1357,8 +1356,14 @@ function profileKey(rec) { return (rec.CodeCat || '') + '|' + (rec.Temp || '').t
 /* ---------- lookup ---------- */
 $('go').addEventListener('click', lookup);
 ['street', 'unit', 'zip'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); }));
-let lookupSeq = 0;  // two lookups at once (Enter twice, a quick ZIP fix): only the newest one's answer is used (#58)
-async function lookup() {
+let lookupSeq = 0, lookupKey = '';  // two lookups at once (a quick ZIP fix): only the newest one's answer is used (#58)
+async function lookup() {   // the address being looked up, asked again (Enter twice): one lookup, counted once (#127)
+  const key = ['street', 'unit', 'zip'].map(id => $(id).value.trim()).join('|');
+  if (key === lookupKey) return;
+  lookupKey = key;
+  try { await lookupOnce(); } finally { if (lookupKey === key) lookupKey = ''; }
+}
+async function lookupOnce() {
   const my = ++lookupSeq, stale = () => my !== lookupSeq;
   const street = $('street').value.trim(), unit = $('unit').value.trim(), zip = $('zip').value.trim();
   $('units').className = 'unit hidden';
@@ -1535,7 +1540,7 @@ const ARROW = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" strok
 // copy of the page from another build can't delete picks in contests it doesn't know (Wave 4 Pass 1). A pick in a contest
 // does drop that contest's unknown choices, so the other build can never see more picks than seats (Pass 2).
 function current(cid) {
-  const c = BYID[cid], v = picks[cid], a = Array.isArray(v) ? v : (v ? [v] : []);
+  const c = Object.prototype.hasOwnProperty.call(BYID, cid) ? BYID[cid] : null, v = picks[cid], a = Array.isArray(v) ? v : (v ? [v] : []);   // a contest, never Object's own "constructor" (#127)
   if (!c) return [];
   if (a[0] === '__skip') return a.length === 1 ? a : [];
   const o = optionsOf(c); return a.filter(x => o.includes(x));
@@ -1933,7 +1938,7 @@ function nudgeDone(action) {
   const was = nudgeFrom && nudgeFrom.isConnected && nudgeFrom !== document.body && nudgeFrom.getClientRects().length ? nudgeFrom : null;
   const home = was || /*PHONE*/(!wide && document.body.classList.contains('dk-app-on') ? $(action === 'keep' ? 'ph-list' : 'dk-paper') : null) || /*/PHONE*/(action === 'keep' || !wide ? $(wide ? 'dk-keep' : 'a-keep') : $('dk-paper'));
   if (home) home.focus({ preventScroll: true });
-  if (document.activeElement !== home) { const f = $(wide ? 'dk-paper' : 'a-keep'); if (f) f.focus({ preventScroll: true }); }  // it didn't take: e.g. a closed race (Pass 3)
+  if (document.activeElement !== home) { const f = $('dk-paper') || $('a-keep'); if (f) f.focus({ preventScroll: true }); }  // it didn't take: e.g. a closed race (Pass 3); the paper at both widths (#127)
   nudgeAt = 0; nudgeBoxes(false);
   if (action === 'keep') openKeep();
 }
@@ -2009,9 +2014,12 @@ function updateShareSum() {
   prepShare();
 }
 let sharePrep = null;  // the link for the sheet's current choices, packed ahead of the tap
+function shareName() {  // the name as typed, and as the link would carry it ('' when refused)
+  const typed = cut30($('sharename').value.trim()), once = safeName(typed);
+  return { typed, name: once && safeName(once) === once ? once : '' };  // the friend's page runs the check on what the link carries (Pass 1)
+}
 function prepShare(keepShown) {  // keepShown: right after a share, the link just shown stays (Oct 17)
-  const typed = cut30($('sharename').value.trim()), once = safeName(typed), ids = chosenIds(), withWhy = $('sharewhy').checked;
-  const name = once && safeName(once) === once ? once : '';  // the friend's page runs the check on what the link carries (Pass 1)
+  const { typed, name } = shareName(), ids = chosenIds(), withWhy = $('sharewhy').checked;
   nameNote(typed && !name);  // the friend's page would refuse it: say so here (once typing pauses), send nothing (#93)
   const pk = packPicks(ids, false, withWhy), g0 = LS.get('ballotta.gen', 1), gen = Number.isInteger(g0) ? Math.max(1, Math.min(99, g0)) : 1, code = rand8();  // a whole number or 1 (#44)
   const st = { ids, name, withWhy, pk, gen, code, url: null };
@@ -2021,7 +2029,8 @@ function prepShare(keepShown) {  // keepShown: right after a share, the link jus
   st.p = packFrag('s', { v: 1, n: name, c: code, g: gen, p: pk.p, w: pk.w }).then(f => (st.url = location.origin + '/picks/#' + f));
   sharePrep = st; return st;
 }
-$('sharename').addEventListener('input', () => prepShare());  // a new name: the link just shared goes (#98; the event itself would have read as keepShown)
+let sharePrepTimer = 0;  // a new name: the link just shared goes at once (#98), and the new one is prepared once typing pauses (#127)
+$('sharename').addEventListener('input', () => { sharePrep = null; $('share-out').classList.add('hidden'); const n = shareName(); nameNote(n.typed && !n.name); clearTimeout(sharePrepTimer); sharePrepTimer = setTimeout(() => prepShare(), 150); });   // the name's note at once, as before
 // The note waits for typing to pause, or for the box to be left: "Dem…" on the way to "Demi" isn't a refusal, and the
 // note is read aloud (Pass 1). Clearing it never waits.
 let nameNoteTimer = 0, nameRefused = false;
@@ -2047,7 +2056,7 @@ function rand8() { const a = 'abcdefghijkmnpqrstuvwxyz23456789', r = new Uint8Ar
 let sharing = false;  // ignore a second tap while the share sheet is still open
 $('share-go').addEventListener('click', async () => {
   if (sharing) return;
-  const st = sharePrep || prepShare();
+  clearTimeout(sharePrepTimer); const st = sharePrep || prepShare();   // a share right after typing: prepared now, with the name as typed (#127)
   const { ids, name, withWhy, pk, gen, code } = st; if (!ids.length) return;
   const url = st.url || await st.p;
   // Only the link: chat apps then show the preview card instead of the long link as text.
@@ -2109,12 +2118,16 @@ const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].
 const RESERVED_WORDS = new RegExp('(?<![\\p{L}\\p{N}])(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
   'tax ?office'].map(fold).join('|') + ')(?![\\p{L}\\p{N}])', 'u');
 const cut30 = (t) => [...t].slice(0, 30).join('');  // 30 characters, never half of one (#93: an emoji is two UTF-16 units)
+// Letters in boxes and circles (🅖🅞🅟, 🄶, 🅶) read as the plain capitals; NFKC leaves them (#127). (Regional indicator
+// letters are LOOKALIKE's already.)
+const unbox = (t) => t.replace(/[\u{1F130}-\u{1F149}\u{1F150}-\u{1F169}\u{1F170}-\u{1F189}]/gu, ch => String.fromCharCode(65 + (ch.codePointAt(0) - 0x1F130) % 32));
 function safeName(n) {
   if (typeof n !== 'string') return '';
   n = cut30(n.normalize('NFKC').replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, '').replace(/\s+/g, ' ').trim()).trim();  // cut, then trim again (Pass 2)
+  const seen = unbox(n);  // what's checked: boxed letters as plain ones (#127); n itself is what shows
   const refused = (L) => {  // L: how look-alike letters read; a name is checked with each reading (Pass 3)
     const latin = (t) => [...t.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()].map(ch => L[ch] || ch).join('');
-    const low = latin(n), split = latin(n.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
+    const low = latin(seen), split = latin(seen.replace(/(\p{Lu})(?=\p{Lu}\p{Ll})/gu, '$1 ').replace(/(\p{Ll})(?=\p{Lu})/gu, '$1 ').replace(/(\p{L})(?=\p{N})|(\p{N})(?=\p{L})/gu, '$1$2 '));
     const run = (t) => t.replace(/[\s\p{P}\p{S}]/gu, '');
     const words = (t) => {
       const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
@@ -2123,12 +2136,12 @@ function safeName(n) {
     // Uneven splits ("G OP", "V oter"): from the name as typed, a single letter joins its neighbour, except a
     // capitalised word ("S Tate" stays a person) (#43, Pass 1).
     // Small capitals (ᴘ, ᴛ…) look like capitals, so they count as capitals here; a capitalised word needs 3+ letters (Pass 2).
-    const caps = n.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (L[ch] || L[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
+    const caps = seen.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (L[ch] || L[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
     const uneven = caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim().replace(/(?<=(^|\s)\S)\s(?!\p{Lu}\p{Ll}{2,})|(?<!(^|\s)\p{Lu}\p{Ll}{2,})\s(?=\S(\s|$))/gu, '');
     const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split), fold(latin(uneven))];
     // Shouted with a party at the end ("LANEGOP"): all capitals can't be split into words, and no name ends that way;
-    // only at the end, so "GOPAL" is fine (#93).
-    const shouted = caps.split(/[\s\p{P}\p{S}]+/u).some(w => /^[\p{Lu}\p{N}]{5,}$/u.test(w) && /.(gop|dems|rnc|dnc)$/.test(fold(latin(w))));  // not "dem": ERDEM (Pass 1)
+    // only at the end, so "GOPAL" is fine (#93). All lowercase likewise ("lanegop", #127); "Lanegop" is a name.
+    const shouted = caps.split(/[\s\p{P}\p{S}]+/u).some(w => /^(?:[\p{Lu}\p{N}]{5,}|[\p{Ll}\p{N}]{5,})$/u.test(w) && /.(gop|dems|rnc|dnc)$/.test(fold(latin(w))));  // not "dem": ERDEM (Pass 1)
     return shouted || forms.some(t => RESERVED.test(run(t)) || words(t).some(x => RESERVED_WORDS.test(x) || RESERVED_GLUED.test(x)));
   };
   return refused(LOOKALIKE) || refused(LOOKALIKE_STROKE) ? '' : n;
@@ -3116,7 +3129,7 @@ const desk = (() => {
 /*RESULTS*/
     try { results.top(ui.view, ui.view === 'rdecide' ? rcurId() : ''); } catch (e) {}
 /*/RESULTS*/
-    if (!ballot.length && !(app && ui.view === 'all')) /*PHONE*/{ if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/return;/*PHONE*/ }/*/PHONE*/
+    if (!ballot.length && !(app && ui.view === 'all')) { /*PHONE*/if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/ return; }   // one marker pair, so an edit can't break one build (#124, #87)
     if (ballot.length && idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
     if (ui.view === 'all' && !after()) ui.view = 'decide';
     if (after() && ui.view === 'vote') ui.view = 'decide';   // Nov 3's Where to vote isn't in the menu after the election
@@ -3131,7 +3144,7 @@ const desk = (() => {
     P().dataset.c = ui.view === 'decide' && ballot.length ? curB().c.id : '';  // an outbound link in the paper or notes is counted by the race's level, only in Decide
     $('dk-desk').className = 'dk-desk' + (ui.view === 'glance' || ui.view === 'vote' || ui.view === 'all' ? ' wide' : '');   // the runoff's Where to vote keeps its notes and the band its width (#173)
     ({ decide: viewDecide, glance: viewGlance, vote: viewVote, crib: viewCrib, all: viewAll/*RESULTS*/, rdecide: viewRDecide, rvote: viewRVote, rcrib: viewRCrib/*/RESULTS*/ })[ui.view]();
-    if (app && friend && /*PHONE*/(true || /*/PHONE*/WIDE.matches/*PHONE*/)/*/PHONE*/ && ui.cmpFor !== friend) {
+    if (app && friend && (/*PHONE*/true || /*/PHONE*/WIDE.matches) && ui.cmpFor !== friend) {
       // Counted when at least one of their races is on your ballot: once per page for links without a code, once per
       // browser for links with one (like share_opened). The detail tells it apart from the phone layout's Compare tap.
       const mine = new Set(ballot.map(b => b.c.id)), k = friend.code || '', seen = LS.get('ballotta.compared', []), list = Array.isArray(seen) ? seen : [];
@@ -3638,7 +3651,7 @@ const desk = (() => {
   window.addEventListener('beforeprint', () => { printing = true; });
   window.addEventListener('afterprint', () => { printing = false; });
   ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => { printing = false; }, true));  // in case a browser never sends afterprint
-  WIDE.addEventListener('change', () => {
+  WIDE.addEventListener('change', () => {   // the first line runs only in a build without the phone layout (a rollback): the old narrow page has no print options (#122)
     if (/*PHONE*/false && /*/PHONE*/!WIDE.matches && !printing && !matchMedia('print').matches && (ui.two || ui.hideCrib)) { ui.two = ui.hideCrib = false; $('crib').classList.remove('two'); renderCrib(); }  // laptop-only print options
     render();
   });
@@ -3707,7 +3720,7 @@ const desk = (() => {
     // A message about an incoming link: the landing page shows it in the form; in the app that form is hidden, so say it here (audit #26).
     say(t) {  // '' clears it: every new link does (Pass 1)
       const box = $('dk-say'); box.classList.add('hidden');
-      if (!t || !document.body.classList.contains('dk-app-on')) return;  // the app is hidden on phones; kept for a later resize
+      if (!t || !document.body.classList.contains('dk-app-on')) return;  // not in the app yet: the landing page's form says it (#122)
       box.firstElementChild.textContent = t; box.classList.remove('hidden');
       if (WIDE.matches && box.getBoundingClientRect().top < 56) window.scrollTo(0, 0);  // it sits above the paper: bring it on screen
     },
@@ -4048,7 +4061,7 @@ const phone = (() => {
       busy = true;
       const end = (on) => { if (my !== gen) return; gen++; clearTimeout(t); busy = false; back(on); };
       const t = setTimeout(() => { if (ac) ac.abort(); end(false); }, 3500);
-      try { fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: ac ? ac.signal : undefined }).then((r) => end(r.ok), () => end(false)); } catch (e) { end(false); }
+      try { fetch(location.href, { method: 'HEAD', cache: 'no-store', signal: ac ? ac.signal : undefined }).then((r) => end(r.ok && !r.redirected), () => end(false)); } catch (e) { end(false); }   // the page's own answer, not a portal's redirect (#127)
     };
     document.addEventListener('visibilitychange', check); window.addEventListener('online', check); setInterval(check, 20000);
     setTimeout(check, 1000);  // and once soon after load: a copy opened on a line that's fine now says so at once, not after 20 s (round-2 #16, #114)
