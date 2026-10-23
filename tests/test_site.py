@@ -2351,11 +2351,12 @@ def a_double_enter_counts_one_lookup(b):
     # #58). A repeat of the same address while it's being looked up is now ignored; a changed address still goes.
     ctx, pg = new_page(b, county='stub'); pg.goto(BASE)
     pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701')
-    pg.press('#street', 'Enter'); pg.press('#street', 'Enter'); pg.press('#zip', 'Enter')
-    pg.wait_for_selector('body.dk-app-on', timeout=30000)
+    pg.evaluate("""() => { for (const id of ['street', 'street', 'zip'])   // three Enters before the first answer (a key press through
+        document.getElementById(id).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }""")   # Playwright can land after it: W19)
+    pg.wait_for_selector('body.dk-app-on', timeout=30000); pg.wait_for_timeout(1500)   # every lookup's count has landed
     assert names(pg).count('lookup_started') == 1 and names(pg).count('ballot_found') == 1, names(pg)
     pg.evaluate("lookup()"); pg.wait_for_function("(window.__events || []).filter(e => e[0] === 'ballot_found').length === 2", timeout=30000)
-    assert names(pg).count('lookup_started') == 2, ('once the first has finished, the same address can be looked up again', names(pg))
+    pg.wait_for_timeout(1500); assert names(pg).count('lookup_started') == 2, ('once the first has finished, the same address can be looked up again', names(pg))
     ctx.close()
 
 @phone_test
@@ -2394,8 +2395,8 @@ def typing_a_share_name_prepares_the_link_once(b):
     pg.fill('#sharename', ''); pg.click('#sharename'); pg.keyboard.type('Maya'); pg.click('#share-go')   # at once, no pause
     pg.wait_for_selector('#share-out:not(.hidden)')
     pg.wait_for_timeout(400); assert pg.is_visible('#share-out'), 'the link just shown went when typing paused'   # nothing waits to replace it
-    url = pg.evaluate('sharePrep.p')
-    assert pg.evaluate("u => unpackFrag(u.split('#')[1]).then(o => o.n)", url) == 'Maya', 'the link carried an older name'
+    url = pg.inner_text('#share-out').strip()                                      # the link shown, as shared (after a share, sharePrep is already the next one)
+    assert pg.evaluate("u => unpackFrag(u.split('#')[1]).then(o => o.n)", url) == 'Maya', ('the link carried an older name', url[:80])
     ctx.close()
 
 @desk_test
