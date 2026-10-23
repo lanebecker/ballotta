@@ -39,9 +39,11 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ### Tests
 - New site tests for each #127 item; pipeline tests for one viewport tag and one marker pair per line.
-- Mutation runners (#182): 34 anchors brought up to date (24 stale since before 1.5.1, 10 moved by this release); W6x
-  and W6z retired as redundant (reasons in the file); X17's test gets an address that puts a town name at the edge.
-  New desk mutants W19–W29.
+- Mutation runners (#182): 34 anchors brought up to date (24 stale since before 1.5.1, 10 moved by this release), and
+  all five runners run whole again: desk 503 of 506 (W6x, W6z and D7 retired as redundant, reasons in the file), phone
+  155, streets 23, results 130, back end 61, every one killed. Tests that passed for the wrong reason were tightened:
+  a key's own pick announcement (F5), warnings after Change address then Back (F15, F17), the offline copy's decoy
+  cache (P76), a town name at the map's edge (X17), share names and sections apart (D68). New desk mutants W19–W29.
 
 ## [1.5.1] — 2026-10-22
 
