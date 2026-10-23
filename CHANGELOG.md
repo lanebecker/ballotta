@@ -14,6 +14,18 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+## [1.5.4] — 2026-10-23
+
+Campaign links only (checked from Lane's Mac, Oct 23).
+
+### Changed
+- Four candidates' campaign sites moved to new addresses, and Learn more links them there: Candace L. Hunter
+  (hunterforaisd.com), Perla Muñoz Hopkins (perlahopkins.com), Serenity Coats (serenity4education.com) and Vikki
+  Goodwin (vikkigoodwin.com) (#120).
+- `check_sites.py` keeps the printed address for two redirects Lane reviewed: luckfortexashouse.com (it forwards to its
+  site builder's address) and SavingManor.org (it forwards to a page that couldn't be confirmed as the candidate's).
+  The rule is version 3, so the build takes only results checked with it.
+
 ## [1.5.3] — 2026-10-22
 
 Results parsers only; the page itself doesn't change.
