@@ -14,6 +14,32 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.6.0] — 2026-10-31
+
+Come back after Nov 3, and a mailing list for the next election (Lane, Oct 31).
+
+### Added
+- "Come back to see how your choices did": a box at the top of the ballot, on the laptop and the phone, until Nov 4
+  (Austin time). It shows an example result (a made-up proposition, with made-up numbers) and says to come back on the
+  same device or use Keep my picks. Its X, in the corner, hides it on this device for good; Clear everything brings it
+  back. From Nov 4 the ballot shows the results instead, and the box is gone. On the phone, moving to another contest
+  starts at the contest, just under the box.
+- "Your ballot, with the results": How it works, opened from the box. A before-and-after picture of a ballot (made-up
+  names and numbers, in the results' own wording), three steps, the way from election night to official, and four
+  questions.
+- "Ballotta will be back for the next election": the last thing on every page, both layouts, before and after the
+  election. Email me before the next election opens Buttondown's sign-up page (buttondown.com/ballotta) in a new tab: a
+  link, not a form, so the page still sends nothing and the email address never passes through Ballotta. Neither prints.
+- Two new counts, with no details beyond the box's two actions: `come_back` and `mail_list` (README).
+
+### Tests
+- Browser: the box on both layouts, its corner X and what it remembers, Election Day and Nov 4, the phone's moves,
+  printing, Keep my picks from the box; the mailing list last on every layout and view, its link, its count, and the
+  phone's bottom bar never covering it.
+- `mutate_results.py`: twelve new mutants (R137–R148).
+
 ## [1.5.4] — 2026-10-23
 
 Campaign links only (checked from Lane's Mac, Oct 23).

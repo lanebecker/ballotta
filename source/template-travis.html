@@ -196,7 +196,55 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
   @page{margin:0.5in}
 }
 .small{font-size:13px}
+/* ---------- the mailing list (Lane, Oct 31): the last thing on every page, all layouts; a link to Buttondown's own sign-up page ---------- */
+.ml{background:var(--plum);color:var(--ground)}
+.ml-in{max-width:1180px;margin:0 auto;padding:28px 20px calc(32px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+.ml-tx,.ml-go{display:flex;flex-direction:column;gap:8px}
+.ml h2{color:#fff}
+.ml p{color:var(--lilac);font-size:15px}
+.ml-go p{font-size:13px}
+.ml .btn{background:var(--gold);color:var(--ink)}
+.ml .btn:focus-visible{box-shadow:0 0 0 2px var(--plum),0 0 0 4px var(--ground)}
+@media screen and (min-width:1024px){.ml-in{max-width:1248px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);column-gap:40px;align-items:center;padding:32px 48px 36px}.ml h2{font-size:26px}}
+@media print{.ml{display:none !important}}
 /*RESULTS*/
+/* ---------- come back after Nov 3 (Lane, Oct 31): the top of the ballot until Nov 4, or until its X ---------- */
+.cb{display:none}
+body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;position:relative;margin:12px 12px 0;padding:18px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.cb-x{position:absolute;top:8px;right:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line2);border-radius:10px;background:var(--ground);cursor:pointer}
+.cb-tx{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.cb h2{font-size:26px;padding-right:44px}
+.cb .lead{font-size:15px}
+.cb-dev{font-size:14px;color:var(--ink2)}
+.cb-link{border:none;background:none;padding:0;font:inherit;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.cb-ex{margin:0;display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--ground);border:1px solid var(--line);border-radius:12px}
+.cb-exh{display:flex;justify-content:space-between;gap:12px}
+.cb-t{font-weight:700;font-size:15px}
+.cb-ex .rs{margin:0;padding:0;border:none;background:transparent}
+@media screen and (min-width:1024px){
+  body.dk-app-on .cb:not(.hidden){display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:center;margin:16px 24px 0;padding:24px 72px 24px 28px}
+  .cb-x{top:12px;right:12px}
+  .cb h2{font-size:30px;padding-right:0}
+  .cb .lead{font-size:16px}
+}
+@media print{.cb{display:none !important}}
+.cb-sheet h3{margin-top:6px}
+.cb-fig{margin:0;display:flex;flex-direction:column;gap:8px}
+.cb-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--ground)}
+.cb-card.cb-now{border:2px solid var(--plum);background:#fff}
+.cb-rows{list-style:none;margin:0;padding:0}
+.cb-rows li{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-top:1px solid var(--divider);font-size:14px}
+.cb-rows li:first-child{border-top:none}
+.cb-rt{display:flex;justify-content:space-between;gap:12px}
+.cb-st{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.cb-rv{font-weight:600}
+.cb-ry{color:var(--ink2)}
+.cb-pk{display:flex;align-items:center;gap:8px;color:var(--ink2)}
+.cb-pk i{width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.cb-arrow{display:flex;align-items:center;justify-content:center;gap:6px}
+.cb-steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.cb-faq{display:flex;flex-direction:column;gap:10px;font-size:15px}
+.cb-sheet .rs-tl{margin:0}
 /* ---------- results, from Nov 4 (Lane, Oct 20): one neutral look for every choice; no party colors, no marks ---------- */
 .rs{margin:16px 0 4px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--ground);display:flex;flex-direction:column;gap:6px}
 .rs-st{font-size:13px;font-weight:700;color:var(--muted)}
@@ -822,6 +870,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom));scroll-padding-top:calc(64px + env(safe-area-inset-top))}  /* Tab never lands under the bars (A3) */
   /* the bottom bar: back one contest (or back to the contest, from another view) and on to the next undecided one */
   body.dk-app-on:not(.ph-list) .ph-bar{display:flex}
+  body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(112px + env(safe-area-inset-bottom))}   /* the mailing list clears the bar (Oct 31) */
   .ph-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;align-items:center;gap:10px;min-height:72px;padding:10px max(12px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:var(--plum)}
   .ph-bar button{font:inherit;cursor:pointer;border:none}
   #ph-back{flex:0 1 auto;min-width:0;min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid rgba(255,249,241,.45);background:transparent;color:var(--ground);font-weight:600;font-size:15px}
@@ -925,6 +974,23 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 <!--PHONE-->
 <p class="ph-saved hidden" id="ph-saved" role="status"><span><b></b> <span></span></span><button type="button" id="ph-saved-go">Try again</button></p>
 <!--/PHONE-->
+<!--RESULTS-->
+<section class="cb hidden" id="cb" aria-labelledby="cb-h">
+  <button type="button" class="cb-x" data-rs="cbx" aria-label="Dismiss: come back after Nov 3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#241A2E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="cb-tx">
+    <p class="ov">After Nov 3</p>
+    <h2 id="cb-h">Come back to see how your choices did</h2>
+    <p class="lead">From the morning after Election Day, Ballotta shows each result right beside the pick you made here, contest by contest, and follows every race until it’s official.</p>
+    <p class="cb-dev">Your picks are saved in this browser, so come back on this device. Switching devices? <button type="button" class="cb-link" data-rs="keep">Keep my picks</button> sends you a private link to bring them along.</p>
+    <button type="button" class="btn small" data-rs="how">How it works</button>
+  </div>
+  <figure class="cb-ex" aria-label="An example result, with made-up numbers">
+    <p class="ov cb-exh"><span>Example · Wed, Nov 4</span><span>Made-up numbers</span></p>
+    <p class="cb-t">A city proposition</p>
+    <div class="rs"><p class="rs-st">Unofficial · Travis County, posted Nov 4, 9:00 am</p><p class="rs-v">Passing</p><div class="rs-bars"><div class="rs-b"><span class="rs-nm">For</span><span class="rs-tr" aria-hidden="true"><i style="width:58.2%"></i></span><span class="rs-vt">58,200 · 58.2%</span></div><div class="rs-b"><span class="rs-nm">Against</span><span class="rs-tr" aria-hidden="true"><i style="width:41.8%"></i></span><span class="rs-vt">41,800 · 41.8%</span></div></div><p class="rs-you">Your pick, For, is leading.</p></div>
+  </figure>
+</section>
+<!--/RESULTS-->
 <div class="dk-app" id="dk-app">
   <nav class="dk-rail" aria-label="Your ballot">
     <div class="dk-rhd"><h2>Your ballot</h2><span id="dk-count"></span><span class="dk-rbar"><i id="dk-bar"></i></span><!--PHONE--><button type="button" class="ph-done ph-only" id="ph-done">Done</button><!--/PHONE--></div>
@@ -1094,6 +1160,18 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
     <button type="button" class="x hidden" id="reset-all-foot" style="align-self:flex-start">Clear everything on this device</button>
   </footer>
 </main>
+<footer class="ml" id="ml" aria-labelledby="ml-h">
+  <div class="ml-in">
+    <div class="ml-tx">
+      <h2 id="ml-h">Ballotta will be back for the next election</h2>
+      <p>Get one email when your next Travis County ballot is ready to look up. Nothing else, and never anything about how to vote.</p>
+    </div>
+    <div class="ml-go">
+      <a class="btn" href="https://buttondown.com/ballotta" target="_blank" rel="noopener">Email me before the next election</a>
+      <p>Opens Buttondown’s sign-up page. Your email stays with Buttondown, apart from this site, and is never connected to your address or picks.</p>
+    </div>
+  </div>
+</footer>
 
 <dialog class="sheet" id="d-keep" aria-labelledby="dkh">
   <div class="handle" aria-hidden="true"></div>
@@ -1142,6 +1220,30 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <p>From each county’s published results (Travis, Williamson, Bastrop and Hays) and the Texas Secretary of State, added up for contests that cross county lines. Ballotta updates them once or twice a day. It doesn’t call races: a “leader” is only who’s ahead in the count so far.</p>
   <h3 id="rs-whyrun" tabindex="-1">What’s a runoff?</h3>
   <p>Some offices need a majority: more than half the votes. Austin’s City Council, several other city councils and school boards, and ACC’s trustees are among them. When no one gets a majority, the top two meet again in a runoff. Any registered voter in that district or area can vote in it, whether or not they voted in November. The county sets the runoff’s early voting and vote centers, and fewer places are open than in November.</p>
+</dialog>
+<dialog class="sheet cb-sheet" id="cb-how" aria-labelledby="cb-howh">
+  <div class="sheethead"><h2 id="cb-howh" style="font-size:26px">Your ballot, with the results</h2><button type="button" class="x" data-close>Close</button></div>
+  <p class="lead">Most results pages tell you who won. From the morning after Election Day, Ballotta shows every result on your own ballot, right beside the pick you made, and keeps following each race until it’s official.</p>
+  <figure class="cb-fig" aria-label="Your ballot before and after Election Day, with made-up names and numbers">
+    <div class="cb-card"><p class="ov">Before you vote · your picks</p><ul class="cb-rows"><li><span class="cb-rt"><b>A statewide race</b></span><span class="cb-pk"><i aria-hidden="true"></i>Jordan Avery</span></li><li><span class="cb-rt"><b>A city council race</b></span><span class="cb-pk"><i aria-hidden="true"></i>Sam Whitfield</span></li><li><span class="cb-rt"><b>A city proposition</b></span><span class="cb-pk"><i aria-hidden="true"></i>For</span></li><li><span class="cb-rt"><b>A school district proposition</b></span><span class="cb-pk"><i aria-hidden="true"></i>Against</span></li></ul></div>
+    <p class="ov cb-arrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4B2A6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>From Nov 4</p>
+    <div class="cb-card cb-now"><p class="ov">After Nov 3 · the same ballot, with results</p><ul class="cb-rows"><li><span class="cb-rt"><b>A statewide race</b><span class="cb-st">Unofficial</span></span><span class="cb-rv">Leading: Jordan Avery</span><span class="cb-ry">Your pick is leading.</span></li><li><span class="cb-rt"><b>A city council race</b><span class="cb-st">Official</span></span><span class="cb-rv">Headed to a runoff: Maya Ortega and Daniel Price</span><span class="cb-ry">Your pick didn’t make the runoff.</span></li><li><span class="cb-rt"><b>A city proposition</b><span class="cb-st">Official</span></span><span class="cb-rv">Passed</span><span class="cb-ry">Your pick, For, won.</span></li><li><span class="cb-rt"><b>A school district proposition</b><span class="cb-st">Unofficial</span></span><span class="cb-rv">Too close to call</span><span class="cb-ry">Your pick: Against</span></li></ul></div>
+    <figcaption class="note">Made-up names and numbers, to show how it looks.</figcaption>
+  </figure>
+  <h3>How it works</h3>
+  <ol class="cb-steps">
+    <li><b>Make your picks before you vote.</b> Already did? You’re set. Contests you skipped or left undecided still show their results.</li>
+    <li><b>Come back from Wednesday, Nov 4.</b> Open ballotta.org on the same device. A summary of how your picks did is waiting at the top.</li>
+    <li><b>Follow each race until it’s official.</b> Ballotta updates results once or twice a day, and “Since you last looked” shows what changed.</li>
+  </ol>
+  <section class="rs-tl" aria-label="From election night to official"><ol style="--n:3"><li><i aria-hidden="true"></i><b>Election night</b><span>Nov 3 · first counts</span></li><li><i aria-hidden="true"></i><b>Late ballots and local canvasses</b><span>About two weeks · cities, schools, county</span></li><li><i aria-hidden="true"></i><b>State canvass</b><span>Nov 21 – Dec 7 · state and federal</span></li></ol></section>
+  <h3>Good to know</h3>
+  <div class="cb-faq">
+    <p><b>Do I need an account?</b> No. Your picks stay in this browser. To see them on another device, use Keep my picks before you switch.</p>
+    <p><b>Are my picks sent anywhere?</b> No. Everyone gets the same results file, and the matching to your picks happens on your device.</p>
+    <p><b>Does Ballotta call races?</b> No. Until a contest is canvassed, a “leader” is only who’s ahead in the count so far. Every result says whether it’s official.</p>
+    <p><b>Didn’t make picks?</b> You can still see every result on your ballot, and every Travis County contest, with no address needed.</p>
+  </div>
 </dialog>
 <!--/RESULTS-->
 <!--/DESK-->
@@ -1237,6 +1339,7 @@ const EVENTS = {
   share_opened: { generation: GEN, has_picks: YN, link: CODE },
   share_own_ballot: { generation: GEN },
   share_compare: {},
+  mail_list: {},   // Email me before the next election: Buttondown's sign-up page opened (Lane, Oct 31)
 };
 /*PHONE*/
 EVENTS.home_screen = { action: ONE_OF('opened', 'prompted', 'added', 'copied', 'pasted'), from: ONE_OF('menu', 'card') };
@@ -1245,6 +1348,7 @@ EVENTS.backup_nudge.action = ONE_OF('shown', 'keep', 'dismiss', 'home');
 /*RESULTS*/
 EVENTS.help_opened.item = ONE_OF('feedback', 'privacy', 'about', 'address', 'clear', 'clearall', 'results');
 EVENTS.results_seen = {};
+EVENTS.come_back = { action: ONE_OF('how', 'dismiss') };   // the box at the top of the ballot until Nov 4 (Lane, Oct 31)
 EVENTS.view_opened.view = ONE_OF('decide', 'glance', 'vote', 'crib', 'all', 'rdecide', 'rvote', 'rcrib');   // the runoff's three (#174)
 /*/RESULTS*/
 const LAYOUT = ONE_OF('phone', 'laptop');
@@ -1747,6 +1851,7 @@ function outbound(e) {
   try { host = new URL(a.href).hostname; } catch (err) { return; }
   if (host === 'www.google.com' && a.pathname.startsWith('/maps/dir')) return track('directions_opened', { period });
   if (host === 'updates.electionlink.net') return track('wait_times_opened', { period });
+  if (host === 'buttondown.com') return track('mail_list');
   const kind = a.textContent.trim() === 'Campaign site' ? 'campaign_site' : (KIND_BY_HOST.find(([re]) => re.test(host)) || [null, 'other'])[1];
   const level = raceLevel(a);
   track('source_opened', level ? { kind, level } : { kind });
@@ -2598,6 +2703,9 @@ const results = (() => {
     if (!counted) { counted = true; track('results_seen'); }
   }
   function why() { $('rs-why').showModal(); }
+  // Come back after Nov 3 (Lane, Oct 31): at the top of the ballot until Nov 4, Austin time, unless its X said not here
+  // again (kept with the picks, so Clear everything brings it back). From Nov 4 the ballot shows the results instead.
+  function comeBack(app) { $('cb').classList.toggle('hidden', !app || live() || LS.get('ballotta.comeBack', '') === 'dismissed'); }
 
   /* ----- after the election (Lane, Oct 21; docs/plans/2026-10-21-after-the-election.md): the page as a record of the
      ballot. From Nov 4, with a file the page accepts (the pause included), the laptop and phone layouts show results
@@ -2803,6 +2911,9 @@ const results = (() => {
       if (b.dataset.rs === 'why') why(); else if (b.dataset.rs === 'all') openAll();
       else if (b.dataset.rs === 'whyrun') { why(); const h = $('rs-whyrun'); h.scrollIntoView({ block: 'start' }); h.focus({ preventScroll: true }); }   // How runoffs work (W105)
       else if (b.dataset.rs === 'tell') sendFeedback();
+      else if (b.dataset.rs === 'how') { $('cb-how').showModal(); track('come_back', { action: 'how' }); }
+      else if (b.dataset.rs === 'cbx') { LS.set('ballotta.comeBack', 'dismissed'); comeBack(false); track('come_back', { action: 'dismiss' }); $('dk-paper').focus({ preventScroll: true }); }
+      else if (b.dataset.rs === 'keep') openKeep();
       else if (b.dataset.rs === 'go' && window.desk && desk.goTo) desk.goTo(b.dataset.c);
       else if (b.dataset.rs === 'rdecide' && window.desk) desk.rgo(b.dataset.c);   // the runoff (Phase 4)
       else if (b.dataset.rs === 'rvote' && window.desk) desk.rvote();
@@ -2956,7 +3067,7 @@ const results = (() => {
   }
   const runoff = { area, list: runoffs, band: runoffBand, paper: runoffPaper, notes: runoffNotes, vote: runoffVote, crib: runoffCrib, pick: rpick, why: rwhy, cur: rcur, pair, row: rrow, state: rstate, reset() { RP = RW = null; }, date: () => { const rs = runoffs(); return rs.length ? dayLong(entry(rs[0].c.id).runoff_on) : ''; } };
   const paused = () => !!(R && R.withdrawn && live());
-  return { start, ribbon, on, paused, runoff, newDay, said, top, why, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
+  return { start, ribbon, on, paused, runoff, newDay, said, top, why, comeBack, openAll, glancePage, crib, entry, accept, landing, after, rowLine, official, close, picked, updated, nextBox, notes, allPage, allLevels, allCounts, listSum };
 })();
 window.results = results;
 /*/RESULTS*/
@@ -3128,6 +3239,7 @@ const desk = (() => {
     const app = mode(); header();
 /*RESULTS*/
     try { results.top(ui.view, ui.view === 'rdecide' ? rcurId() : ''); } catch (e) {}
+    try { results.comeBack(app && ballot.length > 0); } catch (e) {}
 /*/RESULTS*/
     if (!ballot.length && !(app && ui.view === 'all')) { /*PHONE*/if (window.phone) try { phone.after(); } catch (e) {}/*/PHONE*/ return; }   // one marker pair, so an edit can't break one build (#124, #87)
     if (ballot.length && idx(ui.cur) < 0) ui.cur = ballot[0].c.id;
@@ -3793,7 +3905,9 @@ const phone = (() => {
   }
   // A move on a phone lands at the top of the paper, and a screen reader hears the new contest's heading.
   function moved() {
-    window.scrollTo(0, 0);
+    // Come back after Nov 3 sits above the ballot: a move starts at the contest, just under it (Lane, Oct 31).
+    const cb = document.getElementById('cb'), up = cb && !cb.classList.contains('hidden') ? cb.getBoundingClientRect().bottom + window.scrollY - $('dk-hdr').offsetHeight : 0;
+    window.scrollTo(0, Math.max(0, up));
     const h = $('dk-paper').querySelector('h1');
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   }
