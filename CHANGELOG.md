@@ -41,6 +41,8 @@ Come back after Nov 3, and a mailing list for the next election (Lane, Oct 31).
 - `mutate_results.py`: fourteen new mutants (R137–R150).
 - `phone_glance_vote_and_crib_fit_the_screen`: "opens its contest at the top" now means just under the header while
   the box is above the ballot (`contest_at_top`).
+- `phone_backup_nudge_after_fifth_pick`: "as far down as it goes" is the end of the ballot, not of the page (the mailing
+  list comes after it).
 
 ## [1.5.4] — 2026-10-23
 

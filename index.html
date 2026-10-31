@@ -207,9 +207,9 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 @media screen and (min-width:1024px){.ml-in{max-width:1248px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);column-gap:40px;align-items:center;padding:32px 48px 36px}.ml h2{font-size:26px}}
 @media print{.ml{display:none !important}}
 /*RESULTS*/
-/* ---------- come back after Nov 3 (Lane, Oct 31): the top of the ballot until Nov 4, or until its X ---------- */
+/* ---------- come back after Nov 3 (Lane, Oct 31): the top of the ballot (the desk's first row) until Nov 4, or until its X ---------- */
 .cb{display:none}
-body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;position:relative;margin:12px 12px 0;padding:18px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;position:relative;margin:0 0 16px;padding:18px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px}
 .cb-x{position:absolute;top:8px;right:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line2);border-radius:10px;background:var(--ground);cursor:pointer}
 .cb-tx{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .cb h2{font-size:26px;padding-right:44px}
@@ -221,7 +221,7 @@ body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;posi
 .cb-t{font-weight:700;font-size:15px}
 .cb-rs{display:flex;flex-direction:column;gap:6px}   /* the results' own look, but not a result: no .rs */
 @media screen and (min-width:1024px){
-  body.dk-app-on .cb:not(.hidden){display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:center;margin:16px 24px 0;padding:24px 72px 24px 28px}
+  body.dk-app-on .cb:not(.hidden){grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:center;margin:0;padding:24px 72px 24px 28px}   /* the top of the desk, over the paper and notes */
   .cb-x{top:12px;right:12px}
   .cb h2{font-size:30px;padding-right:0}
   .cb .lead{font-size:16px}
@@ -974,23 +974,6 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 <!--PHONE-->
 <p class="ph-saved hidden" id="ph-saved" role="status"><span><b></b> <span></span></span><button type="button" id="ph-saved-go">Try again</button></p>
 <!--/PHONE-->
-<!--RESULTS-->
-<section class="cb hidden" id="cb" aria-labelledby="cb-h">
-  <button type="button" class="cb-x" data-rs="cbx" aria-label="Dismiss: come back after Nov 3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#241A2E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  <div class="cb-tx">
-    <p class="ov">After Nov 3</p>
-    <h2 id="cb-h">Come back to see how your choices did</h2>
-    <p class="lead">From the morning after Election Day, Ballotta shows each result right beside the pick you made here, contest by contest, and follows every race until it’s official.</p>
-    <p class="cb-dev">Your picks are saved in this browser, so come back on this device. Switching devices? <button type="button" class="cb-link" data-rs="keep">Keep my picks</button> sends you a private link to bring them along.</p>
-    <button type="button" class="btn small" data-rs="how">How it works</button>
-  </div>
-  <figure class="cb-ex" aria-label="An example result, with made-up numbers">
-    <p class="ov cb-exh"><span>Example · Wed, Nov 4</span><span>Made-up numbers</span></p>
-    <p class="cb-t">A city proposition</p>
-    <div class="cb-rs"><p class="rs-st">Unofficial · Travis County, posted Nov 4, 9:00 am</p><p class="rs-v">Passing</p><div class="rs-bars"><div class="rs-b"><span class="rs-nm">For</span><span class="rs-tr" aria-hidden="true"><i style="width:58.2%"></i></span><span class="rs-vt">58,200 · 58.2%</span></div><div class="rs-b"><span class="rs-nm">Against</span><span class="rs-tr" aria-hidden="true"><i style="width:41.8%"></i></span><span class="rs-vt">41,800 · 41.8%</span></div></div><p class="rs-you">Your pick, For, is leading.</p></div>
-  </figure>
-</section>
-<!--/RESULTS-->
 <div class="dk-app" id="dk-app">
   <nav class="dk-rail" aria-label="Your ballot">
     <div class="dk-rhd"><h2>Your ballot</h2><span id="dk-count"></span><span class="dk-rbar"><i id="dk-bar"></i></span><!--PHONE--><button type="button" class="ph-done ph-only" id="ph-done">Done</button><!--/PHONE--></div>
@@ -1018,6 +1001,23 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <div class="dk-desk" id="dk-desk" role="main">
     <div class="dk-say hidden" id="dk-say" role="status"><span></span><button type="button" class="dk-link" aria-label="Dismiss this message">Dismiss</button></div>
     <div class="dk-nudge hidden" id="dk-nudge" data-nudge-box><span role="status"></span><span class="row"><button class="btn small" type="button" data-nudge="keep">Send myself a link</button><button class="dk-link" type="button" data-nudge="dismiss">Not now</button></span><!--PHONE--><button class="dk-link ph-home ph-only" type="button" id="ph-home-nudge">Or add Ballotta to your Home Screen: it keeps your picks longer</button><!--/PHONE--></div>
+<!--RESULTS-->
+    <section class="cb hidden" id="cb" aria-labelledby="cb-h">
+      <button type="button" class="cb-x" data-rs="cbx" aria-label="Dismiss: come back after Nov 3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#241A2E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="cb-tx">
+    <p class="ov">After Nov 3</p>
+    <h2 id="cb-h">Come back to see how your choices did</h2>
+    <p class="lead">From the morning after Election Day, Ballotta shows each result right beside the pick you made here, contest by contest, and follows every race until it’s official.</p>
+    <p class="cb-dev">Your picks are saved in this browser, so come back on this device. Switching devices? <button type="button" class="cb-link" data-rs="keep">Keep my picks</button> sends you a private link to bring them along.</p>
+    <button type="button" class="btn small" data-rs="how">How it works</button>
+      </div>
+      <figure class="cb-ex" aria-label="An example result, with made-up numbers">
+    <p class="ov cb-exh"><span>Example · Wed, Nov 4</span><span>Made-up numbers</span></p>
+    <p class="cb-t">A city proposition</p>
+    <div class="cb-rs"><p class="rs-st">Unofficial · Travis County, posted Nov 4, 9:00 am</p><p class="rs-v">Passing</p><div class="rs-bars"><div class="rs-b"><span class="rs-nm">For</span><span class="rs-tr" aria-hidden="true"><i style="width:58.2%"></i></span><span class="rs-vt">58,200 · 58.2%</span></div><div class="rs-b"><span class="rs-nm">Against</span><span class="rs-tr" aria-hidden="true"><i style="width:41.8%"></i></span><span class="rs-vt">41,800 · 41.8%</span></div></div><p class="rs-you">Your pick, For, is leading.</p></div>
+      </figure>
+    </section>
+<!--/RESULTS-->
 <!--RESULTS-->
     <div class="rs-top hidden" id="rs-top"></div>
 <!--/RESULTS-->

@@ -4633,7 +4633,8 @@ def phone_backup_nudge_after_fifth_pick(b):
     card.locator('[data-nudge="dismiss"]').focus(); pg.keyboard.press('Enter'); expect(card).to_be_hidden()
     assert focused(pg) == 'dk-paper', focused(pg)
     pg.evaluate("localStorage.removeItem('ballotta.nudge')"); pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[25]); expect(card).to_be_visible()
-    pg.evaluate('window.scrollTo(0, document.body.scrollHeight)'); pg.wait_for_timeout(200)
+    # as far down as the ballot goes (the mailing list comes after it, Oct 31)
+    pg.evaluate("window.scrollTo(0, document.getElementById('dk-desk').getBoundingClientRect().bottom + scrollY - innerHeight)"); pg.wait_for_timeout(200)
     hit = pg.evaluate("""() => { const all = [...document.querySelectorAll('#dk-desk a[href], #dk-desk button, #dk-desk textarea, #dk-desk input')].filter(e => e.getClientRects().length && !e.closest('#dk-nudge'));
         const l = all[all.length - 1], r = l.getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return [l.id || l.tagName, !!e && (e === l || l.contains(e))]; }""")
     assert hit[1], ('the paper\'s last control is under the card', hit)
