@@ -11,6 +11,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import mutate_desk as R
 
 PREV, BLD, SW = R.PREV, R.BLD, ROOT / 'sw.js'
+PRIV = ROOT / 'privacy/index.html'   # the built page (a stale build is the pipeline's catch)
 L, P, S = 'results_show_on_the_laptop_ballot', 'results_show_on_the_phone_ballot', 'results_say_what_changed_since_you_last_looked'
 W, X, O = 'withdrawn_results_hide_everything', 'a_bad_results_file_breaks_nothing', 'the_date_override_works_only_on_this_computer'
 A, C, N, E = 'all_travis_county_results_need_no_address', 'a_saved_copy_says_so', 'results_wait_for_nov_4', 'the_canvass_is_explained_from_the_results_and_the_menu'
@@ -174,6 +175,10 @@ M = [
  ('R148 the phone bar over the mailing list', PREV, "  body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(112px + env(safe-area-inset-bottom))}", "", ['the_mailing_list_is_the_last_thing_on_every_page']),
  ('R149 a ballot just opened starts past the box', PREV, "up = !fresh && cb && !cb.classList", "up = cb && !cb.classList", ['phone_lookup_opens_the_app_at_its_top']),
  ('R150 the backup card over the mailing list', PREV, "  html.nudging body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(300px + env(safe-area-inset-bottom))}", "", ['phone_focus_never_hides_under_the_bars']),
+ ('R151 no way to the privacy page', PREV, '<p class="ml-legal">© 2026 Lane Becker · <a href="privacy/">Privacy</a></p>', '<p class="ml-legal">© 2026 Lane Becker</p>', ['the_privacy_page_names_everywhere_anything_goes']),
+ ('R152 the privacy page leaves out the counter', PRIV, 'Ballotta uses Umami Cloud to count', 'Ballotta uses a service to count', ['the_privacy_page_names_everywhere_anything_goes']),
+ ('R153 a script on the privacy page', PRIV, '<header><a href="../">Ballotta</a></header>', '<script>1</script><header><a href="../">Ballotta</a></header>', ['the_privacy_page_names_everywhere_anything_goes']),
+ ('R154 the privacy page without its fonts', PRIV, "font-src 'self';", "font-src 'none';", ['the_privacy_page_names_everywhere_anything_goes']),
 ]
 if __name__ == '__main__':
     R.main(M)

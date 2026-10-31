@@ -203,6 +203,8 @@ dialog.sheet[open]{display:flex;flex-direction:column;gap:14px}
 .ml h2{color:#fff}
 .ml p{color:var(--lilac);font-size:15px}
 .ml-go p{font-size:13px}
+.ml-legal a{color:#fff}
+.ml-legal a:focus-visible{box-shadow:0 0 0 2px var(--plum),0 0 0 4px var(--ground)}
 .ml .btn{background:var(--gold);color:var(--ink)}
 .ml .btn:focus-visible{box-shadow:0 0 0 2px var(--plum),0 0 0 4px var(--ground)}
 @media screen and (min-width:1024px){.ml-in{max-width:1248px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);column-gap:40px;align-items:center;padding:32px 48px 36px}.ml h2{font-size:26px}}
@@ -1164,11 +1166,12 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <div class="ml-in">
     <div class="ml-tx">
       <h2 id="ml-h">Ballotta will be back for the next election</h2>
-      <p>Get one email when your next Travis County ballot is ready to look up. Nothing else, and never anything about how to vote.</p>
+      <p>Get emailed when the election results are up, and when the next election ballot is ready. Nothing else, and never anything about how to vote.</p>
     </div>
     <div class="ml-go">
       <a class="btn" href="https://buttondown.com/ballotta" target="_blank" rel="noopener">Email me before the next election</a>
       <p>Opens Buttondown’s sign-up page. Your email stays with Buttondown, apart from this site, and is never connected to your address or picks.</p>
+      <p class="ml-legal">© 2026 Lane Becker · <a href="privacy/">Privacy</a></p>
     </div>
   </div>
 </footer>

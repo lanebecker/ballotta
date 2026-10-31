@@ -16,6 +16,26 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.7.0] — 2026-10-31
+
+A privacy page, and the mailing list's new promise (Lane, Oct 31).
+
+### Added
+- ballotta.org/privacy/: how Ballotta handles your privacy, in plain words. Where your address goes (the county's map
+  server, or the Census lookup), what stays in your browser, how Keep and Share links carry picks, results matched on
+  your device, what's counted and what never is, GitHub Pages' visit logs, Buttondown and the mailing list, feedback,
+  links to other sites, and who to ask. A plain page: no script, counts nothing, this site's own fonts.
+- At the foot of every page, under the mailing list: "© 2026 Lane Becker · Privacy".
+
+### Changed
+- The mailing list now says: "Get emailed when the election results are up, and when the next election ballot is
+  ready. Nothing else, and never anything about how to vote."
+
+### Tests
+- Browser: the privacy page names every service the main page may reach (from its Content-Security-Policy, plus the
+  Census lookup and Buttondown), has no script, loads its own fonts, and is one click from the foot of the page.
+- `mutate_results.py`: four new mutants (R151–R154).
+
 ## [1.6.0] — 2026-10-31
 
 Come back after Nov 3, and a mailing list for the next election (Lane, Oct 31).
