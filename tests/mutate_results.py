@@ -166,7 +166,8 @@ M = [
  ('R141 a move lands back on the box', PREV, "cb.getBoundingClientRect().bottom + window.scrollY - $('dk-hdr').offsetHeight : 0;", "0 : 0;", ['come_back_sits_above_the_ballot_until_nov_4']),
  ('R142 focus lost with the X', PREV, "track('come_back', { action: 'dismiss' }); $('dk-paper').focus({ preventScroll: true });", "track('come_back', { action: 'dismiss' });", ['come_back_sits_above_the_ballot_until_nov_4']),
  ('R143 the X counted as something else', PREV, "track('come_back', { action: 'dismiss' });", "track('come_back', { action: 'closed' });", ['come_back_sits_above_the_ballot_until_nov_4']),
- ('R144 the box prints', PREV, "@media print{.cb{display:none !important}}", "", ['come_back_never_prints_and_stays_out_of_the_way']),
+ # R144 retired Oct 31: the box moved into the desk, which never prints (the print rules show the crib sheet alone), so
+ # its own print rule was redundant and is gone; come_back_never_prints_and_stays_out_of_the_way still checks it.
  ('R145 Keep my picks from the box opens nothing', PREV, "      else if (b.dataset.rs === 'keep') openKeep();\n", "", ['come_back_never_prints_and_stays_out_of_the_way']),
  ('R146 the mailing list prints', PREV, "@media print{.ml{display:none !important}}", "", ['come_back_never_prints_and_stays_out_of_the_way']),
  ('R147 the mailing list uncounted', PREV, "  if (host === 'buttondown.com') return track('mail_list');\n", "", ['the_mailing_list_is_the_last_thing_on_every_page']),

@@ -38,7 +38,8 @@ Come back after Nov 3, and a mailing list for the next election (Lane, Oct 31).
 - Browser: the box on both layouts, its corner X and what it remembers, Election Day and Nov 4, the phone's moves,
   printing, Keep my picks from the box; the mailing list last on every layout and view, its link, its count, and the
   phone's bottom bar never covering it.
-- `mutate_results.py`: fourteen new mutants (R137–R150).
+- `mutate_results.py`: thirteen new mutants (R137–R150; R144 retired: the box's own print rule was redundant).
+- `mutate_phone.py`: P7, P41 and P45 follow the phone's new first-open rule.
 - `phone_glance_vote_and_crib_fit_the_screen`: "opens its contest at the top" now means just under the header while
   the box is above the ballot (`contest_at_top`).
 - `phone_backup_nudge_after_fifth_pick`: "as far down as it goes" is the end of the ballot, not of the page (the mailing
