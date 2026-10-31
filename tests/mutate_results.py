@@ -171,6 +171,8 @@ M = [
  ('R146 the mailing list prints', PREV, "@media print{.ml{display:none !important}}", "", ['come_back_never_prints_and_stays_out_of_the_way']),
  ('R147 the mailing list uncounted', PREV, "  if (host === 'buttondown.com') return track('mail_list');\n", "", ['the_mailing_list_is_the_last_thing_on_every_page']),
  ('R148 the phone bar over the mailing list', PREV, "  body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(112px + env(safe-area-inset-bottom))}", "", ['the_mailing_list_is_the_last_thing_on_every_page']),
+ ('R149 a ballot just opened starts past the box', PREV, "up = !fresh && cb && !cb.classList", "up = cb && !cb.classList", ['phone_lookup_opens_the_app_at_its_top']),
+ ('R150 the backup card over the mailing list', PREV, "  html.nudging body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(300px + env(safe-area-inset-bottom))}", "", ['phone_focus_never_hides_under_the_bars']),
 ]
 if __name__ == '__main__':
     R.main(M)

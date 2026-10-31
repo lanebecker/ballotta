@@ -220,7 +220,7 @@ body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;posi
 .cb-ex{margin:0;display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--ground);border:1px solid var(--line);border-radius:12px}
 .cb-exh{display:flex;justify-content:space-between;gap:12px}
 .cb-t{font-weight:700;font-size:15px}
-.cb-ex .rs{margin:0;padding:0;border:none;background:transparent}
+.cb-rs{display:flex;flex-direction:column;gap:6px}   /* the results' own look, but not a result: no .rs */
 @media screen and (min-width:1024px){
   body.dk-app-on .cb:not(.hidden){display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:center;margin:16px 24px 0;padding:24px 72px 24px 28px}
   .cb-x{top:12px;right:12px}
@@ -871,6 +871,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   /* the bottom bar: back one contest (or back to the contest, from another view) and on to the next undecided one */
   body.dk-app-on:not(.ph-list) .ph-bar{display:flex}
   body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(112px + env(safe-area-inset-bottom))}   /* the mailing list clears the bar (Oct 31) */
+  html.nudging body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(300px + env(safe-area-inset-bottom))}   /* and the backup card */
   .ph-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;align-items:center;gap:10px;min-height:72px;padding:10px max(12px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:var(--plum)}
   .ph-bar button{font:inherit;cursor:pointer;border:none}
   #ph-back{flex:0 1 auto;min-width:0;min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid rgba(255,249,241,.45);background:transparent;color:var(--ground);font-weight:600;font-size:15px}
@@ -987,7 +988,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <figure class="cb-ex" aria-label="An example result, with made-up numbers">
     <p class="ov cb-exh"><span>Example · Wed, Nov 4</span><span>Made-up numbers</span></p>
     <p class="cb-t">A city proposition</p>
-    <div class="rs"><p class="rs-st">Unofficial · Travis County, posted Nov 4, 9:00 am</p><p class="rs-v">Passing</p><div class="rs-bars"><div class="rs-b"><span class="rs-nm">For</span><span class="rs-tr" aria-hidden="true"><i style="width:58.2%"></i></span><span class="rs-vt">58,200 · 58.2%</span></div><div class="rs-b"><span class="rs-nm">Against</span><span class="rs-tr" aria-hidden="true"><i style="width:41.8%"></i></span><span class="rs-vt">41,800 · 41.8%</span></div></div><p class="rs-you">Your pick, For, is leading.</p></div>
+    <div class="cb-rs"><p class="rs-st">Unofficial · Travis County, posted Nov 4, 9:00 am</p><p class="rs-v">Passing</p><div class="rs-bars"><div class="rs-b"><span class="rs-nm">For</span><span class="rs-tr" aria-hidden="true"><i style="width:58.2%"></i></span><span class="rs-vt">58,200 · 58.2%</span></div><div class="rs-b"><span class="rs-nm">Against</span><span class="rs-tr" aria-hidden="true"><i style="width:41.8%"></i></span><span class="rs-vt">41,800 · 41.8%</span></div></div><p class="rs-you">Your pick, For, is leading.</p></div>
   </figure>
 </section>
 <!--/RESULTS-->
@@ -3899,14 +3900,15 @@ const phone = (() => {
     if (top && D.ui.view === 'decide') top.textContent = (NARROW.matches && app && pr && /\d/.test(pr.textContent) ? pr.textContent + ' · ' : '') + 'Saved on this device';
     // A new contest or view, however it came (the bar, the list, a name in At a glance, a new ballot): start at its top.
     const key = app ? D.ui.view + ':' + D.ui.cur : '';
-    if (key && key !== lastKey && NARROW.matches && !booting) moved();
+    if (key && key !== lastKey && NARROW.matches && !booting) moved(!lastKey);
     lastKey = key;
     $('ph-paste').classList.toggle('ph-show', NARROW.matches && standalone() && iOS() && !ballot.length);  // Android's app shares the browser's storage
   }
   // A move on a phone lands at the top of the paper, and a screen reader hears the new contest's heading.
-  function moved() {
-    // Come back after Nov 3 sits above the ballot: a move starts at the contest, just under it (Lane, Oct 31).
-    const cb = document.getElementById('cb'), up = cb && !cb.classList.contains('hidden') ? cb.getBoundingClientRect().bottom + window.scrollY - $('dk-hdr').offsetHeight : 0;
+  function moved(fresh) {
+    // Come back after Nov 3 sits above the ballot (Lane, Oct 31): a ballot just opened starts above it, at the very top;
+    // a move within the ballot starts at the contest, just under it.
+    const cb = document.getElementById('cb'), up = !fresh && cb && !cb.classList.contains('hidden') ? cb.getBoundingClientRect().bottom + window.scrollY - $('dk-hdr').offsetHeight : 0;
     window.scrollTo(0, Math.max(0, up));
     const h = $('dk-paper').querySelector('h1');
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }

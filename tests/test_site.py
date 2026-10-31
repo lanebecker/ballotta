@@ -2523,6 +2523,13 @@ def backup_card(pg, wide): return pg.locator('#dk-nudge' if wide else '#nudge')
 import urllib.request, time
 PHONE = {'width': 390, 'height': 844}                      # an iPhone 13/14/15's screen in CSS pixels
 
+def contest_at_top(pg):
+    """The open contest starts at the top of the screen: the page's own top, or, while Come back after Nov 3 sits above
+    the ballot (until Nov 4), just under the header, past the box (Lane, Oct 31)."""
+    if not pg.is_visible('#cb'): return pg.evaluate('scrollY') == 0
+    hdr, top = pg.locator('#dk-hdr').bounding_box(), pg.locator('#dk-paper').bounding_box()['y']
+    return hdr['y'] + hdr['height'] - 2 <= top <= hdr['y'] + hdr['height'] + 40
+
 def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None, county=None):
     ctx, pg = new_page(b, sent, csp=csp, touch=True, size=size or PHONE, sw=sw, ua=ua, county=county)
     if init: pg.add_init_script(init)
@@ -2693,7 +2700,7 @@ def phone_glance_vote_and_crib_fit_the_screen(b):
     assert css(pg, '[data-sel="c006"]', 'fontSize') == '16px' and css(pg, '#dk-q', 'fontSize') == '16px', 'iPhones zoom into smaller fields'
     pg.locator('[data-sel="c006"]').select_option(index=1); assert cur(pg, 'c006') == [pg.evaluate("optionsOf(BYID.c006)[0]")]
     pg.evaluate('window.scrollTo(0, 2000)'); pg.locator('[data-go="c070"]').first.click()
-    assert h1(pg) == 'City Council Member, District 9' and pg.evaluate('scrollY') == 0 and focused(pg) == 'H1', 'a name in At a glance opens its contest at the top'
+    assert h1(pg) == 'City Council Member, District 9' and contest_at_top(pg) and focused(pg) == 'H1', 'a name in At a glance opens its contest at the top'
     pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]')
     expect(pg.locator('.dk-tbl thead')).to_be_hidden(); expect(pg.locator('.dk-tbl td:nth-child(4)').first).to_be_hidden()
     assert sideways(pg) <= 0
