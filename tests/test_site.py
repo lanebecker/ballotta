@@ -2523,6 +2523,13 @@ def backup_card(pg, wide): return pg.locator('#dk-nudge' if wide else '#nudge')
 import urllib.request, time
 PHONE = {'width': 390, 'height': 844}                      # an iPhone 13/14/15's screen in CSS pixels
 
+def contest_at_top(pg):
+    """The open contest starts at the top of the screen: the page's own top, or, while Come back after Nov 3 sits above
+    the ballot (until Nov 4), just under the header, past the box (Lane, Oct 31)."""
+    if not pg.is_visible('#cb'): return pg.evaluate('scrollY') == 0
+    hdr, top = pg.locator('#dk-hdr').bounding_box(), pg.locator('#dk-paper').bounding_box()['y']
+    return hdr['y'] + hdr['height'] - 2 <= top <= hdr['y'] + hdr['height'] + 40
+
 def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None, county=None):
     ctx, pg = new_page(b, sent, csp=csp, touch=True, size=size or PHONE, sw=sw, ua=ua, county=county)
     if init: pg.add_init_script(init)
@@ -2693,7 +2700,7 @@ def phone_glance_vote_and_crib_fit_the_screen(b):
     assert css(pg, '[data-sel="c006"]', 'fontSize') == '16px' and css(pg, '#dk-q', 'fontSize') == '16px', 'iPhones zoom into smaller fields'
     pg.locator('[data-sel="c006"]').select_option(index=1); assert cur(pg, 'c006') == [pg.evaluate("optionsOf(BYID.c006)[0]")]
     pg.evaluate('window.scrollTo(0, 2000)'); pg.locator('[data-go="c070"]').first.click()
-    assert h1(pg) == 'City Council Member, District 9' and pg.evaluate('scrollY') == 0 and focused(pg) == 'H1', 'a name in At a glance opens its contest at the top'
+    assert h1(pg) == 'City Council Member, District 9' and contest_at_top(pg) and focused(pg) == 'H1', 'a name in At a glance opens its contest at the top'
     pg.click('#ph-list'); pg.click('#dk-views [data-view="glance"]')
     expect(pg.locator('.dk-tbl thead')).to_be_hidden(); expect(pg.locator('.dk-tbl td:nth-child(4)').first).to_be_hidden()
     assert sideways(pg) <= 0
@@ -4626,7 +4633,8 @@ def phone_backup_nudge_after_fifth_pick(b):
     card.locator('[data-nudge="dismiss"]').focus(); pg.keyboard.press('Enter'); expect(card).to_be_hidden()
     assert focused(pg) == 'dk-paper', focused(pg)
     pg.evaluate("localStorage.removeItem('ballotta.nudge')"); pg.evaluate('id => pick(id, optionsOf(BYID[id])[0])', ids[25]); expect(card).to_be_visible()
-    pg.evaluate('window.scrollTo(0, document.body.scrollHeight)'); pg.wait_for_timeout(200)
+    # as far down as the ballot goes (the mailing list comes after it, Oct 31)
+    pg.evaluate("window.scrollTo(0, document.getElementById('dk-desk').getBoundingClientRect().bottom + scrollY - innerHeight)"); pg.wait_for_timeout(200)
     hit = pg.evaluate("""() => { const all = [...document.querySelectorAll('#dk-desk a[href], #dk-desk button, #dk-desk textarea, #dk-desk input')].filter(e => e.getClientRects().length && !e.closest('#dk-nudge'));
         const l = all[all.length - 1], r = l.getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return [l.id || l.tagName, !!e && (e === l || l.contains(e))]; }""")
     assert hit[1], ('the paper\'s last control is under the card', hit)
@@ -5869,6 +5877,89 @@ def results_are_a_record_from_the_first_moment(b):
     assert pg.evaluate("JSON.parse(localStorage.getItem('ballotta.resultsSeen')).seq") == 5, 'seen never goes back to an older seq'
     assert pg.errs == [], pg.errs
     ctx.close()
+
+# ---------------------------------------------------------------- come back, and the mailing list (Lane, Oct 31)
+CB_H = 'Come back to see how your choices did'   # Lane's wording, Oct 31 ("choices", not "picks")
+ML = 'https://buttondown.com/ballotta'
+
+@results_test
+def come_back_sits_above_the_ballot_until_nov_4(b):
+    # Before Nov 4: at the top of the ballot, on the laptop and the phone, with its X; How it works opens the explainer;
+    # the X keeps it gone on this device (reload included) and Clear everything brings it back. Never on the landing page.
+    for phone in (False, True):
+        ctx, pg = rs_page(b, {'body': '{}'}, when='2026-11-02T12:00', phone=phone)
+        assert pg.is_visible('#cb') and pg.inner_text('#cb-h') == CB_H, phone
+        cb, paper = pg.locator('#cb').bounding_box(), pg.locator('#dk-paper').bounding_box()
+        assert cb['y'] < paper['y'] and cb['y'] < 140, (phone, cb, paper)               # under the header, above the ballot
+        x = pg.locator('#cb .cb-x').bounding_box()
+        assert x['width'] >= 44 and x['height'] >= 44 and x['x'] + x['width'] > cb['x'] + cb['width'] - 24 and x['y'] < cb['y'] + 24, (phone, x, cb)   # the corner
+        assert pg.get_attribute('#cb .cb-x', 'aria-label') == 'Dismiss: come back after Nov 3'
+        assert 'Your pick, For, is leading.' in pg.text_content('#cb .cb-ex') and 'Made-up numbers' in pg.text_content('#cb .cb-ex')
+        assert 'Email me' not in pg.inner_text('#cb'), 'the mailing list is its own thing (Lane, Oct 31)'
+        pg.click('#cb [data-rs="how"]'); pg.wait_for_timeout(200)
+        assert pg.is_visible('#cb-how') and 'Your ballot, with the results' in pg.inner_text('#cb-howh')
+        assert "Your pick didn’t make the runoff." in pg.inner_text('#cb-how') and 'Made-up names and numbers' in pg.inner_text('#cb-how')
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(150)
+        if phone:   # a move starts at the contest, just under the box, not back at the box (#moved)
+            pg.click('#ph-next'); pg.wait_for_timeout(400)
+            hdr = pg.locator('#dk-hdr').bounding_box(); top = pg.locator('#dk-paper').bounding_box()['y']
+            assert hdr['y'] + hdr['height'] - 2 <= top <= hdr['y'] + hdr['height'] + 40, (hdr, top)
+            pg.evaluate('scrollTo(0, 0)')
+        pg.click('#cb .cb-x'); pg.wait_for_timeout(150)
+        assert not pg.is_visible('#cb') and pg.evaluate('document.activeElement.id') == 'dk-paper', phone
+        assert [e for e in events(pg) if e[0] == 'come_back'] == [['come_back', {'action': 'how', 'layout': 'phone' if phone else 'laptop'}], ['come_back', {'action': 'dismiss', 'layout': 'phone' if phone else 'laptop'}]], events(pg)
+        assert pg.evaluate('window.ballottaDropped') == [] and pg.errs == [], (pg.evaluate('window.ballottaDropped'), pg.errs)
+        pg.reload(); pg.wait_for_timeout(500)
+        assert not pg.is_visible('#cb'), 'the X is remembered on this device'
+        pg.on('dialog', lambda d: d.accept()); pg.evaluate('clearEverything()'); pg.wait_for_timeout(600)
+        assert not pg.is_visible('#cb'), 'no ballot, no box: the landing page never shows it'
+        pg.evaluate("b => localStorage.setItem('ballotta.ballot', JSON.stringify(b))", RS_BALLOT); pg.reload(); pg.wait_for_timeout(500)
+        assert pg.is_visible('#cb'), 'Clear everything brings it back'
+        ctx.close()
+    # Election Day still shows it; from Nov 4 (Austin time) it's gone, X or not: the ballot shows the results instead.
+    ctx, pg = rs_page(b, {'body': '{}'}, when='2026-11-03T23:59')
+    assert pg.is_visible('#cb'); ctx.close()
+    fx = rs_fixtures()
+    for body in ({}, fx.scene('mixed')):
+        ctx, pg = rs_page(b, {'body': body}, when='2026-11-04T00:01')
+        assert not pg.is_visible('#cb') and pg.errs == [], pg.errs; ctx.close()
+
+@results_test
+def come_back_never_prints_and_stays_out_of_the_way(b):
+    ctx, pg = rs_page(b, {'body': '{}'}, when='2026-11-02T12:00')
+    pg.emulate_media(media='print')
+    assert not pg.is_visible('#cb') and not pg.is_visible('#ml'), 'nothing but the crib sheet prints'
+    pg.emulate_media(media='screen')
+    pg.click('#cb [data-rs="keep"]'); pg.wait_for_timeout(200)
+    assert pg.is_visible('#d-keep'), 'Keep my picks, from the box'
+    ctx.close()
+
+@test
+def the_mailing_list_is_the_last_thing_on_every_page(b):
+    # Every layout and view ends with it (Lane, Oct 31): a plain link to Buttondown's own sign-up page, so the page sends
+    # nothing and asks for nothing. Opening it is counted once, with no details.
+    def check(pg, where):
+        assert pg.is_visible('#ml'), where
+        a = pg.locator('#ml a')
+        assert (a.get_attribute('href'), a.get_attribute('target'), a.get_attribute('rel'), a.inner_text()) == (ML, '_blank', 'noopener', 'Email me before the next election'), where
+        assert pg.evaluate("[...document.body.children].filter(e => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0 && e.tagName !== 'SCRIPT').pop().id") == 'ml', where
+        assert pg.locator('#ml form, #ml input').count() == 0, 'a link, never a form on this page'
+    ctx, pg = new_page(b, wide=True); ctx.route('https://buttondown.com/**', lambda r: r.abort()); pg.goto(BASE)
+    check(pg, 'laptop landing')
+    pg.click('#ml a'); pg.wait_for_timeout(300)
+    assert [e for e in events(pg) if e[0] == 'mail_list'] == [['mail_list', {'layout': 'laptop'}]] and pg.evaluate('window.ballottaDropped') == [], events(pg)
+    ctx.close()
+    if HAS_PHONE:
+        ctx, pg = phone_page(b); pg.goto(BASE); check(pg, 'phone landing'); ctx.close()
+    if HAS_RESULTS:
+        for phone, when in ((False, '2026-11-02T12:00'), (True, '2026-11-02T12:00'), (False, '2026-11-05T09:00')):
+            ctx, pg = rs_page(b, {'body': rs_fixtures().scene('mixed')}, when=when, phone=phone)
+            check(pg, (phone, when))
+            if phone:   # the bottom bar never covers it
+                pg.evaluate('scrollTo(0, document.body.scrollHeight)'); pg.wait_for_timeout(200)
+                bar, fine = pg.locator('#ph-bar').bounding_box(), pg.locator('#ml .ml-go p').bounding_box()
+                assert fine['y'] + fine['height'] <= bar['y'], (fine, bar)
+            ctx.close()
 
 def main():
     srv = serve()

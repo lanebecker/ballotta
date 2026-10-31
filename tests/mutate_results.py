@@ -158,6 +158,22 @@ M = [
  ('R97 zeros on All results while paused', PREV, "const counts = paused ? { all: 'All', und: 'Too close', why: 'Runoffs' } :", "const counts =", [W]),
  ('R98 the results Previous looks live', PREV, "  .dk-asmarked ~ .dk-nav .btn:disabled{opacity:.45;cursor:default}", "", [T]),
  ('R99 an empty bar while paused', PREV, "$('dk-bar').parentNode.classList.toggle('hidden', paused);\n    menuFor(A);", "\n    menuFor(A);", [W]),
+ # come back after Nov 3, and the mailing list (Lane, Oct 31)
+ ('R137 the box after Nov 4', PREV, "classList.toggle('hidden', !app || live() || LS.get('ballotta.comeBack', '') === 'dismissed')", "classList.toggle('hidden', !app || LS.get('ballotta.comeBack', '') === 'dismissed')", ['come_back_sits_above_the_ballot_until_nov_4']),
+ ('R138 the X forgotten', PREV, "LS.set('ballotta.comeBack', 'dismissed'); comeBack(false);", "comeBack(false);", ['come_back_sits_above_the_ballot_until_nov_4']),
+ ('R139 How it works opens nothing', PREV, "{ $('cb-how').showModal(); track('come_back', { action: 'how' }); }", "{ track('come_back', { action: 'how' }); }", ['come_back_sits_above_the_ballot_until_nov_4']),
+ ('R140 the X in no corner', PREV, ".cb-x{position:absolute;", ".cb-x{position:static;", ['come_back_sits_above_the_ballot_until_nov_4']),
+ ('R141 a move lands back on the box', PREV, "cb.getBoundingClientRect().bottom + window.scrollY - $('dk-hdr').offsetHeight : 0;", "0 : 0;", ['come_back_sits_above_the_ballot_until_nov_4']),
+ ('R142 focus lost with the X', PREV, "track('come_back', { action: 'dismiss' }); $('dk-paper').focus({ preventScroll: true });", "track('come_back', { action: 'dismiss' });", ['come_back_sits_above_the_ballot_until_nov_4']),
+ ('R143 the X counted as something else', PREV, "track('come_back', { action: 'dismiss' });", "track('come_back', { action: 'closed' });", ['come_back_sits_above_the_ballot_until_nov_4']),
+ # R144 retired Oct 31: the box moved into the desk, which never prints (the print rules show the crib sheet alone), so
+ # its own print rule was redundant and is gone; come_back_never_prints_and_stays_out_of_the_way still checks it.
+ ('R145 Keep my picks from the box opens nothing', PREV, "      else if (b.dataset.rs === 'keep') openKeep();\n", "", ['come_back_never_prints_and_stays_out_of_the_way']),
+ ('R146 the mailing list prints', PREV, "@media print{.ml{display:none !important}}", "", ['come_back_never_prints_and_stays_out_of_the_way']),
+ ('R147 the mailing list uncounted', PREV, "  if (host === 'buttondown.com') return track('mail_list');\n", "", ['the_mailing_list_is_the_last_thing_on_every_page']),
+ ('R148 the phone bar over the mailing list', PREV, "  body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(112px + env(safe-area-inset-bottom))}", "", ['the_mailing_list_is_the_last_thing_on_every_page']),
+ ('R149 a ballot just opened starts past the box', PREV, "up = !fresh && cb && !cb.classList", "up = cb && !cb.classList", ['phone_lookup_opens_the_app_at_its_top']),
+ ('R150 the backup card over the mailing list', PREV, "  html.nudging body.dk-app-on:not(.ph-list) .ml-in{padding-bottom:calc(300px + env(safe-area-inset-bottom))}", "", ['phone_focus_never_hides_under_the_bars']),
 ]
 if __name__ == '__main__':
     R.main(M)
