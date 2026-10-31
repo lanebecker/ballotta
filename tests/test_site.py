@@ -5940,13 +5940,13 @@ def the_mailing_list_is_the_last_thing_on_every_page(b):
     # nothing and asks for nothing. Opening it is counted once, with no details.
     def check(pg, where):
         assert pg.is_visible('#ml'), where
-        a = pg.locator('#ml a')
+        a = pg.locator('#ml a.btn')
         assert (a.get_attribute('href'), a.get_attribute('target'), a.get_attribute('rel'), a.inner_text()) == (ML, '_blank', 'noopener', 'Email me before the next election'), where
         assert pg.evaluate("[...document.body.children].filter(e => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0 && e.tagName !== 'SCRIPT').pop().id") == 'ml', where
         assert pg.locator('#ml form, #ml input').count() == 0, 'a link, never a form on this page'
     ctx, pg = new_page(b, wide=True); ctx.route('https://buttondown.com/**', lambda r: r.abort()); pg.goto(BASE)
     check(pg, 'laptop landing')
-    pg.click('#ml a'); pg.wait_for_timeout(300)
+    pg.click('#ml a.btn'); pg.wait_for_timeout(300)
     assert [e for e in events(pg) if e[0] == 'mail_list'] == [['mail_list', {'layout': 'laptop'}]] and pg.evaluate('window.ballottaDropped') == [], events(pg)
     ctx.close()
     if HAS_PHONE:
@@ -5957,9 +5957,33 @@ def the_mailing_list_is_the_last_thing_on_every_page(b):
             check(pg, (phone, when))
             if phone:   # the bottom bar never covers it
                 pg.evaluate('scrollTo(0, document.body.scrollHeight)'); pg.wait_for_timeout(200)
-                bar, fine = pg.locator('#ph-bar').bounding_box(), pg.locator('#ml .ml-go p').bounding_box()
+                bar, fine = pg.locator('#ph-bar').bounding_box(), pg.locator('#ml .ml-go p').last.bounding_box()
                 assert fine['y'] + fine['height'] <= bar['y'], (fine, bar)
             ctx.close()
+
+@test
+def the_privacy_page_names_everywhere_anything_goes(b):
+    # ballotta.org/privacy/ (Lane, Oct 31), linked from the foot of every page: a plain page (no script, counts nothing),
+    # and every service the main page may reach is named on it, so a new one can't arrive without the page saying so.
+    page = (ROOT / 'privacy/index.html').read_text(encoding='utf-8')
+    csp = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', page).group(1)
+    assert '<script' not in page and 'script-src' not in csp and "default-src 'none'" in csp and 'umami' not in page.split('<main>')[0], csp
+    main = (ROOT / PAGE).read_text(encoding='utf-8')
+    mcsp = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', main).group(1)
+    hosts = set(re.findall(r'https://([a-z0-9.-]+)', mcsp)) | {'geocoding.geo.census.gov', 'buttondown.com'}
+    said = {'taxmaps.traviscountytx.gov': 'Travis County’s public map server', 'gateway.umami.is': 'Umami Cloud',
+            'geocoding.geo.census.gov': 'U.S. Census Bureau’s address lookup', 'buttondown.com': 'Buttondown'}
+    assert hosts <= set(said), ('a service the page reaches that the privacy page doesn’t name', hosts - set(said))
+    for h in hosts: assert said[h] in page, h
+    for words in ('GitHub Pages', 'Do Not Track', 'Global Privacy Control', 'never receives your address', 'This page counts nothing', '© 2026 Lane Becker'):
+        assert words in page, words
+    ctx, pg = new_page(b, wide=True, csp=True); bad = []; pg.on('console', lambda m: bad.append(m.text) if m.type == 'error' else None)
+    pg.goto(BASE); bad.clear(); pg.click('#ml .ml-legal a'); pg.wait_for_load_state(); pg.wait_for_timeout(300)   # the main page's stubbed counter isn't this page's
+    assert pg.url.endswith('/privacy/') and pg.title() == 'Privacy · Ballotta' and bad == [], (pg.url, bad)
+    assert 'lanebecker@gmail.com' in pg.inner_text('main') and pg.get_attribute('main a[href^="mailto:"]', 'href') == 'mailto:lanebecker@gmail.com'
+    assert pg.evaluate("document.fonts.check('700 20px \"Zilla Slab\"')"), 'the page’s own fonts, from this site'
+    pg.click('footer a'); pg.wait_for_load_state(); assert pg.url.rstrip('/').endswith(str(PORT)) or pg.url.endswith('/'), pg.url
+    ctx.close()
 
 def main():
     srv = serve()

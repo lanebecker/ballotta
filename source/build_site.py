@@ -322,6 +322,87 @@ def results_page():
             '<script>' + RESULTS_JS + '</script>\n</body></html>\n')
 
 
+# ---- Privacy (Lane, Oct 31). ballotta.org/privacy/: where everything goes, in plain words, linked from the mailing list at
+# the foot of every page. A plain page: no script, no tracker (it counts nothing), only this site's own fonts. Every
+# sentence is a promise: a change to what the site sends, keeps or counts changes this page too (tests/test_site.py checks
+# that every service the main page may reach is named here).
+PRIVACY_UPDATED = "October 31, 2026"
+PRIVACY_CSS = (":root{--ground:#FFF9F1;--ink:#241A2E;--ink2:#3D3248;--muted:#5E4B73;--line:#E6DCCF;--plum:#4B2A6B;--lilac:#EADCF5}"
+               "@font-face{font-family:'Zilla Slab';src:url('../fonts/ZillaSlab-Bold.woff2') format('woff2');font-weight:700;font-display:swap}"
+               "@font-face{font-family:'Public Sans';src:url('../fonts/PublicSans-wght.woff2') format('woff2');font-weight:100 900;font-display:swap}"
+               "*{box-sizing:border-box}body{margin:0;background:var(--ground);color:var(--ink);font:17px/1.55 'Public Sans',system-ui,sans-serif}"
+               "header{background:var(--plum);color:#fff;padding:14px 20px}header a{color:#fff;font-weight:700;text-decoration:none;font-family:'Zilla Slab',Georgia,serif;font-size:22px}"
+               "main{max-width:680px;margin:0 auto;padding:36px 20px 64px}h1,h2{font-family:'Zilla Slab',Georgia,serif;font-weight:700;line-height:1.1;margin:0}"
+               "h1{font-size:38px}h2{font-size:24px;margin-top:36px}p,ul{margin:12px 0 0}ul{padding-left:22px}li{margin-top:6px}"
+               ".up{color:var(--muted);font-size:15px;margin-top:8px}.lead{color:var(--ink2);font-size:19px;margin-top:18px}a{color:var(--ink);font-weight:600}"
+               "a:focus-visible{outline:none;box-shadow:0 0 0 2px var(--ground),0 0 0 4px var(--plum)}"
+               "footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;color:var(--muted);font-size:15px}")
+# The address is written as character references, as the page's own Send feedback assembles it, so a plain scraper
+# reading the source doesn't find it.
+PRIVACY_MAIL = "".join("&#%d;" % ord(c) for c in "lanebecker@gmail.com")
+PRIVACY_BODY = """<header><a href="../">Ballotta</a></header>
+<main>
+<h1>How Ballotta handles your privacy</h1>
+<p class="up">Updated """ + PRIVACY_UPDATED + """</p>
+<p class="lead">Ballotta is a free, independent tool for Travis County voters. It’s built so that it never receives your address, your picks or your reasons. This page says exactly where everything goes.</p>
+
+<h2>Your address</h2>
+<p>When you look up your ballot, your browser sends your address straight to Travis County’s public map server to find your voting districts. If the county can’t match it, your browser asks the U.S. Census Bureau’s address lookup instead. Ballotta never receives your address.</p>
+<p>Your browser keeps your precinct, the contests on your ballot and a map point for your address, so your next visit skips the lookup and still shows the vote centers closest to you. The address itself isn’t kept.</p>
+
+<h2>Your picks and reasons</h2>
+<p>Your picks, your reasons and your share name are saved in this browser, on this device, along with a few settings, like where you left off. They aren’t sent anywhere. To remove them, choose Clear everything on this device in Feedback &amp; Info.</p>
+<p>Keep my picks and Share my picks make a link that carries your picks (and your reasons, if you include them) inside the link itself, after the “#”. Browsers never send that part of a link to any server, Ballotta’s included. Anyone who has the link can see what’s in it, so send a Keep my picks link only to yourself.</p>
+<p>On a phone, Ballotta keeps a copy of the site on your device, so it opens without a connection.</p>
+
+<h2>Election results</h2>
+<p>From Nov 4, your browser downloads the same results file as everyone else and matches it to your picks on your device. Nothing about your ballot is sent.</p>
+
+<h2>What we count</h2>
+<p>Ballotta uses Umami Cloud to count page views, how quickly pages load, and a fixed list of anonymous actions, like “a ballot was found”, “a share link was opened” or “the mailing list was opened”. It sets no cookies.</p>
+<ul>
+<li>Counts never include your address, precinct, districts, which race, candidate names, your picks, your reasons or your name.</li>
+<li>Each count says whether it came from the phone or the laptop layout (and, on a phone, whether from the Home Screen app). With it, Umami receives your screen size, your browser’s language and the site you came from.</li>
+<li>A shared link carries a random code, so we can count how often a link is opened without knowing what’s in it.</li>
+<li>Umami says it uses your IP address only to estimate your country, and doesn’t store it.</li>
+<li>If your browser sends Do Not Track or Global Privacy Control, Ballotta counts nothing at all, not even page views.</li>
+</ul>
+<p>The full list of counts, and the only details each may carry, is in <a href="https://github.com/lanebecker/ballotta#readme">Ballotta’s README</a>. This page counts nothing.</p>
+
+<h2>Hosting</h2>
+<p>GitHub Pages serves ballotta.org. Like most web hosts, GitHub logs the IP address of every visit, for security. Ballotta doesn’t see those logs. See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub’s privacy statement</a>.</p>
+
+<h2>The mailing list</h2>
+<p>If you sign up to be emailed, you give your email address to Buttondown, which sends Ballotta’s emails, on Buttondown’s own page. It’s never connected to your address or your picks. We use it only to tell you when the election results are up and when your next ballot is ready, and you can unsubscribe from any email. See <a href="https://buttondown.com/legal/privacy">Buttondown’s privacy policy</a>.</p>
+
+<h2>Feedback</h2>
+<p>Send feedback opens your own email app with a message to Ballotta. It fills in your precinct and how the lookup went, never your address, and you can change or delete anything before you send it.</p>
+
+<h2>Links to other sites</h2>
+<p>Ballotta links to the League of Women Voters guide, campaign sites, official sources, Google Maps directions and the county’s wait-times map. Those sites have their own privacy policies. A directions link gives Google the vote center’s address, never yours.</p>
+
+<h2>What we don’t do</h2>
+<p>No accounts, no ads, no paid placement, and no selling or sharing data.</p>
+
+<h2>Questions</h2>
+<p>Email <a href="mailto:""" + PRIVACY_MAIL + """">""" + PRIVACY_MAIL + """</a>. When this page changes, the date at the top changes too.</p>
+
+<footer>© 2026 Lane Becker · <a href="../">Back to Ballotta</a></footer>
+</main>
+"""
+
+
+def privacy_page():
+    style = hashlib.sha256(PRIVACY_CSS.encode("utf-8")).digest()
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'sha256-'
+            + base64.b64encode(style).decode() + '\'; font-src \'self\'; img-src \'self\'; base-uri \'none\'; form-action \'none\'">\n'
+            '<title>Privacy · Ballotta</title><link rel="canonical" href="' + BASE_URL + 'privacy/">\n'
+            '<link rel="icon" href="../favicon.svg" type="image/svg+xml">\n'
+            '<style>' + PRIVACY_CSS + '</style></head>\n<body>\n' + PRIVACY_BODY + '</body></html>\n')
+
+
 # next/manifest.webmanifest is left as it is (a preview, the street map's since Oct 19, links it again while it is up;
 # it installs as "Ballotta (preview)"): once no page links it, nothing can install from it, and a Home Screen
 # app installed from the preview opens next/, which sends it on. Rewriting its start_url or scope could merge the two
@@ -337,7 +418,8 @@ def outputs(preview):
     out = {"index.html": build(False), "census.html": census_page(),
            # What the live site runs (ballotta.org/version.json; the README's badge reads it). VERSION is the one source.
            "version.json": json.dumps({"version": check_release.version(ROOT)}) + "\n",
-           "picks/index.html": picks_page()}   # where Share my picks links go: their own card (Lane, Oct 18)
+           "picks/index.html": picks_page(),   # where Share my picks links go: their own card (Lane, Oct 18)
+           "privacy/index.html": privacy_page()}   # where everything goes, linked from the foot of every page (Lane, Oct 31)
     if RESULTS_LIVE:
         out["results/index.html"] = results_page()   # a link to All Travis County results (Lane, Oct 20)
     if PHONE_LIVE:
