@@ -179,6 +179,8 @@ M = [
  ('R152 the privacy page leaves out the counter', PRIV, 'Ballotta uses Umami Cloud to count', 'Ballotta uses a service to count', ['the_privacy_page_names_everywhere_anything_goes']),
  ('R153 a script on the privacy page', PRIV, '<header><a href="../">Ballotta</a></header>', '<script>1</script><header><a href="../">Ballotta</a></header>', ['the_privacy_page_names_everywhere_anything_goes']),
  ('R154 the privacy page without its fonts', PRIV, "font-src 'self';", "font-src 'none';", ['the_privacy_page_names_everywhere_anything_goes']),
+ ('R155 the results promise forever', PREV, "const ML_NEXT_ONLY = new Date(2026, 10, 18);", "const ML_NEXT_ONLY = new Date(2099, 10, 18);", ['the_mailing_list_promises_results_only_until_nov_18']),
+ ('R156 the results promise dropped a day early', PREV, "const ML_NEXT_ONLY = new Date(2026, 10, 18);", "const ML_NEXT_ONLY = new Date(2026, 10, 17);", ['the_mailing_list_promises_results_only_until_nov_18']),
 ]
 if __name__ == '__main__':
     R.main(M)
