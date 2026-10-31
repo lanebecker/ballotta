@@ -1166,7 +1166,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
   <div class="ml-in">
     <div class="ml-tx">
       <h2 id="ml-h">Ballotta will be back for the next election</h2>
-      <p>Get emailed when the election results are up, and when the next election ballot is ready. Nothing else, and never anything about how to vote.</p>
+      <p id="ml-p">Get emailed when the election results are up, and when your next ballot is ready. Nothing else, and never anything about how to vote.</p>
     </div>
     <div class="ml-go">
       <a class="btn" href="https://buttondown.com/ballotta" target="_blank" rel="noopener">Email me before the next election</a>
@@ -1796,6 +1796,10 @@ $('withwhy').addEventListener('change', renderCrib);
 let ctFmt = null;
 const CT = () => ctFmt || (ctFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' }));
 const today = () => { try { const p = {}; CT().formatToParts(new Date()).forEach(x => { p[x.type] = +x.value; }); return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second); } catch (e) { return new Date(); } };  // a browser without time zones keeps its own clock (Pass 1)
+// The mailing list's promise (Lane, Oct 31): from Nov 18, Austin time, with the local canvasses done, this election's
+// results are up, so it promises only the next ballot.
+const ML_NEXT_ONLY = new Date(2026, 10, 18);
+if (today() >= ML_NEXT_ONLY) $('ml-p').textContent = 'Get emailed when your next ballot is ready to look up. Nothing else, and never anything about how to vote.';
 const defaultPeriod = () => { const d = today(); return (d.getFullYear() > 2026 || (d.getMonth() === 9 && d.getDate() > 30) || d.getMonth() > 9) ? 'eday' : 'early'; };
 let period = defaultPeriod(), periodChosen = false;
 let showAll = false;

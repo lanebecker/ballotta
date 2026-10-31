@@ -5962,6 +5962,17 @@ def the_mailing_list_is_the_last_thing_on_every_page(b):
             ctx.close()
 
 @test
+def the_mailing_list_promises_results_only_until_nov_18(b):
+    # Lane, Oct 31: until Nov 18, Austin time, the email is for this election's results and the next ballot; from then,
+    # with the local canvasses done, the next ballot only.
+    both = 'Get emailed when the election results are up, and when your next ballot is ready. Nothing else, and never anything about how to vote.'
+    next_only = 'Get emailed when your next ballot is ready to look up. Nothing else, and never anything about how to vote.'
+    for when, want in (('2026-11-02T12:00:00-06:00', both), ('2026-11-17T23:59:00-06:00', both), ('2026-11-18T00:01:00-06:00', next_only), ('2027-03-01T09:00:00-06:00', next_only)):
+        ctx, pg = new_page(b, wide=True); pg.clock.install(time=_dt.datetime.fromisoformat(when)); pg.goto(BASE)
+        assert pg.inner_text('#ml-p') == want, (when, pg.inner_text('#ml-p'))
+        ctx.close()
+
+@test
 def the_privacy_page_names_everywhere_anything_goes(b):
     # ballotta.org/privacy/ (Lane, Oct 31), linked from the foot of every page: a plain page (no script, counts nothing),
     # and every service the main page may reach is named on it, so a new one can't arrive without the page saying so.

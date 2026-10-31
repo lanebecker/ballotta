@@ -373,7 +373,7 @@ PRIVACY_BODY = """<header><a href="../">Ballotta</a></header>
 <p>GitHub Pages serves ballotta.org. Like most web hosts, GitHub logs the IP address of every visit, for security. Ballotta doesn’t see those logs. See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub’s privacy statement</a>.</p>
 
 <h2>The mailing list</h2>
-<p>If you sign up to be emailed, you give your email address to Buttondown, which sends Ballotta’s emails, on Buttondown’s own page. It’s never connected to your address or your picks. We use it only to tell you when the election results are up and when your next ballot is ready, and you can unsubscribe from any email. See <a href="https://buttondown.com/legal/privacy">Buttondown’s privacy policy</a>.</p>
+<p>If you sign up to be emailed, you give your email address to Buttondown, which sends Ballotta’s emails, on Buttondown’s own page. It’s never connected to your address or your picks. We use it only to tell you when election results are up and when your next ballot is ready, and you can unsubscribe from any email. Ballotta’s emails don’t track opens or clicks. See <a href="https://buttondown.com/legal/privacy">Buttondown’s privacy policy</a>.</p>
 
 <h2>Feedback</h2>
 <p>Send feedback opens your own email app with a message to Ballotta. It fills in your precinct and how the lookup went, never your address, and you can change or delete anything before you send it.</p>

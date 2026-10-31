@@ -16,6 +16,19 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.7.1] — 2026-10-31
+
+The mailing list's wording (Lane, Oct 31).
+
+### Changed
+- Until Nov 18, Austin time: "Get emailed when the election results are up, and when your next ballot is ready."
+  From Nov 18, with the local canvasses done: "Get emailed when your next ballot is ready to look up." No release
+  needed on the day.
+- The privacy page says Ballotta's emails don't track opens or clicks (turned off in Buttondown, Lane, Oct 31).
+
+### Tests
+- Browser: the footer's wording either side of Nov 18. `mutate_results.py`: R155, R156.
+
 ## [1.7.0] — 2026-10-31
 
 A privacy page, and the mailing list's new promise (Lane, Oct 31).
