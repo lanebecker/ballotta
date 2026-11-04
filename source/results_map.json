@@ -2,7 +2,7 @@
  "meta": {
   "election": "2026-11-03",
   "sos_election": "53815",
-  "sos_time_zone": "America/Chicago",
+  "sos_time_zone": "UTC",
   "late_until": "2026-11-17",
   "orders": "https://votetravis.gov/resources/required-notices/",
   "fetch": {
