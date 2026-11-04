@@ -940,6 +940,27 @@ def williamson_on_clarity_and_names_printed_with_their_party_and_quotes():
     line = next(l for l in out.getvalue().splitlines() if l.startswith(cid + ' '))
     assert '0021 = ' in line and 'no fit' not in line, line
 
+@test
+def a_listed_key_adds_up_in_the_travis_breakdown_too():
+    # Nov 4 (Lane): Austin's Prop G showed "How Travis County voted" as 5,867 to 2,795: the Limited Purpose contest
+    # alone, the last of its two keys, while the result above added both. Built from the files filed on Nov 4.
+    d = pathlib.Path(tempfile.mkdtemp())
+    try:
+        shutil.copytree(B.RES, d / 'results', ignore=shutil.ignore_patterns('inbox'))
+        (d / 'results' / 'inbox').mkdir()
+        mp = real_map(); out, _ = B.build(res=d / 'results', mp=mp)
+        tv = max((d / 'results/raw/travis').rglob('*.zip'), key=lambda f: f.parent.name)
+        rep = P.parse_clarity(tv.read_bytes())
+        listed = [c for c, m in mp['contests'].items() if isinstance(m['keys'].get('travis'), list) and len(m['electorate']) > 1]
+        assert listed, 'no contest lists two Travis keys'
+        for cid in listed:
+            want = [0, 0]
+            for k in mp['contests'][cid]['keys']['travis']:
+                for i, (n, v) in enumerate(rep['contests'][k.split(' = ')[0]]['choices'][:2]): want[i] += v
+            got = [x[1] for x in out['contests'][cid]['travis']]
+            assert got == want, (cid, got, want)
+    finally: shutil.rmtree(d)
+
 def datetime_utc(*a):
     import datetime as _dt
     return _dt.datetime(*a, tzinfo=_dt.timezone.utc)
