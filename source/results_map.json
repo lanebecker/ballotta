@@ -208,7 +208,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "5075",
-    "travis": null
+    "travis": "0004 = United States Senator"
    },
    "sos_name": "U. S. SENATOR",
    "write_ins": [
@@ -233,7 +233,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "5039",
-    "travis": null
+    "travis": "0005 = United States Representative, District 10"
    },
    "sos_name": "U. S. REPRESENTATIVE DISTRICT 10",
    "write_ins": [],
@@ -257,7 +257,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "5040",
-    "travis": null
+    "travis": "0006 = United States Representative, District 11"
    },
    "sos_name": "U. S. REPRESENTATIVE DISTRICT 11",
    "write_ins": [],
@@ -269,7 +269,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "5057",
-    "travis": null
+    "travis": "0007 = United States Representative, District 27"
    },
    "sos_name": "U. S. REPRESENTATIVE DISTRICT 27",
    "write_ins": [
@@ -285,7 +285,7 @@
    "canvasser": "legislature",
    "keys": {
     "sos": "3579",
-    "travis": null
+    "travis": "0009 = Governor"
    },
    "sos_name": "GOVERNOR",
    "write_ins": [
@@ -310,7 +310,7 @@
    "canvasser": "legislature",
    "keys": {
     "sos": "4714",
-    "travis": null
+    "travis": "0010 = Lieutenant Governor"
    },
    "sos_name": "LIEUTENANT GOVERNOR",
    "write_ins": [
@@ -329,7 +329,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "3",
-    "travis": null
+    "travis": "0011 = Attorney General"
    },
    "sos_name": "ATTORNEY GENERAL",
    "write_ins": [],
@@ -341,7 +341,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "21",
-    "travis": null
+    "travis": "0012 = Comptroller of Public Accounts"
    },
    "sos_name": "COMPTROLLER OF PUBLIC ACCOUNTS",
    "write_ins": [],
@@ -353,7 +353,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "20",
-    "travis": null
+    "travis": "0013 = Commissioner of the General Land Office"
    },
    "sos_name": "COMMISSIONER OF THE GENERAL LAND OFFICE",
    "write_ins": [],
@@ -365,7 +365,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "19",
-    "travis": null
+    "travis": "0014 = Commissioner of Agriculture"
    },
    "sos_name": "COMMISSIONER OF AGRICULTURE",
    "write_ins": [],
@@ -377,7 +377,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "4843",
-    "travis": null
+    "travis": "0015 = Railroad Commissioner"
    },
    "sos_name": "RAILROAD COMMISSIONER",
    "write_ins": [],
@@ -389,7 +389,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "18",
-    "travis": null
+    "travis": "0016 = Chief Justice, Supreme Court"
    },
    "sos_name": "CHIEF JUSTICE, SUPREME COURT",
    "write_ins": [],
@@ -401,7 +401,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "4706",
-    "travis": null
+    "travis": "0017 = Justice, Supreme Court, Place 2 - Unexpired Term"
    },
    "sos_name": "JUSTICE, SUPREME COURT, PLACE 2 - UNEXPIRED TERM",
    "write_ins": [],
@@ -413,7 +413,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "4711",
-    "travis": null
+    "travis": "0018 = Justice, Supreme Court, Place 7"
    },
    "sos_name": "JUSTICE, SUPREME COURT, PLACE 7",
    "write_ins": [],
@@ -425,7 +425,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "4712",
-    "travis": null
+    "travis": "0019 = Justice, Supreme Court, Place 8"
    },
    "sos_name": "JUSTICE, SUPREME COURT, PLACE 8",
    "write_ins": [],
@@ -437,7 +437,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "3819",
-    "travis": null
+    "travis": "0020 = Judge, Court of Criminal Appeals Place 3"
    },
    "sos_name": "JUDGE, COURT OF CRIMINAL APPEALS, PLACE 3",
    "write_ins": [],
@@ -449,7 +449,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "3820",
-    "travis": null
+    "travis": "0021 = Judge, Court of Criminal Appeals Place 4"
    },
    "sos_name": "JUDGE, COURT OF CRIMINAL APPEALS, PLACE 4",
    "write_ins": [],
@@ -461,7 +461,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "3823",
-    "travis": null
+    "travis": "0022 = Judge, Court of Criminal Appeals, Place 9"
    },
    "sos_name": "JUDGE, COURT OF CRIMINAL APPEALS, PLACE 9",
    "write_ins": [],
@@ -473,7 +473,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "4725",
-    "travis": null
+    "travis": "0023 = Member, State Board of Education, District 5"
    },
    "sos_name": "MEMBER, STATE BOARD OF EDUCATION, DISTRICT 5",
    "write_ins": [],
@@ -485,7 +485,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "5019",
-    "travis": null
+    "travis": "0024 = State Senator, District 21"
    },
    "sos_name": "STATE SENATOR, DISTRICT 21",
    "write_ins": [],
@@ -497,7 +497,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "4917",
-    "travis": null
+    "travis": "0025 = State Representative, District 19"
    },
    "sos_name": "STATE REPRESENTATIVE DISTRICT 19",
    "write_ins": [],
@@ -581,7 +581,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "15242",
-    "travis": null
+    "travis": "0032 = Chief Justice, 15th Court of Appeals District"
    },
    "sos_name": "CHIEF JUSTICE, 15TH COURT OF APPEALS DISTRICT",
    "write_ins": [],
@@ -593,7 +593,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "15243",
-    "travis": null
+    "travis": "0033 = Justice, 15th Court of Appeals District, Place 2"
    },
    "sos_name": "JUSTICE, 15TH COURT OF APPEALS DISTRICT, PLACE 2",
    "write_ins": [],
@@ -605,7 +605,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "15244",
-    "travis": null
+    "travis": "0034 = Justice, 15th Court of Appeals District, Place 3"
    },
    "sos_name": "JUSTICE, 15TH COURT OF APPEALS DISTRICT, PLACE 3",
    "write_ins": [],
@@ -617,7 +617,7 @@
    "canvasser": "state",
    "keys": {
     "sos": "11",
-    "travis": null
+    "travis": "0035 = Chief Justice, 3rd Court of Appeals District"
    },
    "sos_name": "CHIEF JUSTICE, 3RD COURT OF APPEALS DISTRICT",
    "write_ins": [],
@@ -739,7 +739,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0046 = County Judge"
    },
    "write_ins": [],
    "majority": false,
@@ -752,7 +752,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0047 = Judge, County Court at Law No. 1"
    },
    "write_ins": [],
    "majority": false,
@@ -777,7 +777,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0048 = Judge, County Court at Law No. 2"
    },
    "write_ins": [],
    "majority": false,
@@ -790,7 +790,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0049 = Judge, County Court at Law No. 3"
    },
    "write_ins": [],
    "majority": false,
@@ -803,7 +803,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0050 = Judge, County Court at Law No. 4"
    },
    "write_ins": [],
    "majority": false,
@@ -816,7 +816,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0051 = Judge, County Court at Law No. 5"
    },
    "write_ins": [],
    "majority": false,
@@ -829,7 +829,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0052 = Judge, County Court at Law No. 6"
    },
    "write_ins": [],
    "majority": false,
@@ -842,7 +842,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0053 = Judge, County Court at Law No. 7"
    },
    "write_ins": [],
    "majority": false,
@@ -855,7 +855,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0054 = Judge, Probate Court No. 1"
    },
    "write_ins": [],
    "majority": false,
@@ -868,7 +868,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0055 = District Clerk"
    },
    "write_ins": [],
    "majority": false,
@@ -881,7 +881,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0056 = County Clerk"
    },
    "write_ins": [
     {
@@ -898,7 +898,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0057 = County Treasurer"
    },
    "write_ins": [],
    "majority": false,
@@ -911,7 +911,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0058 = County Commissioner, Precinct 2"
    },
    "write_ins": [],
    "majority": false,
@@ -924,7 +924,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0059 = County Commissioner, Precinct 4"
    },
    "write_ins": [],
    "majority": false,
@@ -937,7 +937,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0060 = Justice of the Peace, Precinct 1"
    },
    "write_ins": [],
    "majority": false,
@@ -950,7 +950,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0061 = Justice of the Peace, Precinct 2"
    },
    "write_ins": [],
    "majority": false,
@@ -963,7 +963,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0062 = Justice of the Peace, Precinct 3"
    },
    "write_ins": [],
    "majority": false,
@@ -976,7 +976,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0063 = Justice of the Peace, Precinct 4"
    },
    "write_ins": [],
    "majority": false,
@@ -989,7 +989,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0064 = Justice of the Peace, Precinct 5"
    },
    "write_ins": [],
    "majority": false,
@@ -1002,7 +1002,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0065 = County Constable, Precinct 4 - Unexpired Term"
    },
    "write_ins": [],
    "majority": false,
@@ -1015,7 +1015,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0066 = Travis Central Appraisal District, Travis County, Board of Directors, Place 1"
    },
    "write_ins": [],
    "majority": true,
@@ -1028,7 +1028,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0067 = Travis Central Appraisal District, Travis County, Board of Directors, Place 2"
    },
    "write_ins": [],
    "majority": true,
@@ -1041,7 +1041,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0068 = Travis Central Appraisal District, Travis County, Board of Directors, Place 3"
    },
    "write_ins": [],
    "majority": true,
@@ -1054,7 +1054,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0069 = City of Austin, City Council Member, District 1"
    },
    "write_ins": [],
    "majority": true,
@@ -1067,7 +1067,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0070 = City of Austin, City Council Member, District 3"
    },
    "write_ins": [],
    "majority": true,
@@ -1080,7 +1080,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0071 = City of Austin, City Council Member, District 5"
    },
    "write_ins": [],
    "majority": true,
@@ -1094,8 +1094,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0072 = City of Austin, City Council Member, District 8",
+    "hays": "CITY OF AUSTIN, CITY COUNCIL, DISTRICT 8 = City of Austin, City Council, District 8"
    },
    "write_ins": [],
    "majority": true,
@@ -1111,7 +1111,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0073 = City of Austin, City Council Member, District 9"
    },
    "write_ins": [],
    "majority": true,
@@ -1126,9 +1126,9 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": "0074 = City of Austin Proposition A - Full Purpose",
+    "williamson": "0054 = City of Austin Proposition A",
+    "hays": "CITY OF AUSTIN PROPOSITION A = City of Austin Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1143,9 +1143,9 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": "0075 = City of Austin Proposition B - Full Purpose",
+    "williamson": "0055 = City of Austin Proposition B",
+    "hays": "CITY OF AUSTIN PROPOSITION B = City of Austin Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -1160,9 +1160,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0076 = City of Austin Proposition C - Full Purpose",
+     "0084 = City of Austin Proposition C - Limited Purpose"
+    ],
+    "williamson": "0056 = City of Austin Proposition C",
+    "hays": "CITY OF AUSTIN PROPOSITION C = City of Austin Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -1177,9 +1180,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0077 = City of Austin Proposition D - Full Purpose",
+     "0085 = City of Austin Proposition D - Limited Purpose"
+    ],
+    "williamson": "0057 = City of Austin Proposition D",
+    "hays": "CITY OF AUSTIN PROPOSITION D = City of Austin Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -1194,9 +1200,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0078 = City of Austin Proposition E - Full Purpose",
+     "0086 = City of Austin Proposition E - Limited Purpose"
+    ],
+    "williamson": "0058 = City of Austin Proposition E",
+    "hays": "CITY OF AUSTIN PROPOSITION E = City of Austin Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -1211,9 +1220,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0079 = City of Austin Proposition F - Full Purpose",
+     "0087 = City of Austin Proposition F - Limited Purpose"
+    ],
+    "williamson": "0059 = City of Austin Proposition F",
+    "hays": "CITY OF AUSTIN PROPOSITION F = City of Austin Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -1228,9 +1240,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0080 = City of Austin Proposition G - Full Purpose",
+     "0088 = City of Austin Proposition G - Limited Purpose"
+    ],
+    "williamson": "0060 = City of Austin Proposition G",
+    "hays": "CITY OF AUSTIN PROPOSITION G = City of Austin Proposition G"
    },
    "write_ins": [],
    "majority": false,
@@ -1245,9 +1260,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0081 = City of Austin Proposition H - Full Purpose",
+     "0089 = City of Austin Proposition H - Limited Purpose"
+    ],
+    "williamson": "0061 = City of Austin Proposition H",
+    "hays": "CITY OF AUSTIN PROPOSITION H = City of Austin Proposition H"
    },
    "write_ins": [],
    "majority": false,
@@ -1262,9 +1280,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0082 = City of Austin Proposition I - Full Purpose",
+     "0090 = City of Austin Proposition I - Limited Purpose"
+    ],
+    "williamson": "0062 = City of Austin Proposition I",
+    "hays": "CITY OF AUSTIN PROPOSITION I = City of Austin Proposition I"
    },
    "write_ins": [],
    "majority": false,
@@ -1279,9 +1300,12 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null
+    "travis": [
+     "0083 = City of Austin Proposition J - Full Purpose",
+     "0091 = City of Austin Proposition J - Limited Purpose"
+    ],
+    "williamson": "0063 = City of Austin Proposition J",
+    "hays": "CITY OF AUSTIN PROPOSITION J = City of Austin Proposition J"
    },
    "write_ins": [],
    "majority": false,
@@ -1295,8 +1319,8 @@
     "travis"
    ],
    "keys": {
-    "bastrop": null,
-    "travis": null
+    "bastrop": "0051 = City of Elgin Special Election",
+    "travis": "0092 = City of Elgin Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1309,7 +1333,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0093 = City of Jonestown, City Council Member, Place 3"
    },
    "write_ins": [],
    "majority": false,
@@ -1322,7 +1346,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0094 = City of Jonestown, City Council Member, Place 4"
    },
    "write_ins": [],
    "majority": false,
@@ -1335,7 +1359,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0095 = City of Jonestown, City Council Member, Place 5"
    },
    "write_ins": [],
    "majority": false,
@@ -1348,7 +1372,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0096 = City of Lago Vista, City Council Member, Place 2"
    },
    "write_ins": [],
    "majority": false,
@@ -1361,7 +1385,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0097 = City of Lago Vista, City Council Member, Place 4"
    },
    "write_ins": [],
    "majority": false,
@@ -1374,7 +1398,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0098 = City of Lago Vista, City Council Member, Place 6"
    },
    "write_ins": [],
    "majority": false,
@@ -1387,7 +1411,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0099 = City of Manor, Council Member, Place 2"
    },
    "write_ins": [],
    "majority": true,
@@ -1400,7 +1424,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0100 = City of Manor, Council Member, Place 4"
    },
    "write_ins": [],
    "majority": true,
@@ -1413,7 +1437,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0101 = City of Manor, Council Member, Place 6"
    },
    "write_ins": [],
    "majority": true,
@@ -1426,7 +1450,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0102 = City of Manor Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1439,7 +1463,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0103 = City of Manor Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -1452,7 +1476,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0104 = City of Manor Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -1465,7 +1489,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0105 = City of Manor Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -1479,8 +1503,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0106 = City of Pflugerville, Council Member, Place 2",
+    "williamson": "0069 = City of Pflugerville Council Member, Place 2"
    },
    "write_ins": [],
    "majority": true,
@@ -1494,8 +1518,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0107 = City of Pflugerville, Council Member, Place 4",
+    "williamson": "0070 = City of Pflugerville Council Member, Place 4"
    },
    "write_ins": [],
    "majority": true,
@@ -1509,8 +1533,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0108 = City of Pflugerville, Council Member, Place 6",
+    "williamson": "0071 = City of Pflugerville Council Member, Place 6"
    },
    "write_ins": [],
    "majority": true,
@@ -1524,8 +1548,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0109 = City of Pflugerville Proposition A",
+    "williamson": "0072 = City of Pflugerville Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1539,8 +1563,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0110 = City of Pflugerville Proposition B",
+    "williamson": "0073 = City of Pflugerville Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -1554,8 +1578,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0111 = City of Pflugerville Proposition C",
+    "williamson": "0074 = City of Pflugerville Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -1569,8 +1593,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0112 = City of Pflugerville Proposition D",
+    "williamson": "0075 = City of Pflugerville Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -1584,8 +1608,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0113 = City of Pflugerville Proposition E",
+    "williamson": "0076 = City of Pflugerville Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -1599,8 +1623,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0114 = City of Pflugerville Proposition F",
+    "williamson": "0077 = City of Pflugerville Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -1614,8 +1638,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0115 = City of Pflugerville Proposition G",
+    "williamson": "0078 = City of Pflugerville Proposition G"
    },
    "write_ins": [],
    "majority": false,
@@ -1629,8 +1653,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0116 = City of Pflugerville Proposition H",
+    "williamson": "0079 = City of Pflugerville Proposition H"
    },
    "write_ins": [],
    "majority": false,
@@ -1644,8 +1668,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0117 = City of Pflugerville Proposition I",
+    "williamson": "0080 = City of Pflugerville Proposition I"
    },
    "write_ins": [],
    "majority": false,
@@ -1659,8 +1683,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0118 = City of Pflugerville Proposition J",
+    "williamson": "0081 = City of Pflugerville Proposition J"
    },
    "write_ins": [],
    "majority": false,
@@ -1674,8 +1698,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0119 = City of Pflugerville Proposition K",
+    "williamson": "0082 = City of Pflugerville Proposition K"
    },
    "write_ins": [],
    "majority": false,
@@ -1689,8 +1713,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0120 = City of Pflugerville Proposition L",
+    "williamson": "0083 = City of Pflugerville Proposition L"
    },
    "write_ins": [],
    "majority": false,
@@ -1704,8 +1728,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0121 = City of Pflugerville Proposition M",
+    "williamson": "0084 = City of Pflugerville Proposition M"
    },
    "write_ins": [],
    "majority": false,
@@ -1719,8 +1743,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0122 = City of Pflugerville Proposition N",
+    "williamson": "0085 = City of Pflugerville Proposition N"
    },
    "write_ins": [],
    "majority": false,
@@ -1733,7 +1757,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0123 = City of Sunset Valley, Mayor"
    },
    "write_ins": [],
    "majority": false,
@@ -1746,7 +1770,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0124 = City of Sunset Valley, Two City Council Member Seats"
    },
    "write_ins": [],
    "majority": false,
@@ -1759,7 +1783,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0125 = City of Sunset Valley Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1772,7 +1796,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0126 = Village of Volente, Village Mayor"
    },
    "write_ins": [],
    "majority": false,
@@ -1785,7 +1809,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0127 = Village of Volente, Village Council"
    },
    "write_ins": [],
    "majority": false,
@@ -1803,10 +1827,10 @@
     "lee"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null,
-    "bastrop": null,
+    "travis": "0128 = ACC, Trustee, Place 1",
+    "williamson": "0093 = Austin Community College District Board of Trustees, P",
+    "hays": "AUSTIN COMMUNITY COLLEGE, TRUSTEE, PLACE 1 = Austin Community College, Trustee, Place 1",
+    "bastrop": "0040 = ACC Board of Trustees Election, Pl 1",
     "caldwell": null,
     "lee": null
    },
@@ -1830,10 +1854,10 @@
     "lee"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null,
-    "bastrop": null,
+    "travis": "0129 = ACC, Trustee, Place 2",
+    "williamson": "0094 = Austin Community College District Board of Trustees, P",
+    "hays": "AUSTIN COMMUNITY COLLEGE, TRUSTEE, PLACE 2 = Austin Community College, Trustee, Place 2",
+    "bastrop": "0041 = ACC Board of Trustees Election, Pl 2",
     "caldwell": null,
     "lee": null
    },
@@ -1857,10 +1881,10 @@
     "lee"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null,
-    "hays": null,
-    "bastrop": null,
+    "travis": "0130 = ACC, Trustee, Place 3",
+    "williamson": "0095 = Austin Community College District Board of Trustees, P",
+    "hays": "AUSTIN COMMUNITY COLLEGE, TRUSTEE, PLACE 3 = Austin Community College, Trustee, Place 3",
+    "bastrop": "0042 = ACC Board of Trustees Election, Pl 3",
     "caldwell": null,
     "lee": null
    },
@@ -1880,8 +1904,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0131 = Austin Community College District Proposition A",
+    "williamson": "0096 = Austin Community College District Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1895,7 +1919,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0132 = Austin ISD Board of Trustees, District 1"
    },
    "write_ins": [],
    "majority": true,
@@ -1908,7 +1932,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0133 = Austin ISD Board of Trustees, District 4"
    },
    "write_ins": [],
    "majority": true,
@@ -1921,7 +1945,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0134 = Austin ISD Board of Trustees, District 6"
    },
    "write_ins": [],
    "majority": true,
@@ -1934,7 +1958,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0135 = Austin ISD Board of Trustees, District 7"
    },
    "write_ins": [],
    "majority": true,
@@ -1947,7 +1971,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0136 = Austin ISD Board of Trustees, At-Large Position 9"
    },
    "write_ins": [],
    "majority": true,
@@ -1961,8 +1985,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0137 = Coupland ISD Proposition A",
+    "williamson": "0100 = Coupland Independent School District Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -1975,7 +1999,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0138 = Del Valle ISD Board of Trustees, Single Member District 3"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -1988,7 +2012,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0139 = Del Valle ISD Board of Trustees, Single Member District 5"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2001,7 +2025,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0140 = Del Valle ISD Board of Trustees, Single Member District 7"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2014,7 +2038,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0141 = Del Valle ISD Board of Trustees, Single Member District 8"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2027,7 +2051,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0142 = Del Valle ISD Board of Trustees, Single Member District 9"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2040,7 +2064,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0143 = Del Valle ISD Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2054,8 +2078,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0144 = Leander ISD Board of Trustees, Place 1",
+    "williamson": "0104 = Leander Independent School District Board of Trustees,"
    },
    "write_ins": [],
    "majority": false,
@@ -2069,8 +2093,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0145 = Leander ISD Board of Trustees, Place 2",
+    "williamson": "0105 = Leander Independent School District Board of Trustees,"
    },
    "write_ins": [],
    "majority": false,
@@ -2084,8 +2108,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0146 = Leander ISD Board of Trustees, Place 6",
+    "williamson": "0106 = Leander Independent School District Board of Trustees,"
    },
    "write_ins": [],
    "majority": false,
@@ -2099,8 +2123,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0147 = Leander ISD Board of Trustees, Place 7",
+    "williamson": "0107 = Leander Independent School District Board of Trustees,"
    },
    "write_ins": [],
    "majority": false,
@@ -2114,8 +2138,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0148 = Leander ISD Proposition A",
+    "williamson": "0108 = Leander Independent School District Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2128,7 +2152,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0149 = Manor ISD Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2141,7 +2165,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0150 = Manor ISD Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2155,8 +2179,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0151 = Pflugerville ISD Board of Trustees, Place 6",
+    "williamson": "0109 = Pflugerville Independent School District Board of Trus"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2170,8 +2194,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0152 = Pflugerville ISD Board of Trustees, Place 7",
+    "williamson": "0110 = Pflugerville Independent School District Board of Trus"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2185,8 +2209,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0153 = Round Rock ISD Board of Trustees, Place 3",
+    "williamson": "0111 = Round Rock Independent School District Board of Truste"
    },
    "write_ins": [],
    "majority": false,
@@ -2200,8 +2224,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0154 = Round Rock ISD Board of Trustees, Place 4",
+    "williamson": "0112 = Round Rock Independent School District Board of Truste"
    },
    "write_ins": [],
    "majority": false,
@@ -2215,8 +2239,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0155 = Round Rock ISD Board of Trustees, Place 5",
+    "williamson": "0113 = Round Rock Independent School District Board of Truste"
    },
    "write_ins": [],
    "majority": false,
@@ -2230,8 +2254,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0156 = Round Rock ISD Board of Trustees, Place 6",
+    "williamson": "0114 = Round Rock Independent School District Board of Truste"
    },
    "write_ins": [],
    "majority": false,
@@ -2245,8 +2269,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0157 = Round Rock ISD Proposition A",
+    "williamson": "0115 = Round Rock Independent School District Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2259,7 +2283,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0158 = Eastwood MUD Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2272,7 +2296,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0159 = Eastwood MUD Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2286,7 +2310,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0160 = Eastwood MUD Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2300,7 +2324,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0161 = Eastwood MUD Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -2315,7 +2339,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0162 = Eastwood MUD Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -2329,7 +2353,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0163 = Eastwood MUD Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -2343,7 +2367,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0164 = Eastwood MUD Proposition G"
    },
    "write_ins": [],
    "majority": false,
@@ -2358,7 +2382,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0165 = Eastwood MUD Permanent Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -2372,7 +2396,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0166 = Hero Way West MUD Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2385,7 +2409,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0167 = Hero Way West MUD Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2398,7 +2422,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0168 = Hero Way West MUD Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2412,7 +2436,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0169 = Hidden Lakes MUD No. 1 Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2425,7 +2449,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0170 = Hidden Lakes MUD No. 1 Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2439,7 +2463,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0171 = Hidden Lakes MUD No. 1 Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2453,7 +2477,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0172 = Hidden Lakes MUD No. 1 Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -2468,7 +2492,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0173 = Hidden Lakes MUD No. 1 Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -2483,7 +2507,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0174 = Hidden Lakes MUD No. 1 Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -2497,7 +2521,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0175 = Hidden Lakes MUD No. 1 Proposition G"
    },
    "write_ins": [],
    "majority": false,
@@ -2511,7 +2535,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0176 = Hidden Lakes MUD No. 1 Proposition H"
    },
    "write_ins": [],
    "majority": false,
@@ -2525,7 +2549,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0177 = Hidden Lakes MUD No. 1 Proposition I"
    },
    "write_ins": [],
    "majority": false,
@@ -2539,7 +2563,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0178 = Hidden Lakes MUD No. 1 Proposition J"
    },
    "write_ins": [],
    "majority": false,
@@ -2553,7 +2577,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0179 = Hidden Lakes MUD No. 1, Board of Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -2567,7 +2591,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0180 = Kennedy Hill MUD Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2580,7 +2604,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0181 = Kennedy Hill MUD Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2594,7 +2618,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0182 = Kennedy Hill MUD Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2608,7 +2632,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0183 = Kennedy Hill MUD Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -2623,7 +2647,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0184 = Kennedy Hill MUD Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -2637,7 +2661,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0185 = Kennedy Hill MUD Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -2651,7 +2675,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0186 = Kennedy Hill MUD Proposition G"
    },
    "write_ins": [],
    "majority": false,
@@ -2666,7 +2690,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0187 = Kennedy Hill MUD Permanent Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -2681,8 +2705,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0188 = North Austin MUD No. 1 Director, Place 2",
+    "williamson": "0120 = North Austin Municipal Utility District No. 1 Director"
    },
    "write_ins": [],
    "majority": false,
@@ -2696,8 +2720,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0189 = North Austin MUD No. 1 Director, Place 4",
+    "williamson": "0121 = North Austin Municipal Utility District No. 1 Director"
    },
    "write_ins": [],
    "majority": false,
@@ -2710,7 +2734,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0190 = Northtown MUD Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -2724,8 +2748,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0191 = Sunfield MUD No. 2 Proposition A",
+    "hays": "SUNFIELD MUNICIPAL UTILITY DISTRICT NO. 2 PROPOSITION A = Sunfield Municipal Utility District No. 2 Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2739,8 +2763,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0192 = Sunfield MUD No. 2 Proposition B",
+    "hays": "SUNFIELD MUNICIPAL UTILITY DISTRICT NO. 2 PROPOSITION B = Sunfield Municipal Utility District No. 2 Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2755,8 +2779,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0193 = Sunfield MUD No. 2 Proposition C",
+    "hays": "SUNFIELD MUNICIPAL UTILITY DISTRICT NO. 2 PROPOSITION C = Sunfield Municipal Utility District No. 2 Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2770,8 +2794,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0194 = Sunfield MUD No. 2 Proposition D",
+    "hays": "SUNFIELD MUNICIPAL UTILITY DISTRICT NO. 2 PROPOSITION D = Sunfield Municipal Utility District No. 2 Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -2785,8 +2809,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0195 = Sunfield MUD No. 2 Proposition E",
+    "hays": "SUNFIELD MUNICIPAL UTILITY DISTRICT NO. 2 PROPOSITION E = Sunfield Municipal Utility District No. 2 Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -2801,8 +2825,8 @@
     "hays"
    ],
    "keys": {
-    "travis": null,
-    "hays": null
+    "travis": "0196 = Sunfield MUD No. 2 Proposition F",
+    "hays": "SUNFIELD MUNICIPAL UTILITY DISTRICT NO. 2 PROPOSITION F = Sunfield Municipal Utility District No. 2 Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -2815,7 +2839,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0197 = Travis County MMD No. 1 Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2828,7 +2852,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0198 = Travis County MMD No. 1 Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2841,7 +2865,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0199 = Travis County MMD No. 1 Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2855,7 +2879,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0200 = Travis County MMD No. 1 Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -2868,7 +2892,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0201 = Travis County MMD No. 1 Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -2881,7 +2905,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0202 = Travis County MMD No. 1 Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -2895,7 +2919,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0203 = Travis County MMD No. 1 Permanent Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -2908,7 +2932,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0204 = Travis County MUD No. 41 Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -2921,7 +2945,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0205 = Travis County MUD No. 41 Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -2935,7 +2959,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0206 = Travis County MUD No. 41 Proposition C"
    },
    "write_ins": [],
    "majority": false,
@@ -2949,7 +2973,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0207 = Travis County MUD No. 41 Proposition D"
    },
    "write_ins": [],
    "majority": false,
@@ -2964,7 +2988,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0208 = Travis County MUD No. 41 Proposition E"
    },
    "write_ins": [],
    "majority": false,
@@ -2978,7 +3002,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0209 = Travis County MUD No. 41 Proposition F"
    },
    "write_ins": [],
    "majority": false,
@@ -2993,7 +3017,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0210 = Travis County MUD No. 41 Permanent Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -3007,7 +3031,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0211 = Vista MUD of Travis County Proposition A"
    },
    "write_ins": [],
    "majority": false,
@@ -3020,7 +3044,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0212 = Vista MUD of Travis County Proposition B"
    },
    "write_ins": [],
    "majority": false,
@@ -3034,8 +3058,8 @@
     "williamson"
    ],
    "keys": {
-    "travis": null,
-    "williamson": null
+    "travis": "0213 = Williamson-Travis Counties MUD No. 1, Directors",
+    "williamson": "0139 = Williamson-Travis Counties Municipal Utility District"
    },
    "write_ins": [],
    "majority": false,
@@ -3048,7 +3072,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0214 = Cypress Ranch WCID No. 1, Board of Directors, Three Places"
    },
    "write_ins": [],
    "majority": false,
@@ -3061,7 +3085,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0215 = Travis County WCID No. 17 Directors"
    },
    "write_ins": [],
    "majority": false,
@@ -3074,7 +3098,10 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": [
+     "0216 = Travis County ESD No. 4 Proposition A (Existing)",
+     "0217 = Travis County ESD No. 4 Proposition A (To Be Annexed)"
+    ]
    },
    "write_ins": [],
    "majority": false,
@@ -3088,7 +3115,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0218 = Travis County ESD No. 9 Proposition A (Existing)"
    },
    "write_ins": [],
    "majority": false,
@@ -3103,7 +3130,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0219 = Travis County ESD No. 9 Proposition B (Existing)"
    },
    "write_ins": [],
    "majority": false,
@@ -3118,7 +3145,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0220 = Travis County ESD No. 9 Proposition A (To Be Annexed)"
    },
    "write_ins": [],
    "majority": false,
@@ -3133,7 +3160,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0221 = Travis County ESD No. 9 Proposition B (To Be Annexed)"
    },
    "write_ins": [],
    "majority": false,
@@ -3148,7 +3175,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0222 = Travis County ESD No. 10 Proposition A (Existing)"
    },
    "write_ins": [],
    "majority": false,
@@ -3163,7 +3190,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0223 = Travis County ESD No. 10 Proposition B (Existing)"
    },
    "write_ins": [],
    "majority": false,
@@ -3178,7 +3205,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0224 = Travis County ESD No. 10 Proposition A (To Be Annexed)"
    },
    "write_ins": [],
    "majority": false,
@@ -3193,7 +3220,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0225 = Travis County ESD No. 10 Proposition B (To Be Annexed)"
    },
    "write_ins": [],
    "majority": false,
@@ -3208,7 +3235,7 @@
     "travis"
    ],
    "keys": {
-    "travis": null
+    "travis": "0226 = Wells Branch Community Library District Board of Trustees"
    },
    "write_ins": [],
    "majority": false,
