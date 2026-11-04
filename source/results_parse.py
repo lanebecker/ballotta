@@ -28,8 +28,9 @@ class BadFile(ValueError):
 
 
 def norm(s):
-    """The form names are matched in: capitals, straight quotes, single spaces, no incumbent mark "(I)"."""
-    s = s.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
+    """The form names are matched in: capitals, one kind of quote, single spaces, no incumbent mark "(I)". Quotes are all
+    one kind: Nov 3, 2026, Travis printed Zohaib 'Zo' Qadri for the ballot's Zohaib "Zo" Qadri."""
+    s = s.replace("“", "'").replace("”", "'").replace("‘", "'").replace("’", "'").replace('"', "'")
     s = re.sub(r"\s*\(I\)\s*$", "", s.strip())
     return re.sub(r"\s+", " ", s).upper().strip()
 
@@ -350,5 +351,12 @@ def parse_hays(data):
             "official": "Official Results" in lines[0], "election": when}
 
 
-PARSERS = {"clarity": parse_clarity, "sos": parse_sos, "sos_canvass": parse_sos_canvass, "williamson": parse_williamson,
+def parse_williamson_file(data):
+    """Williamson's file, either kind: Nov 3, 2026 it posted on Clarity (Detail XML, as Travis and Bastrop do), where
+    earlier elections were on livevoterturnout.com (that page's HTML). A zip or XML is Clarity's; anything else, the page."""
+    head = bytes(data[:64]).lstrip()
+    return parse_clarity(data) if head[:2] == b"PK" or head[:5] == b"<?xml" else parse_williamson(data)
+
+
+PARSERS = {"clarity": parse_clarity, "sos": parse_sos, "sos_canvass": parse_sos_canvass, "williamson": parse_williamson_file,
            "hays": parse_hays}
