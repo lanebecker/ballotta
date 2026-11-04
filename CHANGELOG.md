@@ -15,6 +15,9 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 ## [Unreleased]
 
 ### Fixed
+- Results: "How Travis County voted" on a contest Travis prints twice (Austin's Props C–J, Full and Limited Purpose)
+  showed only the last of the two, the Limited Purpose count; it now adds both, as the result above it already did
+  (Lane, Nov 4).
 - Results pipeline (no change to the site): the "Sources this run" line in the Results updates pull request read
   the Secretary of State's feed in Austin time instead of the map's zone (UTC since election night), so it showed the
   feed's time six hours off. The numbers published were never affected.
