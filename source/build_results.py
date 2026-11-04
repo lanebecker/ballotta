@@ -247,10 +247,14 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
                 reg = m.get("registered", {}).get(county)
                 slack = None if (slack is None or reg is None) else slack + reg
                 continue
-            rows, _ = slice_of(rep, key, names, write_ins, m.get("spell", {}).get(county, {}), where)
+            # a list of keys: one contest printed as several in the county's file, added up (Nov 3, 2026: Travis printed
+            # each City of Austin charter proposition twice, "Full Purpose" and "Limited Purpose", for the two kinds of
+            # city voter; the city counts both)
+            for one in (key if isinstance(key, list) else [key]):
+                rows, _ = slice_of(rep, one, names, write_ins, m.get("spell", {}).get(county, {}), where)
+                for n, v in rows:
+                    total[n] += v
             any_county = True
-            for n, v in rows:
-                total[n] += v
             sources.append([rep["label"], rep["posted"]])
             # W11 ("numbers are the last unofficial count") only while a county's file is older than its final count:
             # counties post their final files before the bodies canvass from them, so the canvass date can't be the
@@ -456,9 +460,12 @@ def suggest(path, mp=None):
             continue
         if m["source"] != "counties" or rep["source"] not in m["electorate"] or m["keys"].get(rep["source"]):
             continue
-        names = set(map(P.norm, check_results.pick_names(key[cid])))
+        names = check_results.pick_names(key[cid])
+        # every ballot name printed by one of the contest's choices, as the build reads them (P.match): Nov 3, 2026,
+        # Travis printed "Andy Brown (DEM)" and "Zohaib 'Zo' Qadri" for the ballot's Andy Brown and Zohaib "Zo" Qadri
         fits = [(k, c["name"]) for k, c in rep["contests"].items()
-                if names <= {P.norm(n) for n, _ in c["choices"]} | ({"FOR", "AGAINST"} if key[cid]["type"] == "measure" else set())]
+                if all(any(P.match(printed, [n]) for printed, _ in c["choices"])
+                       or (key[cid]["type"] == "measure" and P.norm(n) in ("FOR", "AGAINST")) for n in names)]
         fits.sort(key=lambda kn: -likeness(key[cid]["title"], kn[1]))   # FOR/AGAINST fits every measure: the title decides (#158)
         print(f"{cid} {key[cid]['title']}: " + ("; ".join(f"{k} = {n}" for k, n in fits[:4])
               or f"no fit: if none of this county's voters vote here, set its key to \"absent\""))

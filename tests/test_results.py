@@ -902,6 +902,44 @@ def the_fetch_report_reads_the_sos_feed_in_the_maps_zone():
     finally: FR.fetch_all, FR.report, B.ZONE[0] = was
     assert seen == [zone], (seen, zone)
 
+@test
+def williamson_on_clarity_and_names_printed_with_their_party_and_quotes():
+    # Nov 3, 2026: Williamson posted on Clarity (Detail XML), as Travis and Bastrop do; Travis printed its partisan
+    # county races "Andy Brown (DEM)" and nicknames in single quotes. Its inbox takes Clarity's file (and still the old
+    # page); norm() makes every quote one kind; suggest fits a contest the way the build reads it (P.match).
+    xml = fx('travis-2025-11-detail.xml').decode('utf-8')
+    wx = xml.replace('<Region>Travis</Region>', '<Region>Williamson</Region>').encode('utf-8')
+    assert '<Region>Travis</Region>' in xml
+    r = P.PARSERS['williamson'](wx); assert r['source'] == 'williamson' and r['contests'], r['source']
+    assert P.PARSERS['williamson'](fx('williamson-2025-11.html'))['source'] == 'williamson', 'the page still reads'
+    s = Scratch(sos=False)
+    try:
+        (s.res / 'inbox/williamson/detailxml.xml').write_bytes(wx)
+        got = B.file_inbox(s.res)
+        assert len(got) == 1 and '/raw/williamson/' in str(got[0]) and not B.rejected(s.res), (got, B.rejected(s.res))
+    finally: s.close()
+    assert P.norm('Zohaib "Zo" Qadri') == P.norm("Zohaib 'Zo' Qadri") == P.norm('Zohaib “Zo” Qadri')
+    assert P.match('Andy Brown (DEM)', ['Andy Brown', 'Andrew Brown Jr.']) == 'Andy Brown'
+    assert P.match("Zohaib 'Zo' Qadri", ['Zohaib "Zo" Qadri', 'Kai Huang']) == 'Zohaib "Zo" Qadri'
+    # suggest, on a file whose choices print that way: the contest fits (it printed "no fit" before)
+    mp = json.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))
+    key = __import__('check_results').answer_key()
+    cid = 'c130'   # Del Valle ISD, District 8: Darla Wegner and Robert “Bobby” Hidrogo
+    assert mp['contests'][cid]['source'] == 'counties' and 'travis' in mp['contests'][cid]['electorate']
+    names = __import__('check_results').pick_names(key[cid]); assert len(names) == 2 and any('“' in n for n in names), names
+    printed = [n.replace('“', "'").replace('”', "'") + ' (DEM)' for n in names]
+    one = re.search(r'<Contest key="0021".*?</Contest>', xml, re.S).group(0)
+    one = (one.replace('text="City of Austin Proposition Q"', 'text="' + key[cid]['title'] + '"').replace('isQuestion="true"', 'isQuestion="false"')
+           .replace('text="FOR"', 'text="' + printed[0].replace("'", "&apos;") + '"').replace('text="AGAINST"', 'text="' + printed[1].replace("'", "&apos;") + '"'))
+    made = re.sub(r'<Contest key=.*</Contest>', lambda m: one, xml, flags=re.S).replace('<ElectionDate>11/4/2025</ElectionDate>', '<ElectionDate>11/3/2026</ElectionDate>')
+    f = pathlib.Path(tempfile.mkdtemp()) / 'detailxml.xml'; f.write_text(made, encoding='utf-8')
+    rep = P.parse_clarity(f.read_bytes()); assert [c[0] for c in rep['contests']['0021']['choices']] == printed, rep['contests']
+    out = io.StringIO()
+    blank = copy.deepcopy(mp); blank['contests'][cid]['keys']['travis'] = None   # as before Nov 4's keys went in
+    with contextlib.redirect_stdout(out): B.suggest(f, mp=blank)
+    line = next(l for l in out.getvalue().splitlines() if l.startswith(cid + ' '))
+    assert '0021 = ' in line and 'no fit' not in line, line
+
 def datetime_utc(*a):
     import datetime as _dt
     return _dt.datetime(*a, tzinfo=_dt.timezone.utc)
