@@ -126,6 +126,7 @@ def report(out, res=B.RES, now=None):
 
 def main(argv):
     meta = json.loads((ROOT / "source/results_map.json").read_text(encoding="utf-8"))["meta"]
+    B.ZONE[0] = meta["sos_time_zone"]   # the report re-reads the SOS file: in the map's zone, as the build does (Nov 3: UTC)
     out = fetch_all(meta, election=B.ELECTION)
     for source, path, err in out:
         print(f"{source}: " + (f"filed {path.relative_to(ROOT)}" if path else "error: " + err if err else "nothing new"))

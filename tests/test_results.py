@@ -890,6 +890,18 @@ def the_fetcher_tries_again_reports_and_never_stops_the_run():
         assert json.loads(rep.read_text()) == ['- sos: could not fetch: down']
     finally: shutil.rmtree(d)
 
+@test
+def the_fetch_report_reads_the_sos_feed_in_the_maps_zone():
+    # Nov 3: the feed's times are UTC (meta.sos_time_zone). The build read them so; the PR's "Sources this run" line,
+    # from report(), read them as Austin time (the default), six hours off. The run sets the zone before it reports.
+    zone = json.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))['meta']['sos_time_zone']
+    seen, was = [], (FR.fetch_all, FR.report, B.ZONE[0])
+    B.ZONE[0] = 'Pacific/Kiritimati' if zone != 'Pacific/Kiritimati' else 'UTC'   # anything but the map's
+    FR.fetch_all, FR.report = (lambda meta, election=None: []), (lambda out: seen.append(B.ZONE[0]) or [])
+    try: FR.main(['fetch_results.py', '--report', str(pathlib.Path(tempfile.mkdtemp()) / 'fetch.json')])
+    finally: FR.fetch_all, FR.report, B.ZONE[0] = was
+    assert seen == [zone], (seen, zone)
+
 def datetime_utc(*a):
     import datetime as _dt
     return _dt.datetime(*a, tzinfo=_dt.timezone.utc)
