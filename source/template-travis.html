@@ -399,6 +399,11 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 .dk-tbl.rs-gl tr.rs-gh th{padding:28px 10px 8px;border-bottom:none;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:24px;font-weight:700;line-height:1.2;color:var(--ink);border-radius:10px}
 .dk-tbl.rs-gl tr.rs-gh th .pm{margin-right:10px}
 .rs-tc{display:flex;align-items:flex-start;gap:8px}
+/* what a measure is, beside its name (Lane, Nov 4): in full on its result and on All Travis County results, two lines in At a glance */
+.rs-what{display:flex;flex-direction:column;gap:6px}
+.rs-what-s{margin:0 0 4px;font-size:13px;line-height:1.45;color:var(--ink2)}
+.dk-tbl .rs-tc + small.rs-what-g{padding-left:20px}   /* under the name, past its mark */
+.dk-tbl small.rs-what-g{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px;font-size:12px;line-height:1.4;color:var(--ink2)}
 .rs-tc .pm{margin-top:5px}
 .rs-tc .pm-none{margin-top:10px}
 .rs-flash .rs-gh th{animation:rs-flash 1.8s ease-out}
@@ -2947,7 +2952,7 @@ const results = (() => {
       const cs = shown.filter(c => c.level === L);
       if (!cs.length) return;
       h += '<h3 class="rs-lvh">' + esc(LEVEL_LABEL[L] || L) + ' · ' + cs.length + (cs.length === 1 ? ' contest' : ' contests') + '</h3><div class="rs-grid">'
-        + cs.map(c => '<article class="rs-c"><h4>' + esc(cleanTitle(c)) + '</h4>' + ribbon(c, false)
+        + cs.map(c => '<article class="rs-c"><h4>' + esc(cleanTitle(c)) + '</h4>' + (c.type === 'measure' && c.text ? '<p class="rs-what-s">' + esc(c.text) + '</p>' : '') + ribbon(c, false)
           + (mine.has(c.id) ? '<p class="rs-n"><button type="button" class="dk-link" data-rs="go" data-c="' + esc(c.id) + '">On your ballot · see your pick</button></p>' : '') + '</article>').join('') + '</div>';
     });
     return h + '<p class="note">Ballotta doesn’t call races, and isn’t affiliated with Travis County or any campaign. <button type="button" class="dk-link" data-rs="why">How results become official</button></p>';
@@ -3065,7 +3070,8 @@ const results = (() => {
       const r = res ? '<span class="res">' + esc(res) + '</span><small>' + esc(glanceWhen(c, e)) + '</small>' : '<small>' + noResult() + '</small>';
       const p = !v.length ? '<small>No pick</small>' : v[0] === '__skip' ? '<small>Skipped</small>' : esc(v.map(o => choice(c, o)).join(', '));
       const w = hasWhy(c.id) ? '<span class="dk-wt">' + esc(whyShown(whys[c.id])) + '</span>' : '<small>—</small>';
-      return '<tr data-tr="' + c.id + '"><th scope="row">' + (k ? '<span class="rs-tc"><i class="pm pm-' + k + '" aria-hidden="true"></i>' : '') + '<button type="button" class="dk-link" data-go="' + c.id + '">' + esc(cleanTitle(c)) + '</button>' + (k ? '</span>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th>'
+      return '<tr data-tr="' + c.id + '"><th scope="row">' + (k ? '<span class="rs-tc"><i class="pm pm-' + k + '" aria-hidden="true"></i>' : '') + '<button type="button" class="dk-link" data-go="' + c.id + '">' + esc(cleanTitle(c)) + '</button>' + (k ? '</span>' : '')
+        + (c.type === 'measure' && c.text ? '<small class="rs-what-g">' + esc(c.text) + '</small>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th>'
         + '<td>' + r + '</td><td><span class="rs-lbl">Your pick: </span>' + p + '</td><td><span class="rs-lbl">Your reason: </span>' + w + '</td></tr>';
     };
     let rows = '', shown = 0;
@@ -3505,6 +3511,8 @@ const desk = (() => {
     h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
     if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</div>';
     if (b.conf === 'medium') h += '<span class="flag">Double-check</span><p class="note">' + esc(b.note || 'Not yet confirmed for your address.') + '</p>';
+    // What the measure is, under its name: "Proposition G" alone is hard to tell from F and H (Lane, Nov 4)
+    if (isM && c.text) h += '<div class="rs-what"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
 /*RESULTS*/
     h += results.ribbon(c) + results.nextBox(c);
 /*/RESULTS*/
@@ -3514,7 +3522,6 @@ const desk = (() => {
       return '<li class="dk-lw"><span class="dk-line" data-on="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span></span></li>';
     }).join('') + '</ul>' + (v[0] === '__skip' && !(window.results && results.entry(c.id)) ? '<p class="note">You skipped this ' + (isM ? 'measure' : 'race') + '.</p>' : !v.length ? '<p class="note">No pick here on this device.</p>' : '') + '</section>';
     let read = '';
-    if (isM && c.text) read += '<div class="sub"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
     if (isM && L.plain) read += '<div class="sub"><span class="ov">In plain words</span><p>' + esc(L.plain) + '</p></div>';
     if (!isM) read += opts.map(o => { const l = candLinks(L, o); return l ? '<div><b>' + esc(optLabel(c, o)) + '</b>' + l + '</div>' : ''; }).join('');
     if (L.src && L.src.length) read += srcHTML(L.src);

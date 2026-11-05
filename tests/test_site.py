@@ -5435,7 +5435,7 @@ def how_your_picks_did_groups_the_ballot_and_the_counts_link_to_it(b):
     assert pg.inner_text('#dk-paper .rs-head .rs-hl') == 'Your pick, Against, is behind' and pg.inner_text('#dk-paper .rs-head .rs-hs') == 'Passing · Unofficial'
     assert pg.get_attribute('#dk-paper .rs-head .pm', 'class') == 'pm pm-behind lg' and 'Parks need it' in pg.inner_text('#dk-paper .rs-rsn')
     order = pg.evaluate("[...document.querySelector('#dk-paper').children].map(x => x.tagName === 'H1' ? 'h1' : x.className.split(' ')[0])")
-    assert order[order.index('h1') + 1:order.index('h1') + 4] == ['rs-head', 'rs-rsn', 'rs'], ('under the title: your pick, your reason, then the result', order)
+    assert order[order.index('h1') + 1:order.index('h1') + 5] == ['rs-what', 'rs-head', 'rs-rsn', 'rs'], ('under the title: what it is, your pick, your reason, then the result', order)
     assert [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs > .rs-bars .rs-me .rs-nm')] == ['Against Your pick'] and pg.query_selector('#dk-paper .rs-tv .rs-me') is None
     for cid, what in (('c006', 'no pick'), ('c121', 'skipped')):
         r = rs_go(pg, cid)
@@ -5463,6 +5463,23 @@ def how_your_picks_did_groups_the_ballot_and_the_counts_link_to_it(b):
     pg.click('#rs-top .rs-gol[data-g="open"]'); pg.wait_for_timeout(150)
     g = pg.query_selector('#gl-open')
     assert g.query_selector('tr.rs-gh th').inner_text() == '3 · Not settled yet' and [r.get_attribute('data-tr') for r in g.query_selector_all('tr[data-tr]')] == ['c001', 'c069', 'c124']
+    ctx.close()
+    # what a measure is, under its name (Lane, Nov 4): in full on the result and on All Travis County results, two lines in
+    # At a glance; and the result's fold no longer repeats it
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    words = pg.evaluate("BYID['c071'].text")
+    rs_go(pg, 'c071')
+    assert pg.inner_text('#dk-paper .rs-what .verbatim') == words and pg.inner_text('#dk-paper .rs-what .ov').upper() == 'EXACTLY AS PRINTED ON YOUR BALLOT'
+    order = pg.evaluate("[...document.querySelector('#dk-paper').children].map(x => x.tagName === 'H1' ? 'h1' : x.className.split(' ')[0])")
+    assert order[order.index('h1') + 1:order.index('h1') + 3] == ['rs-what', 'rs-head'], order
+    assert words not in pg.inner_text('#dk-paper details.rs-fold') if pg.query_selector('#dk-paper details.rs-fold') else True
+    rs_go(pg, 'c069'); assert pg.query_selector('#dk-paper .rs-what') is None, 'a race has no measure text'
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+    g = pg.query_selector('#dk-paper tr[data-tr="c071"] .rs-what-g')
+    assert g and g.text_content() == words and pg.evaluate("e => e.getBoundingClientRect().height", g) < 40, 'two lines at most'
+    assert pg.query_selector('#dk-paper tr[data-tr="c069"] .rs-what-g') is None
+    pg.click('#dk-views [data-view="all"]'); pg.wait_for_timeout(200)
+    assert words in [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs-what-s')]
     ctx.close()
     # each group is named as the summary counts it: canvassed, a pick that lost "didn't win"
     ctx, pg = rs_page(b, {'body': fx.scene('official')}, when='2026-12-03T09:00')
