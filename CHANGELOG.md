@@ -22,6 +22,10 @@ From the cold audit after 1.8.0 (milestone "Cold audit, Nov 4"; every published 
 and matched).
 
 ### Fixed
+- From Nov 4, results that don't load (offline, an outage, a broken file) no longer bring back the Nov 3 ballot, with
+  its editable picks and "you can vote" hours: the page stays a record and says "Results didn’t load. Your picks are
+  saved on this device. Try again" (Lane's words), asks again in 30 seconds and when the connection comes back, and
+  rows say "Results didn’t load" instead of "No result yet" (#211).
 - The page runs again on iPhones with Safari before 16.4 (iOS 15, and iOS 16 not updated past 16.3): three regex
   lookbehinds in the share-name check were a syntax error there, so "Show my ballot" did nothing (#209).
 - How your picks did: a pick on a contest the results file has no result for counts as "not settled yet" in the

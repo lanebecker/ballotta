@@ -5158,9 +5158,11 @@ def a_bad_results_file_breaks_nothing(b):
     ctx, pg = rs_page(b, serve)
     bad = ['not json', '[]', 'null', {'seq': -1}, dict(fx.scene('mixed'), election='2024-11-05'), dict(fx.scene('mixed'), contests=[]),
            {'seq': 1, 'election': '2026-11-03', 'withdrawn': False, 'late_until': '2026-11-17', 'contests': {'c071': {'state': 'unofficial'}}}]
-    for body in bad:
+    for body in bad:   # refused outright: "Results didn't load" (#211); a file with nothing usable left: nothing at all
         serve['body'] = body; pg.reload(); pg.wait_for_timeout(400)
-        assert pg.query_selector('.rs') is None and not pg.is_visible('#rs-top'), body
+        top = pg.inner_text('#rs-top').replace('\n', ' ') if pg.is_visible('#rs-top') else ''
+        assert pg.query_selector('.rs') is None and top in ('', 'Results didn’t load Your picks are saved on this device. Try again'), (body, top)
+        assert top or body is bad[-1] or isinstance(body, dict) and body.get('contests') == [], (body, 'a refused file says so')
     pg.click('.dk-row[data-row="c147"]'); pg.click('#dk-paper .dk-line[data-pick="AGAINST"]')
     assert cur(pg, 'c147') == ['AGAINST'], 'with no results the page accepts, picking still works'
     one = fx.scene('mixed'); one['contests']['c071']['choices'].reverse()                    # out of ballot order
@@ -5180,6 +5182,34 @@ def a_bad_results_file_breaks_nothing(b):
     for cid in ('c071', 'c124', 'c069', 'c113'):
         assert rs_go(pg, cid) == '', ('left out', cid)
     assert 'Failing' in rs_go(pg, 'c072'), 'the rest still shown'
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def results_that_dont_load_keep_the_page_a_record(b):
+    # The Nov 4 audit, #211: from Nov 4, with no results file (offline, an outage), the page went back to Nov 3's ballot:
+    # editable picks, Where to vote saying "you can vote", and nothing about the results. It stays a record and says so,
+    # tries again in 30 seconds and when the connection comes back, and Try again asks at once.
+    fx = rs_fixtures(); serve = {'body': fx.scene('mixed'), 'status': 503}
+    ctx, pg = rs_page(b, serve)
+    pg.clock.run_for(9000); pg.wait_for_timeout(200)
+    assert pg.inner_text('#rs-top').replace('\n', ' ') == 'Results didn’t load Your picks are saved on this device. Try again', pg.inner_text('#rs-top')
+    menu = [x.inner_text().strip() for x in pg.query_selector_all('#dk-views button') if x.is_visible()]
+    assert menu == ['Results', 'At a glance', 'All Travis County results', 'Print your results'], ('still a record', menu)
+    assert pg.query_selector('#dk-paper [data-pick]') is None and pg.inner_text('.dk-row[data-row="c071"] small').startswith('Results didn’t load'), pg.inner_text('.dk-row[data-row="c071"] small')
+    n = len(pg.asked)
+    pg.clock.run_for(31 * 1000); pg.wait_for_timeout(200)
+    assert len(pg.asked) == n + 1, 'asked again in 30 seconds'
+    pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(200)
+    assert len(pg.asked) == n + 2, 'asked again when the connection came back'
+    serve['status'] = 200
+    pg.click('#rs-top [data-rs="retry"]'); pg.wait_for_timeout(400)
+    assert len(pg.asked) == n + 3 and 'YOUR 9 PICKS' in pg.inner_text('#rs-top') and 'Passing' in rs_go(pg, 'c071'), pg.inner_text('#rs-top')[:200]
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed'), 'status': 503}, phone=True)
+    pg.clock.run_for(9000); pg.wait_for_timeout(200)
+    assert pg.is_visible('#rs-top .rs-fail, #rs-top.rs-fail') and pg.evaluate("document.querySelector('#rs-top [data-rs=retry]').getBoundingClientRect().height") >= 44
     assert pg.errs == [], pg.errs
     ctx.close()
 
@@ -5974,10 +6004,11 @@ def results_are_a_record_from_the_first_moment(b):
     route.fulfill(status=200, content_type='application/json', body=json.dumps(fx.scene('mixed'))); pg.wait_for_timeout(500)
     assert pg.inner_text('#dk-count') == '0 of 11 official' and pg.errs == [], (pg.inner_text('#dk-count'), pg.errs)
     ctx.close()
-    # no answer at all (the network fails): the ballot again, editable
+    # no answer at all (the network fails): still a record, saying the results didn't load (#211; it was the Nov 3
+    # ballot again, editable, with its voting hours)
     ctx, pg = rs_page(b, {'status': 500, 'body': ''})
     pg.wait_for_timeout(300)
-    assert pg.query_selector('#dk-paper [data-pick]') is not None and pg.errs == [], 'with no results the Nov 3 ballot is back'
+    assert pg.query_selector('#dk-paper [data-pick]') is None and pg.is_visible('#rs-top.rs-fail') and pg.errs == [], 'with no results, still a record'
     ctx.close()
     # an older file after a newer one: ignored, and what this device has seen doesn't go back
     serve = {'body': fx.scene('official')}

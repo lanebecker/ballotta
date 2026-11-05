@@ -266,6 +266,8 @@ body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;posi
 .rs-tv h3{font-size:12px}
 .rs-tv .rs-tr i{background:var(--line2)}
 .rs-top{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.rs-fail p{margin:0}
+.rs-fail b{color:var(--ink);margin-right:4px}   /* Results didn't load (#211) */
 .rs-top b{color:var(--ink)}
 .rs-cell{white-space:nowrap}
 .rs-why{font-size:14px;color:var(--ink2)}
@@ -2566,7 +2568,7 @@ const results = (() => {
       const changed = !R || next.seq !== R.seq || got[1] !== saved || !!next.withdrawn !== !!R.withdrawn, news = !!R;   // paused or back at the same seq redraws too (#153)
       R = next; saved = got[1];
       if (changed) redraw(news);
-    }).catch(() => {}).finally(() => { settle(); clearTimeout(soon); if (saved) soon = setTimeout(() => load(true), 30 * 1000); });   // a kept copy shown: ask again soon, not in 10 minutes (#212)
+    }).catch(() => {}).finally(() => { settle(); clearTimeout(soon); if (saved || !R) soon = setTimeout(() => load(true), 30 * 1000); });   // a kept copy shown, or none at all: ask again soon, not in 10 minutes (#212, #211)
   }
   function redraw(news) {
     try { if (window.desk) { if (news) desk.reflow(updated()); else desk.render(); } } catch (e) {}   // the laptop render ends by drawing the top line (top())
@@ -2729,6 +2731,7 @@ const results = (() => {
     const box = $('rs-top');
     if (!box) return;
     const app = document.body.classList.contains('dk-app-on');
+    if (failed() && app && ballot.length && view !== 'all') { box.className = 'rs-top rs-fail'; box.innerHTML = '<p><b>' + FAILED[0] + '</b> ' + FAILED[1] + ' <button type="button" class="dk-link" data-rs="retry">' + FAILED[2] + '</button></p>'; return; }   // #211
     if (!R || !live() || !app || (!ballot.length && view !== 'all')) { box.classList.add('hidden'); return; }
     if (R.withdrawn) { box.className = 'rs-top'; box.innerHTML = '<p>Results are paused while we check a problem with the latest numbers. Your picks aren’t affected.</p>'; return; }  // W52
     if (view === 'all') { box.className = 'rs-top rs-band'; box.innerHTML = '<p class="rs-upd">' + esc(updated()) + '</p>' + timeline(); return; }   // (#149)
@@ -2778,7 +2781,12 @@ const results = (() => {
   // From Nov 4, until the first answer about results.json (or 8 s), the page is already a record, read-only: the Nov 3
   // ballot was editable for that moment, and a tap could change a pick just before it became a record (#152).
   let settled = false;
-  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled);   // a file with nothing usable changes nothing
+  // A file with nothing usable in it changes nothing; no file at all is not a reason to bring back Nov 3's ballot, with its
+  // "you can vote" and editable picks: the page stays a record and says the results didn't load (the Nov 4 audit, #211).
+  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : true);
+  const failed = () => live() && settled && !R;
+  const FAILED = ['Results didn’t load', 'Your picks are saved on this device.', 'Try again'];   // Lane, Nov 4 (#211)
+  const noResult = () => R && R.withdrawn ? 'Results paused' : failed() ? FAILED[0] : 'No result yet';
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], DAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dow = (d, long) => (long ? DAYS_LONG : DAYS)[new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10))).getUTCDay()];
   const dayLong = (d) => dow(d) + ', ' + md(d);                                       // "Sat, Dec 12"
@@ -2790,7 +2798,7 @@ const results = (() => {
   function rowLine(c) {
     const e = entry(c.id);
     if (e && e.no_call) return 'No call yet · Unofficial';   // W69
-    if (!e || e.state === 'counting' || e.verdict === 'none') return R && R.withdrawn ? 'Results paused' : 'No result yet';
+    if (!e || e.state === 'counting' || e.verdict === 'none') return noResult();
     let v = verdict(c, e);
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) v = 'Runoff: ' + andList(names(c, e.runoff).map(surname));
     else if (e.verdict === 'tied') v = 'Tied';   // W25 in full is too long for a row; other ties keep what they say (#142)
@@ -3004,11 +3012,13 @@ const results = (() => {
       else if (b.dataset.rs === 'go' && window.desk && desk.goTo) desk.goTo(b.dataset.c);
       else if (b.dataset.rs === 'rdecide' && window.desk) desk.rgo(b.dataset.c);   // the runoff (Phase 4)
       else if (b.dataset.rs === 'rvote' && window.desk) desk.rvote();
-      else if (b.dataset.rs === 'glance' && window.desk) desk.glanceAt(b.dataset.g);   // a count in the summary: its group in How your picks did
+      else if (b.dataset.rs === 'glance' && window.desk) desk.glanceAt(b.dataset.g);
+      else if (b.dataset.rs === 'retry') load(true);   // Results didn't load · Try again (#211)   // a count in the summary: its group in How your picks did
     });
     try { wantAll = new URLSearchParams(location.search).has('results'); } catch (e) {}
     load(true);
     document.addEventListener('visibilitychange', () => load(false));
+    window.addEventListener('online', () => { if (!R || saved) load(true); });   // back online with no results, or a kept copy (#211)
     window.addEventListener('focus', () => load(false));
     setInterval(() => load(false), 60 * 1000);   // looks every minute; asks at most every 10 (and only from Nov 4)
   }
@@ -3023,7 +3033,7 @@ const results = (() => {
       const c = b.c, v = current(c.id), e = entry(c.id), res = glanceRes(c, e);
       if (c.level !== last) { last = c.level; html += '<div class="grp">' + esc(LEVEL_LABEL[last] || last) + '</div>'; }
       const p = !v.length ? '—' : v[0] === '__skip' ? 'Skipped' : v.map(o => choice(c, o)).join(', ');
-      html += '<div class="ln"><span>' + esc(cleanTitle(c)) + '<small class="rs-pr">' + esc(res ? res + ' · ' + glanceWhen(c, e) : R && R.withdrawn ? 'Results paused' : 'No result yet') + '</small></span><span>' + esc(p) + '</span></div>';
+      html += '<div class="ln"><span>' + esc(cleanTitle(c)) + '<small class="rs-pr">' + esc(res ? res + ' · ' + glanceWhen(c, e) : noResult()) + '</small></span><span>' + esc(p) + '</span></div>';
       if (withWhy && whys[c.id]) html += '<div class="why"><i>' + esc(whyShown(whys[c.id])) + '</i></div>';
     });
     html += '<p style="font-size:10px;margin-top:10px">Your pick is on the right, the result under each contest. Unofficial results can change until they’re canvassed. From ballotta.org; contests are in ballot order.</p>';
@@ -3052,7 +3062,7 @@ const results = (() => {
     const n = ballot.length, can = canGroup(), grouped = can && by !== 'order';
     const row = (b, k) => {
       const c = b.c, v = current(c.id), e = entry(c.id), res = glanceRes(c, e);
-      const r = res ? '<span class="res">' + esc(res) + '</span><small>' + esc(glanceWhen(c, e)) + '</small>' : '<small>' + (R && R.withdrawn ? 'Results paused' : 'No result yet') + '</small>';
+      const r = res ? '<span class="res">' + esc(res) + '</span><small>' + esc(glanceWhen(c, e)) + '</small>' : '<small>' + noResult() + '</small>';
       const p = !v.length ? '<small>No pick</small>' : v[0] === '__skip' ? '<small>Skipped</small>' : esc(v.map(o => choice(c, o)).join(', '));
       const w = hasWhy(c.id) ? '<span class="dk-wt">' + esc(whyShown(whys[c.id])) + '</span>' : '<small>—</small>';
       return '<tr data-tr="' + c.id + '"><th scope="row">' + (k ? '<span class="rs-tc"><i class="pm pm-' + k + '" aria-hidden="true"></i>' : '') + '<button type="button" class="dk-link" data-go="' + c.id + '">' + esc(cleanTitle(c)) + '</button>' + (k ? '</span>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th>'
