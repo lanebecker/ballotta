@@ -5228,6 +5228,22 @@ def a_saved_copy_says_so(b):
     ctx, pg = rs_page(b, {'body': fx.scene('mixed'), 'headers': {'x-ballotta-copy': 'saved'}})
     assert 'Saved copy · may be out of date' in pg.inner_text('#rs-top'), pg.inner_text('#rs-top')
     ctx.close()
+    # #212: while a kept copy is shown the page asks again in 30 s, not 10 minutes; an older file never replaces the one
+    # shown, kept or not (a lagging edge); a fresh answer drops "Saved copy"
+    scene = fx.scene('mixed'); serve = {'body': scene, 'headers': {'x-ballotta-copy': 'saved'}}
+    ctx, pg = rs_page(b, serve)
+    n = len(pg.asked)
+    serve.update(body={**scene, 'seq': scene['seq'] - 1, 'withdrawn': True}, headers={})   # older, and paused: unmistakable if taken
+    pg.clock.run_for(31 * 1000); pg.wait_for_timeout(300)
+    top = pg.inner_text('#rs-top')
+    assert len(pg.asked) == n + 1 and 'paused' not in top and 'Saved copy' in top, (len(pg.asked) - n, top)
+    serve.update(body=scene)
+    pg.clock.run_for(31 * 1000); pg.wait_for_timeout(300)
+    assert len(pg.asked) == n + 2 and 'Saved copy' not in pg.inner_text('#rs-top'), (len(pg.asked) - n, pg.inner_text('#rs-top'))
+    pg.clock.run_for(5 * 60 * 1000); pg.wait_for_timeout(200)
+    assert len(pg.asked) == n + 2, 'a fresh copy: back to every 10 minutes'
+    assert pg.errs == [], pg.errs
+    ctx.close()
     sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
     assert "u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept" in sw and "h.set('x-ballotta-copy', 'saved')" in sw
 
@@ -5399,6 +5415,15 @@ def how_your_picks_did_groups_the_ballot_and_the_counts_link_to_it(b):
         rail = {x.get_attribute('class') for x in pg.query_selector_all('.dk-row .dk-d')}
         assert rail == ({'dk-d', 'dk-d on'} if picks else {'dk-d pm pm-none'}), ('paused: the dots as before; no picks: each a dash', rail)
         ctx.close()
+    # #213: a picked contest the file has no result for is "not settled yet" everywhere, counted once the same way
+    sc = fx.scene('mixed'); sc = {**sc, 'contests': {k: v for k, v in sc['contests'].items() if k != 'c124'}}
+    ctx, pg = rs_page(b, {'body': sc})
+    words = [x.inner_text().replace('\n', ' ') for x in pg.query_selector_all('#rs-top .rs-sum .three > div')]
+    assert 'YOUR 9 PICKS' in pg.inner_text('#rs-top .rs-sum') and words[2] == '3 not settled yet', words
+    pg.click('#rs-top .rs-gol[data-g="open"]'); pg.wait_for_timeout(150)
+    g = pg.query_selector('#gl-open')
+    assert g.query_selector('tr.rs-gh th').inner_text() == '3 · Not settled yet' and [r.get_attribute('data-tr') for r in g.query_selector_all('tr[data-tr]')] == ['c001', 'c069', 'c124']
+    ctx.close()
     # each group is named as the summary counts it: canvassed, a pick that lost "didn't win"
     ctx, pg = rs_page(b, {'body': fx.scene('official')}, when='2026-12-03T09:00')
     words = pg.inner_text('#rs-top .rs-sum .rs-gol[data-g="behind"] span')

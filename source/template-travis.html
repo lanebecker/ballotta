@@ -2542,6 +2542,7 @@ const results = (() => {
   // Asked on load, when the page comes back into view, and every 10 minutes in view, like version.json (the newer-release
   // check). no-store: never a browser cache; the offline copy (phones) marks a copy it kept, so the page can say so (W14).
   const EVERY = 10 * 60 * 1000;
+  let soon = 0;
   // A new day on a page left open: everything dated is drawn again (the runoff's band and pages, the timeline, "Runoff
   // held", the late-ballots line), keeping the reader's place; at midnight into Nov 4 the results are asked for (#164).
   function newDay() { if (!live()) return; if (R && window.desk) { try { desk.reflow(''); } catch (e) {} } load(true); }
@@ -2554,11 +2555,11 @@ const results = (() => {
       if (!got) return;
       const next = accept(got[0]);
       if (!next) return;
-      if (R && next.seq < R.seq && !saved) return;   // an older file (a lagging cache, a kept copy) never replaces a newer one (#152)
+      if (R && next.seq < R.seq) return;   // an older file (a lagging cache, a kept copy) never replaces a newer one, whichever is shown (#152, #212)
       const changed = !R || next.seq !== R.seq || got[1] !== saved || !!next.withdrawn !== !!R.withdrawn, news = !!R;   // paused or back at the same seq redraws too (#153)
       R = next; saved = got[1];
       if (changed) redraw(news);
-    }).catch(() => {}).finally(settle);
+    }).catch(() => {}).finally(() => { settle(); clearTimeout(soon); if (saved) soon = setTimeout(() => load(true), 30 * 1000); });   // a kept copy shown: ask again soon, not in 10 minutes (#212)
   }
   function redraw(news) {
     try { if (window.desk) { if (news) desk.reflow(updated()); else desk.render(); } } catch (e) {}   // the laptop render ends by drawing the top line (top())
@@ -2805,12 +2806,14 @@ const results = (() => {
     return 'open';
   }  // Each pick's outcome, for the summary's counts: in a several-seat race each pick counts on its own, so "1 of your 2
   // picks is leading" adds one to "leading" and one to "behind", as the paper says (#144); a contest's picks otherwise count once.
-  const outs = (c) => { const v = current(c.id); return seats(c) > 1 && v.length > 1 && v[0] !== '__skip' ? v.map(x => outcome(c, x)).filter(Boolean) : [outcome(c)].filter(Boolean); };
+  // A pick on a contest the file has no result for (dropped as invalid, or held back by the pipeline) is not settled yet,
+  // the same in the summary, the phone's list and How your picks did (the Nov 4 audit, #213).
+  const outs = (c) => { const v = current(c.id), o = seats(c) > 1 && v.length > 1 && v[0] !== '__skip' ? v.map(x => outcome(c, x)).filter(Boolean) : [outcome(c)].filter(Boolean); return o.length || !picked(c) || !R || R.withdrawn ? o : ['open']; };
   const openPicks = () => ballot.flatMap(b => outs(b.c).filter(o => o === 'open').map(() => b));
   // How your picks did (Lane, Nov 4): the summary's three counts, then the contests with no pick here, always in this order.
   // Each pick has its group, as the summary counts it; a contest's own group is "none" when it has no pick here or was skipped.
   const GROUPS = ['with', 'behind', 'open', 'none'], OUT_G = { up: 'with', down: 'behind', behind: 'behind', open: 'open' };
-  const groupsOf = (c) => { if (!picked(c)) return ['none']; const o = outs(c); return o.length ? o.map(x => OUT_G[x]) : ['open']; };   // a pick with no result in the file: not settled
+  const groupsOf = (c) => picked(c) ? outs(c).map(x => OUT_G[x]) : ['none'];
   // A contest's mark (the canvas's pick-status marks; the shape says it, never the color alone): gold, won or leading;
   // a ring, behind or didn't win; half gold, not settled yet; a dash, no pick. Several picks with mixed outcomes: the ring.
   function mark(c) { const g = groupsOf(c); return g[0] === 'none' ? 'none' : g.includes('open') ? 'open' : g.every(x => x === 'with') ? 'with' : 'behind'; }

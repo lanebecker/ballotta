@@ -204,6 +204,9 @@ M = [
  ('R174 a group named Behind when none are', PREV, "if (k === 'behind') return !behind ? 'Didn’t win' : !down ? 'Behind' : 'Didn’t win or behind';", "if (k === 'behind') return 'Behind';", [HP]),
  ('R175 the headline keeps its period', PREV, "esc(mine(c, e).replace(/\\.$/, '')) + '</p><p class=\"rs-hs\">'", "esc(mine(c, e)) + '</p><p class=\"rs-hs\">'", [HP]),
  ('R176 the screen reader hears no mark', PREV, "return e ? mine(c, e).replace(/\\.$/, '') : 'you picked here';", "return 'you picked here';", [T, HP]),
+ ('R177 a kept copy waits 10 minutes', PREV, "if (saved) soon = setTimeout(() => load(true), 30 * 1000);", "", ['a_saved_copy_says_so']),
+ ('R178 a kept copy shown takes an older file', PREV, "      if (R && next.seq < R.seq) return;", "      if (R && next.seq < R.seq && !saved) return;", ['a_saved_copy_says_so']),
+ ('R179 a pick with no result is left out of the summary', PREV, "return o.length || !picked(c) || !R || R.withdrawn ? o : ['open'];", "return o;", [HP]),
 ]
 if __name__ == '__main__':
     R.main(M)
