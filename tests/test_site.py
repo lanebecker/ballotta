@@ -5186,6 +5186,31 @@ def a_bad_results_file_breaks_nothing(b):
     ctx.close()
 
 @results_test
+def the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins(b):
+    # Lane, Nov 4: a measure with a vote or two reads "Too few votes to call", not "Too close to call" (#204); several seats
+    # with only the last too close names the clear ones (#205); a declared write-in the county hasn't counted by name
+    # reads "Not counted by name yet", with no bar, not 0 (#197).
+    fx = rs_fixtures(); sc = fx.scene('mixed'); C = sc['contests']
+    C['c147'] = fx.entry('c147', verdict='none', votes=[1, 0]); C['c147']['no_call'] = 'too_few'
+    C['c113'] = fx.entry('c113', verdict='too_close', votes=[400, 300, 295], leaders=['Sarah Ponder'], canvasser='the Sunset Valley City Council')
+    w = [x for x in C['c001']['choices'] if x[3]]; w[0][1] = 0; w[0][2] = 0.0; C['c001']['unnamed'] = [w[0][0]]
+    ctx, pg = rs_page(b, {'body': sc})
+    r = rs_go(pg, 'c147')
+    assert 'Too few votes to call' in r and 'This one is decided at the canvass.' in r and 'Too close' not in r, r
+    assert pg.inner_text('.dk-row[data-row="c147"] small').startswith('Too few votes to call · Unofficial')
+    pg.click('#dk-filt [data-f="und"]')
+    assert 'c147' not in [x.get_attribute('data-row') for x in pg.query_selector_all('.dk-row[data-row]')], 'too few is not too close'
+    pg.click('#dk-filt [data-f="all"]')
+    r = rs_go(pg, 'c113')
+    assert 'Leading: Sarah Ponder · second seat too close to call' in r and '1 of your 2 picks is leading' in r, r
+    assert pg.get_attribute('.dk-row[data-row="c113"] .dk-d', 'class') == 'dk-d pm pm-open', 'one leading, one in the close seat: not settled'
+    r = rs_go(pg, 'c001')
+    row = [x for x in pg.query_selector_all('#dk-paper .rs > .rs-bars .rs-b') if 'Jade Simmons' in x.inner_text()][0]
+    assert 'Not counted by name yet' in row.inner_text() and row.query_selector('.rs-tr') is None, row.inner_text()
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
 def a_shared_friends_pick_shows_beside_each_result(b):
     # Lane, Nov 4 (#210): after the election a Share link showed nothing about the friend (the rail hid them, the result
     # had no line), though the landing promised their picks beside yours. Now: their pick after yours on each result,
@@ -5890,12 +5915,15 @@ def small_after_election_fixes(b):
     assert 'Becomes official when the Austin City Council canvasses the vote, by Nov 17.' in paper and 'on Nov 12' not in paper, paper[:600]   # the deadline, still ahead
     assert pg.evaluate("getComputedStyle(document.querySelector('.dk-row[data-row=\"c113\"] small')).whiteSpace") == 'normal', 'a rail line is cut with …'
     ctx.close()
-    for when, shown in (('2026-11-02T09:00', 1), ('2026-11-05T09:00', 0)):   # before the election they show: the check can see them
+    for when, shown in (('2026-11-02T09:00', 1), ('2026-11-05T09:00', 1)):   # after the election too, now with their picks and Hide on the results paper (#210)
         ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when=when, url=link('s', DESK_FRIEND), ballot=False, picks=False)
         pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')   # as lookup_wide, whatever the count says
         pg.wait_for_selector('body.dk-app-on', timeout=30000); pg.wait_for_selector('.dk-rail .dk-row', timeout=30000); pg.wait_for_timeout(600)
         n = pg.locator('.dk-rail .dk-fa').count()
-        assert (n > 0) == bool(shown), (when, n, 'a friend’s initials in the rail after the election, with no Hide' if n else 'the check sees no initials at all')
+        assert (n > 0) == bool(shown), (when, n, 'the check sees no initials at all')
+        if when >= '2026-11-04':
+            pg.click('.dk-rail .dk-row:has(.dk-fa)'); pg.wait_for_timeout(150)
+            assert pg.query_selector('#dk-paper [data-act="hidefriend"]'), 'their initials in the rail, and Hide on the paper'
         ctx.close()
 
 @results_test

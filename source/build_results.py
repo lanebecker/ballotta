@@ -170,9 +170,10 @@ def slice_of(rep, key, names, write_ins, spell, where):
         if P.norm(named) != P.norm(c["name"]):
             raise Problem(f"{where}: {rep['label']}'s contest {key} is {c['name']!r} in this file, not {named!r} (fix the map's key)")
     every = names + write_ins
-    got = {}
+    got, lumped = {}, 0
     for printed, votes in c["choices"]:
         if P.norm(printed) in GENERIC_WRITE_IN:
+            lumped += votes
             continue
         who = spell.get(printed) or P.match(printed, every)
         if who is None:
@@ -184,7 +185,10 @@ def slice_of(rep, key, names, write_ins, spell, where):
     missing = [n for n in names if n not in got]
     if missing:
         raise Problem(f"{where}: {rep['label']} has no line for {missing}")
-    return [(n, got[n]) for n in names] + [(n, got.get(n, 0)) for n in write_ins], c.get("registered")
+    # A declared write-in with no line of its own while the file lumps write-in votes under "Write-in" hasn't been
+    # counted by name yet: its 0 is unknown, not zero (the Nov 4 audit, #197; Lane: "Not counted by name yet")
+    unnamed = [n for n in write_ins if n not in got] if lumped else []
+    return [(n, got[n]) for n in names] + [(n, got.get(n, 0)) for n in write_ins], c.get("registered"), unnamed
 
 
 def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None):
@@ -195,22 +199,22 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
     cvr = canvassers[cv_slug]
     line = official.get("canvasses", {}).get(cv_slug, {})
     done = line.get("canvassed")
-    sources, missing, slack, travis = [], [], 0, None
+    sources, missing, slack, travis, unnamed = [], [], 0, None, []
     official_numbers = True
     if m["source"] == "sos":
         feed, can = reports.get("sos"), reports.get("sos_canvass")
         if feed is None:
             return None
-        rows, _ = slice_of(feed, m["keys"]["sos"], names, write_ins, m.get("spell", {}).get("sos", {}), where)
+        rows, _, unnamed = slice_of(feed, m["keys"]["sos"], names, write_ins, m.get("spell", {}).get("sos", {}), where)
         sources.append([feed["label"], feed["posted"]])
         if done and can is not None and P.norm(m["sos_name"]) in can["contests"]:
-            rows, _ = slice_of(can, P.norm(m["sos_name"]), names, write_ins, m.get("spell", {}).get("sos_canvass", {}), where)
+            rows, _, unnamed = slice_of(can, P.norm(m["sos_name"]), names, write_ins, m.get("spell", {}).get("sos_canvass", {}), where)
             sources = [[can["label"], can["posted"]]]
         elif done:
             official_numbers = False                         # W11: official, but these are the last unofficial numbers
         if not m.get("travis_only") and reports.get("travis") and m["keys"].get("travis"):
             try:
-                tv, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
+                tv, _, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
                 tt = sum(v for _, v in tv[: len(names)])
                 travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]] if tt else None   # no Travis votes: no breakdown (#203)
             except Problem as p:   # only the Travis breakdown waits: the statewide result still shows (the verification of #158)
@@ -252,7 +256,8 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
             # city voter; the city counts both)
             here = {}   # this county's own count, every listed contest added up (its Travis breakdown, below)
             for one in (key if isinstance(key, list) else [key]):
-                part, _ = slice_of(rep, one, names, write_ins, m.get("spell", {}).get(county, {}), where)
+                part, _, un = slice_of(rep, one, names, write_ins, m.get("spell", {}).get(county, {}), where)
+                unnamed += [n for n in un if n not in unnamed]
                 for n, v in part:
                     total[n] += v
                     here[n] = here.get(n, 0) + v
@@ -296,10 +301,16 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
             verdict, leaders, runoff = R.unofficial(kind, rows, n, m.get("majority", False), slack, write_ins, cid, needs)
     except ValueError as e:
         raise Problem(f"{where}: {e} (source/results_map.json)")
+    # Too few votes for any lead to clear the 20-vote floor, even all of them one way: no call, and the page says why
+    # ("Too few votes to call"; Lane, Nov 4, #204), not "Too close to call"
+    if not done and verdict == "too_close" and slack is not None and cast + slack < R.FLOOR:
+        verdict, leaders = "none", []
     no_call = None                                   # W69: why votes show with no verdict
     if not done and verdict == "none" and cast and slack is not None:
         if m.get("outcome_from_canvass"):
             no_call = "two_majorities"
+        elif cast + slack < R.FLOOR:
+            no_call = "too_few"
         elif "unsure" in (m.get("majority"), needs):
             no_call = "rule_unsettled"
     if not done:
@@ -315,6 +326,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
         "changed": 0, "corrected": (prev_entry or {}).get("corrected"), "note": None, "who": m.get("who"),
         "runoff_on": official.get("runoffs", {}).get(cid) if verdict in ("runoff", "may_runoff", "tied_runoff") else None,
         "recount": recount, "write_ins": bool(write_ins), "needs": "two_thirds" if needs == "two_thirds" else None, "no_call": no_call,
+        "unnamed": [n for n in write_ins if n in unnamed],
     }
 
 
@@ -427,7 +439,10 @@ def word(e):
         return "No votes yet"
     who = " and ".join(e["leaders"] or e["runoff"])
     state = {"partial": "partial: " + ", ".join(e["missing"]) + " missing", "recount": "official, recount requested"}.get(e["state"], e["state"])
-    return VERDICT_WORDS[e["verdict"]] + (f": {who}" if who else "") + f" ({state})" + (f"; {NOTE_WORDS[e['note']]}" if e["note"] else "")
+    v = "Too few votes to call" if e.get("no_call") == "too_few" else VERDICT_WORDS[e["verdict"]]
+    if e["verdict"] == "too_close" and e["leaders"]:   # several seats, the last too close (#205)
+        v = "Leading, last seat too close to call"
+    return v + (f": {who}" if who else "") + f" ({state})" + (f"; {NOTE_WORDS[e['note']]}" if e["note"] else "")
 
 
 def notes(contests, mp):

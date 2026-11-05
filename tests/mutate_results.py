@@ -139,7 +139,7 @@ M = [
  ('R129 All results use up since', PREV, "    sinceNow();   // a visit counts only", "    // a visit counts only", ['all_results_dont_use_up_since_you_last_looked']),
  ('R130 back from paused at the same seq', PREV, " || !!next.withdrawn !== !!R.withdrawn, news = !!R;", ", news = !!R;", ['a_restore_reaches_pages_left_open']),
  ('R131 the Nov 3 bars unlabeled after the runoff', PREV, "(held ? '<p class=\"rs-bl\">Nov 3 result</p>' : '')", "''", ['lanes_runoff_calls_oct_21_evening']),
- ('R132 a friend\'s initials after the election', PREV, "const fp = !A && friend && friend.P[id]", "const fp = friend && friend.P[id]", ['small_after_election_fixes']),
+ ('R132 no friend\'s initials after the election', PREV, "const fp = friend && friend.P[id]", "const fp = !A && friend && friend.P[id]", ['small_after_election_fixes', 'a_shared_friends_pick_shows_beside_each_result']),
  ('R133 a gap under the band', PREV, "justify-content:center;align-content:start;", "justify-content:center;", ['the_runoff_pages_hold_their_layout']),
  ('R134 an at-large Place as an area', PREV, "const m = cleanTitle(c).match(/District \\d+/);", "const m = cleanTitle(c).match(/District \\d+|Place \\d+/);", ['several_runoffs_step_through_and_each_names_its_voters']),
  ('R135 the phone back to a results contest', PREV, "    else if (D.ui.view === 'rdecide') desk.rprev();", "", ['the_phone_shows_the_runoff_and_steps_back_sensibly']),
@@ -147,8 +147,8 @@ M = [
  ('R112 a runoff row opens nothing', PREV, "r.dataset.rrow ? rgo(r.dataset.rrow, true) :", "false ? rgo(r.dataset.rrow, true) :", [RO]),
  ('R113 days miscounted', PREV, "(n > 1 ? n + ' days from today'", "(n > 1 ? (n + 1) + ' days from today'", [RO]),
  # the fix verification's findings (Oct 21)
- ('R101 no word for no call', PREV, "    else if (e.no_call) h += '<p class=\"rs-v\">No call yet</p>", "    else if (false) h += '<p class=\"rs-v\">No call yet</p>", [V]),
- ('R102 no call reads as no result', PREV, "    if (e && e.no_call) return 'No call yet · Unofficial';   // W69", "", [V]),
+ ('R101 no word for no call', PREV, "    else if (e.no_call) h += '<p class=\"rs-v\">' + noCall(e)", "    else if (false) h += '<p class=\"rs-v\">' + noCall(e)", [V]),
+ ('R102 no call reads as no result', PREV, "    if (e && e.no_call) return noCall(e) + ' · Unofficial';   // W69", "", [V]),
  ('R100 W59 without its ending', PREV, " Unofficial until each canvass. <button type=\"button\" class=\"dk-link\" data-rs=\"why\">Why unofficial?</button></p>';", "</p>';", [T]),
  ('R89 W5 with W6 after late ballots', PREV, "    if (cv.kind === 'state') { if (day() <= R.late_until) h += ", "    if (cv.kind === 'state' && day() <= R.late_until) { h += ", [V]),
  ('R90 the band drawn twice on new results', PREV, "    if (!window.desk) top();", "    top();", [V]),
@@ -196,7 +196,7 @@ M = [
  ('R167 the toggle does nothing', PREV, "ui.glanceBy = btn.dataset.by; viewGlance();", "viewGlance();", [HP]),
  ('R168 grouped while paused', PREV, "const canGroup = () => !!R && !R.withdrawn &&", "const canGroup = () => !!R &&", [HP]),
  ('R169 a headline for a skipped contest', PREV, "const you = withPick !== false && picked(c)", "const you = withPick !== false && current(c.id).length > 0", [HP]),
- ('R170 your bar unmarked', PREV, "bars(c, e.choices, true, you ? current(c.id) : null)", "bars(c, e.choices, true, null)", [HP]),
+ ('R170 your bar unmarked', PREV, "bars(c, e.choices, true, you ? current(c.id) : null, e.unnamed)", "bars(c, e.choices, true, null, e.unnamed)", [HP]),
  ('R171 the phone list stays open on a count', PREV, "e.target.closest('.dk-row, .rs-lnext, .rs-gol')", "e.target.closest('.dk-row, .rs-lnext')", [HP]),
  # R172 retired Nov 4 before it shipped: a count's number over its words is already taller than 44px, so the phone's
  # min-height is only a floor; the test still measures every count's height.
@@ -213,6 +213,12 @@ M = [
  ('R183 back online, nothing asked', PREV, "    window.addEventListener('online', () => { if (!R || saved) load(true); });", "", ['results_that_dont_load_keep_the_page_a_record']),
  ('R184 Try again does nothing', PREV, "      else if (b.dataset.rs === 'retry') load(true);", "", ['results_that_dont_load_keep_the_page_a_record']),
  ('R185 rows say no result yet when none loaded', PREV, ": failed() ? FAILED[0] : 'No result yet';", ": 'No result yet';", ['results_that_dont_load_keep_the_page_a_record']),
+ ('R186 too few votes read as no call', PREV, "const noCall = (e) => e.no_call === 'too_few' ? 'Too few votes to call' : 'No call yet';", "const noCall = (e) => 'No call yet';", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
+ ('R187 the clear seats unsaid', PREV, "    if (V === 'too_close' && e.leaders.length) {", "    if (false) {", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
+ ('R188 a write-in not counted by name reads 0', PREV, "un = (x) => !!unnamed && unnamed.includes(x[0]);", "un = (x) => false;", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
+ ('R189 a pick in a clear seat is not settled', PREV, "    if (V === 'too_close' && hit) return 'up';", "", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
+ ('R190 a measure without its words', PREV, "    if (isM && c.text) h += '<div class=\"rs-what\">", "    if (false) h += '<div class=\"rs-what\">", [HP]),
+ ('R191 a friend\'s pick left off the result', PREV, "    if (withPick !== false && theirs) h += theirs;", "", ['a_shared_friends_pick_shows_beside_each_result']),
 ]
 if __name__ == '__main__':
     R.main(M)

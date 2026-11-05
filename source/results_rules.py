@@ -75,7 +75,10 @@ def unofficial(kind, votes, seats=1, majority=False, slack=0, write_ins=(), cid=
     nth, nxt = r[seats - 1][1], r[seats][1]
     if clear(nth, nxt, total, slack):
         return "leading", [n for n, _ in r[:seats]], []
-    return "too_close", [], []
+    # several seats, the last too close: the ones clear of the first left out are named (Lane, Nov 4, #205: "Leading:
+    # Moser, Vrabel · third seat too close to call"); one seat, or none clear, names no one
+    sure = [n for n, v in r[:seats - 1] if clear(v, nxt, total, slack)] if seats > 1 else []
+    return "too_close", sure, []
 
 
 def measure(votes, total, slack=0, need=Fraction(1, 2)):

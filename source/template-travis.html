@@ -2544,7 +2544,9 @@ const results = (() => {
     if (!NOTES.includes(e.note) || ![null, 'district', 'area'].includes(e.who) || typeof e.write_ins !== 'boolean') return false;
     if (![null, 'two_thirds'].includes(e.needs) || (e.needs && c.type !== 'measure')) return false;
     if (!(e.recount === null || (isStr(e.recount) && /^https:\/\//.test(e.recount)))) return false;
-    if (![undefined, null, 'two_majorities', 'rule_unsettled'].includes(e.no_call) || (e.no_call && (e.verdict !== 'none' || !['unofficial', 'partial'].includes(e.state)))) return false;   // W69: a reason only on an unofficial count with no verdict
+    if (e.unnamed !== undefined && !(Array.isArray(e.unnamed) && e.unnamed.every(n => e.choices.some(x => x[0] === n && x[3] && x[1] === 0)))) return false;   // #197
+    if (e.verdict === 'too_close' && e.leaders.length >= seats(c)) return false;   // #205: the clear ones of several seats, never all
+    if (![undefined, null, 'two_majorities', 'rule_unsettled', 'too_few'].includes(e.no_call) || (e.no_call && (e.verdict !== 'none' || !['unofficial', 'partial'].includes(e.state)))) return false;   // W69: a reason only on an unofficial count with no verdict
     return true;
   }
   function accept(j) {
@@ -2605,8 +2607,15 @@ const results = (() => {
     else h += '<p class="rs-n">Becomes official when ' + esc(e.canvasser) + ' canvasses the vote' + (cv.on && day() <= cv.on ? ' on ' + esc(md(cv.on)) : cv.by && day() <= cv.by ? ', by ' + esc(md(cv.by)) : '') + '.</p>';  // W6, W7; a date gone by isn't said as if to come (#177)
     return h;
   }
+  // Votes with no verdict, and why (W69): too few votes for any lead to count is said so (Lane, Nov 4, #204)
+  const noCall = (e) => e.no_call === 'too_few' ? 'Too few votes to call' : 'No call yet';
+  const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth'];
   function verdict(c, e) {
     const L = names(c, e.leaders), V = e.verdict;
+    if (V === 'too_close' && e.leaders.length) {   // several seats, the last too close: the clear ones named (Lane, Nov 4, #205)
+      const left = seats(c) - e.leaders.length;
+      return 'Leading: ' + L.join(', ') + ' · ' + (left === 1 ? (ORDINAL[seats(c) - 1] || 'last') + ' seat' : 'last ' + left + ' seats') + ' too close to call';
+    }
     switch (V) {
       case 'leading': return seats(c) > 1 ? 'Leading for ' + e.leaders.length + ' seats: ' + L.join(', ') : 'Leading: ' + L[0];   // W15, W16
       case 'passing': return 'Passing'; case 'failing': return 'Failing';                                              // W17
@@ -2639,6 +2648,10 @@ const results = (() => {
       if (V === 'passed' || V === 'failed' || V === 'failed_tie') return side + ((V === 'passed') === (v[0] === 'FOR') ? 'won.' : 'didn’t win.');  // W40
       return 'Your pick: ' + choice(c, v[0]);                                                                         // W36
     }
+    if (V === 'too_close' && mineIn) {   // among the clear seats of several, the last too close (#205): W34, W38's words
+      if (n === 1) return 'Your pick is leading.';
+      return mineIn === n ? n + ' of your picks are leading.' : mineIn + ' of your ' + n + ' picks ' + (mineIn === 1 ? 'is' : 'are') + ' leading.';
+    }
     if (V === 'leading') {
       if (n === 1) return mineIn ? 'Your pick is leading.' : 'Your pick is behind.';                                 // W34, W35
       return mineIn === n ? n + ' of your picks are leading.' : mineIn ? mineIn + ' of your ' + n + ' picks ' + (mineIn === 1 ? 'is' : 'are') + ' leading.' : 'None of your picks are leading.';  // W38
@@ -2668,11 +2681,11 @@ const results = (() => {
   }
   const pctText = (x, d, total) => { const p = d === 2 && total ? 100 * x[1] / total : x[2]; return x[1] > 0 && +p.toFixed(d) === 0 ? '<' + (d === 2 ? '0.01' : '0.1') + '%' : p.toFixed(d) + '%'; };   // two decimals from the votes: the file keeps two
   // you: the picks to mark (Lane, Nov 4: your pick's bar gold, with a tag), on the result itself only
-  function bars(c, rows, wi, you) {
-    const d = pctDigits(rows), total = rows.reduce((a, x) => a + x[1], 0), me = (x) => !!you && you.includes(x[0]);
+  function bars(c, rows, wi, you, unnamed) {   // unnamed: declared write-ins the county hasn't counted by name (#197)
+    const d = pctDigits(rows), total = rows.reduce((a, x) => a + x[1], 0), me = (x) => !!you && you.includes(x[0]), un = (x) => !!unnamed && unnamed.includes(x[0]);
     return '<div class="rs-bars">' + rows.map(x => '<div class="rs-b' + (me(x) ? ' rs-me' : '') + '"><span class="rs-nm">' + esc(choice(c, x[0])) + (wi && x[3] ? ' <small>(write-in)</small>' : '') + (me(x) ? ' <span class="rs-tag">Your pick</span>' : '') + '</span>'
-      + '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span>'
-      + '<span class="rs-vt">' + x[1].toLocaleString('en-US') + ' · ' + pctText(x, d, total) + '</span></div>').join('') + '</div>';
+      + (un(x) ? '' : '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span>')
+      + '<span class="rs-vt">' + (un(x) ? 'Not counted by name yet' : x[1].toLocaleString('en-US') + ' · ' + pctText(x, d, total)) + '</span></div>').join('') + '</div>';   // #197 (Lane, Nov 4)
   }
   const NOTE = {
     district_not_confirmed: 'Voters didn’t confirm this district (Proposition A failed), so it won’t be created.',   // W31
@@ -2693,10 +2706,10 @@ const results = (() => {
     const v = verdict(c, e);
     const held = ['runoff', 'tied_runoff'].includes(e.verdict) && e.runoff_on && day() > e.runoff_on;   // W113: the county has the runoff's result
     if (v) h += '<p class="rs-v">' + (held ? esc(v.replace(/Travis County Elections$/, '')) + '<a href="' + TCE + '" target="_blank" rel="noopener">Travis County Elections ↗</a>' : esc(v)) + '</p>';
-    else if (e.no_call) h += '<p class="rs-v">No call yet</p><p class="rs-n">This one is decided at the canvass.</p>';   // W69 (Lane, Oct 21): numbers with no verdict, on purpose
+    else if (e.no_call) h += '<p class="rs-v">' + noCall(e) + '</p><p class="rs-n">This one is decided at the canvass.</p>';   // W69 (Lane, Oct 21): numbers with no verdict, on purpose
     if (upcoming(c)) h += '<p class="rs-why">No one won a majority, so the top two meet again on ' + esc(dayLong(e.runoff_on)) + '.</p>';
     if (e.needs === 'two_thirds') h += '<p class="rs-n">Needs two-thirds of the vote to pass.</p>';   // W68: road bonds (Tex. Const. art. III §52(b))
-    if (e.state !== 'counting') h += (held ? '<p class="rs-bl">Nov 3 result</p>' : '') + bars(c, e.choices, true, you ? current(c.id) : null);   // the bars aren't the runoff's (W113)
+    if (e.state !== 'counting') h += (held ? '<p class="rs-bl">Nov 3 result</p>' : '') + bars(c, e.choices, true, you ? current(c.id) : null, e.unnamed);   // the bars aren't the runoff's (W113)
     if (e.write_ins) h += '<p class="rs-n">Declared write-in candidates are listed by name. Only votes for declared write-in candidates count.</p>';  // W45
     if (e.note) h += '<p class="rs-n rs-key">' + NOTE[e.note] + '</p>';
     if (e.recount) h += '<p class="rs-n rs-key">Recount requested · <a href="' + esc(e.recount) + '" target="_blank" rel="noopener">Details</a></p>';  // W29
@@ -2804,7 +2817,7 @@ const results = (() => {
   // A rail row's second line: the result in a few words, and whether it's official.
   function rowLine(c) {
     const e = entry(c.id);
-    if (e && e.no_call) return 'No call yet · Unofficial';   // W69
+    if (e && e.no_call) return noCall(e) + ' · Unofficial';   // W69
     if (!e || e.state === 'counting' || e.verdict === 'none') return noResult();
     let v = verdict(c, e);
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) v = 'Runoff: ' + andList(names(c, e.runoff).map(surname));
@@ -2823,6 +2836,7 @@ const results = (() => {
       return (V === 'passing' || V === 'passed') === (v[0] === 'FOR') ? 'up' : off ? 'down' : 'behind';
     }
     if (V === 'leading') return hit ? 'up' : 'behind';
+    if (V === 'too_close' && hit) return 'up';   // one of the clear seats of several (#205); the rest are open
     if (['won', 'elected', 'unopposed'].includes(V)) return hit ? 'up' : 'down';
     if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : off ? 'down' : 'behind';   // unofficial: no call, as W112 (#177)
     return 'open';
@@ -3049,7 +3063,7 @@ const results = (() => {
   // At a glance after the election (the canvas's At a glance board): Contest · Result · Your pick · Your reason, read-only.
   // The result's first line says what happened; the second, whether it's official, and when it was or will be.
   function glanceRes(c, e) {
-    if (e && e.no_call) return 'No call yet';   // W69
+    if (e && e.no_call) return noCall(e);   // W69
     if (!e || e.state === 'counting' || e.verdict === 'none') return null;
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return 'Runoff: ' + andList(names(c, e.runoff));
     return e.verdict === 'tied' ? 'Tied' : verdict(c, e);   // W25 is long: the contest's own page says what happens next

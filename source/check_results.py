@@ -22,7 +22,8 @@ An entry:
   state        counting | unofficial | partial | official | recount
   verdict      none | leading | too_close | may_runoff | runoff | won | elected | passing | failing | passed | failed |
                failed_tie | unopposed | tied | tied_legislature | tied_runoff | tied_second
-  leaders      [choice name]: who leads, won or was elected (empty when the verdict names no one)
+  leaders      [choice name]: who leads, won or was elected (empty when the verdict names no one); with too_close in a
+               several-seat race, the ones already clear of the last seat (#205)
   runoff       [choice name]: the two headed to a runoff (empty unless the verdict is runoff, and then 0 or 2)
   choices      [[name, votes, percent, write_in]] in ballot order; name is the page's own pick name (candidate
                names without the party; FOR / AGAINST); write_in true only for a declared write-in candidate, listed
@@ -45,9 +46,12 @@ An entry:
   write_ins    bool: declared write-in candidates are listed in choices (W45)
   needs        null | two_thirds: a measure that needs two-thirds of the vote to pass (road bonds, Tex. Const. art.
                III §52(b); W68)
-  no_call      null | two_majorities | rule_unsettled: why votes are shown with no verdict (W69): an outcome that needs
-               separate majorities one total can't show (ESD 4's annexation), or a rule not yet confirmed whose two
-               readings disagree; settled at the canvass
+  no_call      null | two_majorities | rule_unsettled | too_few: why votes are shown with no verdict (W69): an outcome
+               that needs separate majorities one total can't show (ESD 4's annexation), a rule not yet confirmed whose
+               two readings disagree, or too few votes for any lead to clear the 20-vote floor (#204); settled at the
+               canvass
+  unnamed      [declared write-in]: write-ins the county hasn't counted by name yet (it lumps them as "Write-in"), so
+               their 0 is unknown; the page says "Not counted by name yet" (#197)
 """
 import json, pathlib, re, sys
 
@@ -62,6 +66,7 @@ KINDS = {"local", "state", "legislature"}
 TOP = {"seq", "election", "withdrawn", "late_until", "contests"}
 ENTRY = {"state", "verdict", "leaders", "runoff", "choices", "sources", "missing", "travis", "canvasser", "canvass",
          "official_numbers", "changed", "corrected", "note", "who", "runoff_on", "recount", "write_ins", "needs", "no_call"}
+OPTIONAL = {"unnamed"}   # added Nov 4 (#197): a file from before it is still sound
 # The verdicts each state may carry: an unofficial count never says won, passed or elected (Lane, Oct 20: "Won" only
 # when official), and an official one never says leading.
 ALLOWED = {
@@ -79,6 +84,11 @@ def pick_names(contest):
     if contest["type"] == "measure":
         return ["FOR", "AGAINST"]
     return [re.sub(r"\s*\((REP|DEM|LIB|GRN)\)$", "", x) for x in contest["choices"] if x != "Write-in"]
+
+
+def seats_of(contest):
+    m = re.search(r"vote for up to (\d+)", contest["title"])
+    return int(m.group(1)) if m else 1
 
 
 def answer_key(root=ROOT):
@@ -128,8 +138,8 @@ def check(obj, key, prev=None, rolled=None):
             bad.append(where + "not a contest on Travis ballots (source/answer_key.json)"); continue
         if not isinstance(e, dict):
             bad.append(where + "not an object"); continue
-        if set(e) != ENTRY:
-            bad.append(where + f"keys {sorted(set(e) ^ ENTRY)} missing or extra"); continue
+        if set(e) - OPTIONAL != ENTRY:
+            bad.append(where + f"keys {sorted((set(e) - OPTIONAL) ^ ENTRY)} missing or extra"); continue
         c, names = key[cid], pick_names(key[cid])
         if e["state"] not in STATES:
             bad.append(where + f"state {e['state']!r}")
@@ -165,7 +175,9 @@ def check(obj, key, prev=None, rolled=None):
             bad.append(where + f"{e['verdict']} needs leaders")
         if e["verdict"] == "won" and isinstance(e["leaders"], list) and len(e["leaders"]) > 1:
             bad.append(where + "won names one winner; several are elected")
-        if e["verdict"] in ("none", "too_close", "may_runoff", "runoff", "tied", "tied_legislature", "tied_runoff", "tied_second",
+        if e["verdict"] == "too_close" and e["leaders"] and not (c["type"] != "measure" and len(e["leaders"]) < seats_of(c)):
+            bad.append(where + "too_close names leaders only in a several-seat race, fewer than its seats")
+        if e["verdict"] in ("none", "may_runoff", "runoff", "tied", "tied_legislature", "tied_runoff", "tied_second",
                             "passing", "failing", "passed", "failed", "failed_tie") and e["leaders"]:
             bad.append(where + f"{e['verdict']} names no leaders")
         if c["type"] == "measure" and e["verdict"] not in ("none", "too_close", "passing", "failing", "passed", "failed", "failed_tie"):
@@ -221,7 +233,10 @@ def check(obj, key, prev=None, rolled=None):
             bad.append(where + "recount must be an https link or null")
         if e["needs"] not in (None, "two_thirds") or (e["needs"] and c["type"] != "measure"):
             bad.append(where + "needs is null, or two_thirds on a measure")
-        if e["no_call"] not in (None, "two_majorities", "rule_unsettled") or (e["no_call"] and (e["verdict"] != "none" or e["state"] in ("official", "recount", "counting"))):
+        un = e.get("unnamed", [])
+        if not (isinstance(un, list) and all(any(x[0] == n and x[3] and x[1] == 0 for x in ch) for n in un)):
+            bad.append(where + "unnamed lists declared write-ins shown with 0 votes")
+        if e["no_call"] not in (None, "two_majorities", "rule_unsettled", "too_few") or (e["no_call"] and (e["verdict"] != "none" or e["state"] in ("official", "recount", "counting"))):
             bad.append(where + "no_call is null, or a reason on an unofficial result with no verdict")
         if (e["state"] == "recount") != bool(e["recount"]):
             bad.append(where + "recount state exactly when there's a recount link")
