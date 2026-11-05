@@ -5303,15 +5303,20 @@ def all_travis_county_results_need_no_address(b):
     titles = lambda: [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs-c h4')]
     pg.click('.dk-row[data-lv="City"]'); t = titles()
     assert t and all('City of' in x for x in t), t
-    pg.click('.dk-row[data-lv="all"]'); pg.fill('#dk-q', 'Morales'); assert titles() == ['County Commissioner, Precinct 4'], titles()
-    pg.fill('#dk-q', 'commissioner'); assert titles() == ['County Commissioner, Precinct 4'], titles()   # a word only in the title
-    pg.fill('#dk-q', 'zzz'); assert 'Nothing matches' in pg.inner_text('#dk-paper')
-    pg.fill('#dk-q', ''); pg.click('#dk-filt [data-f="und"]'); assert len(titles()) == 4, titles()   # too close or may go to a runoff
+    pg.click('.dk-row[data-lv="all"]'); pg.fill('#dk-q', 'Morales')
+    assert len(titles()) > 1, 'a search here waits until typing pauses (#214)'
+    pg.wait_for_timeout(250); assert titles() == ['County Commissioner, Precinct 4'], titles()
+    pg.fill('#dk-q', 'commissioner'); pg.wait_for_timeout(250); assert titles() == ['County Commissioner, Precinct 4'], titles()   # a word only in the title
+    pg.fill('#dk-q', 'zzz'); pg.wait_for_timeout(250); assert 'Nothing matches' in pg.inner_text('#dk-paper')
+    pg.fill('#dk-q', ''); pg.wait_for_timeout(250); pg.click('#dk-filt [data-f="und"]'); assert len(titles()) == 4, titles()   # too close or may go to a runoff
+    # #214: no landmark per result here (each contest's h4 names it), and Travis's breakdown is an h5 under its h4
+    assert pg.query_selector('#dk-paper section[aria-label]') is None and pg.query_selector('#dk-paper .rs-tv h3') is None
     pg.click('#dk-filt [data-f="all"]')
     pg.click('#dk-views [data-view="decide"]'); pg.wait_for_timeout(200)   # no address: Results asks for one
     assert not pg.evaluate("document.body.classList.contains('dk-app-on')") and pg.evaluate("document.activeElement.id") == 'street'
     pg.goto(BASE.replace('index.html', 'results/')); pg.wait_for_timeout(800)
-    assert pg.url.endswith('/?results') and pg.inner_text('#dk-paper h1') == 'All Travis County results', pg.url
+    assert pg.url.endswith('/') and 'results' not in pg.url.split('/')[-1] and pg.inner_text('#dk-paper h1') == 'All Travis County results', pg.url   # ?results opens it once, then goes (#214)
+    assert pg.evaluate("location.search") == '', 'a reload would open All Travis County results again'
     assert pg.errs == [], pg.errs
     ctx.close()
 
@@ -6190,6 +6195,12 @@ def the_mailing_list_promises_results_only_until_nov_18(b):
         ctx, pg = new_page(b, wide=True); pg.clock.install(time=_dt.datetime.fromisoformat(when)); pg.goto(BASE)
         assert pg.inner_text('#ml-p') == want, (when, pg.inner_text('#ml-p'))
         ctx.close()
+    # a page left open across midnight into Nov 18 switches too (the Nov 4 audit, #215)
+    ctx, pg = new_page(b, wide=True); pg.clock.install(time=_dt.datetime.fromisoformat('2026-11-17T23:58:00-06:00')); pg.goto(BASE)
+    assert pg.inner_text('#ml-p') == both
+    pg.clock.run_for(3 * 60 * 1000); pg.wait_for_timeout(100)
+    assert pg.inner_text('#ml-p') == next_only, pg.inner_text('#ml-p')
+    ctx.close()
 
 @test
 def the_privacy_page_names_everywhere_anything_goes(b):

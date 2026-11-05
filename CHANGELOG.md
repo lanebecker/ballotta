@@ -14,7 +14,24 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.9.1] — 2026-11-05
+
+The rest of the Nov 4 audit that needed no new words.
+
+### Fixed
+- All Travis County results (#214):
+  - it draws faster: Austin's date is worked out once a second, not thousands of times a draw;
+  - its search waits until typing pauses (150 ms) instead of redrawing 214 contests at every key;
+  - for screen readers, each result is no longer a landmark of its own (there were 214, all named "Result"), and "How
+    Travis County voted" is a heading under its contest's;
+  - ballotta.org/?results opens it once, then leaves the address, so a reload opens your ballot.
+- The footer's Nov 18 switch now also happens on a page left open across midnight (#215).
+
 ### Results pipeline
+- Manor's and Pflugerville's runoff rules now cite what confirms them: each city's own record of a council-place
+  runoff (Manor Place 6, June 2022; Pflugerville Place 2, Sep 2016). Majority, as before; no result changes (#199).
 - Del Valle ISD's trustees are elected by plurality (Educ. Code §11.057(a) for single-member districts; a majority
   needs a board resolution 180 days ahead, and none was found; its Nov 3 order is silent, Lane read it Nov 5). SMD 9
   (c131) reads "Leading: Gloria Vera-Bedolla" instead of "No call yet", and will be called at the canvass (#198).
