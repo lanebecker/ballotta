@@ -3272,7 +3272,7 @@ const desk = (() => {
     $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%'; $('dk-bar').parentNode.classList.toggle('hidden', paused);
     menuFor(A);
     document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
-    const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).length }
+    const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).reduce((n, b) => n + current(b.c.id).length, 0) }   // each pick, as the summary counts them (Lane, Nov 4, #215)
       : { all: 'All ' + n, und: 'Undecided ' + (n - done), why: 'Reasons ' + ballot.filter(b => hasWhy(b.c.id)).length };
     document.querySelectorAll('#dk-filt button').forEach(b => { b.textContent = counts[b.dataset.f]; b.setAttribute('aria-pressed', b.dataset.f === ui.filter ? 'true' : 'false'); });
     const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));

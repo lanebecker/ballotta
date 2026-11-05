@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-4i7Hr2sfcA9dyyejmqGk3fYrVWFSg/VIH754yXnLjYA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-vqC2hTKfPi3eSimhFv4DyHV5hCTIqPlyFQzkQTTeR60='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -29,11 +29,11 @@ if (top === self) { var guard = document.getElementById('frame-guard'); if (guar
 })();
 </script>
 <script>window.ballottaBeforeSend = () => null;</script><script defer src="umami.js" integrity="sha256-kah212dkb9W3cBtvq/l/ipmuU7lOfltY1GW60eXXY+A=" data-website-id="51b98962-382e-4070-bbd0-f43aba4143ae" data-domains="ballotta.org,www.ballotta.org" data-exclude-search="true" data-exclude-hash="true" data-do-not-track="true" data-before-send="ballottaBeforeSend" data-performance="true"></script>
-<title>Ballotta · What's on your ballot? (Travis County test)</title>
-<meta name="description" content="See exactly what's on your November 3, 2026 ballot in Travis County, make your picks with private notes, and print a crib sheet to take to the polls.">
+<title>Ballotta · How your Travis County ballot turned out</title>
+<meta name="description" content="See the Nov 3, 2026 results for every contest on your Travis County ballot, beside the picks you made.">
 <meta name="theme-color" content="#4B2A6B">
-<meta property="og:title" content="Ballotta · What's on your ballot?">
-<meta property="og:description" content="Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet. An early test.">
+<meta property="og:title" content="Ballotta · How your ballot turned out">
+<meta property="og:description" content="See the Nov 3, 2026 results for every contest on your Travis County ballot, beside the picks you made.">
 <meta property="og:image" content="https://ballotta.org/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -3271,7 +3271,7 @@ const desk = (() => {
     $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%'; $('dk-bar').parentNode.classList.toggle('hidden', paused);
     menuFor(A);
     document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
-    const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).length }
+    const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).reduce((n, b) => n + current(b.c.id).length, 0) }   // each pick, as the summary counts them (Lane, Nov 4, #215)
       : { all: 'All ' + n, und: 'Undecided ' + (n - done), why: 'Reasons ' + ballot.filter(b => hasWhy(b.c.id)).length };
     document.querySelectorAll('#dk-filt button').forEach(b => { b.textContent = counts[b.dataset.f]; b.setAttribute('aria-pressed', b.dataset.f === ui.filter ? 'true' : 'false'); });
     const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));

@@ -5312,7 +5312,8 @@ def results_turn_the_ballot_into_a_record(b):
     assert pg.evaluate("getComputedStyle(document.querySelector('#dk-paper [data-act=prev]')).opacity") == '0.45', 'the results paper\'s Previous on contest 1 looks disabled (#150)'
     assert cur0 == 'c001', ('a record opens at the top, not at the first contest without a pick (#146)', cur0)
     assert pg.text_content('.dk-row[data-row="c071"] small').endswith(' · Your pick, Against, is behind') and not pg.query_selector('.dk-row[data-row="c006"] .dk-vh'), 'picked rows say how the pick did to screen readers (#148, Nov 4)'
-    assert [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All 11', 'Too close 4', 'My picks 8']
+    assert [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All 11', 'Too close 4', 'My picks 9'], 'each pick, as the summary\'s "Your 9 picks" (#215)'
+    pg.click('#dk-filt [data-f="why"]'); assert len(pg.query_selector_all('.dk-row[data-row]')) == 8, 'still the 8 contests picked in'; pg.click('#dk-filt [data-f="all"]')
     assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', pg.inner_text('#dk-when')
     pg.evaluate("desk.today(false)")   # what the midnight check runs on a page left open
     assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', ('the results time past midnight (#141)', pg.inner_text('#dk-when'))
