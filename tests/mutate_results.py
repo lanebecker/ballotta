@@ -18,6 +18,7 @@ A, C, N, E = 'all_travis_county_results_need_no_address', 'a_saved_copy_says_so'
 T = 'results_turn_the_ballot_into_a_record'
 V = 'every_state_reads_in_at_a_glance_and_the_printout'
 RO = 'the_runoff_is_its_own_ballot'
+HP = 'how_your_picks_did_groups_the_ballot_and_the_counts_link_to_it'
 M = [
  ('R1 results before Nov 4', PREV, 'const live = () => day() >= FROM;', 'const live = () => true;', [N]),
  ('R2 ?today= works on ballotta.org', PREV, "const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);", 'const LOCAL = true;', [O]),
@@ -31,7 +32,7 @@ M = [
  ('R10 nothing becomes official since', PREV, "        else if (isOfficial(e) && !['official', 'recount'].includes(w[0])) since.official++;\n", '', [S]),
  ('R11 what was seen is never kept', PREV, "LS.set('ballotta.resultsSeen', rec);", '', [S]),
  ('R12 withdrawn ignored', PREV, 'const entry = (cid) => (R && !R.withdrawn && live() ?', 'const entry = (cid) => (R && live() ?', [W]),
- ('R14 a pick line on nobody\'s ballot', PREV, "    if (withPick !== false) {   // your pick", "    if (true) {   // your pick", [A, P]),
+ ('R14 a pick line on nobody\'s ballot', PREV, "const you = withPick !== false && picked(c)", "const you = picked(c)", [A, P]),
  ('R15 results counted at every redraw', PREV, "    if (!counted) { counted = true; track('results_seen'); }\n  }\n  function landing() {", "    track('results_seen');\n  }\n  function landing() {", [L, P]),
  ('R16 a saved copy unsaid', PREV, "r.headers.get('x-ballotta-copy') === 'saved'", 'false', [C]),
  ('R17 the offline copy marks nothing', SW, "u.pathname.endsWith('/results.json') ? savedCopy(kept) : kept", "u.pathname.endsWith('/results.json') ? kept : kept", [C]),   # the built file; a stale build is the pipeline's catch
@@ -99,9 +100,9 @@ M = [
  ('R71 zeros while paused', PREV, "$('dk-count').textContent = paused ? 'Results paused' : done", "$('dk-count').textContent = done", [W]),
  ('R72 a record opens on the first without a pick', PREV, "if (ui.curAuto && after() && ballot.length)", "if (false)", [T]),
  ('R73 no What\'s next on the phone', PREV, "    if (runs.length) h += '<button type=\"button\" class=\"rs-lnext\"", "    if (false) h += '<button type=\"button\" class=\"rs-lnext\"", [P]),
- ('R74 the phone list stays open', PREV, "e.target.closest('.dk-row, .rs-lnext')", "e.target.closest('.dk-row')", [P]),
+ ('R74 the phone list stays open', PREV, "e.target.closest('.dk-row, .rs-lnext, .rs-gol')", "e.target.closest('.dk-row, .rs-gol')", [P]),
  ('R75 a move says only the pick', PREV, "    if (after()) return 'Contest ' + (idx(c.id) + 1)", "    if (false) return 'Contest ' + (idx(c.id) + 1)", [T]),
- ('R76 picked rows silent to screen readers', PREV, "(A && v.length && v[0] !== '__skip' ? '<span class=\"dk-vh\"> · you picked here</span>' : '')", "''", [T]),
+ ('R76 picked rows silent to screen readers', PREV, "(A && v.length && v[0] !== '__skip' ? '<span class=\"dk-vh\"> · ' + esc(results.pickSaid(b.c)) + '</span>' : '')", "''", [T]),
  ('R77 small targets on the phone', PREV, "  .dk-app .dk-link[data-rs],.rs .rs-key a{display:inline-flex;align-items:center;min-height:44px}", "", [P]),
  ('R78 no time on a narrow laptop', PREV, "  .rs-upd{display:block;margin:0;", "  .rs-upd{display:none;margin:0;", [T]),
  ('R79 skipped said twice', PREV, "v[0] === '__skip' && !(window.results && results.entry(c.id))", "v[0] === '__skip'", [T]),
@@ -181,6 +182,27 @@ M = [
  ('R154 the privacy page without its fonts', PRIV, "font-src 'self';", "font-src 'none';", ['the_privacy_page_names_everywhere_anything_goes']),
  ('R155 the results promise forever', PREV, "const ML_NEXT_ONLY = new Date(2026, 10, 18);", "const ML_NEXT_ONLY = new Date(2099, 10, 18);", ['the_mailing_list_promises_results_only_until_nov_18']),
  ('R156 the results promise dropped a day early', PREV, "const ML_NEXT_ONLY = new Date(2026, 10, 18);", "const ML_NEXT_ONLY = new Date(2026, 10, 17);", ['the_mailing_list_promises_results_only_until_nov_18']),
+ # How your picks did, and your pick first on the result (Lane, Nov 4)
+ ('R157 the groups out of order', PREV, "const GROUPS = ['with', 'behind', 'open', 'none']", "const GROUPS = ['behind', 'with', 'open', 'none']", [HP]),
+ ('R158 a skipped contest grouped as a pick', PREV, "if (!picked(c)) return ['none'];", "if (!current(c.id).length) return ['none'];", [HP]),
+ ('R159 several picks: only the first group', PREV, "[...new Set(g)].forEach(k => per[k].bs.push(b));", "per[g[0]].bs.push(b);", [HP]),
+ ('R160 one leading of two marked gold', PREV, "g.every(x => x === 'with') ? 'with' : 'behind'", "g.includes('with') ? 'with' : 'behind'", [HP]),
+ ('R161 a zero is a link', PREV, "return x[0] ? '<button type=\"button\" class=\"rs-gol\"", "return true ? '<button type=\"button\" class=\"rs-gol\"", [HP]),
+ ('R162 a count goes nowhere', PREV, "      else if (b.dataset.rs === 'glance' && window.desk) desk.glanceAt(b.dataset.g);", "", [HP]),
+ ('R163 a count lands at the top of the page', PREV, "      window.scrollTo(0, Math.max(0, th.getBoundingClientRect().top + window.scrollY - $('dk-hdr').offsetHeight - 12));\n", "", [HP]),
+ ('R164 focus left behind', PREV, "      th.focus({ preventScroll: true });\n      g.classList", "      g.classList", [HP]),
+ ('R165 no flash', PREV, "void g.offsetWidth; g.classList.add('rs-flash');", "void g.offsetWidth;", [HP]),
+ ('R166 the menu remembers ballot order', PREV, "if (v === 'glance') ui.glanceBy = 'how'; ", "", [HP]),
+ ('R167 the toggle does nothing', PREV, "ui.glanceBy = btn.dataset.by; viewGlance();", "viewGlance();", [HP]),
+ ('R168 grouped while paused', PREV, "const canGroup = () => !!R && !R.withdrawn &&", "const canGroup = () => !!R &&", [HP]),
+ ('R169 a headline for a skipped contest', PREV, "const you = withPick !== false && picked(c)", "const you = withPick !== false && current(c.id).length > 0", [HP]),
+ ('R170 your bar unmarked', PREV, "bars(c, e.choices, true, you ? current(c.id) : null)", "bars(c, e.choices, true, null)", [HP]),
+ ('R171 the phone list stays open on a count', PREV, "e.target.closest('.dk-row, .rs-lnext, .rs-gol')", "e.target.closest('.dk-row, .rs-lnext')", [HP]),
+ ('R172 small counts on the phone', PREV, "  .rs-listsum .rs-gol{min-height:44px;margin:-4px;padding:4px}\n", "", [HP]),
+ ('R173 rail marks while paused', PREV, "(A && !paused ? ' pm pm-' + results.mark(b.c)", "(A ? ' pm pm-' + results.mark(b.c)", [HP]),
+ ('R174 a group named Behind when none are', PREV, "if (k === 'behind') return !behind ? 'Didn’t win' : !down ? 'Behind' : 'Didn’t win or behind';", "if (k === 'behind') return 'Behind';", [HP]),
+ ('R175 the headline keeps its period', PREV, "esc(mine(c, e).replace(/\\.$/, '')) + '</p><p class=\"rs-hs\">'", "esc(mine(c, e)) + '</p><p class=\"rs-hs\">'", [HP]),
+ ('R176 the screen reader hears no mark', PREV, "return e ? mine(c, e).replace(/\\.$/, '') : 'you picked here';", "return 'you picked here';", [T, HP]),
 ]
 if __name__ == '__main__':
     R.main(M)

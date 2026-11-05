@@ -14,6 +14,28 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.8.0] — 2026-11-04
+
+### Changed
+- After the election, your picks lead (Lane, Nov 4; the canvas's "Your picks, linked"):
+  - **Each count in "Your N picks" is a link** (on a laptop's summary and in the phone's list) to At a glance,
+    grouped, scrolled to that group, whose heading flashes once and takes focus. A count of zero isn't a link.
+  - **At a glance is now "How your picks did"**, grouped by how your pick did, always in this order: won or leading,
+    behind (or didn't win), not settled yet (or too close to call), no pick. Each heading counts as the summary does
+    (each pick on its own), so a several-seat race with picks in two groups is in both. Within a group, contests are in
+    ballot order. "By how your pick did" and "In ballot order" switch between the two; "In ballot order" is the page
+    as it was, with "Only contests I picked in". From the menu it always opens grouped. With no picks on this device,
+    or while results are paused, it stays in ballot order, titled as before.
+  - **A mark for each pick**, in the rail, in At a glance and on the result: gold, won or leading; a ring, behind or
+    didn't win; half gold, not settled yet; a dash, no pick. The shape carries it, never the color alone, and no
+    checks or crosses. A screen reader hears how the pick did after each rail row's result, in the result's own words.
+  - **The result page leads with your pick**: under the title, its mark and how it did ("Your pick, Against, is
+    behind"), the result in a few words under it, then your reason, then the full result, where your choice's bar is
+    gold with a "Your pick" tag. No pick or skipped: the result comes first, as before.
+  - Print your results keeps ballot order.
+
 ### Fixed
 - Results: "How Travis County voted" on a contest Travis prints twice (Austin's Props C–J, Full and Limited Purpose)
   showed only the last of the two, the Limited Purpose count; it now adds both, as the result above it already did
