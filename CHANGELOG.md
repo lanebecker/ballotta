@@ -14,7 +14,10 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Results pipeline
+- Del Valle ISD's trustees are elected by plurality (Educ. Code §11.057(a) for single-member districts; a majority
+  needs a board resolution 180 days ahead, and none was found; its Nov 3 order is silent, Lane read it Nov 5). SMD 9
+  (c131) reads "Leading: Gloria Vera-Bedolla" instead of "No call yet", and will be called at the canvass (#198).
 
 ## [1.9.0] — 2026-11-05
 
