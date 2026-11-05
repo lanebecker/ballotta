@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-LfN7xzkmznluS4RyKGM7aUvC7klmI7ECUclZaKPXE1s='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GcRfZqDR7qD26lJ5/0VqLbGVqrverxowqsEEgTPayCQ=' 'sha256-PD7hQ6D7xcpFlcAK91tuFiJW776FwXqvDxxAqeXh3s8=' 'sha256-5OLZ8EnVSuc9eHI6M+fghwlMfaQCVtPX9bsDXD6QkZ8='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://taxmaps.traviscountytx.gov https://gateway.umami.is; frame-src 'self'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <!--PHONE-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2273,8 +2273,14 @@ const RESERVED = new RegExp(['league', 'lwv', 'vote411', 'county', 'official', '
 // after just 2 ("TXVOTERS"): no real name ends that way (#43).
 const RESERVED_GLUED = new RegExp('(^|\\s)(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')\\S{4,}|\\S{4,}(' + ['voters?', 'clerks?', 'cityof'].map(fold).join('|') + ')(\\s|$)'
   + '|\\S{2,}(' + ['voters?', 'cityof'].map(fold).join('|') + ')(\\s|$)');
-const RESERVED_WORDS = new RegExp('(?<![\\p{L}\\p{N}])(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
+// No lookbehind anywhere in the page: Safari before 16.4 can't parse it, and the whole script would fail (the Nov 4
+// audit, #209). "Not after a letter or digit" is the start, or a character that isn't one (test() only, so it may match it).
+const RESERVED_WORDS = new RegExp('(?:^|[^\\p{L}\\p{N}])(' + ['state', 'party', 'admin', 'gop', 'dems?', 'repubs?', 'rnc', 'dnc', 'voters?', 'clerks?', 'city ?of', 'village ?of',
   'tax ?office'].map(fold).join('|') + ')(?![\\p{L}\\p{N}])', 'u');
+// Spaces between one-character words go ("G O P" → "GOP"); keep(a, b) says whether the space between words a and b stays.
+// One space at a time against the words as given, as a lookbehind regex would (#209). t: words with single spaces.
+const joinWords = (t, keep) => { const w = t.split(' '); return w.reduce((s, x, i) => s + (i && keep(w[i - 1], x) ? ' ' : '') + x, ''); };
+const oneChar = (x) => [...x].length === 1;
 const cut30 = (t) => [...t].slice(0, 30).join('');  // 30 characters, never half of one (#93: an emoji is two UTF-16 units)
 // Letters in boxes and circles (🅖🅞🅟, 🄶, 🅶) read as the plain capitals; NFKC leaves them (#127). (Regional indicator
 // letters are LOOKALIKE's already.)
@@ -2289,13 +2295,14 @@ function safeName(n) {
     const run = (t) => t.replace(/[\s\p{P}\p{S}]/gu, '');
     const words = (t) => {
       const w = t.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim();
-      return [t.replace(/[\p{P}\p{S}]/gu, ''), w, w.replace(/(?<=(^|\s)\S)\s(?=\S(\s|$))/gu, '')];
+      return [t.replace(/[\p{P}\p{S}]/gu, ''), w, joinWords(w, (a, b) => !(oneChar(a) && oneChar(b)))];
     };
     // Uneven splits ("G OP", "V oter"): from the name as typed, a single letter joins its neighbour, except a
     // capitalised word ("S Tate" stays a person) (#43, Pass 1).
     // Small capitals (ᴘ, ᴛ…) look like capitals, so they count as capitals here; a capitalised word needs 3+ letters (Pass 2).
     const caps = seen.replace(/[\u1D00-\u1D2B\u0262\u026A\u0274\u0276\u0280\u0281\u028F\u0299\u029B\u029C\u029F\uA730\uA731\uAB70-\uABBFтмнквп]/gu, ch => (L[ch] || L[ch.toUpperCase()] || ch).toUpperCase());  // + Cherokee small letters, Cyrillic т м н к в п (Pass 3)
-    const uneven = caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim().replace(/(?<=(^|\s)\S)\s(?!\p{Lu}\p{Ll}{2,})|(?<!(^|\s)\p{Lu}\p{Ll}{2,})\s(?=\S(\s|$))/gu, '');
+    const uneven = joinWords(caps.replace(/[\p{P}\p{S}]/gu, ' ').replace(/\s+/g, ' ').trim(),
+      (a, b) => !((oneChar(a) && !/^\p{Lu}\p{Ll}{2,}/u.test(b)) || (oneChar(b) && !/^\p{Lu}\p{Ll}{2,}$/u.test(a))));
     const forms = [fold(low), fold(low.replace(/[|!$@]/g, '')), fold(split), fold(latin(uneven))];
     // Shouted with a party at the end ("LANEGOP"): all capitals can't be split into words, and no name ends that way;
     // only at the end, so "GOPAL" is fine (#93). All lowercase likewise ("lanegop", #127); "Lanegop" is a name.
