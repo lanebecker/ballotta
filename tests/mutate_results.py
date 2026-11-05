@@ -65,7 +65,7 @@ M = [
  ('R38 the timeline stuck at the start', PREV, "    const now = steps.findIndex(s => d <= s[2]);", "    const now = 0;", [T]),
  ('R39 an official runoff unsaid', PREV, "!!e.runoff_on && day() <= e.runoff_on;", "!!e.runoff_on && day() > e.runoff_on;", [T]),
  ('R40 Next skips to the undecided', PREV, "  function upNext() { if (after()) return null; ", "  function upNext() { ", [T]),
- ('R41 the reason left out', PREV, "(w ? '<p><q>'", "(false ? '<p><q>'", [T]),
+ ('R41 the reason left out', PREV, "(rsn ? '<div class=\"rs-rsn\">", "(false ? '<div class=\"rs-rsn\">", [T]),
  ('R42 the whole summary on a phone', PREV, ".rs-band .rs-sum,.rs-band .rs-tl{display:none}", ".rs-band .rs-x{display:none}", [P]),
  ('R43 the landing unchanged after', PREV, "      .forEach(([el, h]) => A ? swapIn(el, h) : swapOut(el));", "      .forEach(() => {});", [A]),
  ('R44 no address, no page', PREV, "(ballot.length > 0 || (after() && ui.allNow && ui.view === 'all'))", "(ballot.length > 0)", [A]),
