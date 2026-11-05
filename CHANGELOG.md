@@ -16,6 +16,34 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.9.0] — 2026-11-05
+
+Lane's decisions on the Nov 4 audit (#197, #204, #205, #210, #215, #216), and his ask to bring back what each
+measure is.
+
+### Changed
+- **What a measure is, beside its name:** the ballot's exact words under the title on each measure's result (before
+  your pick), under each measure on All Travis County results, and in two lines in At a glance. "Proposition G" alone
+  was hard to tell from F and H.
+- **Too few votes to call** (#204): a measure or race with too few votes for any lead to clear the 20-vote floor (47
+  MUD and MMD measures with a vote or two) says so, and the canvass decides it; it read "Too close to call", and no
+  longer counts as too close.
+- **The clear seats are named** (#205): in a several-seat race where only the last seat is close, "Leading: Scott
+  Moser, Brenda Vrabel · third seat too close to call"; a pick among the clear seats reads as leading.
+- **"Not counted by name yet"** (#197): a declared write-in the county hasn't counted by name (Travis lumps 3,710
+  County Clerk write-ins as "Write-in") shows that, with no bar, instead of 0.
+- **A shared friend's picks after the election** (#210): their pick after yours on each result ("Maya picked For",
+  with their reason, no won or lost words for them), the chip to hide them, their initial back in the rail; the
+  phone's fold no longer says "You and Maya".
+- The rail's "My picks" counts each pick, as the summary does (#215).
+- While results are live, the page's title, description, link previews and Home Screen description are about the
+  results: "Ballotta · How your Travis County ballot turned out" (#216). A results rollback keeps the ballot's.
+
+### Results pipeline
+- `results.json` entries gain an optional `unnamed` list and the `too_few` no-call reason; `too_close` may name the
+  clear seats of a several-seat race. The checker takes both; a file from before them is still sound. The pull
+  request's change list says "Too few votes to call" and "Leading, last seat too close to call".
+
 ## [1.8.1] — 2026-11-04
 
 From the cold audit after 1.8.0 (milestone "Cold audit, Nov 4"; every published result was recomputed independently

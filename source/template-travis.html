@@ -399,6 +399,12 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 .dk-tbl.rs-gl tr.rs-gh th{padding:28px 10px 8px;border-bottom:none;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:24px;font-weight:700;line-height:1.2;color:var(--ink);border-radius:10px}
 .dk-tbl.rs-gl tr.rs-gh th .pm{margin-right:10px}
 .rs-tc{display:flex;align-items:flex-start;gap:8px}
+.dk-fp.rs-fp{padding:0 18px;font-size:15px}   /* a friend's pick under yours, its initial under your mark (#210) */
+/* what a measure is, beside its name (Lane, Nov 4): in full on its result and on All Travis County results, two lines in At a glance */
+.rs-what{display:flex;flex-direction:column;gap:6px}
+.rs-what-s{margin:0 0 4px;font-size:13px;line-height:1.45;color:var(--ink2)}
+.dk-tbl .rs-tc + small.rs-what-g{padding-left:20px}   /* under the name, past its mark */
+.dk-tbl small.rs-what-g{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px;font-size:12px;line-height:1.4;color:var(--ink2)}
 .rs-tc .pm{margin-top:5px}
 .rs-tc .pm-none{margin-top:10px}
 .rs-flash .rs-gh th{animation:rs-flash 1.8s ease-out}
@@ -2538,7 +2544,9 @@ const results = (() => {
     if (!NOTES.includes(e.note) || ![null, 'district', 'area'].includes(e.who) || typeof e.write_ins !== 'boolean') return false;
     if (![null, 'two_thirds'].includes(e.needs) || (e.needs && c.type !== 'measure')) return false;
     if (!(e.recount === null || (isStr(e.recount) && /^https:\/\//.test(e.recount)))) return false;
-    if (![undefined, null, 'two_majorities', 'rule_unsettled'].includes(e.no_call) || (e.no_call && (e.verdict !== 'none' || !['unofficial', 'partial'].includes(e.state)))) return false;   // W69: a reason only on an unofficial count with no verdict
+    if (e.unnamed !== undefined && !(Array.isArray(e.unnamed) && e.unnamed.every(n => e.choices.some(x => x[0] === n && x[3] && x[1] === 0)))) return false;   // #197
+    if (e.verdict === 'too_close' && e.leaders.length >= seats(c)) return false;   // #205: the clear ones of several seats, never all
+    if (![undefined, null, 'two_majorities', 'rule_unsettled', 'too_few'].includes(e.no_call) || (e.no_call && (e.verdict !== 'none' || !['unofficial', 'partial'].includes(e.state)))) return false;   // W69: a reason only on an unofficial count with no verdict
     return true;
   }
   function accept(j) {
@@ -2599,8 +2607,15 @@ const results = (() => {
     else h += '<p class="rs-n">Becomes official when ' + esc(e.canvasser) + ' canvasses the vote' + (cv.on && day() <= cv.on ? ' on ' + esc(md(cv.on)) : cv.by && day() <= cv.by ? ', by ' + esc(md(cv.by)) : '') + '.</p>';  // W6, W7; a date gone by isn't said as if to come (#177)
     return h;
   }
+  // Votes with no verdict, and why (W69): too few votes for any lead to count is said so (Lane, Nov 4, #204)
+  const noCall = (e) => e.no_call === 'too_few' ? 'Too few votes to call' : 'No call yet';
+  const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth'];
   function verdict(c, e) {
     const L = names(c, e.leaders), V = e.verdict;
+    if (V === 'too_close' && e.leaders.length) {   // several seats, the last too close: the clear ones named (Lane, Nov 4, #205)
+      const left = seats(c) - e.leaders.length;
+      return 'Leading: ' + L.join(', ') + ' · ' + (left === 1 ? (ORDINAL[seats(c) - 1] || 'last') + ' seat' : 'last ' + left + ' seats') + ' too close to call';
+    }
     switch (V) {
       case 'leading': return seats(c) > 1 ? 'Leading for ' + e.leaders.length + ' seats: ' + L.join(', ') : 'Leading: ' + L[0];   // W15, W16
       case 'passing': return 'Passing'; case 'failing': return 'Failing';                                              // W17
@@ -2633,6 +2648,10 @@ const results = (() => {
       if (V === 'passed' || V === 'failed' || V === 'failed_tie') return side + ((V === 'passed') === (v[0] === 'FOR') ? 'won.' : 'didn’t win.');  // W40
       return 'Your pick: ' + choice(c, v[0]);                                                                         // W36
     }
+    if (V === 'too_close' && mineIn) {   // among the clear seats of several, the last too close (#205): W34, W38's words
+      if (n === 1) return 'Your pick is leading.';
+      return mineIn === n ? n + ' of your picks are leading.' : mineIn + ' of your ' + n + ' picks ' + (mineIn === 1 ? 'is' : 'are') + ' leading.';
+    }
     if (V === 'leading') {
       if (n === 1) return mineIn ? 'Your pick is leading.' : 'Your pick is behind.';                                 // W34, W35
       return mineIn === n ? n + ' of your picks are leading.' : mineIn ? mineIn + ' of your ' + n + ' picks ' + (mineIn === 1 ? 'is' : 'are') + ' leading.' : 'None of your picks are leading.';  // W38
@@ -2662,18 +2681,18 @@ const results = (() => {
   }
   const pctText = (x, d, total) => { const p = d === 2 && total ? 100 * x[1] / total : x[2]; return x[1] > 0 && +p.toFixed(d) === 0 ? '<' + (d === 2 ? '0.01' : '0.1') + '%' : p.toFixed(d) + '%'; };   // two decimals from the votes: the file keeps two
   // you: the picks to mark (Lane, Nov 4: your pick's bar gold, with a tag), on the result itself only
-  function bars(c, rows, wi, you) {
-    const d = pctDigits(rows), total = rows.reduce((a, x) => a + x[1], 0), me = (x) => !!you && you.includes(x[0]);
+  function bars(c, rows, wi, you, unnamed) {   // unnamed: declared write-ins the county hasn't counted by name (#197)
+    const d = pctDigits(rows), total = rows.reduce((a, x) => a + x[1], 0), me = (x) => !!you && you.includes(x[0]), un = (x) => !!unnamed && unnamed.includes(x[0]);
     return '<div class="rs-bars">' + rows.map(x => '<div class="rs-b' + (me(x) ? ' rs-me' : '') + '"><span class="rs-nm">' + esc(choice(c, x[0])) + (wi && x[3] ? ' <small>(write-in)</small>' : '') + (me(x) ? ' <span class="rs-tag">Your pick</span>' : '') + '</span>'
-      + '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span>'
-      + '<span class="rs-vt">' + x[1].toLocaleString('en-US') + ' · ' + pctText(x, d, total) + '</span></div>').join('') + '</div>';
+      + (un(x) ? '' : '<span class="rs-tr" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, x[2])).toFixed(1) + '%"></i></span>')
+      + '<span class="rs-vt">' + (un(x) ? 'Not counted by name yet' : x[1].toLocaleString('en-US') + ' · ' + pctText(x, d, total)) + '</span></div>').join('') + '</div>';   // #197 (Lane, Nov 4)
   }
   const NOTE = {
     district_not_confirmed: 'Voters didn’t confirm this district (Proposition A failed), so it won’t be created.',   // W31
     annex_both: 'Both approved: the area will be added.', annex_district_rejected: 'Area approved, district rejected: the area won’t be added.',  // W32
     annex_area_rejected: 'Area rejected: the area won’t be added.', annex_both_rejected: 'Area rejected: the area won’t be added.' };
   // The ribbon on one contest (W1–W45). withPick: false in All Travis County results, which is nobody's ballot.
-  function ribbon(c, withPick) {
+  function ribbon(c, withPick, theirs) {   // theirs: a shared friend's pick, shown after yours (Lane, Nov 4, #210)
     const e = entry(c.id);
     if (!e) return '';
     // Your pick leads the page (Lane, Nov 4, option A): its mark, how it did, then the result in a few words; your reason under it.
@@ -2681,15 +2700,16 @@ const results = (() => {
     const you = withPick !== false && picked(c), rsn = you && typeof whys[c.id] === 'string' && whys[c.id].trim() ? whys[c.id] : '';
     let h = you ? '<section class="rs-head" aria-label="Your pick"><i class="pm pm-' + mark(c) + ' lg" aria-hidden="true"></i><div><p class="rs-hl">' + esc(mine(c, e).replace(/\.$/, '')) + '</p><p class="rs-hs">' + esc(rowLine(c)) + '</p></div></section>'
       + (rsn ? '<div class="rs-rsn"><p><q>' + esc(whyShown(rsn)) + '</q></p><p class="rs-n">Your reason. Only you can see it.</p></div>' : '') : '';
+    if (withPick !== false && theirs) h += theirs;
     h += '<section class="rs' + (isOfficial(e) ? ' rs-is-off' : '') + '" aria-label="Result">' + status(c, e);
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
     const held = ['runoff', 'tied_runoff'].includes(e.verdict) && e.runoff_on && day() > e.runoff_on;   // W113: the county has the runoff's result
     if (v) h += '<p class="rs-v">' + (held ? esc(v.replace(/Travis County Elections$/, '')) + '<a href="' + TCE + '" target="_blank" rel="noopener">Travis County Elections ↗</a>' : esc(v)) + '</p>';
-    else if (e.no_call) h += '<p class="rs-v">No call yet</p><p class="rs-n">This one is decided at the canvass.</p>';   // W69 (Lane, Oct 21): numbers with no verdict, on purpose
+    else if (e.no_call) h += '<p class="rs-v">' + noCall(e) + '</p><p class="rs-n">This one is decided at the canvass.</p>';   // W69 (Lane, Oct 21): numbers with no verdict, on purpose
     if (upcoming(c)) h += '<p class="rs-why">No one won a majority, so the top two meet again on ' + esc(dayLong(e.runoff_on)) + '.</p>';
     if (e.needs === 'two_thirds') h += '<p class="rs-n">Needs two-thirds of the vote to pass.</p>';   // W68: road bonds (Tex. Const. art. III §52(b))
-    if (e.state !== 'counting') h += (held ? '<p class="rs-bl">Nov 3 result</p>' : '') + bars(c, e.choices, true, you ? current(c.id) : null);   // the bars aren't the runoff's (W113)
+    if (e.state !== 'counting') h += (held ? '<p class="rs-bl">Nov 3 result</p>' : '') + bars(c, e.choices, true, you ? current(c.id) : null, e.unnamed);   // the bars aren't the runoff's (W113)
     if (e.write_ins) h += '<p class="rs-n">Declared write-in candidates are listed by name. Only votes for declared write-in candidates count.</p>';  // W45
     if (e.note) h += '<p class="rs-n rs-key">' + NOTE[e.note] + '</p>';
     if (e.recount) h += '<p class="rs-n rs-key">Recount requested · <a href="' + esc(e.recount) + '" target="_blank" rel="noopener">Details</a></p>';  // W29
@@ -2797,7 +2817,7 @@ const results = (() => {
   // A rail row's second line: the result in a few words, and whether it's official.
   function rowLine(c) {
     const e = entry(c.id);
-    if (e && e.no_call) return 'No call yet · Unofficial';   // W69
+    if (e && e.no_call) return noCall(e) + ' · Unofficial';   // W69
     if (!e || e.state === 'counting' || e.verdict === 'none') return noResult();
     let v = verdict(c, e);
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) v = 'Runoff: ' + andList(names(c, e.runoff).map(surname));
@@ -2816,6 +2836,7 @@ const results = (() => {
       return (V === 'passing' || V === 'passed') === (v[0] === 'FOR') ? 'up' : off ? 'down' : 'behind';
     }
     if (V === 'leading') return hit ? 'up' : 'behind';
+    if (V === 'too_close' && hit) return 'up';   // one of the clear seats of several (#205); the rest are open
     if (['won', 'elected', 'unopposed'].includes(V)) return hit ? 'up' : 'down';
     if (V === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return v.some(x => e.runoff.includes(x)) ? 'open' : off ? 'down' : 'behind';   // unofficial: no call, as W112 (#177)
     return 'open';
@@ -2947,7 +2968,7 @@ const results = (() => {
       const cs = shown.filter(c => c.level === L);
       if (!cs.length) return;
       h += '<h3 class="rs-lvh">' + esc(LEVEL_LABEL[L] || L) + ' · ' + cs.length + (cs.length === 1 ? ' contest' : ' contests') + '</h3><div class="rs-grid">'
-        + cs.map(c => '<article class="rs-c"><h4>' + esc(cleanTitle(c)) + '</h4>' + ribbon(c, false)
+        + cs.map(c => '<article class="rs-c"><h4>' + esc(cleanTitle(c)) + '</h4>' + (c.type === 'measure' && c.text ? '<p class="rs-what-s">' + esc(c.text) + '</p>' : '') + ribbon(c, false)
           + (mine.has(c.id) ? '<p class="rs-n"><button type="button" class="dk-link" data-rs="go" data-c="' + esc(c.id) + '">On your ballot · see your pick</button></p>' : '') + '</article>').join('') + '</div>';
     });
     return h + '<p class="note">Ballotta doesn’t call races, and isn’t affiliated with Travis County or any campaign. <button type="button" class="dk-link" data-rs="why">How results become official</button></p>';
@@ -3042,7 +3063,7 @@ const results = (() => {
   // At a glance after the election (the canvas's At a glance board): Contest · Result · Your pick · Your reason, read-only.
   // The result's first line says what happened; the second, whether it's official, and when it was or will be.
   function glanceRes(c, e) {
-    if (e && e.no_call) return 'No call yet';   // W69
+    if (e && e.no_call) return noCall(e);   // W69
     if (!e || e.state === 'counting' || e.verdict === 'none') return null;
     if (e.verdict === 'runoff' && e.runoff.length && !(e.runoff_on && day() > e.runoff_on)) return 'Runoff: ' + andList(names(c, e.runoff));
     return e.verdict === 'tied' ? 'Tied' : verdict(c, e);   // W25 is long: the contest's own page says what happens next
@@ -3065,7 +3086,8 @@ const results = (() => {
       const r = res ? '<span class="res">' + esc(res) + '</span><small>' + esc(glanceWhen(c, e)) + '</small>' : '<small>' + noResult() + '</small>';
       const p = !v.length ? '<small>No pick</small>' : v[0] === '__skip' ? '<small>Skipped</small>' : esc(v.map(o => choice(c, o)).join(', '));
       const w = hasWhy(c.id) ? '<span class="dk-wt">' + esc(whyShown(whys[c.id])) + '</span>' : '<small>—</small>';
-      return '<tr data-tr="' + c.id + '"><th scope="row">' + (k ? '<span class="rs-tc"><i class="pm pm-' + k + '" aria-hidden="true"></i>' : '') + '<button type="button" class="dk-link" data-go="' + c.id + '">' + esc(cleanTitle(c)) + '</button>' + (k ? '</span>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th>'
+      return '<tr data-tr="' + c.id + '"><th scope="row">' + (k ? '<span class="rs-tc"><i class="pm pm-' + k + '" aria-hidden="true"></i>' : '') + '<button type="button" class="dk-link" data-go="' + c.id + '">' + esc(cleanTitle(c)) + '</button>' + (k ? '</span>' : '')
+        + (c.type === 'measure' && c.text ? '<small class="rs-what-g">' + esc(c.text) + '</small>' : '') + (b.conf === 'medium' ? '<small class="dk-chk">Double-check</small>' : '') + '</th>'
         + '<td>' + r + '</td><td><span class="rs-lbl">Your pick: </span>' + p + '</td><td><span class="rs-lbl">Your reason: </span>' + w + '</td></tr>';
     };
     let rows = '', shown = 0;
@@ -3266,7 +3288,7 @@ const desk = (() => {
     $('dk-bar').style.width = (n ? Math.round(100 * done / n) : 0) + '%'; $('dk-bar').parentNode.classList.toggle('hidden', paused);
     menuFor(A);
     document.querySelectorAll('#dk-views button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
-    const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).length }
+    const counts = A ? { all: 'All ' + n, und: 'Too close' + (paused ? '' : ' ' + ballot.filter(b => results.close(b.c)).length), why: 'My picks ' + ballot.filter(b => results.picked(b.c)).reduce((n, b) => n + current(b.c.id).length, 0) }   // each pick, as the summary counts them (Lane, Nov 4, #215)
       : { all: 'All ' + n, und: 'Undecided ' + (n - done), why: 'Reasons ' + ballot.filter(b => hasWhy(b.c.id)).length };
     document.querySelectorAll('#dk-filt button').forEach(b => { b.textContent = counts[b.dataset.f]; b.setAttribute('aria-pressed', b.dataset.f === ui.filter ? 'true' : 'false'); });
     const byLevel = {}; ballot.forEach(b => (byLevel[b.c.level] = byLevel[b.c.level] || []).push(b));
@@ -3277,7 +3299,7 @@ const desk = (() => {
       html += '<div class="dk-g"><span>' + esc(LEVEL_LABEL[L] || L) + '</span><span>' + (paused ? all.length : all.filter(b => A ? results.official(b.c) : decided(b.c.id)).length + '/' + all.length) + '</span></div>';
       html += shown.map(b => {
         const id = b.c.id, v = current(id), sub = A ? results.rowLine(b.c) : !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : v.map(x => optLabel(b.c, x)).join(', ');
-        const fp = !A && friend && friend.P[id] ? esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) : '';  // read out as "Maya picked …" (#32)
+        const fp = friend && friend.P[id] ? esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) : '';  // read out as "Maya picked …" (#32)
         const fa = fp ? '<span class="dk-fa' + (samePick(id) ? '' : ' diff') + '" aria-hidden="true" title="' + possessive() + ' pick: ' + fp + '">' + initial() + '</span><span class="dk-vh">' + esc(friendName()) + ' picked ' + fp + '</span>' : '';
         return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (A && !paused ? ' pm pm-' + results.mark(b.c) : v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small' + (A ? ' class="w"' : '') + '>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + (A && v.length && v[0] !== '__skip' ? '<span class="dk-vh"> · ' + esc(results.pickSaid(b.c)) + '</span>' : '') + '</small></span>' + fa + '</button>';   // the gold dot, for screen readers, once the line is the result (#148)
       }).join('');
@@ -3500,13 +3522,19 @@ const desk = (() => {
   function viewResult() {
     const b = curB(), c = b.c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure', n = seats(c), opts = optionsOf(c), v = current(c.id), i = idx(c.id);
     const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level);
-    let h = '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span></div>';   // nothing saved to say on a results paper (#150)
+    let h = (friend ? '<div class="dk-fchip"><span class="dk-fa">' + initial() + '</span>Showing ' + possessive() + ' picks · <button type="button" class="dk-link" data-act="hidefriend">Hide</button></div>' : '')   // as before the election (#210)
+      + '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span></div>';   // nothing saved to say on a results paper (#150)
     const t = cleanTitle(c);
     h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
     if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</div>';
     if (b.conf === 'medium') h += '<span class="flag">Double-check</span><p class="note">' + esc(b.note || 'Not yet confirmed for your address.') + '</p>';
+    // What the measure is, under its name: "Proposition G" alone is hard to tell from F and H (Lane, Nov 4)
+    if (isM && c.text) h += '<div class="rs-what"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
 /*RESULTS*/
-    h += results.ribbon(c) + results.nextBox(c);
+    // A shared friend's pick, as before the election: who, what, their reason; no won or lost words for them (#210)
+    const F = friend && friend.P[c.id] && friend.P[c.id].filter(x => opts.includes(x));
+    const theirs = F && F.length ? '<div class="dk-fp rs-fp"><span class="dk-fa" aria-hidden="true">' + initial() + '</span><span><b>' + esc(friendName()) + ' picked ' + esc(F.map(x => optLabel(c, x)).join(', ')) + '</b>' + (friend.W[c.id] ? ' · “' + esc(friend.W[c.id]) + '”' : '') + '</span></div>' : '';
+    h += results.ribbon(c, true, theirs) + results.nextBox(c);
 /*/RESULTS*/
     const raw = isM ? opts : c.choices.filter(x => x !== 'Write-in');
     h += '<section class="dk-asmarked" aria-label="Your choice"><span class="ov">Your choice</span><ul class="dk-lines dk-ro' + (isM ? ' dk-mrow' : '') + '">' + opts.map((o, k) => {
@@ -3514,7 +3542,6 @@ const desk = (() => {
       return '<li class="dk-lw"><span class="dk-line" data-on="' + on + '"><span class="dk-oval" aria-hidden="true"></span><span class="dk-nm">' + esc(optLabel(c, o)) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span></span></li>';
     }).join('') + '</ul>' + (v[0] === '__skip' && !(window.results && results.entry(c.id)) ? '<p class="note">You skipped this ' + (isM ? 'measure' : 'race') + '.</p>' : !v.length ? '<p class="note">No pick here on this device.</p>' : '') + '</section>';
     let read = '';
-    if (isM && c.text) read += '<div class="sub"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
     if (isM && L.plain) read += '<div class="sub"><span class="ov">In plain words</span><p>' + esc(L.plain) + '</p></div>';
     if (!isM) read += opts.map(o => { const l = candLinks(L, o); return l ? '<div><b>' + esc(optLabel(c, o)) + '</b>' + l + '</div>' : ''; }).join('');
     if (L.src && L.src.length) read += srcHTML(L.src);
@@ -4014,7 +4041,7 @@ const phone = (() => {
     if (dec) {
       const c = D.curB().c, L = DATA.learn[c.id] || {};
       const what = D.after && D.after() ? (results.paused() ? 'Calling races' : 'About this result') : c.type === 'measure' ? 'Sources' : L.office ? 'About this office · Learn more' : 'Learn more';
-      $('ph-fold').textContent = (friend ? 'You and ' + friendName() + ' · ' : '') + what;
+      $('ph-fold').textContent = (friend && !(D.after && D.after()) ? 'You and ' + friendName() + ' · ' : '') + what;   // after the election the friend's pick is on the paper, not in the fold (#210)
       $('ph-fold').setAttribute('aria-expanded', foldOpen ? 'true' : 'false');
       $('dk-notes').classList.toggle('ph-open', foldOpen);
       // Nothing behind it (a measure with no sources): no fold (#76).

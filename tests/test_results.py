@@ -19,7 +19,7 @@ import pathlib, sys, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'source'))
-import results_rules as R, results_parse as P, build_results as B, fetch_results as FR
+import results_rules as R, results_parse as P, build_results as B, fetch_results as FR, check_results
 import copy, shutil, tempfile
 import io, json, re, zipfile
 FX = ROOT / 'tests/fixtures/results'
@@ -713,6 +713,52 @@ def a_held_contest_given_a_note_is_a_change_and_the_old_file_is_untouched():
         assert e['changed'] == out2['seq'] != out1['contests']['c148']['changed'], (e['changed'], out2['seq'])
         assert [l for l in ch['lines'] if 'c148' in l and 'HELD' not in l], ch['lines']
     finally: shutil.rmtree(d)
+
+@test
+def several_seats_with_the_last_too_close_name_the_clear_ones():
+    """Lane, Nov 4 (#205): Northtown MUD, vote for 3 (c179): Moser and Vrabel are clear; Hill leads Capers by 14."""
+    v = V(('R. Lee Hill', 548), ('Chris Capers', 534), ('Scott Moser', 1204), ('Brenda Vrabel', 1012))
+    assert R.unofficial('candidate', v, seats=3) == ('too_close', ['Scott Moser', 'Brenda Vrabel'], [])
+    assert R.unofficial('candidate', V(('A', 100), ('B', 95), ('C', 94)), seats=2) == ('too_close', [], []), 'none clear: no one named'
+    assert R.unofficial('candidate', V(('A', 119), ('B', 100))) == ('too_close', [], []), 'one seat: no one named'
+    assert R.unofficial('candidate', v, seats=3, slack=500)[1] == ['Scott Moser'], 'the slack counts against each'
+
+@test
+def too_few_votes_is_no_call_with_its_reason_and_unnamed_write_ins_are_unknown():
+    """Lane, Nov 4: 47 MUD measures with a vote or two read "Too close to call"; now no call, "too_few" (#204). The
+    County Clerk's declared write-in showed 0 while Travis lumped 3,710 votes as "Write-in": unknown, not zero (#197)."""
+    d, res = scratch_with([clarity({'1': ('Measure', FA(1, 0)), '2': ('Measure two', FA(15, 5)),
+                                    '3': ('County Clerk', [('Dyana Limon-Mercado', 900), ('Write-in', 37)])})])
+    try:
+        mp = one_map(c147=M('1 = Measure'), c148=M('2 = Measure two'),
+                     c053=M('3 = County Clerk', canvasser='eastwood-mud', write_ins=[{'name': 'LaShawn Nash'}]))
+        out, ch = B.build(res=res, mp=mp)
+        e = out['contests']
+        assert (e['c147']['verdict'], e['c147']['no_call']) == ('none', 'too_few'), e['c147']
+        assert (e['c148']['verdict'], e['c148']['no_call']) == ('too_close', None), 'twenty votes: the floor can be met, so too close'
+        assert e['c053']['unnamed'] == ['LaShawn Nash'] and e['c053']['choices'][1][:2] == ['LaShawn Nash', 0], e['c053']
+        assert e['c147']['unnamed'] == [] and not check_results.check(out, check_results.answer_key()), check_results.check(out, check_results.answer_key())
+        assert B.word(e['c147']) == 'Too few votes to call (unofficial)', B.word(e['c147'])
+    finally: shutil.rmtree(d)
+    d, res = scratch_with([clarity({'3': ('County Clerk', [('Dyana Limon-Mercado', 900), ('LaShawn Nash', 12)])})])
+    try:
+        out, _ = B.build(res=res, mp=one_map(c053=M('3 = County Clerk', canvasser='eastwood-mud', write_ins=[{'name': 'LaShawn Nash'}])))
+        assert out['contests']['c053']['unnamed'] == [] and out['contests']['c053']['choices'][1][:2] == ['LaShawn Nash', 12], 'named by the county: counted'
+    finally: shutil.rmtree(d)
+
+@test
+def the_results_check_takes_the_nov_4_fields():
+    key = check_results.answer_key()
+    def one(cid, **e):
+        base = json.loads((ROOT / 'results.json').read_text(encoding='utf-8'))
+        base['contests'] = {cid: {**base['contests'][cid], **e}} if cid in base['contests'] else {}
+        return check_results.check(base, key)
+    assert not one('c179', verdict='too_close', leaders=['Scott Moser', 'Brenda Vrabel'])
+    assert one('c179', verdict='too_close', leaders=['Scott Moser', 'Brenda Vrabel', 'R. Lee Hill']), 'as many as the seats is leading, not too close'
+    assert one('c069', verdict='too_close', leaders=['Selena Xie']), 'one seat: too close names no one'
+    assert not one('c147', verdict='none', leaders=[], no_call='too_few')
+    assert one('c053', unnamed=['Dyana Limon-Mercado']), 'only a declared write-in shown with 0'
+    assert not one('c053', unnamed=['LaShawn Nash']) and not one('c053'), 'and the field is optional'
 
 @test
 def no_travis_breakdown_when_travis_has_no_votes():

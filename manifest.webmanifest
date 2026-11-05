@@ -5,7 +5,7 @@
  "display": "standalone",
  "name": "Ballotta",
  "short_name": "Ballotta",
- "description": "Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet.",
+ "description": "See the Nov 3, 2026 results for every contest on your Travis County ballot, beside the picks you made.",
  "background_color": "#4B2A6B",
  "theme_color": "#4B2A6B",
  "icons": [

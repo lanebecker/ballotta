@@ -268,6 +268,18 @@ def every_test_page_has_the_suites_clock_and_waits_without_eval():
     assert not bad, bad
 
 @test
+def results_season_names_the_page_for_its_results():
+    """Lane, Nov 4: with results live, the tab, search and link-preview text and the Home Screen description say what the
+    page is now; a results rollback keeps the ballot's words."""
+    import importlib; sys.path.insert(0, str(ROOT / 'source')); B = importlib.import_module('build_site')
+    page = (ROOT / 'index.html').read_text(encoding='utf-8')
+    if B.RESULTS_LIVE:
+        assert all(page.count(x) == 1 for x in B.RESULTS_HEAD) and not any(x in page for x in B.BALLOT_HEAD)
+        assert json.loads((ROOT / 'manifest.webmanifest').read_text(encoding='utf-8'))['description'] == B.RESULTS_ABOUT
+    rollback = B.build(False, results=False)
+    assert all(rollback.count(x) == 1 for x in B.BALLOT_HEAD) and not any(x in rollback for x in B.RESULTS_HEAD), 'a results rollback keeps the ballot\'s words'
+
+@test
 def one_viewport_tag():
     """#122: with the phone layout, the page carried two viewport tags (the plain one and the phone layout's, with
     viewport-fit=cover). The build keeps one: the phone layout's when it is live, the plain one in a rollback."""

@@ -5186,6 +5186,60 @@ def a_bad_results_file_breaks_nothing(b):
     ctx.close()
 
 @results_test
+def the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins(b):
+    # Lane, Nov 4: a measure with a vote or two reads "Too few votes to call", not "Too close to call" (#204); several seats
+    # with only the last too close names the clear ones (#205); a declared write-in the county hasn't counted by name
+    # reads "Not counted by name yet", with no bar, not 0 (#197).
+    fx = rs_fixtures(); sc = fx.scene('mixed'); C = sc['contests']
+    C['c147'] = fx.entry('c147', verdict='none', votes=[1, 0]); C['c147']['no_call'] = 'too_few'
+    C['c113'] = fx.entry('c113', verdict='too_close', votes=[400, 300, 295], leaders=['Sarah Ponder'], canvasser='the Sunset Valley City Council')
+    w = [x for x in C['c001']['choices'] if x[3]]; w[0][1] = 0; w[0][2] = 0.0; C['c001']['unnamed'] = [w[0][0]]
+    ctx, pg = rs_page(b, {'body': sc})
+    r = rs_go(pg, 'c147')
+    assert 'Too few votes to call' in r and 'This one is decided at the canvass.' in r and 'Too close' not in r, r
+    assert pg.inner_text('.dk-row[data-row="c147"] small').startswith('Too few votes to call · Unofficial')
+    pg.click('#dk-filt [data-f="und"]')
+    assert 'c147' not in [x.get_attribute('data-row') for x in pg.query_selector_all('.dk-row[data-row]')], 'too few is not too close'
+    pg.click('#dk-filt [data-f="all"]')
+    r = rs_go(pg, 'c113')
+    assert 'Leading: Sarah Ponder · second seat too close to call' in r and '1 of your 2 picks is leading' in r, r
+    assert pg.get_attribute('.dk-row[data-row="c113"] .dk-d', 'class') == 'dk-d pm pm-open', 'one leading, one in the close seat: not settled'
+    assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['3', '2', '4'], 'Ponder, in a clear seat, counts as leading; Young and the tiny measure as not settled'
+    r = rs_go(pg, 'c001')
+    row = [x for x in pg.query_selector_all('#dk-paper .rs > .rs-bars .rs-b') if 'Jade Simmons' in x.inner_text()][0]
+    assert 'Not counted by name yet' in row.inner_text() and row.query_selector('.rs-tr') is None, row.inner_text()
+    assert pg.errs == [], pg.errs
+    ctx.close()
+
+@results_test
+def a_shared_friends_pick_shows_beside_each_result(b):
+    # Lane, Nov 4 (#210): after the election a Share link showed nothing about the friend (the rail hid them, the result
+    # had no line), though the landing promised their picks beside yours. Now: their pick after yours on each result,
+    # with the chip to hide them, and their initial in the rail; no won or lost words for them; the phone's fold no
+    # longer says "You and Maya".
+    fx = rs_fixtures()
+    url = link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2348', 'g': 1, 'p': {'71': 0}})
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, url=url)
+    pg.goto('about:blank'); pg.goto(url); pg.wait_for_timeout(700)
+    assert pg.evaluate("!!window.friend && friend.name") == 'Maya', 'the link was read'
+    rs_go(pg, 'c071')
+    fp = pg.inner_text('#dk-paper .rs-fp')
+    assert fp.startswith('M') and 'Maya picked ' in fp and not re.search(r'won|lost|behind|leading', fp, re.I), fp
+    order = pg.evaluate("[...document.querySelector('#dk-paper').children].map(x => x.tagName === 'H1' ? 'h1' : x.className.split(' ').pop())")
+    assert order.index('rs-fp') == order.index('rs-head') + 1 + ('rs-rsn' in order) and order[0] == 'dk-fchip', order
+    assert pg.query_selector('.dk-row[data-row="c071"] .dk-fa') and 'Maya picked' in pg.text_content('.dk-row[data-row="c071"]')
+    rs_go(pg, 'c069'); assert pg.query_selector('#dk-paper .rs-fp') is None, 'nothing where Maya picked nothing'
+    pg.click('#dk-paper [data-act="hidefriend"]'); pg.wait_for_timeout(200)
+    assert pg.query_selector('#dk-paper .dk-fchip') is None and pg.query_selector('.dk-row .dk-fa') is None
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, phone=True, url=url)
+    pg.goto('about:blank'); pg.goto(url); pg.wait_for_timeout(700)
+    rs_go(pg, 'c071', phone=True)
+    assert 'Maya picked' in pg.inner_text('#dk-paper .rs-fp') and 'You and' not in pg.inner_text('#ph-fold'), pg.inner_text('#ph-fold')
+    ctx.close()
+
+@results_test
 def results_that_dont_load_keep_the_page_a_record(b):
     # The Nov 4 audit, #211: from Nov 4, with no results file (offline, an outage), the page went back to Nov 3's ballot:
     # editable picks, Where to vote saying "you can vote", and nothing about the results. It stays a record and says so,
@@ -5312,7 +5366,8 @@ def results_turn_the_ballot_into_a_record(b):
     assert pg.evaluate("getComputedStyle(document.querySelector('#dk-paper [data-act=prev]')).opacity") == '0.45', 'the results paper\'s Previous on contest 1 looks disabled (#150)'
     assert cur0 == 'c001', ('a record opens at the top, not at the first contest without a pick (#146)', cur0)
     assert pg.text_content('.dk-row[data-row="c071"] small').endswith(' · Your pick, Against, is behind') and not pg.query_selector('.dk-row[data-row="c006"] .dk-vh'), 'picked rows say how the pick did to screen readers (#148, Nov 4)'
-    assert [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All 11', 'Too close 4', 'My picks 8']
+    assert [x.inner_text() for x in pg.query_selector_all('#dk-filt button')] == ['All 11', 'Too close 4', 'My picks 9'], 'each pick, as the summary\'s "Your 9 picks" (#215)'
+    pg.click('#dk-filt [data-f="why"]'); assert len(pg.query_selector_all('.dk-row[data-row]')) == 8, 'still the 8 contests picked in'; pg.click('#dk-filt [data-f="all"]')
     assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', pg.inner_text('#dk-when')
     pg.evaluate("desk.today(false)")   # what the midnight check runs on a page left open
     assert pg.inner_text('#dk-when') == 'Results updated Nov 4, 8:41 am', ('the results time past midnight (#141)', pg.inner_text('#dk-when'))
@@ -5435,7 +5490,7 @@ def how_your_picks_did_groups_the_ballot_and_the_counts_link_to_it(b):
     assert pg.inner_text('#dk-paper .rs-head .rs-hl') == 'Your pick, Against, is behind' and pg.inner_text('#dk-paper .rs-head .rs-hs') == 'Passing · Unofficial'
     assert pg.get_attribute('#dk-paper .rs-head .pm', 'class') == 'pm pm-behind lg' and 'Parks need it' in pg.inner_text('#dk-paper .rs-rsn')
     order = pg.evaluate("[...document.querySelector('#dk-paper').children].map(x => x.tagName === 'H1' ? 'h1' : x.className.split(' ')[0])")
-    assert order[order.index('h1') + 1:order.index('h1') + 4] == ['rs-head', 'rs-rsn', 'rs'], ('under the title: your pick, your reason, then the result', order)
+    assert order[order.index('h1') + 1:order.index('h1') + 5] == ['rs-what', 'rs-head', 'rs-rsn', 'rs'], ('under the title: what it is, your pick, your reason, then the result', order)
     assert [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs > .rs-bars .rs-me .rs-nm')] == ['Against Your pick'] and pg.query_selector('#dk-paper .rs-tv .rs-me') is None
     for cid, what in (('c006', 'no pick'), ('c121', 'skipped')):
         r = rs_go(pg, cid)
@@ -5463,6 +5518,23 @@ def how_your_picks_did_groups_the_ballot_and_the_counts_link_to_it(b):
     pg.click('#rs-top .rs-gol[data-g="open"]'); pg.wait_for_timeout(150)
     g = pg.query_selector('#gl-open')
     assert g.query_selector('tr.rs-gh th').inner_text() == '3 · Not settled yet' and [r.get_attribute('data-tr') for r in g.query_selector_all('tr[data-tr]')] == ['c001', 'c069', 'c124']
+    ctx.close()
+    # what a measure is, under its name (Lane, Nov 4): in full on the result and on All Travis County results, two lines in
+    # At a glance; and the result's fold no longer repeats it
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')})
+    words = pg.evaluate("BYID['c071'].text")
+    rs_go(pg, 'c071')
+    assert pg.inner_text('#dk-paper .rs-what .verbatim') == words and pg.inner_text('#dk-paper .rs-what .ov').upper() == 'EXACTLY AS PRINTED ON YOUR BALLOT'
+    order = pg.evaluate("[...document.querySelector('#dk-paper').children].map(x => x.tagName === 'H1' ? 'h1' : x.className.split(' ')[0])")
+    assert order[order.index('h1') + 1:order.index('h1') + 3] == ['rs-what', 'rs-head'], order
+    assert words not in pg.inner_text('#dk-paper details.rs-fold') if pg.query_selector('#dk-paper details.rs-fold') else True
+    rs_go(pg, 'c069'); assert pg.query_selector('#dk-paper .rs-what') is None, 'a race has no measure text'
+    pg.click('#dk-views [data-view="glance"]'); pg.wait_for_timeout(100)
+    g = pg.query_selector('#dk-paper tr[data-tr="c071"] .rs-what-g')
+    assert g and g.text_content() == words and pg.evaluate("e => e.getBoundingClientRect().height", g) < 40, 'two lines at most'
+    assert pg.query_selector('#dk-paper tr[data-tr="c069"] .rs-what-g') is None
+    pg.click('#dk-views [data-view="all"]'); pg.wait_for_timeout(200)
+    assert words in [x.inner_text() for x in pg.query_selector_all('#dk-paper .rs-what-s')]
     ctx.close()
     # each group is named as the summary counts it: canvassed, a pick that lost "didn't win"
     ctx, pg = rs_page(b, {'body': fx.scene('official')}, when='2026-12-03T09:00')
@@ -5844,12 +5916,15 @@ def small_after_election_fixes(b):
     assert 'Becomes official when the Austin City Council canvasses the vote, by Nov 17.' in paper and 'on Nov 12' not in paper, paper[:600]   # the deadline, still ahead
     assert pg.evaluate("getComputedStyle(document.querySelector('.dk-row[data-row=\"c113\"] small')).whiteSpace") == 'normal', 'a rail line is cut with …'
     ctx.close()
-    for when, shown in (('2026-11-02T09:00', 1), ('2026-11-05T09:00', 0)):   # before the election they show: the check can see them
+    for when, shown in (('2026-11-02T09:00', 1), ('2026-11-05T09:00', 1)):   # after the election too, now with their picks and Hide on the results paper (#210)
         ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, when=when, url=link('s', DESK_FRIEND), ballot=False, picks=False)
         pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')   # as lookup_wide, whatever the count says
         pg.wait_for_selector('body.dk-app-on', timeout=30000); pg.wait_for_selector('.dk-rail .dk-row', timeout=30000); pg.wait_for_timeout(600)
         n = pg.locator('.dk-rail .dk-fa').count()
-        assert (n > 0) == bool(shown), (when, n, 'a friend’s initials in the rail after the election, with no Hide' if n else 'the check sees no initials at all')
+        assert (n > 0) == bool(shown), (when, n, 'the check sees no initials at all')
+        if when >= '2026-11-04':
+            pg.click('.dk-rail .dk-row:has(.dk-fa)'); pg.wait_for_timeout(150)
+            assert pg.query_selector('#dk-paper [data-act="hidefriend"]'), 'their initials in the rail, and Hide on the paper'
         ctx.close()
 
 @results_test

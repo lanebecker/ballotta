@@ -106,6 +106,27 @@ def strip_results(html):
     return strip_marked(html, 'RESULTS')
 
 
+# Results season (Lane, Nov 4): the tab, search results, link previews and the Home Screen app say what the page is now.
+# The template keeps the ballot's words, so a results rollback, and the next election, have them as they were.
+BALLOT_HEAD = ['<title>Ballotta · What\'s on your ballot? (Travis County test)</title>',
+               '<meta name="description" content="See exactly what\'s on your November 3, 2026 ballot in Travis County, make your picks with private notes, and print a crib sheet to take to the polls.">',
+               '<meta property="og:title" content="Ballotta · What\'s on your ballot?">',
+               '<meta property="og:description" content="Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet. An early test.">']
+RESULTS_ABOUT = "See the Nov 3, 2026 results for every contest on your Travis County ballot, beside the picks you made."
+RESULTS_HEAD = ['<title>Ballotta · How your Travis County ballot turned out</title>',
+                '<meta name="description" content="' + RESULTS_ABOUT + '">',
+                '<meta property="og:title" content="Ballotta · How your ballot turned out">',
+                '<meta property="og:description" content="' + RESULTS_ABOUT + '">']
+BALLOT_ABOUT = "Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet."
+
+
+def results_head(html):
+    for a, b in zip(BALLOT_HEAD, RESULTS_HEAD):
+        assert html.count(a) == 1, a
+        html = html.replace(a, b, 1)
+    return html
+
+
 # ---- Content-Security-Policy (#36). Only the page's own inline scripts (by hash) and files from this site run; data
 # goes only to the county map server and the counting service; frames only from this site (the Census sandbox).
 PAGE_CSP = ("default-src 'none'; script-src 'self' {hashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
@@ -141,7 +162,7 @@ def manifest(preview=False):
     return json.dumps({
         "id": "./", "start_url": "./", "scope": "./", "display": "standalone",
         "name": "Ballotta (preview)" if preview else "Ballotta", "short_name": "Ballotta",
-        "description": "Your Travis County ballot for Nov 3, 2026, with private picks and a printable crib sheet.",
+        "description": RESULTS_ABOUT if RESULTS_LIVE and not preview else BALLOT_ABOUT,
         "background_color": "#4B2A6B", "theme_color": "#4B2A6B",
         "icons": [{"src": up + "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
                   {"src": up + "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
@@ -496,6 +517,8 @@ def build(preview=False, desk=None, phone=None, streets=None, results=None, data
         html = strip_streets(html)
     if not results:   # likewise
         html = strip_results(html)
+    elif not preview:
+        html = results_head(html)
     if not phone:
         html = strip_phone(html)
     else:
