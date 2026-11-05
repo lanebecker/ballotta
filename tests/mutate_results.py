@@ -198,7 +198,8 @@ M = [
  ('R169 a headline for a skipped contest', PREV, "const you = withPick !== false && picked(c)", "const you = withPick !== false && current(c.id).length > 0", [HP]),
  ('R170 your bar unmarked', PREV, "bars(c, e.choices, true, you ? current(c.id) : null)", "bars(c, e.choices, true, null)", [HP]),
  ('R171 the phone list stays open on a count', PREV, "e.target.closest('.dk-row, .rs-lnext, .rs-gol')", "e.target.closest('.dk-row, .rs-lnext')", [HP]),
- ('R172 small counts on the phone', PREV, "  .rs-listsum .rs-gol{min-height:44px;margin:-4px;padding:4px}\n", "", [HP]),
+ # R172 retired Nov 4 before it shipped: a count's number over its words is already taller than 44px, so the phone's
+ # min-height is only a floor; the test still measures every count's height.
  ('R173 rail marks while paused', PREV, "(A && !paused ? ' pm pm-' + results.mark(b.c)", "(A ? ' pm pm-' + results.mark(b.c)", [HP]),
  ('R174 a group named Behind when none are', PREV, "if (k === 'behind') return !behind ? 'Didn’t win' : !down ? 'Behind' : 'Didn’t win or behind';", "if (k === 'behind') return 'Behind';", [HP]),
  ('R175 the headline keeps its period', PREV, "esc(mine(c, e).replace(/\\.$/, '')) + '</p><p class=\"rs-hs\">'", "esc(mine(c, e)) + '</p><p class=\"rs-hs\">'", [HP]),
