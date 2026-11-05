@@ -219,6 +219,10 @@ M = [
  ('R189 a pick in a clear seat is not settled', PREV, "    if (V === 'too_close' && hit) return 'up';", "", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
  ('R190 a measure without its words', PREV, "    if (isM && c.text) h += '<div class=\"rs-what\">", "    if (false) h += '<div class=\"rs-what\">", [HP]),
  ('R191 a friend\'s pick left off the result', PREV, "    if (withPick !== false && theirs) h += theirs;", "", ['a_shared_friends_pick_shows_beside_each_result']),
+ ('R192 the footer switches only on load', PREV, "  shownDay = d;\n  mlNext();", "  shownDay = d;", ['the_mailing_list_promises_results_only_until_nov_18']),
+ ('R193 ?results stays in the address', PREV, "u.searchParams.delete('results'); history.replaceState(history.state, '', u.pathname + u.search + u.hash);", "", ['all_travis_county_results_need_no_address']),
+ ('R194 a landmark per result on All results', PREV, "(all ? '' : ' aria-label=\"Result\"')", "' aria-label=\"Result\"'", ['all_travis_county_results_need_no_address']),
+ ('R195 All results redrawn at every key', PREV, "if (ui.view === 'all') qT = setTimeout(listChanged, 150); else listChanged();", "listChanged();", ['all_travis_county_results_need_no_address']),
 ]
 if __name__ == '__main__':
     R.main(M)

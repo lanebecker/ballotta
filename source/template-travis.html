@@ -263,7 +263,7 @@ body.dk-app-on .cb:not(.hidden){display:flex;flex-direction:column;gap:16px;posi
 .rs-tr i{display:block;height:100%;background:var(--lc)}
 .rs-you{font-weight:700;font-size:15px;color:var(--ink)}
 .rs-tv{border-top:1px solid var(--divider);padding-top:10px;margin-top:4px;display:flex;flex-direction:column;gap:4px}
-.rs-tv h3{font-size:12px}
+.rs-tv h3,.rs-tv h5{font-size:12px}
 .rs-tv .rs-tr i{background:var(--line2)}
 .rs-top{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
 .rs-fail p{margin:0}
@@ -1854,7 +1854,9 @@ const today = () => { try { const p = {}; CT().formatToParts(new Date()).forEach
 // The mailing list's promise (Lane, Oct 31): from Nov 18, Austin time, with the local canvasses done, this election's
 // results are up, so it promises only the next ballot.
 const ML_NEXT_ONLY = new Date(2026, 10, 18);
-if (today() >= ML_NEXT_ONLY) $('ml-p').textContent = 'Get emailed when your next ballot is ready to look up. Nothing else, and never anything about how to vote.';
+// Checked on load and by dayCheck, so a page left open across Nov 17→18 switches too (the Nov 4 audit, #215)
+const mlNext = () => { if (today() >= ML_NEXT_ONLY) $('ml-p').textContent = 'Get emailed when your next ballot is ready to look up. Nothing else, and never anything about how to vote.'; };
+mlNext();
 const defaultPeriod = () => { const d = today(); return (d.getFullYear() > 2026 || (d.getMonth() === 9 && d.getDate() > 30) || d.getMonth() > 9) ? 'eday' : 'early'; };
 let period = defaultPeriod(), periodChosen = false;
 let showAll = false;
@@ -1926,6 +1928,7 @@ let shownDay = today().toDateString();
 function dayCheck() {  // a new day since the page was drawn: redraw what depends on the date
   const d = today().toDateString(); if (d === shownDay) return;
   shownDay = d;
+  mlNext();
   const was = period;
   if (!periodChosen) period = defaultPeriod();
   if (period !== was) renderVote(); else waitsNote();  // a new list only when the period changed, so a focused link keeps its place (#47)
@@ -2509,7 +2512,9 @@ const results = (() => {
   const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
   const override = (() => { if (!LOCAL) return ''; try { const t = new URLSearchParams(location.search).get('today') || ''; return DATE.test(t) ? t : ''; } catch (e) { return ''; } })();
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  const day = () => override || iso(today());
+  // Austin's date, worked out at most once a second: All Travis County results asks it thousands of times a draw (#214)
+  let dayAt = 0, dayIs = '';
+  const day = () => { if (override) return override; const t = Date.now(); if (t - dayAt > 1000 || t < dayAt) { dayAt = t; dayIs = iso(today()); } return dayIs; };
   const live = () => day() >= FROM;
   const md = (d) => MONTHS[+d.slice(5, 7) - 1] + ' ' + +d.slice(8, 10);
   const when = (t) => { const h = +t.slice(11, 13), m = t.slice(14, 16); return md(t.slice(0, 10)) + ', ' + ((h + 11) % 12 + 1) + ':' + m + ' ' + (h < 12 ? 'am' : 'pm'); };
@@ -2583,7 +2588,10 @@ const results = (() => {
     try { renderCrib(); } catch (e) {}   // the printout: the results beside the picks once they're in
     if (!window.desk) top();   // the laptop's render drew the band for its own view; again here would undo the focus it kept (#140) and draw the ballot's band on All Travis County results (#147)
     landing();
-    if (wantAll && on()) { wantAll = false; openAll(); }   // ballotta.org/?results (the results/ link)
+    if (wantAll && on()) {   // ballotta.org/?results (the results/ link): once; a reload opens your ballot, not this again (#214)
+      wantAll = false; openAll();
+      try { const u = new URL(location.href); u.searchParams.delete('results'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch (e) {}
+    }
   }
 
   /* ----- what one contest's ribbon says ----- */
@@ -2701,7 +2709,10 @@ const results = (() => {
     let h = you ? '<section class="rs-head" aria-label="Your pick"><i class="pm pm-' + mark(c) + ' lg" aria-hidden="true"></i><div><p class="rs-hl">' + esc(mine(c, e).replace(/\.$/, '')) + '</p><p class="rs-hs">' + esc(rowLine(c)) + '</p></div></section>'
       + (rsn ? '<div class="rs-rsn"><p><q>' + esc(whyShown(rsn)) + '</q></p><p class="rs-n">Your reason. Only you can see it.</p></div>' : '') : '';
     if (withPick !== false && theirs) h += theirs;
-    h += '<section class="rs' + (isOfficial(e) ? ' rs-is-off' : '') + '" aria-label="Result">' + status(c, e);
+    // On All Travis County results, 214 sections labeled "Result" were 214 identical landmarks: there it's a plain section,
+    // its contest's h4 names it, and Travis's breakdown is an h5 under it (#214)
+    const all = withPick === false, hx = all ? 'h5' : 'h3';
+    h += '<section class="rs' + (isOfficial(e) ? ' rs-is-off' : '') + '"' + (all ? '' : ' aria-label="Result"') + '>' + status(c, e);
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
     const held = ['runoff', 'tied_runoff'].includes(e.verdict) && e.runoff_on && day() > e.runoff_on;   // W113: the county has the runoff's result
@@ -2715,7 +2726,7 @@ const results = (() => {
     if (e.recount) h += '<p class="rs-n rs-key">Recount requested · <a href="' + esc(e.recount) + '" target="_blank" rel="noopener">Details</a></p>';  // W29
     if (e.corrected && day() <= iso(new Date(+e.corrected.slice(0, 4), +e.corrected.slice(5, 7) - 1, +e.corrected.slice(8, 10) + 7))) h += '<p class="rs-n rs-key">Corrected ' + esc(md(e.corrected)) + ': an earlier version on Ballotta was wrong.</p>';  // W51
     if (withPick !== false && !you && current(c.id).length) h += '<div class="rs-mine"><p class="rs-you">' + esc(mine(c, e)) + '</p></div>';   // skipped (W42)
-    if (e.travis) h += '<div class="rs-tv"><h3>How Travis County voted</h3><p class="rs-n">Travis County’s count only. The result above includes every county in this race.</p>' + bars(c, e.travis.map(x => [x[0], x[1], x[2], false]), false) + '</div>';  // W43, W44
+    if (e.travis) h += '<div class="rs-tv"><' + hx + '>How Travis County voted</' + hx + '><p class="rs-n">Travis County’s count only. The result above includes every county in this race.</p>' + bars(c, e.travis.map(x => [x[0], x[1], x[2], false]), false) + '</div>';  // W43, W44
     return h + '</section>';
   }
   const on = () => !!(R && live() && !R.withdrawn && Object.keys(R.contests).length);
@@ -2730,7 +2741,7 @@ const results = (() => {
     const ids = ballot.map(b => b.c.id).filter(id => R.contests[id]);
     const now = Object.fromEntries(ids.map(id => [id, seenOf(R.contests[id])]));
     if (!since) {
-      const seen = plain(LS.get('ballotta.resultsSeen', {})), was = plain(seen.v), at = isStr(seen.at) && DATE.test(seen.at) ? seen.at : '';
+      const seen = plain(LS.get('ballotta.resultsSeen', {})), was = plain(seen.v);
       since = { official: 0, changed: 0, numbers: 0, corrected: 0 };
       const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
       if (isNat(seen.seq) && seen.seq < R.seq) ids.forEach(id => {
@@ -2884,7 +2895,7 @@ const results = (() => {
   // The summary (option A, Lane Oct 20): your ballot, your picks, what's next.
   function summary() {
     const n = ballot.length, off = ballot.filter(b => official(b.c)).length;
-    const oc = ballot.flatMap(b => outs(b.c)), k = (x) => oc.filter(o => o === x).length;
+    const oc = ballot.flatMap(b => outs(b.c));
     let h = '<section class="rs-sum" aria-label="Your ballot so far"><div class="sx"><p class="ov">Your ballot</p><div class="row"><p class="big">' + off + '<small>/' + n + '</small></p><p class="lb">official results<span>'
       + (off === n ? 'Every result on your ballot is official' : off ? 'The rest are still being counted or canvassed' : 'Still being counted or canvassed') + '</span></p></div></div>';
     if (oc.length) {
@@ -3005,7 +3016,7 @@ const results = (() => {
   // The summary, small, at the top of the phone's list (the canvas's phone board).
   function listSum() {
     if (!R || R.withdrawn || !live() || !ballot.length) return '';
-    const n = ballot.length, off = ballot.filter(b => official(b.c)).length, oc = ballot.flatMap(b => outs(b.c)), k = (x) => oc.filter(o => o === x).length;
+    const n = ballot.length, off = ballot.filter(b => official(b.c)).length, oc = ballot.flatMap(b => outs(b.c));
     const opens = openPicks();
     let h = '<div class="rs-listsum"><p class="top"><b>' + off + '<small>/' + n + '</small></b><span>official results</span></p>';
     const runs = runsAhead();   // the phone's list has no summary band: What's next, when it's a runoff, goes here (#143)
@@ -3857,7 +3868,9 @@ const desk = (() => {
     setView(btn.dataset.view, e.detail > 0); track('view_opened', { view: btn.dataset.view });
   }));
   document.querySelectorAll('#dk-filt button').forEach(btn => btn.addEventListener('click', () => { if (ui.view === 'all') ui.allF = btn.dataset.f; else ui.filter = btn.dataset.f; listChanged(); countOnce('f:' + btn.dataset.f, 'filter_used', { filter: btn.dataset.f }); }));
-  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); listChanged(); countOnce('search', 'search_used'); });
+  // On All Travis County results each search redraws 214 contests: once typing pauses (150 ms), not every key (#214)
+  let qT = 0;
+  $('dk-q').addEventListener('input', () => { ui.q = $('dk-q').value.trim(); clearTimeout(qT); if (ui.view === 'all') qT = setTimeout(listChanged, 150); else listChanged(); countOnce('search', 'search_used'); });
   if ('IntersectionObserver' in window) {  // did the FAQ scroll into view? once per visit, after a scroll (a tall window shows it at once)
     const arm = () => {
       if (document.body.classList.contains('dk-app-on')) return;  // a scroll in the app doesn't count: only one on the landing page
