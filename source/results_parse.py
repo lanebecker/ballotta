@@ -316,7 +316,7 @@ def parse_hays(data):
                 m = re.match(r"^Run Date (\d+/\d+/\d{4})", ln)
                 if m: run_date = run_date or m.group(1)
                 lines.append(ln)
-    if not lines or not lines[0].startswith("Cumulative Results Report") or "Hays County" not in lines[0]:
+    if not lines or not lines[0].lower().startswith("cumulative results report") or "hays county" not in lines[0].lower():   # any case (#201)
         raise BadFile("not a Hays County cumulative results report")
     if not (run_date and run_time):
         raise BadFile("no Run Date and Run Time")

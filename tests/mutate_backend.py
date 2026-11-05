@@ -88,6 +88,7 @@ M = [
     ("B73 a 0-0 Travis breakdown", BUILD, "travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]] if tt else None", "travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]]"),
     ("B74 the report names an excluded file", FETCH, "rep = B.latest(res, source, excluded, B.POLLS_CLOSE, [], B.ELECTION)", "rep = B.latest(res, source, {}, B.POLLS_CLOSE, [], B.ELECTION)"),
     ("B75 a hand-uploaded county unmarked", FETCH, 'hand = "" if source in auto else " · not fetched: uploaded by hand"', 'hand = ""'),
+    ("B80 a Hays report in capitals refused", PARSE, 'not lines[0].lower().startswith("cumulative results report") or "hays county" not in lines[0].lower():', 'not lines[0].startswith("Cumulative Results Report") or "Hays County" not in lines[0]:'),
 ]
 ORIG = {}
 
@@ -113,6 +114,8 @@ def restore(*_):
 
 
 def main():
+    if len(sys.argv) > 2:   # a slice of the list (python3 tests/mutate_backend.py 70 80), as mutate_results takes
+        M[:] = M[int(sys.argv[1]):int(sys.argv[2])]
     for name, f, a, z in M:
         n = f.read_text(encoding="utf-8").count(a)
         assert n == 1, (name, "anchor found", n, "times in", f.name)
