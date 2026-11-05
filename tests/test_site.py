@@ -5204,6 +5204,7 @@ def the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins(b):
     r = rs_go(pg, 'c113')
     assert 'Leading: Sarah Ponder · second seat too close to call' in r and '1 of your 2 picks is leading' in r, r
     assert pg.get_attribute('.dk-row[data-row="c113"] .dk-d', 'class') == 'dk-d pm pm-open', 'one leading, one in the close seat: not settled'
+    assert [x.inner_text() for x in pg.query_selector_all('#rs-top .rs-sum .three b')] == ['3', '2', '4'], 'Ponder, in a clear seat, counts as leading; Young and the tiny measure as not settled'
     r = rs_go(pg, 'c001')
     row = [x for x in pg.query_selector_all('#dk-paper .rs > .rs-bars .rs-b') if 'Jade Simmons' in x.inner_text()][0]
     assert 'Not counted by name yet' in row.inner_text() and row.query_selector('.rs-tr') is None, row.inner_text()
