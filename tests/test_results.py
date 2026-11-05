@@ -775,6 +775,19 @@ def no_travis_breakdown_when_travis_has_no_votes():
 
 @test
 def hays_reads_official_in_any_case_and_never_from_unofficial():
+    # the whole report, its first line in capitals (pdfplumber stood in for, with the real report's own text)
+    import pdfplumber
+    with pdfplumber.open(io.BytesIO(fx('hays-2025-11-official.pdf'))) as pdf:
+        pages = [p.extract_text() for p in pdf.pages]
+    for head, want in ((pages[0].split('\n', 1)[0].upper(), True), (pages[0].split('\n', 1)[0].replace('Official', 'Unofficial'), False)):
+        text = [head + '\n' + pages[0].split('\n', 1)[1]] + pages[1:]
+        class Doc:
+            def __init__(self, *a): self.pages = [type('Pg', (), {'extract_text': (lambda self, t=t: t)})() for t in text]
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+        real = pdfplumber.open; pdfplumber.open = Doc
+        try: assert P.parse_hays(b'%PDF')['official'] is want, (head, want)
+        finally: pdfplumber.open = real
     ok = P.HAYS_OFFICIAL.search
     assert ok('Cumulative Results Report Hays County, Texas Official Results') and ok('CUMULATIVE RESULTS REPORT HAYS COUNTY, TEXAS OFFICIAL RESULTS')
     assert not ok('Cumulative Results Report Hays County, Texas Unofficial Results') and not ok('CUMULATIVE RESULTS REPORT HAYS COUNTY, TEXAS UNOFFICIAL RESULTS')
