@@ -3,6 +3,7 @@ plausible bug in the rules, the parsers, the build or the fetcher, and tests/tes
 one. No browser; about two minutes.
 
     python3 tests/mutate_backend.py          # from the repo root; restores every file, even when stopped
+    python3 tests/mutate_backend.py 70 80    # a slice of the list
 """
 import os, pathlib, signal, subprocess, sys
 
@@ -117,6 +118,8 @@ def restore(*_):
 
 
 def main():
+    if len(sys.argv) > 2:   # a slice of the list (python3 tests/mutate_backend.py 70 80), as mutate_results takes
+        M[:] = M[int(sys.argv[1]):int(sys.argv[2])]
     for name, f, a, z in M:
         n = f.read_text(encoding="utf-8").count(a)
         assert n == 1, (name, "anchor found", n, "times in", f.name)
