@@ -5186,6 +5186,34 @@ def a_bad_results_file_breaks_nothing(b):
     ctx.close()
 
 @results_test
+def a_shared_friends_pick_shows_beside_each_result(b):
+    # Lane, Nov 4 (#210): after the election a Share link showed nothing about the friend (the rail hid them, the result
+    # had no line), though the landing promised their picks beside yours. Now: their pick after yours on each result,
+    # with the chip to hide them, and their initial in the rail; no won or lost words for them; the phone's fold no
+    # longer says "You and Maya".
+    fx = rs_fixtures()
+    url = link('s', {'v': 1, 'n': 'Maya', 'c': 'abcd2348', 'g': 1, 'p': {'71': 0}})
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, url=url)
+    pg.goto('about:blank'); pg.goto(url); pg.wait_for_timeout(700)
+    assert pg.evaluate("!!window.friend && friend.name") == 'Maya', 'the link was read'
+    rs_go(pg, 'c071')
+    fp = pg.inner_text('#dk-paper .rs-fp')
+    assert fp.startswith('M') and 'Maya picked ' in fp and not re.search(r'won|lost|behind|leading', fp, re.I), fp
+    order = pg.evaluate("[...document.querySelector('#dk-paper').children].map(x => x.tagName === 'H1' ? 'h1' : x.className.split(' ').pop())")
+    assert order.index('rs-fp') == order.index('rs-head') + 1 + ('rs-rsn' in order) and order[0] == 'dk-fchip', order
+    assert pg.query_selector('.dk-row[data-row="c071"] .dk-fa') and 'Maya picked' in pg.text_content('.dk-row[data-row="c071"]')
+    rs_go(pg, 'c069'); assert pg.query_selector('#dk-paper .rs-fp') is None, 'nothing where Maya picked nothing'
+    pg.click('#dk-paper [data-act="hidefriend"]'); pg.wait_for_timeout(200)
+    assert pg.query_selector('#dk-paper .dk-fchip') is None and pg.query_selector('.dk-row .dk-fa') is None
+    assert pg.errs == [], pg.errs
+    ctx.close()
+    ctx, pg = rs_page(b, {'body': fx.scene('mixed')}, phone=True, url=url)
+    pg.goto('about:blank'); pg.goto(url); pg.wait_for_timeout(700)
+    rs_go(pg, 'c071', phone=True)
+    assert 'Maya picked' in pg.inner_text('#dk-paper .rs-fp') and 'You and' not in pg.inner_text('#ph-fold'), pg.inner_text('#ph-fold')
+    ctx.close()
+
+@results_test
 def results_that_dont_load_keep_the_page_a_record(b):
     # The Nov 4 audit, #211: from Nov 4, with no results file (offline, an outage), the page went back to Nov 3's ballot:
     # editable picks, Where to vote saying "you can vote", and nothing about the results. It stays a record and says so,

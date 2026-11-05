@@ -399,6 +399,7 @@ button.lnk{width:100%;background:none;border:none;border-bottom:1px dotted var(-
 .dk-tbl.rs-gl tr.rs-gh th{padding:28px 10px 8px;border-bottom:none;font-family:'Zilla Slab',Rockwell,Georgia,serif;font-size:24px;font-weight:700;line-height:1.2;color:var(--ink);border-radius:10px}
 .dk-tbl.rs-gl tr.rs-gh th .pm{margin-right:10px}
 .rs-tc{display:flex;align-items:flex-start;gap:8px}
+.dk-fp.rs-fp{padding:0 18px;font-size:15px}   /* a friend's pick under yours, its initial under your mark (#210) */
 /* what a measure is, beside its name (Lane, Nov 4): in full on its result and on All Travis County results, two lines in At a glance */
 .rs-what{display:flex;flex-direction:column;gap:6px}
 .rs-what-s{margin:0 0 4px;font-size:13px;line-height:1.45;color:var(--ink2)}
@@ -2678,7 +2679,7 @@ const results = (() => {
     annex_both: 'Both approved: the area will be added.', annex_district_rejected: 'Area approved, district rejected: the area won’t be added.',  // W32
     annex_area_rejected: 'Area rejected: the area won’t be added.', annex_both_rejected: 'Area rejected: the area won’t be added.' };
   // The ribbon on one contest (W1–W45). withPick: false in All Travis County results, which is nobody's ballot.
-  function ribbon(c, withPick) {
+  function ribbon(c, withPick, theirs) {   // theirs: a shared friend's pick, shown after yours (Lane, Nov 4, #210)
     const e = entry(c.id);
     if (!e) return '';
     // Your pick leads the page (Lane, Nov 4, option A): its mark, how it did, then the result in a few words; your reason under it.
@@ -2686,6 +2687,7 @@ const results = (() => {
     const you = withPick !== false && picked(c), rsn = you && typeof whys[c.id] === 'string' && whys[c.id].trim() ? whys[c.id] : '';
     let h = you ? '<section class="rs-head" aria-label="Your pick"><i class="pm pm-' + mark(c) + ' lg" aria-hidden="true"></i><div><p class="rs-hl">' + esc(mine(c, e).replace(/\.$/, '')) + '</p><p class="rs-hs">' + esc(rowLine(c)) + '</p></div></section>'
       + (rsn ? '<div class="rs-rsn"><p><q>' + esc(whyShown(rsn)) + '</q></p><p class="rs-n">Your reason. Only you can see it.</p></div>' : '') : '';
+    if (withPick !== false && theirs) h += theirs;
     h += '<section class="rs' + (isOfficial(e) ? ' rs-is-off' : '') + '" aria-label="Result">' + status(c, e);
     if (e.who) h += '<p class="rs-n">' + (e.who === 'district' ? 'Decided by voters in the district.' : 'Decided by voters in the area to be added.') + '</p>';  // W33
     const v = verdict(c, e);
@@ -3283,7 +3285,7 @@ const desk = (() => {
       html += '<div class="dk-g"><span>' + esc(LEVEL_LABEL[L] || L) + '</span><span>' + (paused ? all.length : all.filter(b => A ? results.official(b.c) : decided(b.c.id)).length + '/' + all.length) + '</span></div>';
       html += shown.map(b => {
         const id = b.c.id, v = current(id), sub = A ? results.rowLine(b.c) : !v.length ? 'Undecided' : v[0] === '__skip' ? 'Skipping' : v.map(x => optLabel(b.c, x)).join(', ');
-        const fp = !A && friend && friend.P[id] ? esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) : '';  // read out as "Maya picked …" (#32)
+        const fp = friend && friend.P[id] ? esc(friend.P[id].map(x => optLabel(b.c, x)).join(', ')) : '';  // read out as "Maya picked …" (#32)
         const fa = fp ? '<span class="dk-fa' + (samePick(id) ? '' : ' diff') + '" aria-hidden="true" title="' + possessive() + ' pick: ' + fp + '">' + initial() + '</span><span class="dk-vh">' + esc(friendName()) + ' picked ' + fp + '</span>' : '';
         return '<button type="button" class="dk-row" data-row="' + id + '"' + (id === ui.cur && ui.view === 'decide' ? ' aria-current="true"' : '') + '><span class="dk-d' + (A && !paused ? ' pm pm-' + results.mark(b.c) : v.length && v[0] !== '__skip' ? ' on' : '') + '" aria-hidden="true"></span><span class="dk-rt"><b>' + esc(cleanTitle(b.c)) + '</b><small' + (A ? ' class="w"' : '') + '>' + esc(sub) + (b.conf === 'medium' ? ' · Double-check' : '') + (A && v.length && v[0] !== '__skip' ? '<span class="dk-vh"> · ' + esc(results.pickSaid(b.c)) + '</span>' : '') + '</small></span>' + fa + '</button>';   // the gold dot, for screen readers, once the line is the result (#148)
       }).join('');
@@ -3506,7 +3508,8 @@ const desk = (() => {
   function viewResult() {
     const b = curB(), c = b.c, L = DATA.learn[c.id] || {}, isM = c.type === 'measure', n = seats(c), opts = optionsOf(c), v = current(c.id), i = idx(c.id);
     const where = c.entity && c.entity !== c.level ? c.entity : (LEVEL_LABEL[c.level] || c.level);
-    let h = '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span></div>';   // nothing saved to say on a results paper (#150)
+    let h = (friend ? '<div class="dk-fchip"><span class="dk-fa">' + initial() + '</span>Showing ' + possessive() + ' picks · <button type="button" class="dk-link" data-act="hidefriend">Hide</button></div>' : '')   // as before the election (#210)
+      + '<div class="dk-top"><span class="ov">' + esc(where) + ' · contest ' + (i + 1) + ' of ' + ballot.length + '</span></div>';   // nothing saved to say on a results paper (#150)
     const t = cleanTitle(c);
     h += '<h1>' + esc(c.entity && t.startsWith(c.entity + ', ') ? t.slice(c.entity.length + 2) : t) + '</h1>';
     if (!isM) h += '<div class="dk-meta">' + (opts.length === 1 ? 'Unopposed' : (n > 1 ? 'Vote for up to ' + n : 'Vote for 1')) + (c.choices.includes('Write-in') ? ' · write-in allowed' : '') + '</div>';
@@ -3514,7 +3517,10 @@ const desk = (() => {
     // What the measure is, under its name: "Proposition G" alone is hard to tell from F and H (Lane, Nov 4)
     if (isM && c.text) h += '<div class="rs-what"><span class="ov">Exactly as printed on your ballot</span><p class="verbatim">' + esc(c.text) + '</p></div>';
 /*RESULTS*/
-    h += results.ribbon(c) + results.nextBox(c);
+    // A shared friend's pick, as before the election: who, what, their reason; no won or lost words for them (#210)
+    const F = friend && friend.P[c.id] && friend.P[c.id].filter(x => opts.includes(x));
+    const theirs = F && F.length ? '<div class="dk-fp rs-fp"><span class="dk-fa" aria-hidden="true">' + initial() + '</span><span><b>' + esc(friendName()) + ' picked ' + esc(F.map(x => optLabel(c, x)).join(', ')) + '</b>' + (friend.W[c.id] ? ' · “' + esc(friend.W[c.id]) + '”' : '') + '</span></div>' : '';
+    h += results.ribbon(c, true, theirs) + results.nextBox(c);
 /*/RESULTS*/
     const raw = isM ? opts : c.choices.filter(x => x !== 'Write-in');
     h += '<section class="dk-asmarked" aria-label="Your choice"><span class="ov">Your choice</span><ul class="dk-lines dk-ro' + (isM ? ' dk-mrow' : '') + '">' + opts.map((o, k) => {
@@ -4021,7 +4027,7 @@ const phone = (() => {
     if (dec) {
       const c = D.curB().c, L = DATA.learn[c.id] || {};
       const what = D.after && D.after() ? (results.paused() ? 'Calling races' : 'About this result') : c.type === 'measure' ? 'Sources' : L.office ? 'About this office · Learn more' : 'Learn more';
-      $('ph-fold').textContent = (friend ? 'You and ' + friendName() + ' · ' : '') + what;
+      $('ph-fold').textContent = (friend && !(D.after && D.after()) ? 'You and ' + friendName() + ' · ' : '') + what;   // after the election the friend's pick is on the paper, not in the fold (#210)
       $('ph-fold').setAttribute('aria-expanded', foldOpen ? 'true' : 'false');
       $('dk-notes').classList.toggle('ph-open', foldOpen);
       // Nothing behind it (a measure with no sources): no fold (#76).
