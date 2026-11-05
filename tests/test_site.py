@@ -15,9 +15,13 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 PORT = int(os.environ.get('BALLOTTA_PORT', '8765'))
 PAGE = os.environ.get('BALLOTTA_PAGE', 'index.html')
 # Run the suite as of another moment, e.g. BALLOTTA_TODAY=2026-11-01T12:00:00-05:00 (#64: several views change with the
-# date: early voting from Oct 19, Election Day lists from Oct 31). Every page from new_page()/phone_page() gets it.
+# date: early voting from Oct 19, Election Day lists from Oct 31). Every page from new_page()/phone_page()/own_page() gets
+# it. Unset, the suite runs as of Nov 2, 2026, noon: the ballot tests are about the days before the election, and after
+# Nov 4 the wall clock turned the page into results and failed them (the Nov 4 audit, #208); the results tests set
+# their own clocks. BALLOTTA_TODAY=now runs at the wall clock.
 import datetime as _dt
-TODAY = _dt.datetime.fromisoformat(os.environ['BALLOTTA_TODAY']) if os.environ.get('BALLOTTA_TODAY') else None
+DEFAULT_TODAY = '2026-11-02T12:00:00-06:00'
+TODAY = None if os.environ.get('BALLOTTA_TODAY') == 'now' else _dt.datetime.fromisoformat(os.environ.get('BALLOTTA_TODAY') or DEFAULT_TODAY)
 BASE = f'http://127.0.0.1:{PORT}/{PAGE}'
 HAS_DESK = 'id="dk-app"' in (ROOT / PAGE).read_text(encoding='utf-8')
 HAS_PHONE = 'id="ph-bar"' in (ROOT / PAGE).read_text(encoding='utf-8')
@@ -102,7 +106,7 @@ def names(pg): return [e[0] for e in events(pg)]
 def lookup(pg, street='1000 Guadalupe St', zip_='78701'):
     pg.fill('#street', street); pg.fill('#zip', zip_); pg.click('#go')
     pg.wait_for_selector('#result:not(.hidden)', timeout=30000)
-    pg.wait_for_function("document.getElementById('k-total').textContent !== '0'", timeout=30000)
+    poll(pg, "document.getElementById('k-total').textContent !== '0'")
 
 def open_race(pg, cid):
     pg.evaluate(f"document.getElementById('r{cid}').open = true")
@@ -266,7 +270,7 @@ def build_module():
 def lookup_wide(pg, street='1000 Guadalupe St', zip_='78701'):
     pg.fill('#street', street); pg.fill('#zip', zip_); pg.click('#go')
     pg.wait_for_selector('body.dk-app-on', timeout=30000)
-    pg.wait_for_function("/ of \\d+ decided$/.test(document.getElementById('dk-count').textContent)", timeout=30000)
+    poll(pg, "/ of \\d+ decided$/.test(document.getElementById('dk-count').textContent)")
 
 def cur(pg, cid): return pg.evaluate(f"current('{cid}')")
 
@@ -616,7 +620,7 @@ def two_tabs_stay_in_step(b):
     # over the other's changes without a word. A tab now takes the other's saved copy, everywhere it shows it; a reason
     # being typed when the other tab saves is kept, not lost.
     ctx, a = new_page(b, wide=True, county='stub'); a.goto(BASE); lookup_wide(a)
-    t = ctx.new_page(); t.goto(BASE); t.wait_for_selector('body.dk-app-on')
+    t = own_page(ctx); t.goto(BASE); t.wait_for_selector('body.dk-app-on')
     first = lambda pg, k: pg.evaluate('''k => { const c = ballot[k].c.id;                       // a choice as its button names it
         return [c, document.querySelector('[data-c="' + c + '"][data-pick]:not([data-pick="__skip"])').dataset.pick]; }''', k)
     (c0, v0), (c1, v1), (c2, v2), (c3, v3) = first(a, 0), first(a, 1), first(a, 2), first(a, 3)
@@ -769,7 +773,7 @@ def page_is_built_locked_down(b):
 def tracker_runs_only_as_pinned(b):
     # Issue #68: a changed umami.js (on the server or in transit) never runs; the pinned one does.
     for extra in ('', '\n/* changed */'):
-        ctx = b.new_context(); route_county(ctx); ctx.route('https://gateway.umami.is/**', lambda r: r.abort()); pg = ctx.new_page()
+        ctx = b.new_context(); route_county(ctx); ctx.route('https://gateway.umami.is/**', lambda r: r.abort()); pg = own_page(ctx)
         js = lambda route, extra=extra.encode(): (lambda r: route.fulfill(response=r, body=r.body() + extra))(route.fetch())
         ctx.route('**/umami.js', lambda route: js(route)); pg.goto(BASE); pg.wait_for_timeout(1200)
         assert pg.evaluate('typeof window.umami') == ('object' if not extra else 'undefined'), extra
@@ -798,7 +802,7 @@ def page_refuses_to_show_in_another_sites_frame(b):
     assert pg.locator('#street').is_visible() and NOJS not in pg.inner_text('body') and 'ballotta.org directly' not in pg.inner_text('body'), 'not framed: shown, without either note'
     ctx.close()
     # JavaScript off (Tor Browser's Safest setting, NoScript): the note, with the county's own lookup (Lane, Oct 17).
-    ctx = b.new_context(java_script_enabled=False); route_county(ctx); pg = ctx.new_page(); pg.goto(BASE)
+    ctx = b.new_context(java_script_enabled=False); route_county(ctx); pg = own_page(ctx); pg.goto(BASE)
     assert pg.inner_text('body').strip() == NOJS and not pg.locator('#street').is_visible(), pg.inner_text('body')[:300]
     assert pg.get_attribute('.nojs:not(.framed) a', 'href') == 'https://votetravis.gov/voter-lookup/'
     ctx.close()
@@ -1543,7 +1547,7 @@ def desk_launch_audit_fixes(b):
     ctx.close()
     ctx = b.new_context(viewport={'width': 1366, 'height': 1024}, has_touch=True, is_mobile=True); route_county(ctx)    # #35: a tablet in landscape
     stub_tracker(ctx)
-    pg = ctx.new_page(); pg.goto(BASE); lookup_wide(pg)
+    pg = own_page(ctx); pg.goto(BASE); lookup_wide(pg)
     assert pg.evaluate("matchMedia('(pointer: coarse)').matches")
     assert pg.locator('.kbd:visible').count() == 0, 'no keyboard hints on a touch screen'
     ctx.close()
@@ -1670,7 +1674,7 @@ def real_tracker_sends_only_listed_events(b):
             route.fulfill(response=r, body=body)
         ctx.route(re.compile(r'.*/index\.html$|.*:%d/$' % PORT), page)
         ctx.route('https://gateway.umami.is/**', lambda r: (sent.append(r.request.post_data_json), r.fulfill(status=200, content_type='application/json', body='{}')))
-        pg = ctx.new_page(); pg.goto(f'http://127.0.0.1:{PORT}/index.html')
+        pg = own_page(ctx); pg.goto(f'http://127.0.0.1:{PORT}/index.html')
         if live_phone: lookup_phone(pg); pb_go(pg, 'c070'); pb_line(pg, 'Qadri').click(); pg.wait_for_timeout(1500)   # promoted: the phone layout
         else: lookup(pg); pick(pg, 'c070', 'Qadri'); pg.wait_for_timeout(1500)
         title = pg.evaluate('document.title')
@@ -2053,6 +2057,12 @@ def desk_print_button_opens_the_crib_sheet(b):
     ctx.close()
 
 # ---------------------------------------------------------------- issues round B (Oct 15): #36 hardening, #38 untangling
+def own_page(ctx):
+    """A page in a context a test built itself (not new_page's): with the suite's clock, as new_page gives (#207)."""
+    pg = ctx.new_page()
+    if TODAY: pg.clock.install(time=TODAY)
+    return pg
+
 def poll(pg, js, timeout=30):                                   # a wait that works under the page's CSP (no eval in the page)
     import time
     end = time.time() + timeout
@@ -2277,7 +2287,7 @@ def clearing_picks_drops_a_reason_waiting_to_be_saved(b):
     # Both now drop it, as Clear everything does.
     for how in ('clear', 'restore'):
         ctx, a = new_page(b, wide=True); a.goto(BASE); saved_ballot(a, [1, 70, 71]); a.wait_for_selector('body.dk-app-on')
-        t = ctx.new_page(); t.goto(BASE); t.wait_for_selector('body.dk-app-on')
+        t = own_page(ctx); t.goto(BASE); t.wait_for_selector('body.dk-app-on')
         a.evaluate("desk.ph.go('c070')"); a.wait_for_selector('#dk-w')
         if how == 'restore':   # a Keep link is waiting to be loaded
             a.evaluate("u => { location.hash = u.split('#')[1]; }", link('k', {'v': 1, 'pr': '300', 'b': [1, 70, 71], 'p': {'71': 0}})); a.wait_for_selector('#d-restore[open]')
@@ -2317,7 +2327,7 @@ def two_tabs_acting_at_once_keep_both(b):
     # every box waiting to be saved keeps its text. Tab B holds back its storage events, as a tab does in the moment
     # between the other tab's write reaching it and its listener running.
     ctx, a = new_page(b, wide=True); a.goto(BASE); saved_ballot(a, [1, 70, 71]); a.wait_for_selector('body.dk-app-on')
-    t = ctx.new_page()                                                              # registered before the page's own listeners
+    t = own_page(ctx)                                                              # registered before the page's own listeners
     t.add_init_script("window.__hold = true; addEventListener('storage', e => { if (window.__hold) e.stopImmediatePropagation(); })")
     t.goto(BASE); t.wait_for_selector('body.dk-app-on')
     o1, o70 = a.evaluate("[optionsOf(BYID.c001)[0], optionsOf(BYID.c070)[0]]")
@@ -2539,7 +2549,7 @@ def phone_page(b, sent=None, csp=False, sw=False, size=None, init=None, ua=None,
 def lookup_phone(pg):
     pg.fill('#street', '1000 Guadalupe St'); pg.fill('#zip', '78701'); pg.click('#go')
     pg.wait_for_selector('body.dk-app-on', timeout=30000)
-    pg.wait_for_function("/ \\d+ decided$/.test(document.getElementById('ph-count').textContent)", timeout=30000)
+    poll(pg, "/ \\d+ decided$/.test(document.getElementById('ph-count').textContent)")
 
 def h1(pg): return pg.inner_text('#dk-paper h1')
 def focused(pg): return pg.evaluate("(() => { const a = document.activeElement; return a ? (a.id || a.tagName) : null; })()")
@@ -4199,7 +4209,7 @@ def phone_counts_progress_sources_and_clearing(b):
     ctx.close()
     ctx, pg = phone_page(b); pg.goto(BASE); lookup_phone(pg); pa_open(pg, 'c070')                   # another open tab doesn't write it back (audit #5)
     pg.locator('#dk-paper .dk-line', has_text='Qadri').click()
-    pg2 = ctx.new_page(); pg2.goto(BASE); pg2.wait_for_selector('body.dk-app-on')
+    pg2 = own_page(ctx); pg2.goto(BASE); pg2.wait_for_selector('body.dk-app-on')
     pg2.evaluate('window.__mark = 1'); pa_relookup(pg); pg.wait_for_timeout(500)                   # a lookup elsewhere doesn't reload this tab
     assert pg2.evaluate('window.__mark') == 1, 'only Clear everything reloads other tabs (Pass 2)'
     pg.once('dialog', lambda d: d.accept()); pa_menu(pg, 'Clear everything'); pg.wait_for_load_state()
@@ -4486,7 +4496,7 @@ def phone_share_friend_compare_and_events(b):
     pg.reload(); pg.wait_for_selector('#friend:not(.hidden)')       # survives a refresh, and is not double-counted
     pg.wait_for_timeout(1500)
     assert names(pg).count('share_opened') == 0
-    pg2 = ctx.new_page(); pg2.goto(url)   # same link, new tab
+    pg2 = own_page(ctx); pg2.goto(url)   # same link, new tab
     pg2.wait_for_selector('#friend:not(.hidden)'); pg2.wait_for_timeout(1500)
     assert names(pg2).count('share_opened') == 0, events(pg2)
     pg2.close()
@@ -5539,9 +5549,7 @@ def a_saved_runoff_view_opens_the_ballot_after_a_rollback(b):
 
 def rs_tab(ctx, when):
     """A second tab on the same browser (its storage shared), at the same time."""
-    pg = ctx.new_page(); t = rs_when(when)
-    if TODAY: pg.clock.set_system_time(t)
-    else: pg.clock.install(time=t)
+    pg = ctx.new_page(); pg.clock.install(time=rs_when(when))   # a new tab has no clock yet: install, at that time
     pg.goto(BASE); pg.wait_for_timeout(600); return pg
 
 @results_test
