@@ -80,7 +80,7 @@ ENTITIES = {
     "Austin Community College": ("acc", ["travis", "williamson", "hays", "bastrop", "caldwell", "lee"], True, "six counties per its order (pp. 2-3); majority per its order; 2024 runoff"),
     "Austin ISD": ("austin-isd", ["travis"], True, "majority per its order; Travis only"),
     "Coupland ISD": ("coupland-isd", ["travis", "williamson"], False, "Travis + Williamson per its order (not Bastrop); measures only"),
-    "Del Valle ISD": ("del-valle-isd", ["travis"], "unsure", "UNVERIFIED: plurality by 2014 practice only; its order is silent"),
+    "Del Valle ISD": ("del-valle-isd", ["travis"], False, "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"),
     "Leander ISD": ("leander-isd", ["travis", "williamson"], False, "plurality: 2022 Community Impact report and 2022 winners at 35-44%"),
     "Manor ISD": ("manor-isd", ["travis"], False, "measures only"),
     "Pflugerville ISD": ("pflugerville-isd", ["travis", "williamson"], "unsure", "UNVERIFIED; only two-candidate and one-candidate races, so it can't change a result"),
@@ -184,7 +184,6 @@ OVERRIDES = {
     "c069": {"electorate": ["travis", "hays"], "registered": {"hays": 565}},
     "c114": {"canvasser": "sunset-valley-ccpd"},
     "c120": {"electorate": ["travis", "williamson"], "who": "area"},     # ACC annexation: Pflugerville ISD not yet in ACC
-    "c131": {"majority": "unsure"},                                     # Del Valle SMD 9, three candidates
     "c205": {"outcome_from_canvass": True},  # ESD 4 annexation: separate majorities (H&S Code §775.051(f)), one ballot listing
     **{cid: {"registered": ACC_REGISTERED} for cid in ("c117", "c118", "c119")},
 }

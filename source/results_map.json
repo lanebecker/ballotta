@@ -2002,8 +2002,8 @@
     "travis": "0138 = Del Valle ISD Board of Trustees, Single Member District 3"
    },
    "write_ins": [],
-   "majority": "unsure",
-   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+   "majority": false,
+   "why": "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"
   },
   "c128": {
    "source": "counties",
@@ -2015,8 +2015,8 @@
     "travis": "0139 = Del Valle ISD Board of Trustees, Single Member District 5"
    },
    "write_ins": [],
-   "majority": "unsure",
-   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+   "majority": false,
+   "why": "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"
   },
   "c129": {
    "source": "counties",
@@ -2028,8 +2028,8 @@
     "travis": "0140 = Del Valle ISD Board of Trustees, Single Member District 7"
    },
    "write_ins": [],
-   "majority": "unsure",
-   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+   "majority": false,
+   "why": "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"
   },
   "c130": {
    "source": "counties",
@@ -2041,8 +2041,8 @@
     "travis": "0141 = Del Valle ISD Board of Trustees, Single Member District 8"
    },
    "write_ins": [],
-   "majority": "unsure",
-   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+   "majority": false,
+   "why": "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"
   },
   "c131": {
    "source": "counties",
@@ -2054,8 +2054,8 @@
     "travis": "0142 = Del Valle ISD Board of Trustees, Single Member District 9"
    },
    "write_ins": [],
-   "majority": "unsure",
-   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+   "majority": false,
+   "why": "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"
   },
   "c132": {
    "source": "counties",
@@ -2068,7 +2068,7 @@
    },
    "write_ins": [],
    "majority": false,
-   "why": "UNVERIFIED: plurality by 2014 practice only; its order is silent"
+   "why": "plurality: Educ. Code §11.057(a) for single-member districts, majority only by a board resolution 180+ days before (none found); its Nov 3, 2026 order is silent (Lane, Nov 5); 2022 SMD 3 won with 50.0%, no runoff (#198)"
   },
   "c133": {
    "source": "counties",
