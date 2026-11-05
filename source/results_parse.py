@@ -297,6 +297,11 @@ HAYS_HEAD = re.compile(r"^(Cumulative Results Report|Registered Voters|General E
                        r"\d+/\d+/\d{4}$|Run Time|Run Date|Nov\. |[A-Z][a-z]+\.? \d+, \d{4} )")
 
 
+# The report's first line says which it is: "… Official Results" or "… Unofficial Results", in whatever case Hays prints
+# it (the Nov 4 audit, #201); "Unofficial" never reads as official.
+HAYS_OFFICIAL = re.compile(r"\bofficial results\b", re.I)
+
+
 def parse_hays(data):
     """data: Hays's 'Cumulative Results' PDF. A contest is the title above its 'Choice Party' header, then one row per
     choice (its last number pair is the total), closed by 'Cast Votes:', which the rows must add up to."""
@@ -348,7 +353,7 @@ def parse_hays(data):
         raise BadFile(f"contest {cur} has no Cast Votes line")
     when = next((d for d in (day_of(ln, "%m/%d/%Y") for ln in lines[:12]) if d), None)   # the header's own date line
     return {"source": "hays", "label": LABELS["hays"], "posted": posted, "contests": contests,
-            "official": "Official Results" in lines[0], "election": when}
+            "official": bool(HAYS_OFFICIAL.search(lines[0])), "election": when}
 
 
 def parse_williamson_file(data):

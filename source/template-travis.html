@@ -1610,8 +1610,8 @@ function chooseUnit(profiles, label, pt) {
 const LEVELS = ['Federal', 'State', 'Courts', 'County', 'City', 'School', 'Special district'];
 const LEVEL_LABEL = { 'Courts': 'District courts', 'Special district': 'Special districts' };
 const PARTY = { REP: 'Republican', DEM: 'Democratic', LIB: 'Libertarian', GRN: 'Green' };
-function seats(c) { const m = c.title.match(/vote for up to (\d)/); return m ? +m[1] : 1; }
-function cleanTitle(c) { return c.title.replace(/\s*\(vote for up to \d\)/, ''); }
+function seats(c) { const m = c.title.match(/vote for up to (\d+)/); return m ? +m[1] : 1; }
+function cleanTitle(c) { return c.title.replace(/\s*\(vote for up to \d+\)/, ''); }
 function optionsOf(c) { return c.type === 'measure' ? ['FOR', 'AGAINST'] : c.choices.filter(x => x !== 'Write-in').map(o => o.replace(/\s*\((REP|DEM|LIB|GRN)\)$/, '')); }
 function optLabel(c, v) { return c.type === 'measure' ? (v === 'FOR' ? 'For' : v === 'AGAINST' ? 'Against' : v) : v; }
 

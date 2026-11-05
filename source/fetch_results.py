@@ -100,27 +100,33 @@ def fetch_all(meta, res=B.RES, fetch=get, election=None):
         one("sos_canvass", f"{SOS}/electionReports/{eid}/OfficialCanvassReport/pdf", "official-canvass.pdf",
             P.parse_sos_canvass, decode=lambda b: base64.b64decode(json.loads(b)["upload"]))
     wc = (meta.get("fetch") or {}).get("williamson")
-    if wc:
-        one("williamson", wc, "results.html", P.parse_williamson)
+    if wc:   # either kind Williamson posts: its own results page, or Clarity's Detail XML (Nov 3, 2026; the Nov 4 audit, #200)
+        tail = wc.split("?")[0].rsplit("/", 1)[-1]
+        one("williamson", wc, tail if "." in tail else "results.html", P.parse_williamson_file)
     for url in (meta.get("fetch") or {}).get("hays") or []:
         one("hays", url, url.rsplit("/", 1)[-1].replace("%20", "-") or "results.pdf", P.parse_hays)
     return out
 
 
-def report(out, res=B.RES, now=None):
+def report(out, res=B.RES, now=None, meta=None):
     """The lines the pull request shows under "Sources": each fetch error, and how old each source's newest file is
-    (a county that stopped posting, or an upload Lane forgot, shows here)."""
+    (a county that stopped posting, or an upload Lane forgot, shows here). A county with no fetch address says it's
+    uploaded by hand, and an excluded file is never a source's newest (the Nov 4 audit, #200)."""
     now = (now or dt.datetime.now(P.AUSTIN)).astimezone(P.AUSTIN)
+    excluded = {x["path"]: x for x in B.load(res / "excluded.json", []) or []}
+    fetch = (meta or {}).get("fetch") or {}
+    auto = {"sos", "sos_canvass"} | {c for c in ("williamson", "hays") if fetch.get(c)}
     lines = [f"- {source}: could not fetch: {err}" for source, _, err in out if err]
     for source in ("travis", "bastrop", "williamson", "hays", "sos", "sos_canvass"):
+        hand = "" if source in auto else " · not fetched: uploaded by hand"
         try:
-            rep = B.latest(res, source, {}, B.POLLS_CLOSE, [], B.ELECTION)
+            rep = B.latest(res, source, excluded, B.POLLS_CLOSE, [], B.ELECTION)
         except Exception as e:   # the build says what's wrong; this line is only a summary
             lines.append(f"- {P.LABELS[source]}: newest file unreadable ({e})"); continue
         if rep is None:
-            lines.append(f"- {P.LABELS[source]}: no file yet"); continue
+            lines.append(f"- {P.LABELS[source]}: no file yet{hand}"); continue
         hours = (now - dt.datetime.fromisoformat(rep["posted"]).replace(tzinfo=P.AUSTIN)).total_seconds() / 3600
-        lines.append(f"- {P.LABELS[source]}: newest file posted {rep['posted'].replace('T', ' ')} ({hours:.0f} h before this run)")
+        lines.append(f"- {P.LABELS[source]}: newest file posted {rep['posted'].replace('T', ' ')} ({hours:.0f} h before this run){hand}")
     return lines
 
 
@@ -131,7 +137,7 @@ def main(argv):
     for source, path, err in out:
         print(f"{source}: " + (f"filed {path.relative_to(ROOT)}" if path else "error: " + err if err else "nothing new"))
     if "--report" in argv:
-        pathlib.Path(argv[argv.index("--report") + 1]).write_text(json.dumps(report(out)), encoding="utf-8")
+        pathlib.Path(argv[argv.index("--report") + 1]).write_text(json.dumps(report(out, meta=meta)), encoding="utf-8")
     # never a failed step: Lane's uploads are built whatever the network did
 
 
