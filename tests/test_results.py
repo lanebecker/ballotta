@@ -696,6 +696,57 @@ def a_failed_confirmation_marks_the_whole_district():
     finally: shutil.rmtree(d)
 
 @test
+def a_held_contest_given_a_note_is_a_change_and_the_old_file_is_untouched():
+    """The Nov 4 audit, #202: a held contest is published as last time; a note notes() puts on it is a change like any
+    other (its "changed", the PR's lines), and the previous file the build was given never changes."""
+    d, res = scratch_with([clarity({'1': ('Confirmation', FA(300, 700)), '2': ('Bonds', FA(600, 400))})])
+    try:
+        mp = one_map(c147=M('1 = Confirmation'), c148=M('2 = Bonds', depends_on='c147'))
+        out1, _ = B.build(res=res, mp=mp)
+        out1['seq'] = 1; before = json.dumps(out1, sort_keys=True)
+        (res / 'official.json').write_text(json.dumps({'canvasses': {'eastwood-mud': {'canvassed': '2026-11-10'}}}))
+        mp['contests']['c148']['keys'] = {k: ('2 = Not the bonds' if v else v) for k, v in mp['contests']['c148']['keys'].items()}   # c148 held
+        out2, ch = B.build(res=res, mp=mp, prev=out1)
+        assert json.dumps(out1, sort_keys=True) == before, 'the previous file was changed'
+        e = out2['contests']['c148']
+        assert e['note'] == 'district_not_confirmed' and e['state'] == 'unofficial', e
+        assert e['changed'] == out2['seq'] != out1['contests']['c148']['changed'], (e['changed'], out2['seq'])
+        assert [l for l in ch['lines'] if 'c148' in l and 'HELD' not in l], ch['lines']
+    finally: shutil.rmtree(d)
+
+@test
+def no_travis_breakdown_when_travis_has_no_votes():
+    """The Nov 4 audit, #203: Sunfield MUD 2's votes are all in Hays, and "How Travis County voted" read 0 For, 0 Against."""
+    d, res = scratch_with([clarity({'1': ('Measure', FA(0, 0))})])
+    try:
+        (res / 'inbox/bastrop/b.xml').write_bytes(clarity({'1': ('Measure', FA(1, 0))}, region='Bastrop')); B.file_inbox(res)
+        mp = one_map(c180=M('1 = Measure', electorate=['travis', 'bastrop'], keys={'travis': '1 = Measure', 'bastrop': '1 = Measure'}))
+        e = B.build(res=res, mp=mp)[0]['contests']['c180']
+        assert e['choices'][0][:2] == ['FOR', 1] and e['travis'] is None, e
+        (res / 'inbox/travis/t2.xml').write_bytes(clarity({'1': ('Measure', FA(2, 1))}, stamp='11/5/2026 10:00:00 AM CST')); B.file_inbox(res)
+        assert B.build(res=res, mp=mp)[0]['contests']['c180']['travis'] == [['FOR', 2, 66.67], ['AGAINST', 1, 33.33]], 'with Travis votes, the breakdown'
+    finally: shutil.rmtree(d)
+
+@test
+def hays_reads_official_in_any_case_and_never_from_unofficial():
+    # the whole report, its first line in capitals (pdfplumber stood in for, with the real report's own text)
+    import pdfplumber
+    with pdfplumber.open(io.BytesIO(fx('hays-2025-11-official.pdf'))) as pdf:
+        pages = [p.extract_text() for p in pdf.pages]
+    for head, want in ((pages[0].split('\n', 1)[0].upper(), True), (pages[0].split('\n', 1)[0].replace('Official', 'Unofficial'), False)):
+        text = [head + '\n' + pages[0].split('\n', 1)[1]] + pages[1:]
+        class Doc:
+            def __init__(self, *a): self.pages = [type('Pg', (), {'extract_text': (lambda self, t=t: t)})() for t in text]
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+        real = pdfplumber.open; pdfplumber.open = Doc
+        try: assert P.parse_hays(b'%PDF')['official'] is want, (head, want)
+        finally: pdfplumber.open = real
+    ok = P.HAYS_OFFICIAL.search
+    assert ok('Cumulative Results Report Hays County, Texas Official Results') and ok('CUMULATIVE RESULTS REPORT HAYS COUNTY, TEXAS OFFICIAL RESULTS')
+    assert not ok('Cumulative Results Report Hays County, Texas Unofficial Results') and not ok('CUMULATIVE RESULTS REPORT HAYS COUNTY, TEXAS UNOFFICIAL RESULTS')
+
+@test
 def an_annexation_gets_one_outcome_from_both_votes():
     d, res = scratch_with([clarity({'1': ('ESD 9 district', FA(400, 600)), '2': ('ESD 9 territory', FA(80, 20))})])
     try:
@@ -880,10 +931,18 @@ def the_fetcher_tries_again_reports_and_never_stops_the_run():
         out = FR.fetch_all(dict(META, sos_election='58314'), res=d, fetch=fetch, election='2026-11-03')
         assert out[0][1] is None and 'the 2026-05-26 election' in out[0][2], out[0]
         lines = FR.report(out, res=d, now=datetime_utc(2026, 11, 4, 15, 0))
-        assert lines[0].startswith('- sos: could not fetch') and '- Travis County: no file yet' in lines, lines
+        assert lines[0].startswith('- sos: could not fetch') and '- Travis County: no file yet · not fetched: uploaded by hand' in lines, lines
+        assert '- Williamson County: no file yet · not fetched: uploaded by hand' in lines and '- Texas Secretary of State: no file yet' in lines, lines
+        assert '- Williamson County: no file yet' in FR.report(out, res=d, now=datetime_utc(2026, 11, 4, 15, 0), meta={'fetch': {'williamson': 'https://x/y.zip'}}), 'fetched: no note'
+        (d / 'inbox/travis').mkdir(parents=True); (d / 'inbox/travis/t.xml').write_bytes(clarity({})); B.file_inbox(d)
+        tv = lambda: [l for l in FR.report(out, res=d, now=datetime_utc(2026, 11, 5, 15, 0)) if l.startswith('- Travis County:')]
+        assert tv()[0].startswith('- Travis County: newest file posted 2026-11-05 09:00'), tv()
+        (d / 'excluded.json').write_text(json.dumps([{'path': p, 'reason': 'test'} for p in (f.relative_to(d).as_posix() for f in (d / 'raw/travis').rglob('*.xml'))]))
+        assert tv() == ['- Travis County: no file yet · not fetched: uploaded by hand'], tv()   # an excluded file is never the newest (#200)
+        (d / 'excluded.json').unlink()
         # the run itself: every fetch failed, and it still ends well, with the report written for the PR
         rep, was = d / 'fetch.json', (FR.fetch_all, FR.report)
-        FR.fetch_all, FR.report = (lambda meta, election=None: [('sos', None, 'down')]), (lambda out: ['- sos: could not fetch: down'])
+        FR.fetch_all, FR.report = (lambda meta, election=None: [('sos', None, 'down')]), (lambda out, **k: ['- sos: could not fetch: down'])
         try: FR.main(['fetch_results.py', '--report', str(rep)])
         except SystemExit as e: raise AssertionError(f'every fetch failing stopped the run ({e}), and Lane’s uploads with it')
         finally: FR.fetch_all, FR.report = was
@@ -897,7 +956,7 @@ def the_fetch_report_reads_the_sos_feed_in_the_maps_zone():
     zone = json.loads((ROOT / 'source/results_map.json').read_text(encoding='utf-8'))['meta']['sos_time_zone']
     seen, was = [], (FR.fetch_all, FR.report, B.ZONE[0])
     B.ZONE[0] = 'Pacific/Kiritimati' if zone != 'Pacific/Kiritimati' else 'UTC'   # anything but the map's
-    FR.fetch_all, FR.report = (lambda meta, election=None: []), (lambda out: seen.append(B.ZONE[0]) or [])
+    FR.fetch_all, FR.report = (lambda meta, election=None: []), (lambda out, **k: seen.append(B.ZONE[0]) or [])
     try: FR.main(['fetch_results.py', '--report', str(pathlib.Path(tempfile.mkdtemp()) / 'fetch.json')])
     finally: FR.fetch_all, FR.report, B.ZONE[0] = was
     assert seen == [zone], (seen, zone)

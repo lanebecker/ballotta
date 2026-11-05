@@ -297,6 +297,11 @@ HAYS_HEAD = re.compile(r"^(Cumulative Results Report|Registered Voters|General E
                        r"\d+/\d+/\d{4}$|Run Time|Run Date|Nov\. |[A-Z][a-z]+\.? \d+, \d{4} )")
 
 
+# The report's first line says which it is: "… Official Results" or "… Unofficial Results", in whatever case Hays prints
+# it (the Nov 4 audit, #201); "Unofficial" never reads as official.
+HAYS_OFFICIAL = re.compile(r"\bofficial results\b", re.I)
+
+
 def parse_hays(data):
     """data: Hays's 'Cumulative Results' PDF. A contest is the title above its 'Choice Party' header, then one row per
     choice (its last number pair is the total), closed by 'Cast Votes:', which the rows must add up to."""
@@ -311,7 +316,7 @@ def parse_hays(data):
                 m = re.match(r"^Run Date (\d+/\d+/\d{4})", ln)
                 if m: run_date = run_date or m.group(1)
                 lines.append(ln)
-    if not lines or not lines[0].startswith("Cumulative Results Report") or "Hays County" not in lines[0]:
+    if not lines or not lines[0].lower().startswith("cumulative results report") or "hays county" not in lines[0].lower():   # any case (#201)
         raise BadFile("not a Hays County cumulative results report")
     if not (run_date and run_time):
         raise BadFile("no Run Date and Run Time")
@@ -348,7 +353,7 @@ def parse_hays(data):
         raise BadFile(f"contest {cur} has no Cast Votes line")
     when = next((d for d in (day_of(ln, "%m/%d/%Y") for ln in lines[:12]) if d), None)   # the header's own date line
     return {"source": "hays", "label": LABELS["hays"], "posted": posted, "contests": contests,
-            "official": "Official Results" in lines[0], "election": when}
+            "official": bool(HAYS_OFFICIAL.search(lines[0])), "election": when}
 
 
 def parse_williamson_file(data):

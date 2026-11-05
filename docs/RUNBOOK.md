@@ -158,7 +158,11 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
    `meta.sos_time_zone` to `"UTC"` in `source/results_map.json`. Done: posted times on the PR read as Austin evening.
    (The fetch checks this too: a feed whose times read later than the state server's own clock isn't filed, and the
    PR's "Sources this run" says to set the zone.)
-4. **Where the counties post:** put Williamson's Nov 3 results page address in `meta.fetch.williamson` and Hays's
+4. *(Nov 3, 2026: neither was set. Williamson moved to Clarity, which refuses cloud servers, and Hays's 2026 PDF
+   names weren't the expected ones; both became daily downloads, step 8.)* Note too that the exclusion stamps
+   `check_results` reads come from raw folder names, which were written in the zone set then: a zone change makes older
+   folder names read hours off (`raw/sos/2026-10-16…` is 5 h off; harmless, since it predates the polls).
+   **Where the counties post:** put Williamson's Nov 3 results page address in `meta.fetch.williamson` and Hays's
    cumulative PDF addresses in `meta.fetch.hays` (both unofficial and, later, official). Done: the next run's log says
    `williamson: filed …` and `hays: filed …`. Where to look (prepared Oct 21 from past elections; confirm each that
    night, since the names can change):
@@ -190,7 +194,12 @@ updates"). Nothing here needs a release: `results.json` is exempt from the bump 
 
 8. **By 8:30 am**, download Travis's and Bastrop's Detail XML and upload each into its own folder on `results/next`
    (GitHub: `source/results/inbox/travis/` → Add file → Upload files; or attach them in a Claude chat). Done: the
-   upload's commit is on `results/next`. Williamson, Hays and the SOS come by themselves (7:15 am and 5:15 pm).
+   upload's commit is on `results/next`. **Williamson and Hays too, by hand** (Nov 4 audit, #200): Williamson posted on
+   Clarity this election, and Clarity refuses cloud servers, so download its Detail XML like Travis's
+   (`inbox/williamson/`); Hays's PDF has no fetch address in `meta.fetch.hays` (the guessed names 404), so download
+   its newest Cumulative Results PDF from hayscountytx.gov (`inbox/hays/`). Hays deletes its unofficial PDFs, so one
+   it posts and replaces before you download it is gone. Only the SOS comes by itself (7:15 am and 5:15 pm). The PR's
+   "Sources this run" marks each county "not fetched: uploaded by hand", with how old its newest file is.
 9. The workflow runs on the upload and updates the "Results updates" pull request with a plain-words change list.
    - **"Numbers only"**: it merged itself and posted the list on the pinned "Results updates" issue. Nothing to do.
    - **"A state or verdict changed"**: read the list and **merge by 9 am**, every day at the same time; sooner when the

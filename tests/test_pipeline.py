@@ -235,6 +235,39 @@ def one_marker_pair_per_line():
     assert not bad, bad
 
 @test
+def no_lookbehind_in_any_page_script():
+    """The Nov 4 audit, #209: a regex lookbehind ((?<= or (?<!) is a syntax error in Safari before 16.4 (iOS 15 phones),
+    and one in the main script stopped the whole page there. No page or script Ballotta serves may have one."""
+    served = [ROOT / 'source/template-travis.html', ROOT / 'index.html', ROOT / 'sw.js', ROOT / 'census.html'] + sorted(ROOT.glob('*/index.html'))
+    bad = [f.relative_to(ROOT).as_posix() for f in served if f.exists() and re.search(r'\(\?<[=!]', f.read_text(encoding='utf-8'))]
+    assert not bad, bad
+
+@test
+def every_test_page_has_the_suites_clock_and_waits_without_eval():
+    """The Nov 4 audit, #207: two tests built their own browser contexts, so their pages ran at the wall clock, not the
+    suite's; and a string wait_for_function is eval'd in the page, which the page's CSP refuses after the first check.
+    Since Nov 4 both failed, and the only checks of the real tracker's firewall and of a tablet stopped running.
+    Every page comes from new_page(), own_page() or rs_tab() (each sets the clock), and no test that keeps the page's
+    CSP (csp=True, or a context it built) waits on a string."""
+    import ast
+    src = (ROOT / 'tests/test_site.py').read_text(encoding='utf-8'); tree = ast.parse(src)
+    makers = {'new_page', 'own_page', 'rs_tab'}
+    bad = []
+    for fn in [n for n in tree.body if isinstance(n, ast.FunctionDef)]:
+        body = ast.get_source_segment(src, fn)
+        if fn.name not in makers and '.new_page()' in body:
+            bad.append(f'{fn.name}: a page with no clock (use own_page)')
+        # from the line that keeps the CSP on (a csp=True page, or a context the test built) to the end of the test
+        on = min([fn.lineno + i for i, l in enumerate(body.split('\n')) if 'csp=True' in l or 'b.new_context(' in l], default=None)
+        if fn.name.startswith('lookup'):   # the lookups run in every kind of page, CSP on or off
+            on = fn.lineno
+        if on is not None:
+            for c in ast.walk(fn):
+                if isinstance(c, ast.Call) and c.lineno >= on and getattr(c.func, 'attr', '') == 'wait_for_function' and c.args and isinstance(c.args[0], (ast.Constant, ast.JoinedStr)):
+                    bad.append(f'{fn.name}: a string wait_for_function under the page\'s CSP (use poll)')
+    assert not bad, bad
+
+@test
 def one_viewport_tag():
     """#122: with the phone layout, the page carried two viewport tags (the plain one and the phone layout's, with
     viewport-fit=cover). The build keeps one: the phone layout's when it is live, the plain one in a rollback."""

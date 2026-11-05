@@ -15,7 +15,7 @@ source/results/official.json (canvasses, recounts, runoff dates, the kill switch
 (seq, changed, corrected carry on from it). Deterministic: no clock, no network. The rules are source/results_rules.py;
 the parsers source/results_parse.py; the shape is checked by source/check_results.py before anything is written.
 """
-import hashlib, json, pathlib, re, shutil, sys
+import copy, hashlib, json, pathlib, re, shutil, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "source"))
@@ -37,7 +37,7 @@ def load(path, default=None):
 
 
 def seats(contest):
-    m = re.search(r"vote for up to (\d)", contest["title"])
+    m = re.search(r"vote for up to (\d+)", contest["title"])
     return int(m.group(1)) if m else 1
 
 
@@ -212,7 +212,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
             try:
                 tv, _ = slice_of(reports["travis"], m["keys"]["travis"], names, write_ins, m.get("spell", {}).get("travis", {}), where)
                 tt = sum(v for _, v in tv[: len(names)])
-                travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]]
+                travis = [[n, v, R.pct(v, tt)] for n, v in tv[: len(names)]] if tt else None   # no Travis votes: no breakdown (#203)
             except Problem as p:   # only the Travis breakdown waits: the statewide result still shows (the verification of #158)
                 if held is None:
                     raise
@@ -267,7 +267,7 @@ def entry(cid, contest, m, reports, official, canvassers, prev_entry, held=None)
                 official_numbers = False
             if county == "travis" and sum(1 for k in m["electorate"] if m["keys"].get(k) != "absent") > 1:
                 tt = sum(v for _, v in rows[: len(names)])
-                travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]]
+                travis = [[n, v, R.pct(v, tt)] for n, v in rows[: len(names)]] if tt else None   # all its votes elsewhere: no 0–0 box (#203)
         if not any_county:
             return None
         rows = [(n, total[n]) for n in names + write_ins]
@@ -323,7 +323,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
     """(results, changes): results.json's object, and {verdict_changed, lines} for the pull request."""
     mp = mp if mp is not None else load(ROOT / "source/results_map.json")
     key = key or check_results.answer_key()
-    prev = prev or {"seq": 0, "election": "2026-11-03", "withdrawn": False, "late_until": mp["meta"]["late_until"], "contests": {}}
+    prev = copy.deepcopy(prev) if prev else {"seq": 0, "election": "2026-11-03", "withdrawn": False, "late_until": mp["meta"]["late_until"], "contests": {}}   # never the caller's
     official = load(res / "official.json", {}) or {}
     excluded = {x["path"]: x for x in load(res / "excluded.json", []) or []}
     ZONE[0] = mp["meta"]["sos_time_zone"]
@@ -345,7 +345,7 @@ def build(res=RES, mp=None, prev=None, key=None, since=None, election=None):
                 e = entry(cid, key[cid], m, reports, official, mp["canvassers"], seen["contests"].get(cid), held)
             except Problem as p:
                 held.append(f"{key[cid]['title']} ({cid}): {p} " + ("(shown as last published)" if seen["contests"].get(cid) else "(not shown yet)"))
-                e = seen["contests"].get(cid)   # the last published entry stands; or not shown, if there was none
+                e = copy.deepcopy(seen["contests"].get(cid))   # the last published entry stands, as a copy: notes() may change it, and the diff must see that (#202)
             if e is not None:
                 contests[cid] = e
         notes(contests, mp)

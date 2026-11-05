@@ -16,6 +16,34 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.8.1] — 2026-11-04
+
+From the cold audit after 1.8.0 (milestone "Cold audit, Nov 4"; every published result was recomputed independently
+and matched).
+
+### Fixed
+- From Nov 4, results that don't load (offline, an outage, a broken file) no longer bring back the Nov 3 ballot, with
+  its editable picks and "you can vote" hours: the page stays a record and says "Results didn’t load. Your picks are
+  saved on this device. Try again" (Lane's words), asks again in 30 seconds and when the connection comes back, and
+  rows say "Results didn’t load" instead of "No result yet" (#211).
+- The page runs again on iPhones with Safari before 16.4 (iOS 15, and iOS 16 not updated past 16.3): three regex
+  lookbehinds in the share-name check were a syntax error there, so "Show my ballot" did nothing (#209).
+- How your picks did: a pick on a contest the results file has no result for counts as "not settled yet" in the
+  summary, the phone's list and the groups alike; it was in the group but left out of the counts (#213).
+- A saved copy of the results (a phone's offline copy, answered after 4 s) is asked again 30 seconds later, not 10
+  minutes; and an older results file never replaces the one shown, saved or not (#212).
+- Results pipeline: Hays's report reads as official in whatever case it prints "Official Results" (#201); a contest
+  held back keeps its change record when a note is added (#202); no "How Travis County voted" box when Travis has no
+  votes in the contest (#203, Sunfield MUD 2); the PR's "Sources this run" skips excluded files and marks counties
+  uploaded by hand; Williamson's fetch reads either of its formats; the runbook says Williamson and Hays are daily
+  downloads (#200).
+
+### Tests
+- The browser suite runs as of Nov 2, 2026 unless `BALLOTTA_TODAY` says otherwise (`now` for the wall clock); every
+  page a test opens gets that clock, and no test that keeps the page's CSP waits on a string. Since Nov 4 two tests
+  had failed this way, and the real tracker's firewall check and the tablet check had stopped running (#207, #208).
+- test_pipeline refuses a regex lookbehind in any served page, and checks the clock and wait rules.
+
 ## [1.8.0] — 2026-11-04
 
 ### Changed

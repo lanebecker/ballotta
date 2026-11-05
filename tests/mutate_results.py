@@ -51,11 +51,11 @@ M = [
  ('R30 asked before the gate', PREV, "    if (!live() || document.visibilityState === 'hidden' ||", "    if (document.visibilityState === 'hidden' ||", [N]),
  ('R31 a two-thirds measure unsaid', PREV, "    if (e.needs === 'two_thirds') h +=", "    if (false) h +=", [A]),
  # after the election (docs/plans/2026-10-21-after-the-election.md)
- ('R32 never after the election', PREV, "  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled);", "  const after = () => false;", [T]),
+ ('R32 never after the election', PREV, "  const after = () => live() && (R ? !!(R.withdrawn || Object.keys(R.contests).length) : true);", "  const after = () => false;", [T]),
  ('R118 a new day changes nothing after the election', PREV, "      if (window.results) results.newDay();", "", [RO]),
- ('R114 editable while results load', PREV, "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled)", "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : false)", ['results_are_a_record_from_the_first_moment']),
- ('R115 stuck read-only with no results', PREV, "    }).catch(() => {}).finally(settle);", "    }).catch(() => {});", ['results_are_a_record_from_the_first_moment']),
- ('R116 an older file replaces a newer one', PREV, "      if (R && next.seq < R.seq && !saved) return;", "", ['results_are_a_record_from_the_first_moment']),
+ ('R114 editable while results load', PREV, "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : true)", "(R ? !!(R.withdrawn || Object.keys(R.contests).length) : false)", ['results_are_a_record_from_the_first_moment']),
+ ('R115 no results never said', PREV, "    }).catch(() => {}).finally(() => { settle(); ", "    }).catch(() => {}).finally(() => { ", ['results_are_a_record_from_the_first_moment', 'results_that_dont_load_keep_the_page_a_record']),
+ ('R116 an older file replaces a newer one', PREV, "      if (R && next.seq < R.seq) return;", "", ['results_are_a_record_from_the_first_moment']),
  ('R117 seen goes back', PREV, "    if (isNat(old.seq) && old.seq > R.seq) return;", "", ['results_are_a_record_from_the_first_moment']),
  ('R33 picks editable after', PREV, "    if (after()) return viewResult();\n", '', [T]),
  ('R34 picking keys after', PREV, "    if (after() && (/^[1-9]$/.test(k) || k === 's' || k === 'r')) return;", '', [T]),
@@ -184,7 +184,7 @@ M = [
  ('R156 the results promise dropped a day early', PREV, "const ML_NEXT_ONLY = new Date(2026, 10, 18);", "const ML_NEXT_ONLY = new Date(2026, 10, 17);", ['the_mailing_list_promises_results_only_until_nov_18']),
  # How your picks did, and your pick first on the result (Lane, Nov 4)
  ('R157 the groups out of order', PREV, "const GROUPS = ['with', 'behind', 'open', 'none']", "const GROUPS = ['behind', 'with', 'open', 'none']", [HP]),
- ('R158 a skipped contest grouped as a pick', PREV, "if (!picked(c)) return ['none'];", "if (!current(c.id).length) return ['none'];", [HP]),
+ ('R158 a skipped contest grouped as a pick', PREV, "const groupsOf = (c) => picked(c) ?", "const groupsOf = (c) => current(c.id).length ?", [HP]),
  ('R159 several picks: only the first group', PREV, "[...new Set(g)].forEach(k => per[k].bs.push(b));", "per[g[0]].bs.push(b);", [HP]),
  ('R160 one leading of two marked gold', PREV, "g.every(x => x === 'with') ? 'with' : 'behind'", "g.includes('with') ? 'with' : 'behind'", [HP]),
  ('R161 a zero is a link', PREV, "return x[0] ? '<button type=\"button\" class=\"rs-gol\"", "return true ? '<button type=\"button\" class=\"rs-gol\"", [HP]),
@@ -204,6 +204,15 @@ M = [
  ('R174 a group named Behind when none are', PREV, "if (k === 'behind') return !behind ? 'Didn’t win' : !down ? 'Behind' : 'Didn’t win or behind';", "if (k === 'behind') return 'Behind';", [HP]),
  ('R175 the headline keeps its period', PREV, "esc(mine(c, e).replace(/\\.$/, '')) + '</p><p class=\"rs-hs\">'", "esc(mine(c, e)) + '</p><p class=\"rs-hs\">'", [HP]),
  ('R176 the screen reader hears no mark', PREV, "return e ? mine(c, e).replace(/\\.$/, '') : 'you picked here';", "return 'you picked here';", [T, HP]),
+ ('R177 a kept copy waits 10 minutes', PREV, "if (saved || !R) soon = setTimeout(", "if (!R) soon = setTimeout(", ['a_saved_copy_says_so']),
+ ('R178 a kept copy shown takes an older file', PREV, "      if (R && next.seq < R.seq) return;", "      if (R && next.seq < R.seq && !saved) return;", ['a_saved_copy_says_so']),
+ ('R179 a pick with no result is left out of the summary', PREV, "return o.length || !picked(c) || !R || R.withdrawn ? o : ['open'];", "return o;", [HP]),
+ ('R180 results that don\'t load bring back Nov 3', PREV, "R ? !!(R.withdrawn || Object.keys(R.contests).length) : true);", "R ? !!(R.withdrawn || Object.keys(R.contests).length) : !settled);", ['results_that_dont_load_keep_the_page_a_record']),
+ ('R181 results that don\'t load unsaid', PREV, "    if (failed() && app && ballot.length && view !== 'all') {", "    if (false) {", ['results_that_dont_load_keep_the_page_a_record']),
+ ('R182 no results: wait 10 minutes', PREV, "if (saved || !R) soon = setTimeout(", "if (saved) soon = setTimeout(", ['results_that_dont_load_keep_the_page_a_record']),
+ ('R183 back online, nothing asked', PREV, "    window.addEventListener('online', () => { if (!R || saved) load(true); });", "", ['results_that_dont_load_keep_the_page_a_record']),
+ ('R184 Try again does nothing', PREV, "      else if (b.dataset.rs === 'retry') load(true);", "", ['results_that_dont_load_keep_the_page_a_record']),
+ ('R185 rows say no result yet when none loaded', PREV, ": failed() ? FAILED[0] : 'No result yet';", ": 'No result yet';", ['results_that_dont_load_keep_the_page_a_record']),
 ]
 if __name__ == '__main__':
     R.main(M)
