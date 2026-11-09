@@ -1,6 +1,19 @@
 {
  "withdrawn": false,
  "late_until": "2026-11-17",
- "canvasses": {},
+ "canvasses": {
+  "travis-county": {
+   "expected": "2026-11-12",
+   "link": "https://traviscotx.api.civicclerk.com/v1/Meetings/GetMeetingFileStream(fileId=13362,plainText=false)"
+  },
+  "del-valle-isd": {
+   "expected": "2026-11-12",
+   "link": "https://meetings.boardbook.org/Public/DownloadAgenda/675?meeting=775900"
+  },
+  "city-of-austin": {
+   "expected": "2026-11-17",
+   "link": "https://services.austintexas.gov/edims/document.cfm?id=472486"
+  }
+ },
  "runoffs": {}
 }
