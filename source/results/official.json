@@ -12,7 +12,27 @@
   },
   "city-of-austin": {
    "expected": "2026-11-17",
-   "link": "https://services.austintexas.gov/edims/document.cfm?id=472486"
+   "link": "https://austintexas.legistar1.com/austintexas/meetings/2026/11/4235_A_City_Council_26-11-17_City_Council_Agenda.pdf"
+  },
+  "pflugerville-isd": {
+   "expected": "2026-11-12",
+   "link": "https://meetings.boardbook.org/Public/Agenda/Pflugerville?meeting=766446"
+  },
+  "coupland-isd": {
+   "expected": "2026-11-12",
+   "link": "https://meetings.boardbook.org/Public/Agenda/2708?meeting=776651"
+  },
+  "manor-isd": {
+   "expected": "2026-11-16",
+   "link": "https://meetings.boardbook.org/Public/Agenda/938?meeting=775418"
+  },
+  "round-rock-isd": {
+   "expected": "2026-11-16",
+   "link": "https://www.roundrockisd.org/article/3234755/"
+  },
+  "city-of-pflugerville": {
+   "expected": "2026-11-17",
+   "link": "https://legistar1.granicus.com/Pflugerville/meetings/2026/11/3819_A_City_Council_26-11-17_Meeting_Agenda.pdf"
   }
  },
  "runoffs": {}
