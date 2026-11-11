@@ -1,0 +1,32 @@
+name: Clarity probe (temporary)
+
+# One-off test, Nov 11, 2026: do Clarity (Travis, Bastrop, Williamson) and Hays answer a GitHub Actions runner?
+# One honest request per address, Ballotta's usual User-Agent, no retries, no workarounds. Delete this branch after.
+
+on:
+  push:
+    branches: [probe/clarity-from-actions]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: One request to each source
+        env:
+          UA: "Ballotta results (https://ballotta.org)"
+        run: |
+          for url in \
+            https://results.enr.clarityelections.com/TX/Travis/elections.json \
+            https://results.enr.clarityelections.com/TX/Bastrop/elections.json \
+            https://results.enr.clarityelections.com/TX/Williamson/elections.json \
+            https://www.hayscountytx.gov/DocumentCenter/View/5567 ; do
+            echo "=== $url"
+            curl -sS -A "$UA" -o body.bin -D head.txt -w 'status %{http_code}, %{size_download} bytes\n' --max-time 30 "$url" || echo "curl failed"
+            grep -iE '^(server|x-cache|cf-ray|cf-mitigated|content-type):' head.txt || true
+            head -c 300 body.bin | tr -cd '[:print:]\n'; echo
+            sleep 3
+          done
