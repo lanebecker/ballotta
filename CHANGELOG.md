@@ -16,6 +16,17 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 _Nothing yet._
 
+## [1.9.2] — 2026-11-12
+
+### Changed
+- A declared write-in that the county hasn't counted by name now reads "Not counted by name" once the result is official,
+  not "Not counted by name yet": once a body has canvassed, no later count is coming (Lane, Nov 12). First seen on
+  Travis County Clerk (c053), canvassed Nov 12.
+
+### Tests
+- `the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins` also checks the official wording. New mutants
+  R196 and R197; both are killed.
+
 ## [1.9.1] — 2026-11-05
 
 The rest of the Nov 4 audit that needed no new words.
