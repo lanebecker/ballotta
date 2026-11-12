@@ -34,6 +34,10 @@
   "city-of-pflugerville": {
    "expected": "2026-11-17",
    "link": "https://legistar1.granicus.com/Pflugerville/meetings/2026/11/3819_A_City_Council_26-11-17_Meeting_Agenda.pdf"
+  },
+  "leander-isd": {
+   "expected": "2026-11-17",
+   "link": "https://meetings.boardbook.org/Public/Agenda/795?meeting=776766"
   }
  },
  "runoffs": {},
