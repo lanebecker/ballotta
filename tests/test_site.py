@@ -5210,6 +5210,15 @@ def the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins(b):
     assert 'Not counted by name yet' in row.inner_text() and row.query_selector('.rs-tr') is None, row.inner_text()
     assert pg.errs == [], pg.errs
     ctx.close()
+    # once the result is official, no later count is coming: "Not counted by name", no "yet" (Lane, Nov 12)
+    top = max((x for x in C['c001']['choices'] if not x[3]), key=lambda x: x[1])[0]
+    C['c001'].update(state='official', verdict='won', leaders=[top]); C['c001']['canvass']['done'] = '2026-12-07'
+    ctx, pg = rs_page(b, {'body': sc})
+    rs_go(pg, 'c001')
+    row = [x for x in pg.query_selector_all('#dk-paper .rs > .rs-bars .rs-b') if 'Jade Simmons' in x.inner_text()][0]
+    assert row.query_selector('.rs-vt').inner_text() == 'Not counted by name' and row.query_selector('.rs-tr') is None, row.inner_text()
+    assert pg.errs == [], pg.errs
+    ctx.close()
 
 @results_test
 def a_shared_friends_pick_shows_beside_each_result(b):

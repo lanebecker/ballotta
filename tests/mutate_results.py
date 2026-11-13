@@ -223,6 +223,8 @@ M = [
  ('R193 ?results stays in the address', PREV, "u.searchParams.delete('results'); history.replaceState(history.state, '', u.pathname + u.search + u.hash);", "", ['all_travis_county_results_need_no_address']),
  ('R194 a landmark per result on All results', PREV, "(all ? '' : ' aria-label=\"Result\"')", "' aria-label=\"Result\"'", ['all_travis_county_results_need_no_address']),
  ('R195 All results redrawn at every key', PREV, "if (ui.view === 'all') qT = setTimeout(listChanged, 150); else listChanged();", "listChanged();", ['all_travis_county_results_need_no_address']),
+ ('R196 an official write-in still says "yet"', PREV, "'Not counted by name' + (fin ? '' : ' yet')", "'Not counted by name yet'", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
+ ('R197 the bars never told the result is official', PREV, "e.unnamed, isOfficial(e));", "e.unnamed);", ['the_nov_4_wording_too_few_votes_clear_seats_and_unnamed_write_ins']),
 ]
 if __name__ == '__main__':
     R.main(M)
