@@ -13,7 +13,8 @@
   },
   "city-of-austin": {
    "expected": "2026-11-17",
-   "link": "https://austintexas.legistar1.com/austintexas/meetings/2026/11/4235_A_City_Council_26-11-17_City_Council_Agenda.pdf"
+   "link": "https://services.austintexas.gov/council_meetings/action_notes.cfm?mid=1525",
+   "canvassed": "2026-11-17"
   },
   "pflugerville-isd": {
    "expected": "2026-11-17",
@@ -33,14 +34,19 @@
   },
   "city-of-pflugerville": {
    "expected": "2026-11-17",
-   "link": "https://legistar1.granicus.com/Pflugerville/meetings/2026/11/3819_A_City_Council_26-11-17_Meeting_Agenda.pdf"
+   "link": "https://legistar1.granicus.com/Pflugerville/meetings/2026/11/3819_A_City_Council_26-11-17_Meeting_Agenda.pdf",
+   "canvassed": "2026-11-17"
   },
   "leander-isd": {
    "expected": "2026-11-17",
    "link": "https://meetings.boardbook.org/Public/Agenda/795?meeting=776766"
   }
  },
- "runoffs": {},
+ "runoffs": {
+  "c066": "2026-12-12",
+  "c067": "2026-12-12",
+  "c068": "2026-12-12"
+ },
  "final": {
   "travis": "2026-11-10"
  }
