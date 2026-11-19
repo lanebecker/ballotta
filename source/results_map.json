@@ -1828,7 +1828,7 @@
    ],
    "keys": {
     "travis": "0128 = ACC, Trustee, Place 1",
-    "williamson": "0093 = Austin Community College District Board of Trustees, P",
+    "williamson": "0093 = Austin Community College District Board of Trustees, Place 1",
     "hays": "AUSTIN COMMUNITY COLLEGE, TRUSTEE, PLACE 1 = Austin Community College, Trustee, Place 1",
     "bastrop": "0040 = ACC Board of Trustees Election, Pl 1",
     "caldwell": null,
@@ -1855,7 +1855,7 @@
    ],
    "keys": {
     "travis": "0129 = ACC, Trustee, Place 2",
-    "williamson": "0094 = Austin Community College District Board of Trustees, P",
+    "williamson": "0094 = Austin Community College District Board of Trustees, Place 2",
     "hays": "AUSTIN COMMUNITY COLLEGE, TRUSTEE, PLACE 2 = Austin Community College, Trustee, Place 2",
     "bastrop": "0041 = ACC Board of Trustees Election, Pl 2",
     "caldwell": null,
@@ -1882,7 +1882,7 @@
    ],
    "keys": {
     "travis": "0130 = ACC, Trustee, Place 3",
-    "williamson": "0095 = Austin Community College District Board of Trustees, P",
+    "williamson": "0095 = Austin Community College District Board of Trustees, Place 3",
     "hays": "AUSTIN COMMUNITY COLLEGE, TRUSTEE, PLACE 3 = Austin Community College, Trustee, Place 3",
     "bastrop": "0042 = ACC Board of Trustees Election, Pl 3",
     "caldwell": null,
@@ -2079,7 +2079,7 @@
    ],
    "keys": {
     "travis": "0144 = Leander ISD Board of Trustees, Place 1",
-    "williamson": "0104 = Leander Independent School District Board of Trustees,"
+    "williamson": "0104 = Leander Independent School District Board of Trustees, Place 1"
    },
    "write_ins": [],
    "majority": false,
@@ -2094,7 +2094,7 @@
    ],
    "keys": {
     "travis": "0145 = Leander ISD Board of Trustees, Place 2",
-    "williamson": "0105 = Leander Independent School District Board of Trustees,"
+    "williamson": "0105 = Leander Independent School District Board of Trustees, Place 2"
    },
    "write_ins": [],
    "majority": false,
@@ -2109,7 +2109,7 @@
    ],
    "keys": {
     "travis": "0146 = Leander ISD Board of Trustees, Place 6",
-    "williamson": "0106 = Leander Independent School District Board of Trustees,"
+    "williamson": "0106 = Leander Independent School District Board of Trustees, Place 6"
    },
    "write_ins": [],
    "majority": false,
@@ -2124,7 +2124,7 @@
    ],
    "keys": {
     "travis": "0147 = Leander ISD Board of Trustees, Place 7",
-    "williamson": "0107 = Leander Independent School District Board of Trustees,"
+    "williamson": "0107 = Leander Independent School District Board of Trustees, Place 7"
    },
    "write_ins": [],
    "majority": false,
@@ -2180,7 +2180,7 @@
    ],
    "keys": {
     "travis": "0151 = Pflugerville ISD Board of Trustees, Place 6",
-    "williamson": "0109 = Pflugerville Independent School District Board of Trus"
+    "williamson": "0109 = Pflugerville Independent School District, Board of Trustees, Place 6"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2195,7 +2195,7 @@
    ],
    "keys": {
     "travis": "0152 = Pflugerville ISD Board of Trustees, Place 7",
-    "williamson": "0110 = Pflugerville Independent School District Board of Trus"
+    "williamson": "0110 = Pflugerville Independent School District, Board of Trustees, Place 7"
    },
    "write_ins": [],
    "majority": "unsure",
@@ -2210,7 +2210,7 @@
    ],
    "keys": {
     "travis": "0153 = Round Rock ISD Board of Trustees, Place 3",
-    "williamson": "0111 = Round Rock Independent School District Board of Truste"
+    "williamson": "0111 = Round Rock Independent School District Board of Trustees, Place 3"
    },
    "write_ins": [],
    "majority": false,
@@ -2225,7 +2225,7 @@
    ],
    "keys": {
     "travis": "0154 = Round Rock ISD Board of Trustees, Place 4",
-    "williamson": "0112 = Round Rock Independent School District Board of Truste"
+    "williamson": "0112 = Round Rock Independent School District Board of Trustees, Place  4"
    },
    "write_ins": [],
    "majority": false,
@@ -2240,7 +2240,7 @@
    ],
    "keys": {
     "travis": "0155 = Round Rock ISD Board of Trustees, Place 5",
-    "williamson": "0113 = Round Rock Independent School District Board of Truste"
+    "williamson": "0113 = Round Rock Independent School District Board of Trustees, Place 5"
    },
    "write_ins": [],
    "majority": false,
@@ -2255,7 +2255,7 @@
    ],
    "keys": {
     "travis": "0156 = Round Rock ISD Board of Trustees, Place 6",
-    "williamson": "0114 = Round Rock Independent School District Board of Truste"
+    "williamson": "0114 = Round Rock Independent School District Board of Trustees, Place 6"
    },
    "write_ins": [],
    "majority": false,
@@ -2706,7 +2706,7 @@
    ],
    "keys": {
     "travis": "0188 = North Austin MUD No. 1 Director, Place 2",
-    "williamson": "0120 = North Austin Municipal Utility District No. 1 Director"
+    "williamson": "0120 = North Austin Municipal Utility District No. 1 Director, Place 2"
    },
    "write_ins": [],
    "majority": false,
@@ -2721,7 +2721,7 @@
    ],
    "keys": {
     "travis": "0189 = North Austin MUD No. 1 Director, Place 4",
-    "williamson": "0121 = North Austin Municipal Utility District No. 1 Director"
+    "williamson": "0121 = North Austin Municipal Utility District No. 1 Director, Place 4"
    },
    "write_ins": [],
    "majority": false,
@@ -3059,7 +3059,7 @@
    ],
    "keys": {
     "travis": "0213 = Williamson-Travis Counties MUD No. 1, Directors",
-    "williamson": "0139 = Williamson-Travis Counties Municipal Utility District"
+    "williamson": "0139 = Williamson-Travis Counties Municipal Utility District No. 1, Directors Election"
    },
    "write_ins": [],
    "majority": false,
