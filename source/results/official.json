@@ -9,23 +9,27 @@
   },
   "del-valle-isd": {
    "expected": "2026-11-12",
-   "link": "https://meetings.boardbook.org/Public/DownloadAgenda/675?meeting=775900"
+   "link": "https://meetings.boardbook.org/Public/DownloadAgenda/675?meeting=775900",
+   "canvassed": "2026-11-12"
   },
   "city-of-austin": {
    "expected": "2026-11-17",
-   "link": "https://austintexas.legistar1.com/austintexas/meetings/2026/11/4235_A_City_Council_26-11-17_City_Council_Agenda.pdf"
+   "link": "https://services.austintexas.gov/council_meetings/action_notes.cfm?mid=1525",
+   "canvassed": "2026-11-17"
   },
   "pflugerville-isd": {
    "expected": "2026-11-17",
-   "link": "https://meetings.boardbook.org/Public/Agenda/Pflugerville?meeting=777044"
+   "link": "https://meetings.boardbook.org/Public/Agenda/Pflugerville?meeting=777044",
+   "canvassed": "2026-11-17"
   },
   "coupland-isd": {
-   "expected": "2026-11-12",
-   "link": "https://meetings.boardbook.org/Public/Agenda/2708?meeting=776651"
+   "expected": "2026-11-19",
+   "link": "https://meetings.boardbook.org/Public/Agenda/2708?meeting=778272"
   },
   "manor-isd": {
    "expected": "2026-11-16",
-   "link": "https://meetings.boardbook.org/Public/Agenda/938?meeting=775418"
+   "link": "https://meetings.boardbook.org/Public/Agenda/938?meeting=775418",
+   "canvassed": "2026-11-16"
   },
   "round-rock-isd": {
    "expected": "2026-11-16",
@@ -33,14 +37,20 @@
   },
   "city-of-pflugerville": {
    "expected": "2026-11-17",
-   "link": "https://legistar1.granicus.com/Pflugerville/meetings/2026/11/3819_A_City_Council_26-11-17_Meeting_Agenda.pdf"
+   "link": "https://legistar1.granicus.com/Pflugerville/meetings/2026/11/3819_A_City_Council_26-11-17_Meeting_Agenda.pdf",
+   "canvassed": "2026-11-17"
   },
   "leander-isd": {
    "expected": "2026-11-17",
-   "link": "https://meetings.boardbook.org/Public/Agenda/795?meeting=776766"
+   "link": "https://meetings.boardbook.org/Public/Agenda/795?meeting=776766",
+   "canvassed": "2026-11-17"
   }
  },
- "runoffs": {},
+ "runoffs": {
+  "c066": "2026-12-12",
+  "c067": "2026-12-12",
+  "c068": "2026-12-12"
+ },
  "final": {
   "travis": "2026-11-10"
  }
