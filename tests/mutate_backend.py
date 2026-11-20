@@ -90,6 +90,7 @@ M = [
     ("B74 the report names an excluded file", FETCH, "rep = B.latest(res, source, excluded, B.POLLS_CLOSE, [], B.ELECTION)", "rep = B.latest(res, source, {}, B.POLLS_CLOSE, [], B.ELECTION)"),
     ("B75 a hand-uploaded county unmarked", FETCH, 'hand = "" if source in auto else " · not fetched: uploaded by hand"', 'hand = ""'),
     ("B80 a Hays report in capitals refused", PARSE, 'not lines[0].lower().startswith("cumulative results report") or "hays county" not in lines[0].lower():', 'not lines[0].startswith("Cumulative Results Report") or "Hays County" not in lines[0]:'),
+    ("B81 a local canvass dated before Nov 6 passes the check", CHECK, 'if cv["kind"] == "local" and cv["done"] and cv["done"] < "2026-11-06":', 'if False:'),
     ("B76 the clear seats of several unnamed", RULES, "sure = [n for n, v in r[:seats - 1] if clear(v, nxt, total, slack)] if seats > 1 else []", "sure = []"),
     ("B77 too few votes reads too close", BUILD, 'if not done and verdict == "too_close" and slack is not None and cast + slack < R.FLOOR:', 'if False:'),
     ("B78 an unnamed write-in reads 0", BUILD, "unnamed = [n for n in write_ins if n not in got] if lumped else []", "unnamed = []"),
