@@ -214,8 +214,10 @@ def check(obj, key, prev=None, rolled=None):
                 bad.append(where + "the Legislature canvasses after it meets Jan 12, 2027")
             if cv["kind"] == "state" and cv["done"] and not ("2026-11-21" <= cv["done"] <= "2026-12-07"):
                 bad.append(where + "the state canvass is Nov 21 – Dec 7")
-            if cv["kind"] == "local" and cv["done"] and not ("2026-11-06" <= cv["done"] <= "2026-11-17"):
-                bad.append(where + "a local canvass is Nov 6 – 17")
+            # a local canvass is due Nov 6 – 17 (Elec. Code §67.003), but a board can canvass late: Coupland ISD canvassed
+            # Nov 19, and the page reports what the board did, with its real date (Lane, Nov 20). Never before Nov 6.
+            if cv["kind"] == "local" and cv["done"] and cv["done"] < "2026-11-06":
+                bad.append(where + "a local canvass is on or after Nov 6")
         if not isinstance(e["official_numbers"], bool):
             bad.append(where + "official_numbers must be true or false")
         elif not e["official_numbers"] and e["state"] not in ("official", "recount"):
