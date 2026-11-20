@@ -427,7 +427,9 @@ def official_only_through_its_own_canvasser():
         s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-12', 'recount': {'link': 'https://example.org/recount'}}})
         assert s.build()[0]['contests']['c071']['state'] == 'recount'
         s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-20'}})
-        try: s.build(); raise AssertionError('a canvass after Nov 17 was accepted')
+        assert s.build()[0]['contests']['c071']['canvass']['done'] == '2026-11-20', 'a late canvass keeps its real date (Lane, Nov 20)'
+        s.official(canvasses={'city-of-austin': {'canvassed': '2026-11-05'}})
+        try: s.build(); raise AssertionError('a canvass before Nov 6 was accepted')
         except B.Problem as e: assert 'Nov 6' in str(e), e
     finally: s.close()
 
@@ -759,6 +761,19 @@ def the_results_check_takes_the_nov_4_fields():
     assert not one('c147', verdict='none', leaders=[], no_call='too_few')
     assert one('c053', unnamed=['Dyana Limon-Mercado']), 'only a declared write-in shown with 0'
     assert not one('c053', unnamed=['LaShawn Nash']) and not one('c053'), 'and the field is optional'
+
+@test
+def a_late_local_canvass_keeps_its_real_date():
+    # Coupland ISD canvassed Nov 19, after the Nov 17 deadline: the check takes it with its date (Lane, Nov 20), and
+    # still refuses a local canvass before Nov 6, when none can happen
+    key = check_results.answer_key()
+    base = json.loads((ROOT / 'results.json').read_text(encoding='utf-8'))
+    e = base['contests']['c053']; assert e['state'] == 'official' and e['canvass']['kind'] == 'local', 'Travis canvassed Nov 12'
+    def on(day):
+        b = copy.deepcopy(base); b['contests'] = {'c053': b['contests']['c053']}; b['contests']['c053']['canvass']['done'] = day
+        return check_results.check(b, key)
+    assert not on('2026-11-12') and not on('2026-11-19') and not on('2026-12-01'), on('2026-11-19')
+    assert any('on or after Nov 6' in x for x in on('2026-11-05')), on('2026-11-05')
 
 @test
 def no_travis_breakdown_when_travis_has_no_votes():

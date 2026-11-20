@@ -14,7 +14,11 @@ per milestone; each is tagged `v<version>` at the last commit of that milestone.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Results pipeline
+- A local canvass held after Nov 17 is accepted with its real date (Lane, Nov 20). Texas law sets Nov 6–17, but Coupland
+  ISD canvassed its tax election Nov 19, and the page reports what the board did. A local canvass before Nov 6 is still
+  refused. Tests: `a_late_local_canvass_keeps_its_real_date`, and `official_only_through_its_own_canvasser` now expects a
+  Nov 20 canvass to be accepted; mutant B81 is killed.
 
 ## [1.9.2] — 2026-11-12
 
