@@ -45,15 +45,105 @@
    "expected": "2026-11-17",
    "link": "https://meetings.boardbook.org/Public/Agenda/795?meeting=776766",
    "canvassed": "2026-11-17"
+  },
+  "austin-isd": {
+   "expected": "2026-11-11",
+   "link": "https://austin-isd.community.diligentoneplatform.com/Portal/MeetingInformation.aspx?Id=891",
+   "canvassed": "2026-11-11"
+  },
+  "acc": {
+   "expected": "2026-11-12",
+   "link": "https://drive.google.com/file/d/1AXQWGGdStxbIITR-8S2CBEJvl5vEvBaL/view",
+   "canvassed": "2026-11-12"
+  },
+  "tcad": {
+   "expected": "2026-11-16",
+   "link": "https://meetings.boardbook.org/Public/Agenda/3306?meeting=776414",
+   "canvassed": "2026-11-16"
+  },
+  "city-of-lago-vista": {
+   "expected": "2026-11-16",
+   "link": "https://www.lagovistatexas.gov/CivicAlerts.aspx?AID=1733",
+   "canvassed": "2026-11-16"
+  },
+  "city-of-elgin": {
+   "expected": "2026-11-17",
+   "link": "https://www.elgintexas.gov/CivicAlerts.aspx?AID=1866",
+   "canvassed": "2026-11-17"
+  },
+  "esd-9": {
+   "expected": "2026-11-17",
+   "link": "https://www.westlakefd.org/wp-content/uploads/2026/11/11-17-2026-Agenda-for-Special-Meeting-2.pdf",
+   "canvassed": "2026-11-17"
+  },
+  "travis-county-wcid-17": {
+   "expected": "2026-11-17",
+   "link": "https://www.wcid17.org/wp-content/uploads/2026/11/III.-WCID-No.-17-Order-Canvassing-Returns-and-Declaring-Results-of-Director-Election-11.16.pdf",
+   "canvassed": "2026-11-17"
+  },
+  "wells-branch-library": {
+   "expected": "2026-11-13",
+   "link": "https://www.wblibrary.org/site-assets/files/nov-2024-canvass-agenda.docx",
+   "canvassed": "2026-11-13"
   }
  },
  "runoffs": {
   "c066": "2026-12-12",
   "c067": "2026-12-12",
-  "c068": "2026-12-12"
+  "c068": "2026-12-12",
+  "c090": "2026-12-12",
+  "c096": "2026-12-12"
  },
  "final": {
   "travis": "2026-11-10",
   "williamson": "2026-11-18"
+ },
+ "counted": {
+  "c117": {
+   "caldwell": {
+    "at": "2026-11-12T12:00",
+    "votes": {
+     "Dana Walker": 3492,
+     "Gloria Gonzales-Dholakia": 3272
+    }
+   },
+   "lee": {
+    "at": "2026-11-12T12:00",
+    "votes": {
+     "Dana Walker": 25,
+     "Gloria Gonzales-Dholakia": 7
+    }
+   }
+  },
+  "c118": {
+   "caldwell": {
+    "at": "2026-11-12T12:00",
+    "votes": {
+     "Gigi Edwards Bryant": 5216
+    }
+   },
+   "lee": {
+    "at": "2026-11-12T12:00",
+    "votes": {
+     "Gigi Edwards Bryant": 26
+    }
+   }
+  },
+  "c119": {
+   "caldwell": {
+    "at": "2026-11-12T12:00",
+    "votes": {
+     "Trevor Hale": 3482,
+     "Nan McRaven": 2552
+    }
+   },
+   "lee": {
+    "at": "2026-11-12T12:00",
+    "votes": {
+     "Trevor Hale": 19,
+     "Nan McRaven": 11
+    }
+   }
+  }
  }
 }
